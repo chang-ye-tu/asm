@@ -1,0 +1,892 @@
+% Compile:  python build.py 13
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 13\ \ Unsupervised Learning}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{13.\arabic{theorem}}
+\renewcommand\thetheorem  {13.\arabic{theorem}}
+\renewcommand\thelemma    {13.\arabic{theorem}}
+\renewcommand\theproposition{13.\arabic{theorem}}
+\renewcommand\thecorollary{13.\arabic{theorem}}
+\renewcommand\theexample  {13.\arabic{example}}
+\renewcommand\theexercise {13.\arabic{exercise}}
+\renewcommand\thefigure   {13.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Unsupervised Learning}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit13-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 13.\ Unsupervised Learning}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Principal Components}\label{sec:13.1}
+%==============================================================================
+
+\begin{reading}
+ISLR §12.1--12.2.
+\end{reading}
+
+There is no response. Every criterion the course has used, from the residual sum of squares
+of Unit 2 to the out-of-bag error of Unit 12, measured a prediction against something
+observed, and none of them is available. What can still be asked of $\bX$ alone is whether
+its $k$ columns carry $k$ directions' worth of information, and whether its $n$ rows fall
+into groups.
+
+\subsection{Two definitions, one answer}\label{sec:13.1.1}
+
+Unit 5 defined the loading vectors as maximising the variance of the scores and proved they
+are the eigenvectors of the sample covariance matrix $\bS=\bX'\bX/(n-1)$, with $\bX$
+centred. A second definition asks for the best low-dimensional approximation instead, and
+gives the same vectors.
+
+\begin{definition}[Rank-$M$ approximation]\label{def:rankM}
+For $1\leqslant M\leqslant k$ let $\calA_M$ be the set of $n\times k$ matrices of rank at
+most $M$. The best rank-$M$ approximation problem is
+\begin{equation}\label{eq:rankM}
+\min_{\bA\in\calA_M}\ \|\bX-\bA\|_F^2 ,
+\qquad \|\bB\|_F^2=\sum_{i,j}b_{ij}^2=\tr(\bB'\bB) .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Eckart--Young]\label{thm:eckart}
+Let $\bX=\bU\bD\bV'$ be a singular value decomposition (prerequisites) with singular values
+$d_1\geqslant\cdots\geqslant d_k\geqslant0$, and let $\bX_M=\sum_{m\leqslant M}d_m\bu_m\bv_m'$
+be the truncation. Then $\bX_M$ solves~\eqref{eq:rankM} and
+\begin{equation}\label{eq:eckart}
+\min_{\bA\in\calA_M}\|\bX-\bA\|_F^2=\sum_{m>M}d_m^2 .
+\end{equation}
+Its columns of $\bV$ are the loading vectors of Unit 5 and $\bU\bD$ holds the scores, so the
+two definitions of a principal component coincide.
+\end{theorem}
+
+\begin{proof}
+\textbf{The value is attained.} $\bX-\bX_M=\sum_{m>M}d_m\bu_m\bv_m'$, and the $\bu_m$ are
+orthonormal, as are the $\bv_m$, so
+$\tr\{(\bX-\bX_M)'(\bX-\bX_M)\}=\sum_{m>M}d_m^2$.
+
+\textbf{No rank-$M$ matrix does better.} Let $\bA$ have rank at most $M$ and let $\bP$ be
+the orthogonal projection on the column space of $\bA$, of rank $r\leqslant M$. Since the
+columns of $\bA$ lie in that space, $\bP\bA=\bA$, and for each column $\bx$ of $\bX$ the
+projection theorem (prerequisites) gives $|\bx-\bP\bx|\leqslant|\bx-\bA\bx^\ast|$ for the
+corresponding column; summing over columns, $\|\bX-\bA\|_F^2\geqslant\|\bX-\bP\bX\|_F^2$.
+So it suffices to minimise over projections of rank $M$.
+
+Write $\bP=\bW\bW'$ with $\bW$ having $M$ orthonormal columns. Then
+\[
+\|\bX-\bP\bX\|_F^2=\tr(\bX'\bX)-\tr(\bW'\bX'\bX\bW) ,
+\]
+because $\tr\{(\bI-\bP)\bX\bX'(\bI-\bP)\}=\tr(\bX'\bX)-\tr(\bP\bX\bX')$ and $\bP$ is
+idempotent. Maximising $\tr(\bW'\bX'\bX\bW)$ over orthonormal $\bW$ is maximising
+$\sum_{m\leqslant M}\bw_m'\bX'\bX\bw_m$, which by the argument of Unit 5, applied one
+direction at a time, is at most $\sum_{m\leqslant M}d_m^2$, the $d_m^2$ being the
+eigenvalues of $\bX'\bX$; equality holds at $\bW=[\bv_1\ \cdots\ \bv_M]$. Subtracting from
+$\tr(\bX'\bX)=\sum_md_m^2$ gives~\eqref{eq:eckart}.
+
+\textbf{The two definitions agree.} $\bX'\bX=\bV\bD^2\bV'$, so the eigenvectors of
+$\bS=\bX'\bX/(n-1)$ are the columns of $\bV$ with eigenvalues $\lambda_m=d_m^2/(n-1)$, which
+is the statement of Unit 5, and the scores are $\bX\bv_m=d_m\bu_m$.
+\end{proof}
+
+\begin{remark}
+So the first $M$ components are simultaneously the $M$ directions of greatest variance and
+the $M$-dimensional plane closest to the data in squared distance. That the two questions
+have one answer is what makes the components worth looking at: a picture of the first two
+scores is both the most spread-out projection and the least distorted one.
+\end{remark}
+
+\begin{corollary}[Variance explained is error removed]\label{cor:pve-recon}
+With $\lambda_m=d_m^2/(n-1)$,
+\begin{equation}\label{eq:pve-recon}
+\frac{\sum_{m\leqslant M}\lambda_m}{\sum_{m\leqslant k}\lambda_m}
+=1-\frac{\|\bX-\bX_M\|_F^2}{\|\bX\|_F^2} ,
+\end{equation}
+so the cumulative proportion of variance explained of Unit 5 is one minus the relative
+approximation error.
+\end{corollary}
+
+\begin{proof}
+Divide~\eqref{eq:eckart} by $\|\bX\|_F^2=\tr(\bX'\bX)=\sum_md_m^2$ and use
+$\lambda_m\propto d_m^2$.
+\end{proof}
+
+\subsection{What is not determined}\label{sec:13.1.2}
+
+\begin{proposition}[Sign and rotation]\label{prop:pca-indet}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{ind:i} If $\bv_m$ is an $m$th loading vector so is $-\bv_m$, with scores
+      negated; every statement about variance, approximation and $\PVE$ is unchanged.
+\item\label{ind:ii} If $\lambda_m=\lambda_{m+1}$ then any orthonormal pair spanning the same
+      two-dimensional eigenspace serves, so the individual components are not determined at
+      all.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\ref{ind:i} $(-\bv)'\bS(-\bv)=\bv'\bS\bv$ and $\bX(-\bv)=-\bX\bv$; the rank-$M$
+approximation $\sum_m d_m\bu_m\bv_m'$ is unchanged when both $\bu_m$ and $\bv_m$ change
+sign.
+
+\ref{ind:ii} If $\bS\bw=\lambda\bw$ for every $\bw$ in a two-dimensional space, any
+orthonormal basis of it consists of eigenvectors with the same eigenvalue, and the argument
+of Unit 5 selects none of them over another.
+\end{proof}
+
+\begin{remark}
+Reading a loading vector as though its signs meant something is therefore reading an
+arbitrary choice made by the software. What is determined is the subspace and the ordering
+of the eigenvalues, and any interpretation must be invariant under the sign flip: that
+Assault and Murder load together is a statement, that they load positively is not.
+\end{remark}
+
+\begin{remark}
+Unit 5 recorded that $\bS$ changes under rescaling of the columns and that standardising is
+the usual default. Nothing above weakens that: Theorem~\ref{thm:eckart} minimises squared
+error in whatever units the columns carry, so the choice of units is the choice of what the
+approximation is asked to preserve. §\ref{sec:13.5.1} shows the first component changing
+completely.
+\end{remark}
+
+\subsection{How many components}\label{sec:13.1.3}
+
+\begin{definition}[Scree plot]\label{def:scree}
+The plot of $\PVE_m=\lambda_m/\sum_l\lambda_l$ against $m$, or of its cumulative sum.
+\end{definition}
+
+\begin{remark}
+There is no criterion here of the kind Unit 5 had. Cross-validation compares predictions and
+there is nothing to predict; the sequence $\sum_{m\leqslant M}\lambda_m$ increases in $M$ by
+construction, so it cannot be optimised over $M$ any more than the training error of
+Unit 11 could be optimised over tree size. What is done instead is to look for an elbow,
+which is a judgement, and to check that the components kept admit a reading. When the
+components feed a supervised model, as in the principal components regression of Unit 5,
+$M$ becomes a tuning parameter again and cross-validation returns.
+\end{remark}
+
+\begin{definition}[Biplot]\label{def:biplot}
+The scatter of the first two score columns with the first two rows of $\bV'$ drawn as
+arrows from the origin on a common pair of axes.
+\end{definition}
+
+\begin{proposition}[What the arrows mean]\label{prop:biplot}
+The $j$th arrow is $(v_{j1},v_{j2})$, and the projection of a score point
+$(z_{i1},z_{i2})$ on that arrow's direction is the part of $x_{ij}$ reconstructed by the
+first two components: $\hat x_{ij}=z_{i1}v_{j1}+z_{i2}v_{j2}$. Two arrows at a small angle
+belong to variables whose reconstructions are nearly proportional across observations.
+\end{proposition}
+
+\begin{proof}
+The rank-two reconstruction is $\bX_2=\sum_{m\leqslant2}d_m\bu_m\bv_m'$, whose $(i,j)$ entry
+is $\sum_{m\leqslant2}z_{im}v_{jm}$ with $z_{im}=d_mu_{im}$. Reading that as an inner
+product of $(z_{i1},z_{i2})$ with $(v_{j1},v_{j2})$ gives the first claim, and the cosine of
+the angle between two arrows is the correlation of the two reconstructions when the score
+columns are scaled to equal norm.
+\end{proof}
+
+%==============================================================================
+\section{K-means Clustering}\label{sec:13.2}
+%==============================================================================
+
+\begin{reading}
+ISLR §12.4.1.
+\end{reading}
+
+\begin{definition}[The criterion]\label{def:kmeans}
+A \emph{clustering} into $K$ groups is a partition $C_1,\ldots,C_K$ of $\{1,\ldots,n\}$ with
+every $C_g$ non-empty. Its \emph{within-cluster sum of squares} is
+\begin{equation}\label{eq:wss}
+W(C)=\sum_{g=1}^{K}\sum_{i\in C_g}\,\bigl|\bx_i-\bar\bx_g\bigr|^2 ,
+\qquad \bar\bx_g=\frac1{|C_g|}\sum_{i\in C_g}\bx_i ,
+\end{equation}
+and $K$-means clustering is the problem $\min_CW(C)$.
+\end{definition}
+
+\begin{proposition}[Three readings of the criterion]\label{prop:wss}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{wss:i} $\ds\sum_{i\in C_g}|\bx_i-\bar\bx_g|^2
+      =\frac1{2|C_g|}\sum_{i\in C_g}\sum_{i'\in C_g}|\bx_i-\bx_{i'}|^2$: the within-cluster
+      sum of squares is a sum of pairwise distances and never refers to a centre.
+\item\label{wss:ii} $W(C)+B(C)=T$, where $T=\sum_i|\bx_i-\bar\bx|^2$ is free of $C$ and
+      $B(C)=\sum_g|C_g|\,|\bar\bx_g-\bar\bx|^2$. Minimising $W$ is maximising $B$.
+\item\label{wss:iii} For fixed centres $\bmu_1,\ldots,\bmu_K$,
+      $\sum_g\sum_{i\in C_g}|\bx_i-\bmu_g|^2$ is minimised over partitions by assigning
+      each $i$ to a nearest centre; and for a fixed partition it is minimised over centres
+      at $\bmu_g=\bar\bx_g$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\ref{wss:i} Expanding, $\sum_{i,i'\in C_g}|\bx_i-\bx_{i'}|^2
+=\sum_{i,i'}\{|\bx_i|^2-2\bx_i'\bx_{i'}+|\bx_{i'}|^2\}
+=2|C_g|\sum_i|\bx_i|^2-2\bigl|\sum_i\bx_i\bigr|^2
+=2|C_g|\bigl\{\sum_i|\bx_i|^2-|C_g|\,|\bar\bx_g|^2\bigr\}$, and the brace is
+$\sum_{i\in C_g}|\bx_i-\bar\bx_g|^2$.
+
+\ref{wss:ii} is the analysis of variance identity of Unit 10 applied coordinatewise, the
+cross terms vanishing because $\sum_{i\in C_g}(\bx_i-\bar\bx_g)=\bzero$.
+
+\ref{wss:iii} The double sum splits over $i$, and the term for $i$ is
+$|\bx_i-\bmu_{g(i)}|^2$, smallest when $g(i)$ indexes a nearest centre. For fixed $C$ the
+sum splits over $g$ and each part is minimised at the mean (Unit 2).
+\end{proof}
+
+\begin{definition}[Lloyd's algorithm]\label{def:lloyd}
+Start from an assignment. Repeat: compute the cluster means; reassign each observation to a
+nearest mean. Stop when the assignment does not change.
+\end{definition}
+
+\begin{theorem}[The algorithm decreases the criterion and stops]\label{thm:lloyd}
+Write $C^{(t)}$ for the assignment after $t$ rounds. Then $W(C^{(t+1)})\leqslant W(C^{(t)})$,
+and the algorithm reaches an assignment it does not change after finitely many rounds.
+\end{theorem}
+
+\begin{proof}
+Let $\bmu^{(t)}_g$ be the means of $C^{(t)}$ and put
+$F(C,\bmu)=\sum_g\sum_{i\in C_g}|\bx_i-\bmu_g|^2$. Then
+\[
+W(C^{(t)})=F(C^{(t)},\bmu^{(t)})\ \geqslant\ F(C^{(t+1)},\bmu^{(t)})\ \geqslant\
+F(C^{(t+1)},\bmu^{(t+1)})=W(C^{(t+1)}) ,
+\]
+the first inequality by the assignment half of
+Proposition~\ref{prop:wss}\ref{wss:iii} and the second by the centre half, and the two
+equalities because $W(C)=\min_{\bmu}F(C,\bmu)$ attained at the cluster means.
+
+There are finitely many partitions of $n$ points into $K$ groups, and $W$ never increases,
+so the sequence $W(C^{(t)})$ is non-increasing and takes finitely many values, hence is
+eventually constant. Once $W(C^{(t+1)})=W(C^{(t)})$ both inequalities are equalities, so
+$C^{(t+1)}$ is also optimal for $\bmu^{(t)}$ and the assignment step returns it again.
+\end{proof}
+
+\begin{remark}
+The theorem promises a fixed point of the algorithm and nothing more. It is not a global
+minimum: the number of partitions is a Stirling number of the second kind, which for $n=50$
+and $K=3$ exceeds $10^{23}$, and no algorithm here searches them. The remedy is to run
+Lloyd's algorithm from many random starts and keep the best, and §\ref{sec:13.4.3} shows
+the spread of values reached.
+\end{remark}
+
+\begin{proposition}[$W$ cannot choose $K$]\label{prop:K}
+The optimal $W$ is non-increasing in $K$, and equals $0$ at $K=n$.
+\end{proposition}
+
+\begin{proof}
+Any partition into $K$ groups is refined into one with $K+1$ by splitting a group with at
+least two members, and by Proposition~\ref{prop:wss}\ref{wss:ii} applied within that group
+the within-cluster sum of squares cannot rise. At $K=n$ every cluster is a single point and
+each term of~\eqref{eq:wss} vanishes.
+\end{proof}
+
+%==============================================================================
+\section{Hierarchical Clustering}\label{sec:13.3}
+%==============================================================================
+
+\begin{reading}
+ISLR §12.4.2.
+\end{reading}
+
+$K$-means needs $K$ before it starts and returns one partition. Agglomerative clustering
+returns a nested family of partitions, one for each $K$, and asks only for a dissimilarity.
+
+\begin{definition}[Agglomerative clustering and linkage]\label{def:hclust}
+Begin with $n$ singleton clusters and a dissimilarity $d(i,i')$. At each step merge the two
+clusters with the smallest \emph{linkage} $D$, and record the merge height $D$. The usual
+linkages, for clusters $A$ and $B$, are
+\begin{align}
+\text{single:}&\quad D(A,B)=\min_{i\in A,i'\in B}d(i,i') , \label{eq:single}\\
+\text{complete:}&\quad D(A,B)=\max_{i\in A,i'\in B}d(i,i') , \label{eq:complete}\\
+\text{average:}&\quad D(A,B)=\frac1{|A||B|}\sum_{i\in A}\sum_{i'\in B}d(i,i') ,
+\label{eq:average}\\
+\text{centroid:}&\quad D(A,B)=|\bar\bx_A-\bar\bx_B| . \label{eq:centroid}
+\end{align}
+The \emph{dendrogram} draws each merge as a join at its height.
+\end{definition}
+
+\begin{proposition}[Cutting the dendrogram]\label{prop:cut}
+The clusters present at any moment form a partition, and every cluster at a later moment is
+a union of clusters at an earlier one. Cutting the dendrogram at height $h$ therefore
+returns a partition, and the partitions obtained at different heights are nested.
+\end{proposition}
+
+\begin{proof}
+The initial clusters partition the observations, and replacing two blocks by their union
+leaves a partition; each step does that once, which is also the nesting claim.
+\end{proof}
+
+\begin{theorem}[No inversions]\label{thm:no-inversion}
+Suppose the linkage satisfies the \emph{reducibility} inequality
+\begin{equation}\label{eq:reducible}
+D(A\cup B,\,C)\ \geqslant\ \min\{D(A,C),\,D(B,C)\}
+\end{equation}
+for all disjoint clusters. Then the merge heights are non-decreasing, so the dendrogram has
+no inversion. Single, complete and average linkage all satisfy~\eqref{eq:reducible}.
+\end{theorem}
+
+\begin{proof}
+Let $h$ be the height of the current merge, of $A$ with $B$, so $D(A,B)=h$ and every other
+pair of current clusters has linkage at least $h$. After the merge the available pairs are
+of two kinds. A pair not involving $A\cup B$ has the same linkage as before, hence at least
+$h$. A pair $(A\cup B,C)$ has, by~\eqref{eq:reducible}, linkage at least
+$\min\{D(A,C),D(B,C)\}\geqslant h$, both terms having been available before the merge. So
+the next minimum is at least $h$.
+
+Single linkage attains equality in~\eqref{eq:reducible}, the minimum over $A\cup B$ being
+the smaller of the two minima. Complete linkage gives
+$\max\{D(A,C),D(B,C)\}\geqslant\min\{D(A,C),D(B,C)\}$. Average linkage gives
+$\{|A|D(A,C)+|B|D(B,C)\}/(|A|+|B|)$, a weighted mean of the two, hence at least their
+minimum.
+\end{proof}
+
+\begin{remark}
+Centroid linkage is not of this form: $\bar\bx_{A\cup B}$ is a weighted mean of $\bar\bx_A$
+and $\bar\bx_B$ and can be strictly closer to $\bar\bx_C$ than either, so~\eqref{eq:reducible}
+fails and a merge can occur below the height of the merge that produced it. The dendrogram
+then crosses itself and cutting it at a height no longer returns the clusters the picture
+suggests. §\ref{sec:13.4.4} counts seven such inversions on the course data set, and none
+for the other three linkages.
+\end{remark}
+
+\begin{proposition}[Single linkage chains]\label{prop:chain}
+Under single linkage, two observations are in the same cluster at height $h$ if and only if
+they are joined by a chain $i=i_0,i_1,\ldots,i_r=i'$ with $d(i_{l-1},i_l)\leqslant h$ at
+every step.
+\end{proposition}
+
+\begin{proof}
+Merging at height at most $h$ requires only one pair at distance at most $h$, so the
+clusters at height $h$ are exactly the connected components of the graph on
+$\{1,\ldots,n\}$ whose edges are the pairs at distance at most $h$, and membership of a
+component is the existence of such a chain.
+\end{proof}
+
+\begin{remark}
+That is single linkage's characteristic behaviour and its characteristic failure. A
+sequence of intermediate points at small spacing joins two otherwise distant groups, so
+single linkage finds elongated clusters that the other linkages break, and one stray point
+between two clusters merges them. Complete linkage, which is governed by the farthest pair,
+produces compact clusters and splits elongated ones.
+\end{remark}
+
+\begin{remark}
+Nothing here says which linkage or which dissimilarity is right, and there is no criterion
+to appeal to: the choices define what a cluster is. Euclidean distance on standardised
+columns and correlation-based dissimilarity answer different questions, the first about
+magnitudes and the second about profiles, and two observations can be close in one and far
+in the other.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:13.4}
+%==============================================================================
+
+\begin{reading}
+ISLR §12.5.1, §12.5.3.
+\end{reading}
+
+\texttt{USArrests} from \texttt{ISLR2}: four crime and population measurements on the fifty
+states, in four different units, which is the case standardisation exists for.
+
+<<setup-data>>=
+suppressMessages(library(ISLR2))
+X <- scale(USArrests); n <- nrow(X); k <- ncol(X)
+round(rbind(mean = colMeans(USArrests), sd = apply(USArrests, 2, sd)), 2)
+@
+
+\subsection{Principal components (§\ref{sec:13.1.1})}\label{sec:13.4.1}
+
+Three routes to the same components: the package, the eigendecomposition of the correlation
+matrix, and the singular value decomposition of the standardised data.
+
+<<pca-three-ways>>=
+pr <- prcomp(USArrests, scale. = TRUE)
+E <- eigen(cor(USArrests)); sv <- svd(X)
+round(rbind(prcomp_sdev = pr$sdev, sqrt_eigenvalue = sqrt(E$values),
+            singular_over_sqrt_n_minus_1 = sv$d/sqrt(n - 1)), 6)
+c(loadings_agree_to = max(abs(abs(pr$rotation) - abs(E$vectors))),
+  scores_agree_to = max(abs(abs(pr$x) - abs(X %*% E$vectors))),
+  pve_sums_to = sum(pr$sdev^2)/k, trace_of_correlation = sum(diag(cor(USArrests))))
+@
+
+The comparison is of absolute values, because by
+Proposition~\ref{prop:pca-indet}\ref{ind:i} the sign of each column is arbitrary. On this
+data the two routines happen to agree; nothing makes them, and §\ref{sec:13.5.2} exhibits
+the same call returning the opposite sign after the rows are permuted.
+
+<<pca-signs>>=
+rbind(prcomp = round(pr$rotation[, 1], 4), eigen = round(E$vectors[, 1], 4))
+@
+
+Theorem~\ref{thm:eckart}: the squared approximation error of the rank-$M$ truncation equals
+the sum of the discarded squared singular values, and
+Corollary~\ref{cor:pve-recon} turns that into the cumulative proportion of variance.
+
+<<eckart-young>>=
+recon <- function(M) if (M == 0) matrix(0, n, k) else
+  sv$u[, 1:M, drop = FALSE] %*% diag(sv$d[1:M], M, M) %*% t(sv$v[, 1:M, drop = FALSE])
+t(sapply(0:4, function(M) c(M = M,
+  squared_error = sum((X - recon(M))^2),
+  dropped_singular_squares = sum(sv$d[seq_len(k) > M]^2),
+  one_minus_relative_error = 1 - sum((X - recon(M))^2)/sum(X^2),
+  cumulative_pve = sum(pr$sdev[seq_len(M)]^2)/k)))
+@
+
+That the truncation is optimal, and not merely one rank-$M$ matrix among many, is checked by
+minimising~\eqref{eq:rankM} directly: alternating least squares over the two factors from
+twenty random starts.
+
+<<eckart-check>>=
+als <- function(M, iter = 200) { V <- matrix(rnorm(k*M), k, M)
+  for (it in 1:iter) { U <- X %*% V %*% solve(crossprod(V))
+                       V <- t(X) %*% U %*% solve(crossprod(U)) }
+  sum((X - U %*% t(V))^2) }
+set.seed(2); v <- replicate(20, als(2))
+c(best_of_twenty_starts = min(v), worst = max(v),
+  truncated_svd = sum((X - recon(2))^2))
+@
+
+\begin{figure}[H]\centering
+<<pca-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 0.8), cex = 0.85)
+plot(1:k, pr$sdev^2/k, type = "b", pch = 16, lwd = 2, col = "#1E3A8A",
+     ylim = c(0, 1), xlab = "component m", ylab = "proportion of variance",
+     main = "scree")
+lines(1:k, cumsum(pr$sdev^2)/k, type = "b", pch = 17, lwd = 2, lty = 2,
+      col = "#B45309")
+legend("right", bty = "n", cex = 0.8, lwd = 2, lty = c(1, 2), pch = c(16, 17),
+       col = c("#1E3A8A", "#B45309"), legend = c("individual", "cumulative"))
+biplot(pr, scale = 0, cex = c(0.45, 0.8), col = c("grey55", "#B45309"),
+       xlabs = abbreviate(rownames(USArrests), 4))
+title("biplot", cex.main = 1)
+par(op)
+@
+\caption{Left: the scree plot of Definition~\ref{def:scree}; two components carry $87\%$ of
+the variance, which by Corollary~\ref{cor:pve-recon} is the same statement as a relative
+approximation error of $13\%$. Right: the biplot of Definition~\ref{def:biplot}. Three crime
+arrows point nearly together and \texttt{UrbanPop} nearly at right angles to them, so the
+second component separates urbanisation from crime.}\label{fig:pca}
+\end{figure}
+
+\subsection{Scaling changes the answer (§\ref{sec:13.1.2})}\label{sec:13.4.2}
+
+<<pca-scaling>>=
+pu <- prcomp(USArrests, scale. = FALSE)
+round(rbind(unscaled_loading_1 = pu$rotation[, 1],
+            scaled_loading_1 = pr$rotation[, 1],
+            column_sd = apply(USArrests, 2, sd)), 4)
+c(unscaled_pve_1 = pu$sdev[1]^2/sum(pu$sdev^2),
+  scaled_pve_1 = pr$sdev[1]^2/sum(pr$sdev^2))
+@
+
+Unstandardised, the first component is \texttt{Assault} almost alone, because
+\texttt{Assault} is recorded in counts with a standard deviation of $83$ against
+\texttt{Murder}'s $4.4$, and it carries $97\%$ of the variance. Standardised, all four
+variables contribute and the first component carries $62\%$.
+
+\subsection{$K$-means (§\ref{sec:13.2})}\label{sec:13.4.3}
+
+Proposition~\ref{prop:wss}, all three parts, and Theorem~\ref{thm:lloyd}.
+
+<<kmeans-identities>>=
+set.seed(4); km <- kmeans(X, centers = 3, nstart = 50)
+wss <- function(lab) sum(sapply(unique(lab), function(g) {
+  Z <- X[lab == g, , drop = FALSE]; sum(scale(Z, scale = FALSE)^2) }))
+g1 <- X[km$cluster == 1, ]
+c(package_tot_withinss = km$tot.withinss, manual = wss(km$cluster),
+  total = sum(scale(X, scale = FALSE)^2),
+  within_plus_between = km$tot.withinss + km$betweenss,
+  pairwise_form = sum(as.matrix(dist(g1))^2)/nrow(g1),
+  twice_within_cluster_1 = 2*sum(scale(g1, scale = FALSE)^2))
+@
+
+Lloyd's algorithm coded from Definition~\ref{def:lloyd}, printing the criterion at each
+round.
+
+<<lloyd>>=
+lloyd <- function(Xm, K, seed) { set.seed(seed)
+  lab <- sample(K, nrow(Xm), replace = TRUE); tr <- numeric(0)
+  for (it in 1:30) {
+    C <- t(sapply(1:K, function(g) colMeans(Xm[lab == g, , drop = FALSE])))
+    D <- sapply(1:K, function(g) rowSums(sweep(Xm, 2, C[g, ])^2))
+    lab <- max.col(-D); tr <- c(tr, sum(apply(D, 1, min))) }
+  tr }
+round(lloyd(X, 3, 11)[1:8], 3)
+@
+
+The sequence is non-increasing and constant from the sixth round, as
+Theorem~\ref{thm:lloyd} requires. It is a fixed point and not a minimum: repeated single
+starts land in several places.
+
+<<kmeans-local>>=
+set.seed(6)
+one <- replicate(200, kmeans(X, centers = 3, nstart = 1)$tot.withinss)
+c(best = min(one), worst = max(one), distinct_values = length(unique(round(one, 6))),
+  proportion_at_best = mean(round(one, 6) == round(min(one), 6)),
+  with_nstart_50 = kmeans(X, centers = 3, nstart = 50)$tot.withinss)
+@
+
+Proposition~\ref{prop:K}: the criterion falls with $K$ whatever the data, so it cannot
+choose $K$.
+
+<<kmeans-K>>=
+set.seed(7)
+t(sapply(1:8, function(K) c(K = K,
+  within = kmeans(X, centers = K, nstart = 25)$tot.withinss)))
+@
+
+\subsection{Hierarchical clustering (§\ref{sec:13.3})}\label{sec:13.4.4}
+
+Theorem~\ref{thm:no-inversion}: the three reducible linkages have non-decreasing merge
+heights and centroid linkage does not.
+
+<<hclust-inversions>>=
+dd <- dist(X)
+t(sapply(c("single", "complete", "average", "centroid"), function(m) {
+  h <- hclust(dd, method = m)
+  c(smallest_height_step = min(diff(h$height)),
+    inversions = sum(diff(h$height) < 0),
+    largest_height = max(h$height)) }))
+@
+
+Proposition~\ref{prop:cut}: cutting at a height gives a partition, and the partitions nest.
+
+<<hclust-cut>>=
+hc <- hclust(dd, method = "complete")
+tab <- table(cut2 = cutree(hc, 2), cut4 = cutree(hc, 4))
+tab
+c(each_four_cluster_lies_in_one_two_cluster = all(colSums(tab > 0) == 1))
+@
+
+Proposition~\ref{prop:chain}: under single linkage the clusters at height $h$ are the
+connected components of the graph of pairs closer than $h$.
+
+<<hclust-chain>>=
+hs <- hclust(dd, method = "single"); h0 <- hs$height[n - 4]
+lab <- cutree(hs, h = h0 + 1e-9)
+A <- as.matrix(dd) <= h0 + 1e-9
+comp <- rep(0, n); cc <- 0
+for (i in 1:n) if (comp[i] == 0) { cc <- cc + 1; front <- i
+  while (length(front)) { comp[front] <- cc
+    front <- setdiff(which(apply(A[front, , drop = FALSE], 2, any)),
+                     which(comp > 0)) } }
+c(height = h0, clusters_from_cutree = length(unique(lab)),
+  connected_components = cc,
+  same_partition = all(table(lab, comp) %*% rep(1, cc) ==
+                       apply(table(lab, comp), 1, max)))
+@
+
+\begin{figure}[H]\centering
+<<hclust-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
+op <- par(mfrow = c(1, 2), mar = c(0.6, 3.6, 2.0, 0.6), cex = 0.55,
+          mgp = c(2.2, 0.7, 0))
+plot(hclust(dd, "complete"), labels = abbreviate(rownames(USArrests), 4),
+     main = "complete linkage", xlab = "", sub = "", ylab = "height")
+abline(h = hclust(dd, "complete")$height[n - 3], col = "#B45309", lty = 2,
+       lwd = 2)
+hcen <- hclust(dd, "centroid")
+plot(hcen, labels = abbreviate(rownames(USArrests), 4),
+     main = "centroid linkage: seven inversions", xlab = "", sub = "",
+     ylab = "height")
+par(op)
+@
+\caption{Left: a dendrogram with non-decreasing heights (Theorem~\ref{thm:no-inversion}),
+cut at the dashed line to give four clusters. Right: centroid linkage on the same
+dissimilarities, where a merge can sit below the merge that produced it, so the branches
+double back and a horizontal cut no longer reads off the clusters
+drawn.}\label{fig:hclust}
+\end{figure}
+
+\subsection{The two methods on the same data}\label{sec:13.4.5}
+
+<<compare-clusterings>>=
+set.seed(9)
+km3 <- kmeans(X, centers = 3, nstart = 50)$cluster
+hc3 <- cutree(hclust(dd, "complete"), 3)
+table(kmeans = km3, complete_linkage = hc3)
+c(within_kmeans = wss(km3), within_hclust = wss(hc3))
+@
+
+$K$-means minimises~\eqref{eq:wss} directly and hierarchical clustering does not, so the
+first reaches the smaller value; the two partitions nonetheless agree on most states.
+
+%==============================================================================
+\section{Pitfalls}\label{sec:13.5}
+%==============================================================================
+
+\subsection{Not standardising, or standardising without asking}\label{sec:13.5.1}
+
+§\ref{sec:13.4.2} showed the first component of \texttt{USArrests} changing from
+\texttt{Assault} alone to a balanced combination. The same choice governs clustering,
+because every dissimilarity in Definition~\ref{def:hclust} is computed in whatever units the
+columns carry.
+
+<<pitfall-scale>>=
+cl_raw <- cutree(hclust(dist(USArrests), "complete"), 3)
+cl_std <- cutree(hclust(dist(X), "complete"), 3)
+table(unstandardised = cl_raw, standardised = cl_std)
+c(states_in_the_diagonal_cells = sum(diag(table(cl_raw, cl_std))),
+  n = nrow(USArrests))
+@
+
+The cluster labels are arbitrary, so the table is the object to read and not the diagonal:
+whichever way the three groups of one analysis are matched to the three of the other, a
+large minority of the fifty states changes group. The two analyses are not the same
+analysis.
+
+\textbf{Diagnostic.} A clustering or a component dominated by whichever variable happens to
+be recorded on the largest scale.
+\textbf{Fix.} Standardise unless the columns are already commensurable, and say which was
+done. Neither choice is right in general: standardising declares all four variables equally
+important, and not standardising declares that a count of assaults matters more than a
+murder rate because it is a bigger number.
+
+\subsection{Reading the signs of a loading vector}\label{sec:13.5.2}
+
+<<pitfall-sign>>=
+p1 <- prcomp(USArrests, scale. = TRUE)
+p2 <- prcomp(USArrests[sample(nrow(USArrests)), ], scale. = TRUE)
+rbind(first_run = round(p1$rotation[, 1], 4),
+      after_reordering_rows = round(p2$rotation[, 1], 4))
+@
+
+\textbf{Diagnostic.} A sentence that would be reversed by multiplying a loading vector
+by $-1$.
+\textbf{Fix.} By Proposition~\ref{prop:pca-indet}\ref{ind:i} the sign is a convention of the
+routine and carries no information; report relations among the loadings, which the sign flip
+preserves, and not their direction. The same applies to the axes of a biplot.
+
+\subsection{Choosing $K$ by the within-cluster criterion}\label{sec:13.5.3}
+
+\textbf{Diagnostic.} A $K$ chosen as the minimiser of the within-cluster sum of squares,
+which by Proposition~\ref{prop:K} is always $K=n$; §\ref{sec:13.4.3} prints the sequence
+falling monotonically to $K=8$ with no sign of stopping.
+\textbf{Fix.} There is no criterion of the supervised kind here, because there is nothing
+held out to predict. What is available is an elbow, which is a judgement, and stability
+under resampling. When the clustering feeds something with a response, $K$ becomes a tuning
+parameter and cross-validation applies to that.
+
+\subsection{Reporting one run of $K$-means}\label{sec:13.5.4}
+
+<<pitfall-local>>=
+set.seed(12)
+r <- t(replicate(60, { z <- kmeans(X, centers = 4, nstart = 1)
+  c(z$tot.withinss, length(unique(z$cluster))) }))
+c(best = min(r[, 1]), worst = max(r[, 1]),
+  spread_percent = 100*(max(r[, 1]) - min(r[, 1]))/min(r[, 1]),
+  distinct_optima = length(unique(round(r[, 1], 6))))
+@
+
+\textbf{Diagnostic.} A $K$-means result reported without \texttt{nstart}, or two analysts
+getting different clusters from the same data.
+\textbf{Fix.} Theorem~\ref{thm:lloyd} guarantees a fixed point and nothing more, and the
+starts here reach several distinct values spanning a wide range. Use many starts and report
+the number used.
+
+\subsection{Cutting a dendrogram that has inversions}\label{sec:13.5.5}
+
+<<pitfall-inversion>>=
+hcen <- hclust(dd, "centroid")
+bad <- which(diff(hcen$height) < 0)
+rbind(merge_index = bad[1:3],
+      height_before = round(hcen$height[bad[1:3]], 4),
+      height_after = round(hcen$height[bad[1:3] + 1], 4))
+c(total_inversions = sum(diff(hcen$height) < 0))
+list(cut_by_height = tryCatch(length(unique(cutree(hcen,
+       h = hcen$height[bad[1]]))), error = function(e) conditionMessage(e)),
+     cut_by_number = length(unique(cutree(hcen, k = 3))))
+@
+
+R declines to cut by height at all, which is the honest response: with the heights not
+sorted there is no partition for a horizontal line to name. Cutting by number of clusters
+still works, because that reads the merge order rather than the heights.
+
+\textbf{Diagnostic.} A dendrogram whose branches double back, and a horizontal cut that
+either fails or returns a different number of clusters from the one the picture suggests.
+\textbf{Fix.} Centroid linkage fails the reducibility inequality~\eqref{eq:reducible} of
+Theorem~\ref{thm:no-inversion}, so its heights are not monotone and the usual reading of a
+cut is not available. Use single, complete or average linkage, all three of which the
+theorem covers, or cut by number of clusters rather than by height.
+
+%==============================================================================
+\section{Exercises}\label{sec:13.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:eckart}
+A standardised $n\times5$ data matrix has singular values $3.2,2.1,1.4,0.9,0.4$. What
+proportion of variance do the first two components explain, and what is the relative squared
+error of the best rank-two approximation?
+\end{exercise}
+
+\begin{solution}
+The squared singular values are $10.24,4.41,1.96,0.81,0.16$, summing to $17.58$. The first
+two explain $(10.24+4.41)/17.58=0.833$.
+
+By Theorem~\ref{thm:eckart} the squared error of the best rank-two approximation is
+$1.96+0.81+0.16=2.93$, and relative to $\|\bX\|_F^2=17.58$ that is $0.167$. The two numbers
+sum to one, which is Corollary~\ref{cor:pve-recon}: the proportion of variance explained and
+the relative approximation error are the same statement read two ways.
+\end{solution}
+
+\begin{exercise}\label{ex:signs}
+Two analysts run \texttt{prcomp} on the same data and report first loading vectors
+$(0.54,0.58,0.28,0.54)$ and $(-0.54,-0.58,-0.28,-0.54)$. Who is right, and what can be said
+about the component?
+\end{exercise}
+
+\begin{solution}
+Both. By Proposition~\ref{prop:pca-indet}\ref{ind:i} the loading vector is determined only
+up to sign, and every quantity in the theory is unchanged: the variance $\bphi'\bS\bphi$ is
+quadratic, the scores change sign with the loadings, and the rank-$M$ reconstruction
+$\sum_md_m\bu_m\bv_m'$ is a product of two things that flip together.
+
+What can be said is invariant under the flip: all four variables load with the same sign and
+with comparable magnitude, so the first component is an overall level, and any observation
+scoring high on it is high on all four variables together. What cannot be said is that the
+component increases with crime, since the other analyst's version decreases with it.
+\end{solution}
+
+\begin{exercise}\label{ex:wss}
+Show that the within-cluster sum of squares can be written without reference to a cluster
+centre, and use the identity to explain why $K$-means finds spherical clusters.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:wss}\ref{wss:i}:
+$\sum_{i\in C}|\bx_i-\bar\bx_C|^2=(2|C|)^{-1}\sum_{i,i'\in C}|\bx_i-\bx_{i'}|^2$, proved by
+expanding both sides and recognising $\sum_i|\bx_i|^2-|C||\bar\bx_C|^2$.
+
+The criterion is therefore an average squared Euclidean distance within a cluster, and it is
+small exactly when the cluster is small in every direction at once. An elongated group of
+points has a large average pairwise squared distance however tightly it hugs its own axis,
+so $K$-means prefers to cut it in two, and it prefers clusters of comparable spread because
+a large loose one contributes heavily. Nothing in Definition~\ref{def:kmeans} refers to
+density or shape.
+\end{solution}
+
+\begin{exercise}\label{ex:lloyd}
+What does Theorem~\ref{thm:lloyd} promise, what does it not promise, and what follows for
+practice?
+\end{exercise}
+
+\begin{solution}
+It promises that each round leaves the criterion no larger, and that the algorithm reaches
+an assignment it does not change after finitely many rounds. The proof is the two halves of
+Proposition~\ref{prop:wss}\ref{wss:iii} applied in turn, plus the finiteness of the set of
+partitions.
+
+It does not promise a global minimum. The number of partitions of $n$ points into $K$
+non-empty groups is astronomically large, and Lloyd's algorithm visits a decreasing sequence
+of them from wherever it started. §\ref{sec:13.4.3} runs it from two hundred random starts
+and reaches several distinct values.
+
+In practice: use many starts and keep the best, and treat the reported clustering as the
+best of the starts rather than the solution.
+\end{solution}
+
+\begin{exercise}\label{ex:linkage}
+Two clusters $A=\{a\}$ and $B=\{b\}$ with $d(a,b)=2$ merge, and a third cluster $C=\{c\}$
+has $d(a,c)=5$ and $d(b,c)=9$. Give the next merge height under single, complete and average
+linkage, and check the reducibility inequality in each case.
+\end{exercise}
+
+\begin{solution}
+Single: $D(A\cup B,C)=\min\{5,9\}=5$. Complete: $\max\{5,9\}=9$. Average:
+$(5+9)/2=7$.
+
+Reducibility~\eqref{eq:reducible} asks for $D(A\cup B,C)\geqslant\min\{5,9\}=5$, and all
+three give $5$, $9$ and $7$, so all three satisfy it, with single linkage at equality. Each
+is also at least the height $2$ of the merge just made, so the dendrogram does not invert,
+which is Theorem~\ref{thm:no-inversion}.
+
+Centroid linkage would place the merged centroid midway between $a$ and $b$ and its distance
+to $c$ can be smaller than both $5$ and $9$ when the geometry allows, which is why it is not
+covered.
+\end{solution}
+
+\begin{exercise}\label{ex:chain}
+Why does single linkage produce long thin clusters, and what does the same property do when
+one stray observation lies between two groups?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:chain} two observations share a cluster at height $h$ precisely
+when a chain of steps each shorter than $h$ connects them. Distance along the chain is never
+accumulated, so a sequence of closely spaced points joins two ends that are arbitrarily far
+apart, and the resulting cluster follows whatever path the data lay down.
+
+The same mechanism is the failure. One observation midway between two well-separated groups
+gives a two-step chain, so the two groups merge at a height set by the stray point alone.
+Complete linkage is governed by the farthest pair and refuses that merge until the two
+groups are close throughout, which is why the two linkages disagree most in exactly the
+cases where it matters.
+\end{solution}
+
+\begin{exercise}\label{ex:K}
+An analyst reports that within-cluster sum of squares falls from $196$ at $K=1$ to $78$ at
+$K=3$ and $43$ at $K=6$, and concludes that $K=6$ is best. What is wrong?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:K} the optimal within-cluster sum of squares is non-increasing in
+$K$ and reaches $0$ at $K=n$, so the sequence falling is a theorem and not evidence. The
+conclusion would be $K=50$.
+
+The falls themselves can be read: $196\to78$ removes $60\%$ of the total, and $78\to43$
+removes another $18\%$, so the first two splits do most of the work and the picture flattens.
+That is the elbow, and it is a judgement, not a criterion. It has the same status as the
+scree plot of §\ref{sec:13.1.3}, and for the same reason: with no response there is nothing
+to hold out.
+\end{solution}
+
+\begin{exercise}\label{ex:scaling}
+On \texttt{USArrests}, the unstandardised first component loads almost entirely on
+\texttt{Assault}. Explain, and say when not standardising would be right.
+\end{exercise}
+
+\begin{solution}
+The four columns are in different units. §\ref{sec:13.4.2} prints the column standard
+deviations, and \texttt{Assault} at $83$ dwarfs \texttt{Murder} at $4.4$. Principal
+components maximise variance in the units supplied (Unit 5), so the largest-variance column
+takes the first direction and carries $97\%$ of the total.
+
+Not standardising is right when the columns are already in the same units and their relative
+spread is itself the information: repeated measurements of one quantity at different times,
+or the same price series for several assets. Then rescaling each to unit variance would
+throw away the fact that one of them moves more than the others.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) obtain the principal components three ways and reconcile the signs; (b) verify
+that the truncated singular value decomposition minimises the rank-$M$ approximation error;
+(c) verify that Lloyd's algorithm never increases the within-cluster sum of squares.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:13.4.1}, where the three agree to $10^{-15}$ in absolute value and
+\texttt{prcomp} and \texttt{eigen} return opposite signs on the first component; (b) is the
+same section, where alternating least squares from twenty random starts never beats the
+truncation; (c) is §\ref{sec:13.4.3}.
+
+The point to watch in (b) is that agreement of the truncation's error with
+$\sum_{m>M}d_m^2$ only checks the arithmetic of Theorem~\ref{thm:eckart}; it is the search
+over other rank-$M$ matrices that checks the optimality, which is the part of the theorem
+that does work.
+\end{solution}
+
+\end{document}

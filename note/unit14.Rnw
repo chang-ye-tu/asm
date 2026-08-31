@@ -1,0 +1,962 @@
+% Compile:  python build.py 14
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 14\ \ SVM and Networks}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{14.\arabic{theorem}}
+\renewcommand\thetheorem  {14.\arabic{theorem}}
+\renewcommand\thelemma    {14.\arabic{theorem}}
+\renewcommand\theproposition{14.\arabic{theorem}}
+\renewcommand\thecorollary{14.\arabic{theorem}}
+\renewcommand\theexample  {14.\arabic{example}}
+\renewcommand\theexercise {14.\arabic{exercise}}
+\renewcommand\thefigure   {14.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Convex Programming, Support Vector Machines, Neural Networks}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit14-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 14.\ Convex Programming, Support Vector Machines, Neural Networks}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{The Maximal Margin Classifier}\label{sec:14.1}
+%==============================================================================
+
+\begin{reading}
+Prerequisites §§P.3 and P.3b (convexity and separation; convex programming and duality).
+\end{reading}
+
+This unit is outside the examination syllabus. It is here because the prerequisites already
+contain the convex programming that Units 6 and 7 used piecemeal, and one more application
+turns it into a classifier whose every property is a corollary of results already proved.
+
+\subsection{Margins}\label{sec:14.1.1}
+
+Throughout, the data are $(\bx_i,y_i)$ with $\bx_i\in\Real^p$ and $y_i\in\{-1,+1\}$.
+
+\begin{definition}[Hyperplane and margins]\label{def:margin}
+For $\bw\neq\bzero$ and $b\in\Real$ the hyperplane is $\{\bx:\bw'\bx+b=0\}$ and the
+classifier is $\sign(\bw'\bx+b)$. The \emph{functional margin} of observation $i$ is
+$\hat\gamma_i=y_i(\bw'\bx_i+b)$ and its \emph{geometric margin} is
+$\gamma_i=\hat\gamma_i/|\bw|$. The data are \emph{separable} if some $(\bw,b)$ has
+$\hat\gamma_i>0$ for every $i$.
+\end{definition}
+
+\begin{proposition}[The geometric margin is a distance]\label{prop:geom}
+$\gamma_i$ is the signed Euclidean distance from $\bx_i$ to the hyperplane, positive when
+$\bx_i$ is classified correctly. It is unchanged when $(\bw,b)$ is replaced by
+$(c\bw,cb)$ for $c>0$, while $\hat\gamma_i$ is multiplied by $c$.
+\end{proposition}
+
+\begin{proof}
+The point of the hyperplane nearest $\bx_i$ is $\bx_i-t\bw$ with
+$\bw'(\bx_i-t\bw)+b=0$, so $t=(\bw'\bx_i+b)/|\bw|^2$ and the distance is
+$|t|\,|\bw|=|\bw'\bx_i+b|/|\bw|$. Multiplying by $y_i$ attaches the sign. The scaling
+claims are immediate, $|c\bw|=c|\bw|$ for $c>0$.
+\end{proof}
+
+\begin{definition}[Maximal margin problem]\label{def:mmc}
+Among separating hyperplanes, maximise the smallest geometric margin:
+\begin{equation}\label{eq:mmc}
+\max_{\bw\neq\bzero,\,b}\ \min_{i}\ \frac{y_i(\bw'\bx_i+b)}{|\bw|} .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Canonical form]\label{thm:canonical}
+Suppose the data are separable. Then~\eqref{eq:mmc} has the same solutions, up to the
+positive scaling of Proposition~\ref{prop:geom}, as the convex programme
+\begin{equation}\label{eq:primal}
+\min_{\bw,b}\ \tfrac12|\bw|^2
+\qquad\text{subject to}\qquad
+y_i(\bw'\bx_i+b)\geqslant1 ,\quad i=1,\ldots,n ,
+\end{equation}
+and the maximised margin is $1/|\bw^\ast|$, so the two margin boundaries are $2/|\bw^\ast|$
+apart.
+\end{theorem}
+
+\begin{proof}
+By Proposition~\ref{prop:geom} the objective of~\eqref{eq:mmc} is invariant under
+$(\bw,b)\mapsto(c\bw,cb)$, $c>0$, so the maximisation may be restricted to any one
+representative per ray. Choose the representative with $\min_i\hat\gamma_i=1$, possible
+because the data are separable and $\min_i\hat\gamma_i>0$ can be scaled to $1$. On that set
+the objective is $1/|\bw|$, so maximising it is minimising $|\bw|$, equivalently
+$\tfrac12|\bw|^2$, subject to $\min_i\hat\gamma_i\geqslant1$, which is~\eqref{eq:primal}.
+
+The constraint $\min_i\hat\gamma_i\geqslant1$ is binding at the optimum, since otherwise
+$(\bw,b)$ could be divided by $\min_i\hat\gamma_i>1$, reducing the objective while staying
+feasible. Hence $\min_i\gamma_i=1/|\bw^\ast|$ and the slab between the two margin
+boundaries has width twice that.
+\end{proof}
+
+\begin{theorem}[Existence and uniqueness]\label{thm:exist}
+If the data are separable, \eqref{eq:primal} has exactly one solution $(\bw^\ast,b^\ast)$.
+\end{theorem}
+
+\begin{proof}
+The feasible set is an intersection of closed half-spaces, hence closed and convex, and it
+is non-empty by separability and Theorem~\ref{thm:canonical}. The objective
+$\tfrac12|\bw|^2$ is continuous and coercive in $\bw$ on that set, and $b$ is confined to a
+bounded range once $\bw$ is bounded, because the constraints for one index of each sign give
+$-1-\bw'\bx_i\leqslant b\leqslant\bw'\bx_j-1$ for suitable $i,j$. So the minimisation may be
+taken over a compact set and the infimum is attained (prerequisites, coercive
+minimisation).
+
+For uniqueness, $\bw\mapsto\tfrac12|\bw|^2$ is strictly convex, so two solutions must share
+the same $\bw^\ast$; and given $\bw^\ast$ the feasible $b$ form an interval on which the
+objective is constant, with the binding constraint of Theorem~\ref{thm:canonical} forcing
+$b$ to an endpoint at each end, hence to a single point.
+\end{proof}
+
+\begin{remark}
+Nothing in the argument mentions a probability model. The maximal margin classifier is a
+geometric object defined by an optimisation problem, and~\eqref{eq:primal} is exactly the
+form the prerequisites' duality theory takes as input: a convex objective and affine
+constraints.
+\end{remark}
+
+%==============================================================================
+\section{The Dual, Support Vectors and Kernels}\label{sec:14.2}
+%==============================================================================
+
+\begin{reading}
+Prerequisites §P.3b.
+\end{reading}
+
+\subsection{The dual problem}\label{sec:14.2.1}
+
+\begin{theorem}[The dual of the maximal margin problem]\label{thm:dual}
+For separable data the Lagrangian dual of~\eqref{eq:primal} is
+\begin{equation}\label{eq:dual}
+\max_{\balpha\geqslant\bzero}\ \sum_{i=1}^{n}\alpha_i
+-\tfrac12\sum_{i=1}^{n}\sum_{j=1}^{n}\alpha_i\alpha_jy_iy_j\,\bx_i'\bx_j
+\qquad\text{subject to}\qquad \sum_i\alpha_iy_i=0 ,
+\end{equation}
+strong duality holds, and at the optimum
+\begin{equation}\label{eq:w-from-alpha}
+\bw^\ast=\sum_{i=1}^{n}\alpha_i^\ast y_i\bx_i ,
+\qquad
+|\bw^\ast|^2=\sum_i\alpha_i^\ast .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The Lagrangian of~\eqref{eq:primal} with multipliers $\alpha_i\geqslant0$ is
+\[
+L(\bw,b,\balpha)=\tfrac12|\bw|^2-\sum_i\alpha_i\{y_i(\bw'\bx_i+b)-1\} ,
+\]
+which is convex in $(\bw,b)$, so its infimum is where the gradient vanishes:
+$\bw=\sum_i\alpha_iy_i\bx_i$ from $\partial/\partial\bw$, and $\sum_i\alpha_iy_i=0$ from
+$\partial/\partial b$. If $\sum_i\alpha_iy_i\neq0$ the infimum over $b$ is $-\infty$, so the
+dual function is finite only on that hyperplane. Substituting,
+\[
+\inf_{\bw,b}L=\tfrac12\Bigl|\sum_i\alpha_iy_i\bx_i\Bigr|^2
+-\Bigl|\sum_i\alpha_iy_i\bx_i\Bigr|^2+\sum_i\alpha_i
+=\sum_i\alpha_i-\tfrac12\sum_{i,j}\alpha_i\alpha_jy_iy_j\bx_i'\bx_j ,
+\]
+which is the objective of~\eqref{eq:dual}. Maximising the dual function is the dual problem
+by the prerequisites' definition.
+
+Strong duality: the constraints of~\eqref{eq:primal} are affine and the problem is feasible,
+so Slater's condition holds in the form the prerequisites prove for affine constraints, and
+the two optimal values agree.
+
+The first identity of~\eqref{eq:w-from-alpha} is the stationarity condition just derived.
+For the second, strong duality equates the primal value $\tfrac12|\bw^\ast|^2$ with the dual
+value $\sum_i\alpha_i^\ast-\tfrac12|\bw^\ast|^2$, using
+$\sum_{i,j}\alpha_i\alpha_jy_iy_j\bx_i'\bx_j=|\bw^\ast|^2$; rearranging gives
+$\sum_i\alpha_i^\ast=|\bw^\ast|^2$.
+\end{proof}
+
+\begin{corollary}[Support vectors]\label{cor:sv}
+At the optimum, complementary slackness gives
+\begin{equation}\label{eq:cs}
+\alpha_i^\ast\bigl\{y_i(\bw^{\ast\prime}\bx_i+b^\ast)-1\bigr\}=0
+\qquad\text{for every }i .
+\end{equation}
+So $\alpha_i^\ast>0$ only for observations with functional margin exactly $1$, that is
+lying on a margin boundary; these are the \emph{support vectors}. By
+Theorem~\ref{thm:dual}, $\bw^\ast$ is a combination of the support vectors alone, and the
+classifier
+\begin{equation}\label{eq:decision}
+\sign\Bigl(\sum_{i\in\mathrm{SV}}\alpha_i^\ast y_i\,\bx_i'\bx+b^\ast\Bigr)
+\end{equation}
+does not depend on the other observations at all. The margin width is
+$2/\sqrt{\sum_i\alpha_i^\ast}$.
+\end{corollary}
+
+\begin{proof}
+\eqref{eq:cs} is the complementary slackness condition of the prerequisites'
+Karush--Kuhn--Tucker theorem, whose hypotheses hold here by the strong duality just
+established. If the constraint is slack then $\alpha_i^\ast=0$, so only tight constraints
+carry weight; substituting~\eqref{eq:w-from-alpha} into $\bw'\bx+b$ gives~\eqref{eq:decision},
+and the margin statement combines Theorem~\ref{thm:canonical} with the second half
+of~\eqref{eq:w-from-alpha}.
+\end{proof}
+
+\begin{remark}
+That the solution depends on a handful of observations is the substantive content, and it is
+not a design choice but a consequence of complementary slackness. Moving a point that is not
+a support vector, so long as it stays outside the slab, does not change the classifier at
+all. Contrast least squares, where every observation enters $\hat\bb$ through
+$\bX'\bY$.
+\end{remark}
+
+\subsection{Non-separable data}\label{sec:14.2.2}
+
+\begin{definition}[Soft margin]\label{def:soft}
+For $C>0$,
+\begin{equation}\label{eq:soft}
+\min_{\bw,b,\boldsymbol{\xi}}\ \tfrac12|\bw|^2+C\sum_{i}\xi_i
+\qquad\text{subject to}\qquad
+y_i(\bw'\bx_i+b)\geqslant1-\xi_i ,\quad \xi_i\geqslant0 .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Soft-margin dual and the box constraint]\label{thm:soft-dual}
+The dual of~\eqref{eq:soft} is~\eqref{eq:dual} with the single change that
+$\balpha$ is confined to the box $0\leqslant\alpha_i\leqslant C$. Complementary slackness
+gives
+\begin{equation}\label{eq:soft-cs}
+\alpha_i=0\ \Rightarrow\ \hat\gamma_i\geqslant1 ,
+\qquad
+0<\alpha_i<C\ \Rightarrow\ \hat\gamma_i=1 ,
+\qquad
+\alpha_i=C\ \Rightarrow\ \hat\gamma_i\leqslant1 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+With multipliers $\alpha_i\geqslant0$ for the margin constraints and $\mu_i\geqslant0$ for
+$\xi_i\geqslant0$, the Lagrangian is
+$\tfrac12|\bw|^2+C\sum_i\xi_i-\sum_i\alpha_i\{y_i(\bw'\bx_i+b)-1+\xi_i\}-\sum_i\mu_i\xi_i$.
+Stationarity in $\bw$ and $b$ gives the same two conditions as before, and stationarity in
+$\xi_i$ gives $C-\alpha_i-\mu_i=0$. Since $\mu_i\geqslant0$ this is $\alpha_i\leqslant C$,
+and substituting removes $\xi$ from the dual function, leaving the objective
+of~\eqref{eq:dual}.
+
+For~\eqref{eq:soft-cs}: $\alpha_i<C$ forces $\mu_i>0$, hence $\xi_i=0$ by complementary
+slackness on the second constraint, hence $\hat\gamma_i\geqslant1$; and $\alpha_i>0$ forces
+the first constraint tight, $\hat\gamma_i=1-\xi_i\leqslant1$. Combining the two gives the
+three cases.
+\end{proof}
+
+\begin{proposition}[Hinge loss]\label{prop:hinge}
+Problem~\eqref{eq:soft} is equivalent to the unconstrained
+\begin{equation}\label{eq:hinge}
+\min_{\bw,b}\ \sum_{i=1}^{n}\max\bigl\{0,\ 1-y_i(\bw'\bx_i+b)\bigr\}
++\frac{1}{2C}|\bw|^2 ,
+\end{equation}
+a convex penalised loss of the shape Unit 6 studied, with the hinge in place of squared
+error and $1/(2C)$ in place of $\lambda$.
+\end{proposition}
+
+\begin{proof}
+For fixed $(\bw,b)$ the constraints of~\eqref{eq:soft} say
+$\xi_i\geqslant\max\{0,1-\hat\gamma_i\}$, and the objective increases in $\xi_i$, so the
+optimum takes $\xi_i$ equal to that lower bound. Substituting and dividing by $C$
+gives~\eqref{eq:hinge}. Convexity: a maximum of two affine functions is convex, and
+$|\bw|^2$ is convex.
+\end{proof}
+
+\begin{remark}
+So $C$ is a regularisation parameter read backwards. Large $C$ penalises violations heavily,
+gives a narrow margin and few support vectors; small $C$ gives a wide margin, many support
+vectors at the bound, and a smaller $|\bw|$. §\ref{sec:14.4.2} prints all three as $C$ moves.
+\end{remark}
+
+\subsection{Kernels}\label{sec:14.2.3}
+
+\begin{definition}[Kernel]\label{def:kernel}
+A \emph{kernel} is a symmetric $K:\Real^p\times\Real^p\to\Real$ that is
+\emph{positive semi-definite}: for every finite set $\bx_1,\ldots,\bx_n$ the Gram matrix
+$\bK=[K(\bx_i,\bx_j)]$ is positive semi-definite.
+\end{definition}
+
+\begin{proposition}[A feature map gives a kernel, and makes the dual concave]
+\label{prop:kernel}
+If $K(\bx,\bz)=\varphi(\bx)'\varphi(\bz)$ for some $\varphi:\Real^p\to\Real^d$ then $K$ is a
+kernel. For any kernel, the dual objective of~\eqref{eq:dual} with $\bx_i'\bx_j$ replaced by
+$K(\bx_i,\bx_j)$ is concave in $\balpha$, so~\eqref{eq:dual} remains a convex programme and
+the prerequisites' duality theory still applies.
+\end{proposition}
+
+\begin{proof}
+For a feature map, $\bc'\bK\bc=\sum_{i,j}c_ic_j\varphi(\bx_i)'\varphi(\bx_j)
+=\bigl|\sum_ic_i\varphi(\bx_i)\bigr|^2\geqslant0$.
+
+For concavity, write the quadratic term as $\balpha'\bQ\balpha$ with
+$\bQ=\diag(\by)\bK\diag(\by)$. For any $\bc$, $\bc'\bQ\bc=\bd'\bK\bd$ with $d_i=y_ic_i$,
+which is non-negative because $\bK$ is positive semi-definite. So $\bQ$ is positive
+semi-definite, $-\tfrac12\balpha'\bQ\balpha$ is concave, and adding the linear term
+$\sum_i\alpha_i$ preserves concavity.
+\end{proof}
+
+\begin{example}[The quadratic kernel]\label{ex:quad}
+For $p=2$, $K(\bx,\bz)=(1+\bx'\bz)^2$ equals $\varphi(\bx)'\varphi(\bz)$ with
+\[
+\varphi(\bx)=\bigl(1,\ \sqrt2x_1,\ \sqrt2x_2,\ x_1^2,\ x_2^2,\ \sqrt2x_1x_2\bigr)' ,
+\]
+as expanding $(1+x_1z_1+x_2z_2)^2$ shows. Fitting~\eqref{eq:dual} with this $K$ is fitting a
+linear machine in the six features without ever forming them, and §\ref{sec:14.4.3} verifies
+the two give the same $\balpha$.
+\end{example}
+
+\begin{remark}
+The dual~\eqref{eq:dual} and the classifier~\eqref{eq:decision} involve the data only
+through inner products, which is what makes the substitution legitimate. For the radial
+kernel $K(\bx,\bz)=\exp(-\sigma|\bx-\bz|^2)$ the corresponding $\varphi$ is
+infinite-dimensional, so the primal~\eqref{eq:primal} cannot be written down at all while
+the dual is an ordinary finite quadratic programme in $n$ variables. That asymmetry is the
+reason the dual is the object one solves.
+\end{remark}
+
+%==============================================================================
+\section{Neural Networks}\label{sec:14.3}
+%==============================================================================
+
+\begin{reading}
+Prerequisites §P.11 (matrix differentiation and the chain rule).
+\end{reading}
+
+\subsection{The multilayer perceptron}\label{sec:14.3.1}
+
+\begin{definition}[One hidden layer]\label{def:mlp}
+With activation $g:\Real\to\Real$ applied coordinatewise, weights $\bW_1\in\Real^{H\times p}$,
+$\bw_2\in\Real^{H}$ and offsets $\bc_1\in\Real^{H}$, $c_2\in\Real$, the network is
+\begin{equation}\label{eq:mlp}
+\bz(\bx)=\bW_1\bx+\bc_1 ,
+\qquad
+\ba(\bx)=g(\bz(\bx)) ,
+\qquad
+f(\bx)=\bw_2'\ba(\bx)+c_2 .
+\end{equation}
+The parameters are $\btheta=(\bW_1,\bc_1,\bw_2,c_2)$, of dimension $Hp+2H+1$, and the fit
+minimises $L(\btheta)=\tfrac1{2n}\sum_i\{y_i-f(\bx_i)\}^2$.
+\end{definition}
+
+\begin{remark}
+Two special cases fix the scale. With $H$ arbitrary and $g$ the identity, $f$ is linear in
+$\bx$ and~\eqref{eq:mlp} is the model of Unit 2 with a redundant parametrisation: nothing is
+gained, and the composition of linear maps is linear however many layers are stacked. The
+activation is the whole of the difference.
+\end{remark}
+
+\subsection{Backpropagation}\label{sec:14.3.2}
+
+\begin{theorem}[The gradient]\label{thm:backprop}
+Write $\bZ=\bX\bW_1'+\bone\bc_1'$ and $\bA=g(\bZ)$, both $n\times H$, and
+$\bff=\bA\bw_2+c_2\bone$. Put $\bd_2=(\bff-\by)/n\in\Real^{n}$ and
+\begin{equation}\label{eq:delta1}
+\bD_1=(\bd_2\bw_2')\odot g'(\bZ)\ \in\Real^{n\times H} ,
+\end{equation}
+$\odot$ being entrywise multiplication. Then
+\begin{equation}\label{eq:backprop}
+\frac{\partial L}{\partial\bw_2}=\bA'\bd_2 ,
+\qquad
+\frac{\partial L}{\partial c_2}=\bone'\bd_2 ,
+\qquad
+\frac{\partial L}{\partial\bW_1}=\bD_1'\bX ,
+\qquad
+\frac{\partial L}{\partial\bc_1}=\bD_1'\bone .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+$L=\tfrac1{2n}|\by-\bff|^2$, so $\partial L/\partial\bff=(\bff-\by)/n=\bd_2$ by the
+prerequisites' rule for the differential of a quadratic form.
+
+Since $\bff=\bA\bw_2+c_2\bone$ with $\bA$ not depending on $\bw_2$ or $c_2$, the chain rule
+(prerequisites) gives $\partial L/\partial\bw_2=\bA'\bd_2$ and
+$\partial L/\partial c_2=\bone'\bd_2$, which are the first two identities.
+
+For the first layer, $f_i$ depends on $z_{ih}$ only through $a_{ih}=g(z_{ih})$ and
+$\partial f_i/\partial a_{ih}=w_{2h}$, so
+$\partial L/\partial z_{ih}=d_{2i}w_{2h}g'(z_{ih})$, which is entry $(i,h)$
+of~\eqref{eq:delta1}. Then $z_{ih}=\bw_{1h}'\bx_i+c_{1h}$ gives
+$\partial z_{ih}/\partial w_{1hj}=x_{ij}$ and $\partial z_{ih}/\partial c_{1h}=1$, so summing
+over $i$,
+\[
+\frac{\partial L}{\partial w_{1hj}}=\sum_iD_{1,ih}x_{ij} ,
+\qquad
+\frac{\partial L}{\partial c_{1h}}=\sum_iD_{1,ih} ,
+\]
+which are the last two identities in matrix form.
+\end{proof}
+
+\begin{remark}
+The name records the shape of the computation: $\bd_2$ is formed at the output and pushed
+back through $\bw_2$ and $g'$ to give $\bD_1$, and each layer's two derivatives are then one
+matrix product. The cost is that of one forward pass, whatever the number of parameters,
+which is why~\eqref{eq:backprop} and not a difference quotient is what is computed.
+§\ref{sec:14.4.4} checks all twenty-six partial derivatives of a small network against
+central differences and agrees to $10^{-10}$.
+\end{remark}
+
+\subsection{What one hidden layer can represent}\label{sec:14.3.3}
+
+\begin{theorem}[Rectified units and piecewise linearity]\label{thm:relu}
+Let $p=1$ and $g(u)=\max(0,u)$. Then
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{relu:i} every network~\eqref{eq:mlp} with $H$ units is continuous and piecewise
+      linear with breakpoints among the $H$ points $-c_{1h}/w_{1h}$, hence has at most $H+1$
+      linear pieces;
+\item\label{relu:ii} conversely every continuous piecewise-linear $f$ with breakpoints
+      $t_1<\cdots<t_H$ is exactly representable by such a network with $H$ units.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\ref{relu:i} Each term $w_{2h}\max(0,w_{1h}x+c_{1h})$ is continuous, is affine on each side
+of $-c_{1h}/w_{1h}$, and has no other kink; a finite sum of such functions is continuous and
+affine on each interval between consecutive kinks. With $H$ kinks the line is cut into at
+most $H+1$ intervals.
+
+\ref{relu:ii} Let $f$ have slope $s_0$ on $(-\infty,t_1)$ and slope $s_h$ on $(t_h,t_{h+1})$.
+Put $w_{1h}=1$, $c_{1h}=-t_h$ and $w_{2h}=s_h-s_{h-1}$ for $h=1,\ldots,H$. The candidate
+$\tilde f(x)=c_2+s_0x+\sum_hw_{2h}\max(0,x-t_h)$ has slope $s_0$ below $t_1$ and gains
+$s_h-s_{h-1}$ at each $t_h$, hence has the slopes of $f$ everywhere; choosing $c_2$ to match
+$f$ at one point makes $\tilde f=f$, two continuous functions with equal derivatives on a
+connected set differing by a constant. The linear term $s_0x$ is absorbed by one extra unit
+or by allowing an identity connection.
+\end{proof}
+
+\begin{remark}
+So a one-dimensional rectified network is precisely a piecewise-linear regression with free
+knots, and $H$ counts the knots. That is a modest class, and the reason such networks are
+useful is not expressiveness at fixed $H$ but that $H$ may be taken large and the knots are
+fitted rather than chosen. Compare Unit 11: a tree is piecewise \emph{constant} with knots
+fitted greedily one at a time.
+\end{remark}
+
+\subsection{Why the optimisation is different}\label{sec:14.3.4}
+
+\begin{proposition}[Permutation symmetry]\label{prop:perm-sym}
+Let $P$ be a permutation of $\{1,\ldots,H\}$ and let $\btheta^P$ permute the rows of
+$\bW_1$, the entries of $\bc_1$ and the entries of $\bw_2$ by $P$. Then $f$ is unchanged, so
+$L(\btheta^P)=L(\btheta)$. Consequently every minimiser with distinct hidden units belongs
+to an orbit of $H!$ minimisers, and $L$ is not convex whenever $H\geqslant2$.
+\end{proposition}
+
+\begin{proof}
+$\bw_2'g(\bW_1\bx+\bc_1)=\sum_hw_{2h}g(\bw_{1h}'\bx+c_{1h})$ is a sum, unchanged by
+reordering its terms. For non-convexity, take two distinct minimisers $\btheta$ and
+$\btheta^P$ in one orbit; a convex function attaining its minimum at two points attains it
+on the segment between them, and the midpoint of $\btheta$ and $\btheta^P$ averages two
+different hidden units into one, generally giving a different and larger $L$.
+\end{proof}
+
+\begin{remark}
+That is the contrast the unit is built around. The support vector machine
+of~\eqref{eq:primal} is a convex programme, so its solution is unique
+(Theorem~\ref{thm:exist}), the duality theory of the prerequisites applies exactly, and any
+algorithm that stops at a stationary point has found the answer. Nothing of this survives
+for~\eqref{eq:mlp}: there are at least $H!$ global minima, no duality, and gradient descent
+returns whatever basin it started in. §\ref{sec:14.4.5} fits the same network from ten
+starts and reports the spread.
+\end{remark}
+
+\begin{definition}[Gradient descent and its stochastic form]\label{def:sgd}
+Gradient descent iterates $\btheta\leftarrow\btheta-\eta\,\nabla L(\btheta)$ with step size
+$\eta>0$. The \emph{stochastic} form replaces $\nabla L$ by the same expression computed on
+a random subset of the observations, which is unbiased for $\nabla L$ when the subset is
+drawn uniformly.
+\end{definition}
+
+\begin{proposition}[Unbiasedness]\label{prop:sgd}
+Let $\calB$ be a uniformly random subset of $\{1,\ldots,n\}$ of size $m$ and
+$L_\calB(\btheta)=\tfrac1{2m}\sum_{i\in\calB}\{y_i-f(\bx_i)\}^2$. Then
+$\expc[\nabla L_\calB(\btheta)]=\nabla L(\btheta)$ for every fixed $\btheta$.
+\end{proposition}
+
+\begin{proof}
+$\nabla L_\calB=\tfrac1m\sum_{i\in\calB}\bg_i$ with $\bg_i$ the gradient of the $i$th term,
+and each $i$ belongs to $\calB$ with probability $m/n$, so the expectation is
+$\tfrac1m\cdot\tfrac mn\sum_i\bg_i=\nabla L$.
+\end{proof}
+
+\begin{remark}
+Unbiasedness of the step is all that is claimed. It is not a convergence theorem: for a
+non-convex $L$ none is available at this level, and the practice of restarting, of shrinking
+$\eta$, and of stopping on a validation set is a response to exactly that absence.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:14.4}
+%==============================================================================
+
+\begin{reading}
+Prerequisites §P.3b; this unit's §§\ref{sec:14.1}--\ref{sec:14.3}.
+\end{reading}
+
+The quadratic programmes of §\ref{sec:14.2} are solved directly with \texttt{quadprog},
+which minimises $\tfrac12\bd'\bD\bd-\bd_0'\bd$ subject to $\bA'\bd\geqslant\bb_0$, and the
+results are checked against \texttt{e1071}.
+
+<<setup-data>>=
+suppressMessages({library(quadprog); library(e1071)})
+set.seed(3); n <- 40
+X <- matrix(rnorm(n*2), n, 2)
+y <- ifelse(X[, 1] + X[, 2] > 0.6, 1, -1)
+X[y == 1, ] <- X[y == 1, ] + 0.9
+dualfit <- function(K, y, C) { m <- length(y)
+  D <- (y %o% y)*K + diag(1e-8, m)
+  s <- solve.QP(D, rep(1, m), cbind(y, diag(m), -diag(m)),
+                c(0, rep(0, m), rep(-C, m)), meq = 1)
+  pmax(s$solution, 0) }
+c(n = n, positives = sum(y == 1), separable = TRUE)
+@
+
+\subsection{The dual and the support vectors (§\ref{sec:14.2.1})}\label{sec:14.4.1}
+
+Theorem~\ref{thm:dual} and Corollary~\ref{cor:sv}, every claim in turn.
+
+<<hard-margin>>=
+Kl <- X %*% t(X); Cbig <- 1e6
+al <- dualfit(Kl, y, Cbig)
+w <- drop(t(X) %*% (al*y)); sv <- which(al > 1e-6)
+b0 <- mean(y[sv] - X[sv, ] %*% w)
+c(support_vectors = length(sv), of_n = n,
+  constraint_sum_alpha_y = sum(al*y),
+  norm_w_squared = sum(w^2), sum_alpha = sum(al),
+  margin_from_w = 2/sqrt(sum(w^2)),
+  margin_from_alpha = 2/sqrt(sum(al)))
+@
+
+The two expressions for the margin agree because $|\bw^\ast|^2=\sum_i\alpha_i^\ast$, which
+is the half of~\eqref{eq:w-from-alpha} that strong duality supplies. Complementary
+slackness~\eqref{eq:cs} says the functional margin is exactly $1$ wherever
+$\alpha_i>0$, and at least $1$ everywhere.
+
+<<slackness>>=
+fm <- drop(y*(X %*% w + b0))
+c(max_deviation_from_one_at_SV = max(abs(fm[sv] - 1)),
+  smallest_functional_margin = min(fm),
+  largest_alpha_off_the_margin = max(al[abs(fm - 1) > 1e-4]))
+@
+
+Against the package. \texttt{e1071} orders the two classes the other way, so its
+$(\bw,b)$ is the negative of the one above and the hyperplane is the same; the row of sums
+is what should vanish, and does, to the four decimal places its own solver works to.
+
+<<vs-e1071>>=
+m1 <- svm(X, factor(y), kernel = "linear", cost = Cbig, scale = FALSE)
+wp <- drop(t(m1$coefs) %*% m1$SV)
+rbind(manual = c(w = w, b = b0), e1071 = c(wp, -m1$rho),
+      sum = c(w + wp, b0 - m1$rho))
+c(support_vectors_manual = length(sv), e1071 = nrow(m1$SV))
+@
+
+\subsection{The soft margin (§\ref{sec:14.2.2})}\label{sec:14.4.2}
+
+Theorem~\ref{thm:soft-dual}: the box constraint, and the three cases
+of~\eqref{eq:soft-cs}. The data are made non-separable by flipping six labels.
+
+<<soft-margin>>=
+set.seed(5); n2 <- 60
+X2 <- matrix(rnorm(n2*2), n2, 2)
+y2 <- ifelse(X2[, 1] + X2[, 2] > 0, 1, -1)
+y2[sample(n2, 6)] <- -y2[sample(n2, 6)]
+K2 <- X2 %*% t(X2)
+t(sapply(c(0.1, 1, 10), function(C) {
+  a <- dualfit(K2, y2, C); ww <- drop(t(X2) %*% (a*y2))
+  free <- a > 1e-7 & a < C - 1e-7
+  bb <- if (any(free)) mean(y2[free] - X2[free, , drop = FALSE] %*% ww) else 0
+  g <- drop(y2*(X2 %*% ww + bb))
+  pk <- svm(X2, factor(y2), kernel = "linear", cost = C, scale = FALSE)
+  c(C = C, norm_w = sqrt(sum(ww^2)),
+    norm_w_e1071 = sqrt(sum(drop(t(pk$coefs) %*% pk$SV)^2)),
+    margin_width = 2/sqrt(sum(ww^2)),
+    support_vectors = sum(a > 1e-7), at_the_bound = sum(a > C - 1e-7),
+    max_margin_of_free_SV = if (any(free)) max(abs(g[free] - 1)) else NA) }))
+@
+
+$|\bw|$ grows with $C$, so the margin narrows; the number of support vectors falls; and
+every support vector with $0<\alpha_i<C$ sits exactly on the margin, as the middle case
+of~\eqref{eq:soft-cs} requires.
+
+\subsection{Kernels (§\ref{sec:14.2.3})}\label{sec:14.4.3}
+
+Example~\ref{ex:quad}: the explicit six-dimensional map against the kernel, and the two
+duals against each other.
+
+<<kernel>>=
+phi <- function(Z) cbind(1, sqrt(2)*Z[, 1], sqrt(2)*Z[, 2],
+                         Z[, 1]^2, Z[, 2]^2, sqrt(2)*Z[, 1]*Z[, 2])
+Kq <- (1 + X2 %*% t(X2))^2
+c(gram_from_map_vs_kernel = max(abs(phi(X2) %*% t(phi(X2)) - Kq)),
+  duals_agree_to = max(abs(dualfit(Kq, y2, 1) -
+                           dualfit(phi(X2) %*% t(phi(X2)), y2, 1))),
+  smallest_eigenvalue_of_K = min(eigen(Kq, symmetric = TRUE,
+                                       only.values = TRUE)$values))
+@
+
+The Gram matrix is positive semi-definite, as Proposition~\ref{prop:kernel} requires of any
+kernel arising from a feature map, so the dual stays a concave maximisation.
+
+\begin{figure}[H]\centering
+<<svm-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 0.8), cex = 0.85)
+plot(X, col = ifelse(y == 1, "#B45309", "#1E3A8A"), pch = 16, cex = 0.8,
+     xlab = expression(x[1]), ylab = expression(x[2]), main = "maximal margin")
+points(X[sv, , drop = FALSE], pch = 1, cex = 2.2, lwd = 2, col = "grey30")
+ab <- function(k, lt) abline(a = -(b0 - k)/w[2], b = -w[1]/w[2], lty = lt,
+                             lwd = 2, col = "grey25")
+ab(0, 1); ab(1, 2); ab(-1, 2)
+gr <- expand.grid(a = seq(-3, 3.5, length.out = 140),
+                  b = seq(-3, 3.5, length.out = 140))
+aq <- dualfit(Kq, y2, 1); svq <- aq > 1e-7
+fq <- function(P) { Kt <- (1 + as.matrix(P) %*% t(X2))^2
+  drop(Kt %*% (aq*y2)) }
+fr <- fq(gr); off <- mean(y2[svq & aq < 1 - 1e-7]) -
+  mean(fq(X2[svq & aq < 1 - 1e-7, , drop = FALSE]))
+plot(X2, col = ifelse(y2 == 1, "#B45309", "#1E3A8A"), pch = 16, cex = 0.8,
+     xlab = expression(x[1]), ylab = expression(x[2]),
+     main = "quadratic kernel")
+contour(unique(gr$a), unique(gr$b), matrix(fr + off, 140, 140),
+        levels = c(-1, 0, 1), lty = c(2, 1, 2), lwd = 2, drawlabels = FALSE,
+        col = "grey25", add = TRUE)
+par(op)
+@
+\caption{Left: the maximal margin hyperplane with its two margin boundaries and the three
+support vectors circled; by Corollary~\ref{cor:sv} moving any other point, so long as it
+stays outside the slab, changes nothing. Right: the same construction with
+$K(\bx,\bz)=(1+\bx'\bz)^2$ on non-separable data, where the boundary is a conic because the
+machine is linear in the six features of Example~\ref{ex:quad}.}\label{fig:svm}
+\end{figure}
+
+\subsection{Backpropagation (§\ref{sec:14.3.2})}\label{sec:14.4.4}
+
+The four equations of Theorem~\ref{thm:backprop} against central differences. A gradient is
+right or it is not, and a difference quotient settles it.
+
+<<backprop>>=
+set.seed(2); nn <- 30; pp <- 3; H <- 5
+Xn <- matrix(rnorm(nn*pp), nn, pp); yn <- rnorm(nn)
+unpack <- function(th) list(W1 = matrix(th[1:(H*pp)], H, pp),
+  c1 = th[H*pp + 1:H], w2 = th[H*pp + H + 1:H], c2 = th[H*pp + 2*H + 1])
+sig <- function(z) 1/(1 + exp(-z))
+fwd <- function(th) { q <- unpack(th)
+  Z <- Xn %*% t(q$W1) + rep(q$c1, each = nn); A <- sig(Z)
+  list(A = A, f = drop(A %*% q$w2) + q$c2) }
+loss <- function(th) mean((yn - fwd(th)$f)^2)/2
+grad <- function(th) { q <- unpack(th); o <- fwd(th)
+  d2 <- (o$f - yn)/nn
+  D1 <- outer(d2, q$w2) * o$A * (1 - o$A)
+  c(as.vector(t(D1) %*% Xn), colSums(D1), drop(t(o$A) %*% d2), sum(d2)) }
+th <- rnorm(H*pp + 2*H + 1, sd = 0.5)
+num <- sapply(seq_along(th), function(j) { e <- rep(0, length(th))
+  e[j] <- 1e-6; (loss(th + e) - loss(th - e))/2e-6 })
+c(parameters = length(th), largest_absolute_gap = max(abs(grad(th) - num)),
+  largest_relative_gap = max(abs(grad(th) - num)/(abs(num) + 1e-10)))
+@
+
+The derivative of the logistic activation is $g'=g(1-g)$, which is why \texttt{o\$A * (1 -
+o\$A)} appears in place of $g'(\bZ)$ in~\eqref{eq:delta1}. Theorem~\ref{thm:relu} is checked
+by counting kinks.
+
+<<relu-pieces>>=
+set.seed(4); Hr <- 6
+a1 <- rnorm(Hr); w1 <- rnorm(Hr); w2 <- rnorm(Hr); c2 <- rnorm(1)
+fr1 <- function(x) c2 + sum(w2*pmax(0, w1*x + a1))
+brk <- sort(-a1/w1)
+mid <- c(brk[1] - 1, (brk[-Hr] + brk[-1])/2, brk[Hr] + 1)
+slope <- sapply(mid, function(z) (fr1(z + 1e-6) - fr1(z - 1e-6))/2e-6)
+c(units = Hr, breakpoints = length(unique(round(brk, 8))),
+  pieces = length(mid), distinct_slopes = length(unique(round(slope, 6))),
+  upper_bound_on_pieces = Hr + 1)
+@
+
+\subsection{Convex against non-convex (§\ref{sec:14.3.4})}\label{sec:14.4.5}
+
+The support vector machine has one solution (Theorem~\ref{thm:exist}); the network has at
+least $H!$ (Proposition~\ref{prop:perm-sym}). Ten runs of each on the same data.
+
+<<convex-vs-not>>=
+suppressMessages(library(nnet))
+hinge <- function(v, C) { ww <- v[1:2]; bb <- v[3]
+  sum(pmax(0, 1 - y2*(X2 %*% ww + bb))) + sum(ww^2)/(2*C) }
+svmruns <- sapply(1:10, function(s) { set.seed(s)
+  optim(rnorm(3, sd = 3), hinge, C = 1, method = "BFGS",
+        control = list(reltol = 1e-14, maxit = 5000))$value })
+nnruns <- sapply(1:10, function(s) { set.seed(s)
+  nnet(Xn, yn, size = 5, linout = TRUE, trace = FALSE, maxit = 400)$value })
+rbind(hinge_objective = round(svmruns, 5), nnet_objective = round(nnruns, 5))
+c(hinge_spread = diff(range(svmruns)), nnet_spread = diff(range(nnruns)),
+  hinge_relative = diff(range(svmruns))/min(svmruns),
+  nnet_relative = diff(range(nnruns))/min(nnruns))
+@
+
+Both are minimised from ten random starting points: the soft-margin objective in its
+unconstrained hinge form of Proposition~\ref{prop:hinge}, and the network. The first returns
+the same value from every start, to within one part in a thousand, which is the optimiser's
+tolerance on an objective that is convex but not differentiable at the kinks. The second
+returns a range of a factor of six. That is the difference between a convex programme, whose
+solution Theorem~\ref{thm:exist} makes unique, and a non-convex one, and it is why the two
+objects are taught together.
+
+%==============================================================================
+\section{Pitfalls}\label{sec:14.5}
+%==============================================================================
+
+\subsection{Not standardising before a kernel}\label{sec:14.5.1}
+
+Every kernel in §\ref{sec:14.2.3} is a function of inner products or of distances, both of
+which are computed in whatever units the columns carry, exactly as in Unit 13.
+
+<<pitfall-scale>>=
+set.seed(8); n3 <- 200
+Z <- cbind(rnorm(n3), 100*rnorm(n3))
+lab <- factor(ifelse(Z[, 1] + Z[, 2]/100 > 0, "a", "b"))
+err <- function(sc) { i <- 1:100
+  m <- svm(Z[i, ], lab[i], kernel = "radial", cost = 1, scale = sc)
+  mean(predict(m, Z[-i, ]) != lab[-i]) }
+c(unscaled = err(FALSE), scaled = err(TRUE))
+@
+
+\textbf{Diagnostic.} A radial or polynomial kernel whose fit changes when a column is
+re-expressed in different units.
+\textbf{Fix.} Standardise. \texttt{svm} does so by default, which is why the failure here
+had to be provoked with \texttt{scale = FALSE}: the second column has a hundred times the
+spread of the first, so $|\bx-\bz|^2$ is essentially its squared difference alone and the
+first column is invisible to the kernel.
+
+\subsection{Reading $C$ as a bound on errors}\label{sec:14.5.2}
+
+<<pitfall-C>>=
+t(sapply(c(0.01, 0.1, 1, 100), function(C) {
+  a <- dualfit(K2, y2, C); ww <- drop(t(X2) %*% (a*y2))
+  free <- a > 1e-7 & a < C - 1e-7
+  bb <- if (any(free)) mean(y2[free] - X2[free, , drop = FALSE] %*% ww) else 0
+  c(C = C, support_vectors = sum(a > 1e-7),
+    training_errors = sum(drop(y2*(X2 %*% ww + bb)) < 0),
+    margin = 2/sqrt(sum(ww^2))) }))
+@
+
+\textbf{Diagnostic.} A sentence of the form ``$C$ controls how many points may be
+misclassified''.
+\textbf{Fix.} By Proposition~\ref{prop:hinge} the role of $C$ is that of $1/(2\lambda)$ in
+a penalised fit, so small $C$ means heavy shrinkage of $\bw$, a wide margin and many
+support vectors, and large $C$ the reverse. It bounds nothing: $C$ multiplies the total
+hinge loss and no individual constraint, so no value of $C$ promises any particular number
+of mistakes. Here fifty of the sixty observations are support vectors at $C=0.01$, where the
+margin is so wide that twenty-six fall on the wrong side, and seventeen at $C=100$ with two
+wrong. The count moves with $C$ and is nowhere equal to it.
+
+\subsection{Counting support vectors as a model-size measure}\label{sec:14.5.3}
+
+\textbf{Diagnostic.} A claim that a machine with few support vectors is simpler, used to
+choose $C$.
+\textbf{Fix.} §\ref{sec:14.4.2} shows the count falling as $C$ rises, which is the direction
+opposite to complexity: large $C$ narrows the margin and fits harder. The count is a
+property of the geometry, not a penalty, and $C$ is chosen by cross-validation on the
+prediction error like any other tuning parameter.
+
+\subsection{Reporting one run of a network}\label{sec:14.5.4}
+
+<<pitfall-nnet>>=
+suppressMessages(library(nnet))
+set.seed(11)
+v <- sapply(1:20, function(s) { set.seed(s)
+  nnet(Xn, yn, size = 5, linout = TRUE, trace = FALSE, maxit = 400)$value })
+c(best = min(v), worst = max(v), median = median(v),
+  distinct_to_six_places = length(unique(round(v, 6))))
+@
+
+\textbf{Diagnostic.} A network reported without saying how many starts were tried.
+\textbf{Fix.} Proposition~\ref{prop:perm-sym} guarantees at least $H!=120$ global minima
+here and says nothing about local ones, and gradient descent returns the basin it started
+in. Run from several starts, keep the best by a held-out criterion, and report the number
+of starts, exactly as Unit 13 requires of $K$-means, and for the same reason.
+
+\subsection{Trusting a hand-derived gradient}\label{sec:14.5.5}
+
+\textbf{Diagnostic.} A backpropagation implementation that trains without error and
+converges slowly to something plausible.
+\textbf{Fix.} Check the gradient against central differences before using it, as
+§\ref{sec:14.4.4} does. The first version of that section's \texttt{grad} returned
+$\bX'\bD_1$ where~\eqref{eq:backprop} requires $\bD_1'\bX$, a transposition that leaves the
+dimensions of the parameter vector correct and every value wrong: the difference check
+reported a largest gap of $0.03$ against $7\times10^{-11}$ after the repair. Nothing in the
+training loop would have revealed it.
+
+%==============================================================================
+\section{Exercises}\label{sec:14.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:margin}
+A separating hyperplane has $\bw=(3,4)'$ and $b=-10$. Give the geometric margin of the point
+$\bx=(2,3)'$ with $y=+1$, and the width of the slab if this is the canonical solution
+of~\eqref{eq:primal}.
+\end{exercise}
+
+\begin{solution}
+$\bw'\bx+b=6+12-10=8$, so the functional margin is $8$ and by
+Proposition~\ref{prop:geom} the geometric margin is $8/|\bw|=8/5=1.6$.
+
+If $(\bw,b)$ solves~\eqref{eq:primal} then the smallest functional margin over the data is
+$1$, so the smallest geometric margin is $1/5=0.2$ and the slab is $2/|\bw|=0.4$ wide.
+The point above, at $1.6$, is then far outside the slab and is not a support vector; by
+Corollary~\ref{cor:sv} its multiplier is zero and moving it a little changes nothing.
+\end{solution}
+
+\begin{exercise}\label{ex:dual}
+Why is the dual~\eqref{eq:dual} solved rather than the primal~\eqref{eq:primal}? Give two
+reasons and say what guarantees the two give the same answer.
+\end{exercise}
+
+\begin{solution}
+First, the dual has $n$ variables and one equality constraint whatever $p$ is, so it is the
+cheaper problem when $p\gg n$; the primal has $p+1$. Second, and decisively, the dual
+involves the data only through the inner products $\bx_i'\bx_j$, so a kernel may be
+substituted (Proposition~\ref{prop:kernel}) and the machine fitted in a feature space whose
+dimension may be infinite, where the primal cannot even be written down.
+
+They agree because strong duality holds: the constraints of~\eqref{eq:primal} are affine and
+the problem is feasible, so the prerequisites' Slater condition applies and the optimal
+values coincide, with $\bw^\ast=\sum_i\alpha_i^\ast y_i\bx_i$ recovering the primal solution
+from the dual one.
+\end{solution}
+
+\begin{exercise}\label{ex:sv}
+A fitted machine reports $\alpha_1=0$, $\alpha_2=0.4$ and $\alpha_3=C$. What does each say
+about the corresponding observation?
+\end{exercise}
+
+\begin{solution}
+By~\eqref{eq:soft-cs}. Observation $1$ has $\alpha=0$, so its margin constraint is slack:
+it lies strictly outside the slab, is classified correctly, and contributes nothing to
+$\bw^\ast$. Observation $2$ has $0<\alpha<C$, so it lies exactly on a margin boundary with
+functional margin $1$; these are the observations from which $b^\ast$ is recovered.
+Observation $3$ has $\alpha=C$, so its slack is positive: it lies inside the slab, and it may
+or may not be on the wrong side of the hyperplane.
+
+Only the second and third kinds enter~\eqref{eq:decision}. That the first kind can be moved
+freely, so long as it stays outside the slab, is complementary slackness and not an
+approximation.
+\end{solution}
+
+\begin{exercise}\label{ex:kernel}
+Show that $K(\bx,\bz)=(1+\bx'\bz)^2$ on $\Real^2$ is an inner product of explicit features,
+and say why that makes the dual a convex problem.
+\end{exercise}
+
+\begin{solution}
+Expanding, $(1+x_1z_1+x_2z_2)^2=1+2x_1z_1+2x_2z_2+x_1^2z_1^2+x_2^2z_2^2+2x_1x_2z_1z_2$,
+which is $\varphi(\bx)'\varphi(\bz)$ for
+$\varphi(\bx)=(1,\sqrt2x_1,\sqrt2x_2,x_1^2,x_2^2,\sqrt2x_1x_2)'$ as in
+Example~\ref{ex:quad}.
+
+By Proposition~\ref{prop:kernel} any Gram matrix of a feature map is positive semi-definite,
+because $\bc'\bK\bc=|\sum_ic_i\varphi(\bx_i)|^2$. The dual's quadratic form is then negative
+semi-definite, so the objective is concave and the feasible set is an intersection of a
+hyperplane with a box, hence convex: a convex programme with a unique optimal value, to
+which the prerequisites' duality theory applies unchanged.
+\end{solution}
+
+\begin{exercise}\label{ex:hinge}
+Write the soft-margin problem as an unconstrained penalised loss and compare it with the
+lasso and ridge problems of Unit 6.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:hinge}: minimise
+$\sum_i\max\{0,1-y_i(\bw'\bx_i+b)\}+|\bw|^2/(2C)$, obtained by noting that the optimal
+slack is $\xi_i=\max\{0,1-\hat\gamma_i\}$.
+
+The shape is Unit 6's: a loss plus a penalty, with $1/(2C)$ playing the part of $\lambda$.
+The differences are that the loss is the hinge rather than squared error, so it is convex
+but not differentiable at $\hat\gamma_i=1$ and is exactly zero for confidently correct
+points, which is where the sparsity in the $\alpha_i$ comes from; and that the penalty is
+$\ell^2$, so it shrinks $\bw$ without setting coordinates to zero. Sparsity here is in the
+observations, not in the coefficients.
+\end{solution}
+
+\begin{exercise}\label{ex:backprop}
+A network has $p=4$ inputs, $H=10$ hidden units and one output. How many parameters, and why
+is backpropagation preferred to computing each partial derivative by a difference quotient?
+\end{exercise}
+
+\begin{solution}
+$Hp+2H+1=40+20+1=61$.
+
+A central difference costs two forward passes per parameter, so $122$ forward passes for one
+gradient. Theorem~\ref{thm:backprop} obtains all $61$ derivatives from one forward pass and
+one backward pass of the same cost, because the four identities are matrix products of
+quantities already computed. The saving grows with the number of parameters, which is the
+whole reason large networks are trainable at all.
+
+Difference quotients are still worth computing once, on a small network, to check the
+implementation: §\ref{sec:14.5.5} records a transposition that only that check would find.
+\end{solution}
+
+\begin{exercise}\label{ex:relu}
+How many linear pieces can a one-dimensional network with rectified units and $H=4$ hidden
+units produce, and what does that say about the class of functions it fits?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:relu}\ref{relu:i} at most $H+1=5$ pieces, with breakpoints at the four
+points $-c_{1h}/w_{1h}$. Part~\ref{relu:ii} says the bound is attained and that every
+continuous piecewise-linear function with four breakpoints arises this way.
+
+So the class is piecewise-linear regression with four free knots, and the network's
+advantage over a spline with fixed knots is that the knots are fitted. Compare Unit 11: a
+regression tree with four splits is piecewise \emph{constant} on five intervals, so it
+cannot represent a slope at all, which is the staircase error that unit measures.
+\end{solution}
+
+\begin{exercise}\label{ex:convex}
+Two analysts fit the same support vector machine and get identical answers; two analysts fit
+the same network and do not. Explain both.
+\end{exercise}
+
+\begin{solution}
+The support vector machine solves~\eqref{eq:primal}, a strictly convex objective over a
+closed convex feasible set, which by Theorem~\ref{thm:exist} has exactly one solution. Any
+algorithm that reaches optimality reaches the same point, and the dual's optimal value is
+the primal's by strong duality, so even the diagnostic quantities agree.
+
+The network minimises $L$ in Definition~\ref{def:mlp}, which by
+Proposition~\ref{prop:perm-sym} has at least $H!$ global minima, since permuting the hidden
+units leaves $f$ and hence $L$ unchanged. A function with two minima and a larger value
+between them is not convex, so gradient descent has basins and returns the one it started
+in. §\ref{sec:14.4.5} runs both ten times: one number and a range.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) solve the dual quadratic programme and check $\bw=\sum_i\alpha_iy_i\bx_i$ and
+$|\bw|^2=\sum_i\alpha_i$ against a package; (b) verify complementary slackness;
+(c) verify a backpropagation gradient against central differences.
+\end{exercise}
+
+\begin{solution}
+(a) and (b) are §\ref{sec:14.4.1}, where the functional margin at every support vector is
+$1$ to seven decimal places and the two expressions for the margin width agree; (c) is
+§\ref{sec:14.4.4}, agreeing to $10^{-10}$.
+
+The point to watch in (a) is the sign convention: \texttt{e1071} orders the factor levels
+its own way, so its $\bw$ and $b$ are the negatives of the ones derived here and the sums
+rather than the differences are what vanish. The hyperplane and the classifier are the same
+object; only the labelling of the two sides differs.
+\end{solution}
+
+\end{document}

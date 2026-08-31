@@ -1,0 +1,1162 @@
+% Compile:  python build.py 09
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 9\ \ Modelling Trends in Time}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{9.\arabic{theorem}}
+\renewcommand\thetheorem  {9.\arabic{theorem}}
+\renewcommand\thelemma    {9.\arabic{theorem}}
+\renewcommand\theproposition{9.\arabic{theorem}}
+\renewcommand\thecorollary{9.\arabic{theorem}}
+\renewcommand\theexample  {9.\arabic{example}}
+\renewcommand\theexercise {9.\arabic{exercise}}
+\renewcommand\thefigure   {9.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Modelling Trends in Time}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit09-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 9.\ Modelling Trends in Time}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Trends in Time}\label{sec:9.1}
+%==============================================================================
+
+\begin{reading}
+FREES §7.1--7.2.
+\end{reading}
+
+The data are now a single series $y_1,\ldots,y_T$ indexed by time. The index is not a
+label: observations near each other in time are typically dependent, and the classical
+assumption of Unit 2 that the errors are uncorrelated is the first thing to check rather
+than the last.
+
+\subsection{Decomposition}\label{sec:9.1.1}
+
+\begin{definition}[Components]\label{def:decomp}
+A series is decomposed into a \emph{trend} $\mu_t$, a \emph{seasonal} component $\gamma_t$
+of known period $s$, and an \emph{irregular} component $\varepsilon_t$, either additively
+or multiplicatively:
+\begin{equation}\label{eq:decomp}
+y_t = \mu_t + \gamma_t + \varepsilon_t
+\qquad\text{or}\qquad
+y_t = \mu_t\,\gamma_t\,\varepsilon_t .
+\end{equation}
+Periodicity of the seasonal component means $\gamma_{t+s}=\gamma_t$ for every $t$.
+\end{definition}
+
+\begin{proposition}[Logarithms turn one into the other]\label{prop:log-decomp}
+If $y_t=\mu_t\gamma_t\varepsilon_t$ with all three factors positive, then
+$\ln y_t=\ln\mu_t+\ln\gamma_t+\ln\varepsilon_t$ is additive, and $\ln\gamma_t$ has the same
+period $s$. A seasonal swing that is a constant \emph{proportion} of the level is therefore
+a constant \emph{amount} on the log scale.
+\end{proposition}
+
+\begin{proof}
+Take logarithms; periodicity is preserved because $\ln\gamma_{t+s}=\ln\gamma_t$. For the
+last statement, if $\gamma_t=1+\delta$ in one season then the seasonal effect on $y_t$ is
+$\delta\mu_t$, proportional to the level, while on the log scale it is $\ln(1+\delta)$,
+free of $t$.
+\end{proof}
+
+\subsection{Polynomial trends}\label{sec:9.1.2}
+
+\begin{definition}[Linear trend in time]\label{def:lintrend}
+The \emph{linear trend in time} model is
+\begin{equation}\label{eq:lintrend}
+y_t = \beta_0+\beta_1 t+\varepsilon_t , \qquad t=1,\ldots,T ,
+\end{equation}
+with $\{\varepsilon_t\}$ uncorrelated, mean zero, variance $\sigma^2$. Higher-order
+polynomials add $t^2,t^3,\ldots$ as further regressors.
+\end{definition}
+
+\begin{theorem}[Exact least squares for a linear trend]\label{thm:trend-ls}
+For the design $\bX=[\bone\ \ \bt]$ with $\bt=(1,2,\ldots,T)'$,
+\begin{equation}\label{eq:trend-var}
+\var(\hat\beta_1)=\frac{12\,\sigma^2}{T(T^2-1)} ,
+\qquad
+\var(\hat\beta_0)=\frac{2(2T+1)\,\sigma^2}{T(T-1)} ,
+\qquad
+\cov(\hat\beta_0,\hat\beta_1)=\frac{-6\,\sigma^2}{T(T-1)} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+With $\sum_t t=T(T+1)/2$ and $\sum_t t^2=T(T+1)(2T+1)/6$,
+\[
+\bX'\bX=\begin{pmatrix} T & \tfrac{T(T+1)}2\\[2pt] \tfrac{T(T+1)}2 & \tfrac{T(T+1)(2T+1)}6\end{pmatrix},
+\qquad
+\det(\bX'\bX)=\frac{T^2(T+1)(2T+1)}{6}-\frac{T^2(T+1)^2}{4} .
+\]
+Factoring $T^2(T+1)/12$ out of the determinant leaves $2(2T+1)-3(T+1)=T-1$, so
+$\det(\bX'\bX)=T^2(T+1)(T-1)/12=T^2(T^2-1)/12$. By Unit 2,
+$\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$, and inverting a $2\times2$ matrix,
+\[
+(\bX'\bX)^{-1}=\frac{1}{\det}
+\begin{pmatrix} \tfrac{T(T+1)(2T+1)}6 & -\tfrac{T(T+1)}2\\[2pt] -\tfrac{T(T+1)}2 & T\end{pmatrix} .
+\]
+The lower right entry is $T\cdot12/\{T^2(T^2-1)\}=12/\{T(T^2-1)\}$; the upper left is
+$\{T(T+1)(2T+1)/6\}\cdot12/\{T^2(T+1)(T-1)\}=2(2T+1)/\{T(T-1)\}$; and the off-diagonal is
+$-\{T(T+1)/2\}\cdot12/\{T^2(T+1)(T-1)\}=-6/\{T(T-1)\}$.
+\end{proof}
+
+\begin{remark}
+$\var(\hat\beta_1)$ falls like $T^{-3}$, not $T^{-1}$: the design points spread out as the
+series lengthens, so a slope in time is estimated far more precisely than a slope on a
+covariate whose spread is fixed. That precision is real only if the errors are genuinely
+uncorrelated, which for a time series is the assumption most likely to fail
+(§\ref{sec:9.2}).
+\end{remark}
+
+\begin{remark}
+A polynomial fits the observed range and then leaves it. The leading term dominates outside
+the data, so a high-degree fit that improves $R^2$ by a little can produce forecasts of any
+magnitude and sign (§\ref{sec:9.5.1}). Degree is a modelling choice made against
+out-of-sample error, not against $R^2$.
+\end{remark}
+
+\subsection{Seasonality}\label{sec:9.1.3}
+
+\begin{definition}[Seasonal dummies]\label{def:seasonal}
+For period $s$ let $d_{tj}=\indc\{t\equiv j \ (\mathrm{mod}\ s)\}$, $j=1,\ldots,s$. The
+\emph{seasonal dummy} model is $\gamma_t=\sum_{j=1}^s\alpha_jd_{tj}$.
+\end{definition}
+
+\begin{proposition}[Identifiability]\label{prop:seasonal-ident}
+The $s$ dummy columns sum to $\bone$, so a model containing all $s$ of them and an
+intercept is rank deficient. Dropping either the intercept or one dummy restores full rank
+and leaves the column space, hence the fitted values, unchanged.
+\end{proposition}
+
+\begin{proof}
+Every $t$ lies in exactly one residue class, so $\sum_jd_{tj}=1$ for all $t$ and the $s+1$
+columns are dependent. The span of $\{\bone,d_{\cdot1},\ldots,d_{\cdot s}\}$ has dimension
+$s$, and each of the two reduced sets has $s$ members that are linearly independent, so each
+spans it. Fitted values are the projection onto the column space (Unit 2), which is the
+same.
+\end{proof}
+
+\begin{proposition}[What the dummies fit]\label{prop:seasonal-means}
+With the $s$ dummies as the only regressors, $\hat\alpha_j$ is the mean of the
+observations in season $j$.
+\end{proposition}
+
+\begin{proof}
+The columns are orthogonal, $d_{\cdot j}'d_{\cdot l}=0$ for $j\neq l$, so the normal
+equations separate: $\hat\alpha_j=d_{\cdot j}'\bY/d_{\cdot j}'d_{\cdot j}$, which is the
+sum of the observations in season $j$ divided by their number.
+\end{proof}
+
+\begin{theorem}[Harmonics span the same space]\label{thm:fourier}
+Fix $s\geqslant2$ and let $\omega_j=2\pi j/s$. The vectors
+\[
+\bone,\quad \{\cos(\omega_jt)\}_{j=1}^{\lceil s/2\rceil-1},\quad
+\{\sin(\omega_jt)\}_{j=1}^{\lceil s/2\rceil-1},\quad
+\text{and }\{\cos(\pi t)\}\text{ if $s$ is even,}
+\]
+regarded as functions of $t$ on one period, form a basis of the same $s$-dimensional space
+as the seasonal dummies.
+\end{theorem}
+
+\begin{proof}
+Both families consist of functions of $t\bmod s$, so both lie in the space
+$\Real^s$ of all such functions, of dimension $s$. Counting the harmonics: $1$ constant,
+$2(\lceil s/2\rceil-1)$ sines and cosines, and one more when $s$ is even, giving
+$1+2(s/2-1)+1=s$ for even $s$ and $1+2\{(s+1)/2-1\}=s$ for odd $s$. It therefore suffices
+to show the harmonics are linearly independent.
+
+Write $\zeta=e^{2\pi i/s}$. For integers $a$ not divisible by $s$,
+$\sum_{t=0}^{s-1}\zeta^{at}=(\zeta^{as}-1)/(\zeta^a-1)=0$, a geometric sum, while for
+$a\equiv0$ the sum is $s$. Taking real and imaginary parts of
+$\zeta^{(j-k)t}$ and $\zeta^{(j+k)t}$ gives, for $1\leqslant j,k<s/2$,
+\[
+\sum_{t=0}^{s-1}\cos(\omega_jt)\cos(\omega_kt)=\tfrac s2\delta_{jk},
+\quad
+\sum_{t=0}^{s-1}\sin(\omega_jt)\sin(\omega_kt)=\tfrac s2\delta_{jk},
+\quad
+\sum_{t=0}^{s-1}\cos(\omega_jt)\sin(\omega_kt)=0 ,
+\]
+and each of these is orthogonal to $\bone$ because $\sum_t\cos(\omega_jt)=
+\sum_t\sin(\omega_jt)=0$ for $j\not\equiv0$. When $s$ is even, $\cos(\pi t)=(-1)^t$ has
+squared norm $s$ and is orthogonal to the rest by the same computation. A set of nonzero
+mutually orthogonal vectors is linearly independent.
+\end{proof}
+
+\begin{remark}
+The two parametrisations fit identically. Harmonics are preferred when $s$ is large and the
+seasonal shape is smooth, since dropping the high-frequency pairs costs few parameters and
+imposes smoothness; dummies are preferred when the seasonal pattern is irregular, since
+they impose nothing.
+\end{remark}
+
+\subsection{Forecasting from a trend model}\label{sec:9.1.4}
+
+\begin{proposition}[Point forecast and interval]\label{prop:trend-forecast}
+Under~\eqref{eq:lintrend} with normal errors, the forecast of $y_{T+l}$ is
+$\hat y_{T+l}=\hat\beta_0+\hat\beta_1(T+l)$ and, writing $\bx_{T+l}=(1,T+l)'$, the
+prediction interval of Unit 3 is
+\begin{equation}\label{eq:trend-pi}
+\hat y_{T+l}\ \pm\ t_{T-2,1-\alpha/2}\;s\sqrt{1+\bx_{T+l}'(\bX'\bX)^{-1}\bx_{T+l}} .
+\end{equation}
+Its half-width grows with $l$, but only through the estimation term, and tends to
+$t\,s$ times $\sqrt{1+O(l^2/T^3)}$.
+\end{proposition}
+
+\begin{proof}
+The forecast and the interval are the prediction results of Unit 3 applied at the design
+point $\bx_{T+l}$. For the width, Theorem~\ref{thm:trend-ls} gives
+\[
+\bx_{T+l}'(\bX'\bX)^{-1}\bx_{T+l}
+= \frac{2(2T+1)}{T(T-1)}-\frac{12(T+l)}{T(T-1)}+\frac{12(T+l)^2}{T(T^2-1)} ,
+\]
+each term of order $T^{-1}$ or $l^2T^{-3}$.
+\end{proof}
+
+\begin{remark}
+The interval~\eqref{eq:trend-pi} is dominated by the irreducible term $1$ under the square
+root: for a trend model the uncertainty about a forecast ten steps ahead is barely larger
+than one step ahead. That is a strong claim, and it is false for the model of the next
+section, where the interval widens like $\sqrt l$. Which of the two is right is a question
+about the error process, not about the trend.
+\end{remark}
+
+%==============================================================================
+\section{Stationarity and Random Walks}\label{sec:9.2}
+%==============================================================================
+
+\begin{reading}
+FREES §7.3--7.5.
+\end{reading}
+
+\subsection{Stationarity and white noise}\label{sec:9.2.1}
+
+\begin{definition}[Stationarity]\label{def:stationary}
+A series $\{y_t\}$ with finite second moments is \emph{weakly stationary} if
+\begin{equation}\label{eq:stationary}
+\expc[y_t]=\mu \ \text{ free of } t ,
+\qquad
+\cov(y_t,y_{t+k})=\gamma(k) \ \text{ free of } t ,
+\end{equation}
+and $\gamma$ is its \emph{autocovariance function}, $\rho(k)=\gamma(k)/\gamma(0)$ its
+\emph{autocorrelation function}. It is \emph{strictly stationary} if the joint law of
+$(y_{t_1},\ldots,y_{t_m})$ equals that of $(y_{t_1+h},\ldots,y_{t_m+h})$ for every choice of
+indices and every $h$.
+\end{definition}
+
+\begin{proposition}\label{prop:stationary-basic}
+For a weakly stationary series, $\var(y_t)=\gamma(0)$ is constant, $\gamma(-k)=\gamma(k)$,
+and $|\gamma(k)|\leqslant\gamma(0)$. A strictly stationary series with finite second
+moments is weakly stationary; the converse is false.
+\end{proposition}
+
+\begin{proof}
+Taking $k=0$ in~\eqref{eq:stationary} gives constant variance. Symmetry is
+$\cov(y_t,y_{t-k})=\cov(y_{t-k},y_t)=\gamma(k)$ after shifting the index by $k$. The bound
+is Cauchy--Schwarz (prerequisites) applied to $y_t-\mu$ and $y_{t+k}-\mu$, both of variance
+$\gamma(0)$. If the joint laws are shift invariant then so are the moments they determine.
+For the converse, weak stationarity constrains only the first two moments and says nothing
+about, for instance, the skewness of $y_t$.
+\end{proof}
+
+\begin{definition}[White noise]\label{def:whitenoise}
+$\{\varepsilon_t\}$ is \emph{white noise} if it is independent and identically distributed
+with mean $\mu_\varepsilon$ and variance $\sigma^2<\infty$. Its autocovariance is
+$\gamma(0)=\sigma^2$ and $\gamma(k)=0$ for $k\neq0$.
+\end{definition}
+
+\begin{proposition}[Forecasting white noise]\label{prop:wn-forecast}
+For white noise the best mean squared error forecast of $y_{T+l}$ given
+$y_1,\ldots,y_T$ is $\mu_\varepsilon$ for every $l\geqslant1$, estimated by $\bar y$, and
+the forecast error variance $\sigma^2(1+1/T)$ does not depend on $l$.
+\end{proposition}
+
+\begin{proof}
+$y_{T+l}$ is independent of the past, so $\expc[y_{T+l}\mid y_1,\ldots,y_T]=\mu_\varepsilon$,
+which minimises mean squared error by the conditional expectation result of Unit 1.
+Replacing $\mu_\varepsilon$ by $\bar y$, the error $y_{T+l}-\bar y$ has variance
+$\sigma^2+\sigma^2/T$, the two terms being independent.
+\end{proof}
+
+\begin{remark}
+White noise is the target rather than a model of anything: a filter is a procedure that
+reduces a series to white noise, and modelling is finished when nothing is left in the
+residuals that the ACF can see.
+\end{remark}
+
+\subsection{The random walk}\label{sec:9.2.2}
+
+\begin{definition}[Random walk]\label{def:rw}
+Let $\{c_t\}$ be white noise with mean $\mu_c$ and variance $\sigma_c^2$, and let $y_0$ be
+fixed. The \emph{random walk with drift $\mu_c$} is
+\begin{equation}\label{eq:rw}
+y_t=y_{t-1}+c_t = y_0+\sum_{j=1}^t c_j , \qquad t\geqslant1 .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Moments]\label{thm:rw-moments}
+For the random walk~\eqref{eq:rw} and $1\leqslant r\leqslant t$,
+\begin{equation}\label{eq:rw-moments}
+\expc[y_t]=y_0+t\mu_c ,
+\qquad
+\cov(y_r,y_t)=r\,\sigma_c^2 ,
+\qquad
+\corr(y_r,y_t)=\sqrt{r/t} .
+\end{equation}
+In particular $\var(y_t)=t\sigma_c^2$, so a random walk is not weakly stationary whenever
+$\sigma_c^2>0$; and for fixed lag $k$,
+$\corr(y_{t-k},y_t)=\sqrt{1-k/t}\to1$ as $t\to\infty$.
+\end{theorem}
+
+\begin{proof}
+The mean is immediate from~\eqref{eq:rw}. For the covariance, with $r\leqslant t$,
+\[
+\cov(y_r,y_t)=\cov\Bigl(\sum_{j\leqslant r}c_j,\ \sum_{l\leqslant t}c_l\Bigr)
+=\sum_{j\leqslant r}\sum_{l\leqslant t}\cov(c_j,c_l)=\sum_{j\leqslant r}\sigma_c^2
+=r\sigma_c^2 ,
+\]
+only the diagonal terms surviving because the $c_j$ are independent. Taking $r=t$ gives the
+variance, which depends on $t$, so~\eqref{eq:stationary} fails. The correlation is
+$r\sigma_c^2/\sqrt{r\sigma_c^2\cdot t\sigma_c^2}=\sqrt{r/t}$, and putting $r=t-k$ gives the
+last claim.
+\end{proof}
+
+\begin{remark}
+The last statement is the visual signature of a random walk: its sample autocorrelation
+function starts near $1$ and decays hardly at all over the first many lags, because the
+population correlations $\sqrt{1-k/t}$ are all close to $1$ when $t$ is large.
+\end{remark}
+
+\subsection{Inference under a random walk}\label{sec:9.2.3}
+
+\begin{theorem}[The sample mean is not what it looks like]\label{thm:rw-mean}
+For the driftless random walk, $\mu_c=0$,
+\begin{equation}\label{eq:rw-mean}
+\var(\bar y)=\frac{\sigma_c^2}{T^2}\sum_{m=1}^{T}m^2
+=\sigma_c^2\,\frac{(T+1)(2T+1)}{6T} ,
+\end{equation}
+which \emph{grows} like $T\sigma_c^2/3$. The usual estimate $s_y^2/T$, computed as though
+the observations were independent, does not.
+\end{theorem}
+
+\begin{proof}
+Write $y_t=y_0+\sum_{j\leqslant t}c_j$. Then
+$\sum_{t=1}^T y_t = Ty_0+\sum_{j=1}^T(T-j+1)c_j$, since $c_j$ appears in $y_t$ for every
+$t\geqslant j$, that is in $T-j+1$ of the terms. The $c_j$ are independent, so
+\[
+\var\Bigl(\sum_{t=1}^Ty_t\Bigr)=\sigma_c^2\sum_{j=1}^T(T-j+1)^2
+=\sigma_c^2\sum_{m=1}^{T}m^2=\sigma_c^2\frac{T(T+1)(2T+1)}{6} ,
+\]
+and dividing by $T^2$ gives~\eqref{eq:rw-mean}. The leading behaviour is
+$\sigma_c^2(2T^2)/(6T)=T\sigma_c^2/3$.
+\end{proof}
+
+\begin{remark}
+A standard error computed from $s_y^2/T$ is therefore wrong by a factor that grows with the
+length of the series, and it is wrong in the dangerous direction: too small. Every $t$
+statistic built on it is inflated, which is what produces the spurious regressions of
+§\ref{sec:9.5.2}.
+\end{remark}
+
+\begin{theorem}[Forecasting a random walk]\label{thm:rw-forecast}
+Let $\hat\mu_c=\bar c=(y_T-y_0)/T$ be the average change over the observed series. The
+$l$-step forecast and its error variance are
+\begin{equation}\label{eq:rw-forecast}
+\hat y_{T+l}=y_T+l\,\bar c ,
+\qquad
+\var(y_{T+l}-\hat y_{T+l}) = l\,\sigma_c^2\Bigl(1+\frac lT\Bigr) .
+\end{equation}
+Ignoring the estimation term, an approximate $95\%$ interval is
+$y_T+l\bar c\pm2s_c\sqrt l$, whose width grows like $\sqrt l$.
+\end{theorem}
+
+\begin{proof}
+Iterating~\eqref{eq:rw} forward, $y_{T+l}=y_T+\sum_{k=1}^lc_{T+k}$. Since $y_T$ is known at
+time $T$ and the future changes have mean $\mu_c$, the mean squared error forecast is
+$y_T+l\mu_c$, estimated by replacing $\mu_c$ with $\bar c$. The error is
+\[
+y_{T+l}-\hat y_{T+l}=\sum_{k=1}^l(c_{T+k}-\mu_c) - l(\bar c-\mu_c) ,
+\]
+a difference of two independent terms, the first involving only future changes and the
+second only past ones. Their variances are $l\sigma_c^2$ and $l^2\sigma_c^2/T$, and adding
+gives~\eqref{eq:rw-forecast}.
+\end{proof}
+
+\begin{proposition}[Random walk against linear trend]\label{prop:rw-vs-trend}
+Writing $c_t=\mu_c+\varepsilon_t$ with $\{\varepsilon_t\}$ white noise, the random walk is
+\begin{equation}\label{eq:rw-as-trend}
+y_t = y_0+\mu_c t+u_t , \qquad u_t=\sum_{j=1}^t\varepsilon_j ,
+\end{equation}
+which has the same deterministic part as the linear trend
+model~\eqref{eq:lintrend}. The two differ only in the error process: stationary white noise
+there, a random walk here.
+\end{proposition}
+
+\begin{proof}
+Substitute $c_j=\mu_c+\varepsilon_j$ into~\eqref{eq:rw} and collect the constant terms.
+\end{proof}
+
+\begin{remark}
+The distinction is not cosmetic. Under~\eqref{eq:lintrend} a shock dies immediately and the
+series returns to its trend line; under~\eqref{eq:rw-as-trend} a shock is absorbed into
+$u_t$ permanently and the level never returns. That is why the two forecast intervals of
+§\ref{sec:9.4.4} behave so differently, and why the choice between them cannot be made from
+$R^2$: both fit a rising series well.
+\end{remark}
+
+\subsection{Filtering}\label{sec:9.2.4}
+
+\begin{definition}[Difference operator]\label{def:diff}
+$\Delta y_t=y_t-y_{t-1}$, and $\Delta^d$ is $\Delta$ applied $d$ times. A \emph{filter} is
+any operation intended to reduce a series to white noise.
+\end{definition}
+
+\begin{theorem}[Differencing]\label{thm:differencing}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If $\{y_t\}$ is a random walk with changes $\{c_t\}$, then $\Delta y_t=c_t$ is white
+      noise.
+\item If $\{y_t\}$ is itself white noise with variance $\sigma^2$, then $\Delta y_t$ has
+      variance $2\sigma^2$ and autocorrelations
+      $\rho(1)=-\tfrac12$, $\rho(k)=0$ for $k\geqslant2$.
+\item If $y_t=\beta_0+\beta_1t+\varepsilon_t$ is a linear trend with white noise errors,
+      then $\Delta y_t=\beta_1+\varepsilon_t-\varepsilon_{t-1}$ is stationary with the
+      autocorrelations of (ii).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) is the definition~\eqref{eq:rw} rearranged.
+
+(ii) $\var(y_t-y_{t-1})=\sigma^2+\sigma^2=2\sigma^2$ by independence, and
+$\cov(\Delta y_t,\Delta y_{t-1})=\cov(y_t-y_{t-1},\ y_{t-1}-y_{t-2})=-\var(y_{t-1})
+=-\sigma^2$, all other cross-covariances vanishing; dividing by $2\sigma^2$ gives
+$-\tfrac12$. For $k\geqslant2$ the two differences involve disjoint sets of observations,
+so the covariance is $0$.
+
+(iii) Differencing removes the linear term and leaves $\beta_1$ plus the difference of the
+errors, which is (ii).
+\end{proof}
+
+\begin{remark}
+Part (ii) is the cost of differencing a series that did not need it: the variance doubles
+and a negative first-order autocorrelation is introduced where there was none. A first
+difference is a strong operation, and the diagnostic for whether it was needed is whether
+it reduced the variability: for a random walk it does, dramatically, and for stationary
+data it does the opposite.
+\end{remark}
+
+\begin{proposition}[Log differences are proportional changes]\label{prop:logdiff}
+Let $\pi_t=y_t/y_{t-1}-1$ be the proportional change. Then
+$\Delta\ln y_t=\ln(1+\pi_t)$, and $|\Delta\ln y_t-\pi_t|\leqslant2\pi_t^2$ whenever
+$|\pi_t|\leqslant\tfrac12$.
+\end{proposition}
+
+\begin{proof}
+$\ln y_t-\ln y_{t-1}=\ln(y_t/y_{t-1})=\ln(1+\pi_t)$. For the bound, Taylor's theorem with
+Lagrange remainder (prerequisites) applied to $x\mapsto\ln(1+x)$ at $0$ gives
+$\ln(1+\pi)=\pi-\pi^2/\{2(1+\xi)^2\}$ for some $\xi$ between $0$ and $\pi$. If
+$|\pi|\leqslant\tfrac12$ then $\xi\in(-\tfrac12,\tfrac12)$, so $(1+\xi)^2>\tfrac14$ and the
+remainder is smaller than $2\pi^2$ in modulus.
+\end{proof}
+
+\begin{remark}[Identifying a random walk]
+Three checks, all of which the computation of §\ref{sec:9.4.3} performs. The sample
+standard deviation should fall sharply on differencing, since the level has variance
+growing like $t\sigma_c^2$ while the differences have variance $\sigma_c^2$. The sample
+autocorrelation function of the level should start near $1$ and decay slowly
+(Theorem~\ref{thm:rw-moments}), and that of the differences should be negligible at every
+lag. And a time series plot of the differences should show no trend and constant spread.
+\end{remark}
+
+%==============================================================================
+\section{Forecast Evaluation and Autocorrelation}\label{sec:9.3}
+%==============================================================================
+
+\begin{reading}
+FREES §7.6, §8.1.
+\end{reading}
+
+\subsection{Out-of-sample validation}\label{sec:9.3.1}
+
+\begin{definition}[The protocol]\label{def:oos}
+Split the series at $T_1$, keeping $t=1,\ldots,T_1$ as the \emph{development} subsample and
+$t=T_1+1,\ldots,T$ as the \emph{validation} subsample, $T_2=T-T_1$. Fit each candidate model
+on the development subsample only. For each validation date $t$, produce the one-step
+forecast $\hat y_t$ using the fitted model and the observations up to $t-1$, and record the
+\emph{forecast residual} $e_t=y_t-\hat y_t$.
+\end{definition}
+
+\begin{remark}
+The split must respect time. A random split, of the kind Unit 1 used for cross-sectional
+data, would let a model be fitted on observations later than the ones it predicts, and for
+a series with a trend that alone can make a useless model look excellent. Nothing dated
+after $t-1$ may enter $\hat y_t$, the estimated coefficients included.
+\end{remark}
+
+\begin{definition}[Comparison statistics]\label{def:oos-stats}
+With $e_t=y_t-\hat y_t$ over the $T_2$ validation dates,
+\begin{align}
+\ME &= \frac1{T_2}\sum e_t , &
+\MPE &= \frac{100}{T_2}\sum \frac{e_t}{y_t} , &
+\MSE &= \frac1{T_2}\sum e_t^2 , \label{eq:oos1}\\
+\MAE &= \frac1{T_2}\sum|e_t| , &
+\MAPE &= \frac{100}{T_2}\sum\Bigl|\frac{e_t}{y_t}\Bigr| . & &\label{eq:oos2}
+\end{align}
+\end{definition}
+
+\begin{proposition}[What each statistic sees]\label{prop:oos-decomp}
+$\MSE=\ME^2+\widehat{\var}(e)$, where $\widehat{\var}(e)=T_2^{-1}\sum(e_t-\ME)^2$. Hence
+$\ME$ measures only systematic over- or under-prediction and can be near zero for a
+forecast that is wildly wrong in both directions, while $\MSE$ and $\MAE$ cannot.
+$\MPE$ and $\MAPE$ are the same two statistics on a relative scale and are undefined when
+some $y_t=0$.
+\end{proposition}
+
+\begin{proof}
+$T_2^{-1}\sum e_t^2 = T_2^{-1}\sum\{(e_t-\bar e)+\bar e\}^2
+=T_2^{-1}\sum(e_t-\bar e)^2+\bar e^2$, the cross term vanishing because
+$\sum(e_t-\bar e)=0$; and $\bar e=\ME$.
+\end{proof}
+
+\subsection{Autocorrelation}\label{sec:9.3.2}
+
+\begin{definition}[Sample autocorrelation]\label{def:sample-acf}
+For $k\geqslant1$,
+\begin{equation}\label{eq:sample-acf}
+r_k = \frac{\sum_{t=k+1}^{T}(y_t-\bar y)(y_{t-k}-\bar y)}{\sum_{t=1}^{T}(y_t-\bar y)^2} .
+\end{equation}
+The plot of $r_k$ against $k$ is the \emph{correlogram}.
+\end{definition}
+
+\begin{proposition}[Range]\label{prop:acf-range}
+$|r_k|\leqslant1$.
+\end{proposition}
+
+\begin{proof}
+Extend the sum in the numerator to all $t$ by setting $y_t-\bar y=0$ for $t\leqslant0$, and
+apply Cauchy--Schwarz (prerequisites) to the vectors with entries $y_t-\bar y$ and
+$y_{t-k}-\bar y$: the numerator is at most
+$\{\sum_t(y_t-\bar y)^2\}^{1/2}\{\sum_t(y_{t-k}-\bar y)^2\}^{1/2}$, and each factor is at
+most $\{\sum_t(y_t-\bar y)^2\}^{1/2}$.
+\end{proof}
+
+\begin{theorem}[The correlogram of white noise]\label{thm:acf-wn}
+Let $y_1,\ldots,y_T$ be white noise with mean $\mu$ and variance $\sigma^2$, and fix
+$k\geqslant1$. Put
+\[
+\tilde r_k=\frac{1}{(T-k)\sigma^2}\sum_{t=k+1}^{T}(y_t-\mu)(y_{t-k}-\mu) ,
+\]
+the version with the mean known. Then the summands are uncorrelated with mean zero, and
+\begin{equation}\label{eq:acf-var}
+\expc[\tilde r_k]=0 , \qquad \var(\tilde r_k)=\frac{1}{T-k} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $\xi_t=y_t-\mu$ and $z_t=\xi_t\xi_{t-k}$. Independence gives
+$\expc[z_t]=\expc[\xi_t]\expc[\xi_{t-k}]=0$ and
+$\expc[z_t^2]=\expc[\xi_t^2]\expc[\xi_{t-k}^2]=\sigma^4$.
+
+For $t\neq u$ the product $z_tz_u=\xi_t\xi_{t-k}\xi_u\xi_{u-k}$ involves at least one index
+appearing exactly once: the four indices $t,t-k,u,u-k$ can coincide only through $t=u-k$ or
+$u=t-k$, and in either case exactly two of them coincide and the remaining two are distinct
+from each other and from the pair. Factorising the expectation over independent
+coordinates therefore leaves a factor $\expc[\xi]=0$, so $\expc[z_tz_u]=0$ and the $z_t$ are
+uncorrelated.
+
+Hence $\var\bigl(\sum_{t>k}z_t\bigr)=(T-k)\sigma^4$, and dividing by
+$(T-k)\sigma^2$ gives~\eqref{eq:acf-var}.
+\end{proof}
+
+\begin{corollary}\label{cor:acf-band}
+Under white noise, $\prb\{|\tilde r_k|>2/\sqrt{T-k}\}\leqslant\tfrac14$. The horizontal
+lines at $\pm2/\sqrt T$ drawn on a correlogram are two standard deviations of $\tilde r_k$.
+\end{corollary}
+
+\begin{proof}
+Chebyshev's inequality (prerequisites) with~\eqref{eq:acf-var}.
+\end{proof}
+
+\begin{remark}
+Chebyshev gives only $\tfrac14$; the conventional reading of the band as a $95\%$ device
+rests on a normal approximation for $\tilde r_k$, which is not proved here. The sequence
+$z_t=\xi_t\xi_{t-k}$ is not independent, so the central limit theorem of the prerequisites
+does not apply to it directly. What §\ref{sec:9.4.5} does instead is measure the coverage
+by simulation, and it comes out at the advertised $95\%$.
+\end{remark}
+
+\begin{remark}
+Replacing $\mu$ by $\bar y$ and $(T-k)$ by $T$, as in~\eqref{eq:sample-acf}, introduces a
+small negative bias: $\expc[r_k]\approx-1/T$, which §\ref{sec:9.4.5} also exhibits. For a
+series of any length the bias is negligible beside the standard deviation $1/\sqrt T$.
+\end{remark}
+
+\subsection{Autocorrelated errors in a regression}\label{sec:9.3.3}
+
+\begin{definition}[Durbin--Watson]\label{def:dw}
+For residuals $e_1,\ldots,e_T$ from a fitted regression,
+\begin{equation}\label{eq:dw}
+\DW = \frac{\sum_{t=2}^{T}(e_t-e_{t-1})^2}{\sum_{t=1}^{T}e_t^2} .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Exact relation to the first autocorrelation]\label{prop:dw-r1}
+With $r_1=\sum_{t=2}^Te_te_{t-1}/\sum_{t=1}^Te_t^2$,
+\begin{equation}\label{eq:dw-r1}
+\DW = 2(1-r_1) - \frac{e_1^2+e_T^2}{\sum_{t=1}^Te_t^2} .
+\end{equation}
+So $\DW$ is near $2$ when the residuals are uncorrelated, near $0$ under strong positive
+autocorrelation, and near $4$ under strong negative autocorrelation.
+\end{proposition}
+
+\begin{proof}
+Expanding the numerator of~\eqref{eq:dw} and writing $S=\sum_{t=1}^Te_t^2$,
+\[
+\sum_{t=2}^T(e_t-e_{t-1})^2=\sum_{t=2}^Te_t^2+\sum_{t=2}^Te_{t-1}^2-2\sum_{t=2}^Te_te_{t-1}
+=(S-e_1^2)+(S-e_T^2)-2r_1S .
+\]
+Dividing by $S$ gives~\eqref{eq:dw-r1}. The three cases follow by putting $r_1=0,1,-1$ and
+noting the correction term is $O(1/T)$ when no single residual dominates.
+\end{proof}
+
+\begin{remark}
+Positive residual autocorrelation is the normal state of affairs for a regression on time
+series data, and its consequence is the one Theorem~\ref{thm:rw-mean} exhibits in extreme
+form: the reported standard errors are too small, so significance is overstated. The
+remedies are to model the dependence, which is Unit 10, or to difference the series, which
+§\ref{sec:9.2.4} does.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:9.4}
+%==============================================================================
+
+\begin{reading}
+FREES §7.2, §7.4, §7.6.
+\end{reading}
+
+Two series from base R. \texttt{AirPassengers}: monthly international airline passengers,
+$T=144$, with a rising trend and a seasonal swing that grows with the level.
+\texttt{EuStockMarkets}: daily closing values of four European indices; the DAX column is
+used, $T=1860$.
+
+<<data-setup>>=
+suppressMessages(library(lmtest))
+y  <- as.numeric(AirPassengers); T <- length(y); tt <- seq_len(T)
+mo <- factor(rep(month.abb, length.out = T), levels = month.abb)
+dax <- as.numeric(EuStockMarkets[, "DAX"])
+c(T_air = T, T_dax = length(dax), mean_air = mean(y), sd_air = sd(y))
+@
+
+\subsection{Trend and season (§\ref{sec:9.1.2}--§\ref{sec:9.1.3})}\label{sec:9.4.1}
+
+<<trend-fits>>=
+m1 <- lm(y ~ tt)                 # linear trend only
+m2 <- lm(y ~ tt + mo)            # additive trend and season
+m3 <- lm(log(y) ~ tt + mo)       # multiplicative, on the log scale
+c(R2_trend = summary(m1)$r.squared, R2_trend_season = summary(m2)$r.squared,
+  R2_log = summary(m3)$r.squared,
+  s_trend = summary(m1)$sigma, s_trend_season = summary(m2)$sigma)
+@
+
+Theorem~\ref{thm:trend-ls} gives the sampling variances in closed form.
+
+<<trend-variance>>=
+X <- cbind(1, tt); V <- solve(crossprod(X))
+c(var_b1_matrix = V[2, 2], formula = 12/(T*(T^2 - 1)),
+  var_b0_matrix = V[1, 1], formula_b0 = 2*(2*T + 1)/(T*(T - 1)),
+  cov_matrix = V[1, 2], formula_cov = -6/(T*(T - 1)))
+@
+
+Propositions~\ref{prop:seasonal-ident} and~\ref{prop:seasonal-means}: the dummies alone fit
+the seasonal means, and the harmonic basis of Theorem~\ref{thm:fourier} spans the same
+space.
+
+<<seasonal-checks>>=
+ms <- lm(y ~ mo - 1)
+ph <- 2*pi*tt/12
+Fh <- cbind(1, sapply(1:5, function(j) cos(j*ph)),
+               sapply(1:5, function(j) sin(j*ph)), cos(6*ph))
+D  <- model.matrix(~ mo - 1)
+c(dummies_are_means = max(abs(coef(ms) - tapply(y, mo, mean))),
+  rank_dummies = qr(D)$rank, rank_harmonics = qr(Fh)$rank,
+  rank_of_both_together = qr(cbind(D, Fh))$rank,
+  fitted_values_differ_by = max(abs(fitted(lm(y ~ tt + mo)) -
+                                    fitted(lm(y ~ tt + Fh - 1)))))
+@
+
+\begin{figure}[H]\centering
+<<air-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+plot(tt, y, type = "l", col = "grey35", xlab = "month", ylab = "passengers",
+     main = "additive fit")
+lines(tt, fitted(m2), lwd = 2, col = "#B45309")
+plot(tt, log(y), type = "l", col = "grey35", xlab = "month",
+     ylab = "log passengers", main = "on the log scale")
+lines(tt, fitted(m3), lwd = 2, col = "#1E3A8A")
+par(op)
+@
+\caption{A linear trend plus twelve monthly dummies. On the original scale the fitted
+seasonal amplitude is constant while the observed one grows, so the fit is too wide early
+and too narrow late; on the log scale the amplitude is constant by construction
+(Proposition~\ref{prop:log-decomp}) and the same model fits throughout.}\label{fig:air}
+\end{figure}
+
+\subsection{Extrapolating a polynomial}\label{sec:9.4.2}
+
+<<poly-extrapolate>>=
+t(sapply(c(1, 2, 4, 8), function(dg) {
+  m <- lm(y ~ poly(tt, dg))
+  c(degree = dg, R2 = summary(m)$r.squared,
+    forecast_t_180 = predict(m, data.frame(tt = 180))) }))
+@
+
+Each increase in degree raises $R^2$ and the degree-$8$ fit, the best of the four by that
+measure, forecasts a negative number of passengers three years ahead.
+
+\subsection{Is the DAX a random walk? (§\ref{sec:9.2.4})}\label{sec:9.4.3}
+
+<<dax-identify>>=
+d1 <- diff(dax); dl <- diff(log(dax))
+c(sd_level = sd(dax), sd_difference = sd(d1),
+  ratio = sd(dax)/sd(d1),
+  acf1_level = acf(dax, plot = FALSE)$acf[2],
+  acf1_difference = acf(d1, plot = FALSE)$acf[2],
+  acf1_log_difference = acf(dl, plot = FALSE)$acf[2])
+@
+
+All three checks of §\ref{sec:9.2.4} point the same way: differencing cuts the standard
+deviation by a factor of $33$, the level has first autocorrelation $0.997$, and the
+differences have $0.0008$.
+
+\begin{figure}[H]\centering
+<<dax-fig, echo=FALSE, fig.width=6.4, fig.height=3.3>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0),
+          cex = 0.7)
+plot(dax, type = "l", col = "grey30", xlab = "", ylab = "DAX", main = "level")
+plot(d1, type = "l", col = "grey30", xlab = "", ylab = "change",
+     main = "first difference")
+acf(dax, lag.max = 40, main = "ACF, level", col = "#1E3A8A", lwd = 2,
+    xlab = "lag")
+acf(d1, lag.max = 40, main = "ACF, difference", col = "#B45309", lwd = 2,
+    xlab = "lag")
+par(op)
+@
+\caption{The signature of a random walk. The level wanders with growing spread and its
+correlogram decays hardly at all over forty lags, as
+$\corr(y_{t-k},y_t)=\sqrt{1-k/t}$ of Theorem~\ref{thm:rw-moments} predicts; the differences
+look like white noise.}\label{fig:dax}
+\end{figure}
+
+\subsection{The two forecast intervals (§\ref{sec:9.1.4}, §\ref{sec:9.2.3})}\label{sec:9.4.4}
+
+\begin{figure}[H]\centering
+<<forecast-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+set.seed(6); Tn <- 60; ys <- 100 + cumsum(rnorm(Tn, 0.4, 2))
+l <- 1:25; cb <- mean(diff(c(100, ys))); sc <- sd(diff(c(100, ys)))
+tv <- 1:Tn; mfit <- lm(ys ~ tv)
+pr <- predict(mfit, newdata = data.frame(tv = Tn + l), interval = "prediction")
+rw <- cbind(ys[Tn] + l*cb - 2*sc*sqrt(l), ys[Tn] + l*cb,
+            ys[Tn] + l*cb + 2*sc*sqrt(l))
+yl <- range(ys, pr, rw)
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+for (w in 1:2) {
+  cl <- if (w == 1) "#B45309" else "#1E3A8A"
+  M  <- if (w == 1) rw[, c(2, 1, 3)] else pr
+  plot(tv, ys, type = "l", xlim = c(1, Tn + 25), ylim = yl, col = "grey25",
+       xlab = "t", ylab = expression(y[t]),
+       main = if (w == 1) "random walk" else "linear trend")
+  lines(Tn + l, M[, 1], lwd = 2, col = cl)
+  lines(Tn + l, M[, 2], lty = 2, col = cl); lines(Tn + l, M[, 3], lty = 2, col = cl)
+  abline(v = Tn, col = "grey80")
+}
+par(op)
+@
+\caption{One simulated series, two models. The random walk forecasts from the last
+observation with an interval widening like $\sqrt l$
+(Theorem~\ref{thm:rw-forecast}); the linear trend forecasts from the fitted line with an
+interval of almost constant width (Proposition~\ref{prop:trend-forecast}). Both fit the
+observed part well.}\label{fig:forecast}
+\end{figure}
+
+Theorem~\ref{thm:rw-mean} says the variance of the sample mean of a random walk grows with
+$T$, while the estimate computed as though the data were independent does not.
+
+<<rw-mean-var>>=
+set.seed(4); B <- 3000
+t(sapply(c(50, 200, 800), function(Tn) {
+  r <- replicate(B, { z <- cumsum(rnorm(Tn)); c(mean(z), var(z)/Tn) })
+  c(T = Tn, simulated_var_of_ybar = var(r[1, ]),
+    formula = (Tn + 1)*(2*Tn + 1)/(6*Tn),
+    mean_of_naive_estimate = mean(r[2, ])) }))
+@
+
+<<over-differencing>>=
+set.seed(7); w <- rnorm(20000)
+c(var_white_noise = var(w), var_of_its_difference = var(diff(w)),
+  ratio = var(diff(w))/var(w),
+  acf1_of_difference = acf(diff(w), plot = FALSE)$acf[2], theory = -0.5)
+@
+
+\subsection{Correlograms and Durbin--Watson (§\ref{sec:9.3.2}--§\ref{sec:9.3.3})}
+\label{sec:9.4.5}
+
+Theorem~\ref{thm:acf-wn} gives the mean and variance of $r_k$ under white noise; the $95\%$
+calibration of the $\pm2/\sqrt T$ band is not proved there and is measured here.
+
+<<acf-calibration>>=
+set.seed(3); B <- 5000
+t(sapply(c(50, 200), function(Tn) {
+  rk <- replicate(B, acf(rnorm(Tn), plot = FALSE, lag.max = 1)$acf[2])
+  c(T = Tn, mean_r1 = mean(rk), minus_one_over_T = -1/Tn,
+    sd_r1 = sd(rk), one_over_sqrt_T = 1/sqrt(Tn),
+    inside_the_band = mean(abs(rk) < 2/sqrt(Tn))) }))
+@
+
+<<durbin-watson>>=
+set.seed(5); n <- 60
+xg <- rnorm(n); eg <- as.numeric(arima.sim(list(ar = 0.6), n))
+md <- lm(I(1 + 2*xg + eg) ~ xg); rr <- residuals(md)
+r1 <- sum(rr[-1]*rr[-n])/sum(rr^2)
+c(DW_manual = sum(diff(rr)^2)/sum(rr^2),
+  DW_package = unname(dwtest(md)$statistic),
+  approximation_2_1_minus_r1 = 2*(1 - r1),
+  exact_identity = unname(2*(1 - r1) - (rr[1]^2 + rr[n]^2)/sum(rr^2)))
+@
+
+The approximation $2(1-r_1)$ is off by $0.09$ on sixty observations; the exact
+identity~\eqref{eq:dw-r1} matches the package to the last digit.
+
+\subsection{Comparing forecasts out of sample (§\ref{sec:9.3.1})}\label{sec:9.4.6}
+
+Three candidates for \texttt{AirPassengers}, fitted on the first $120$ months and judged on
+the last $24$: a trend with monthly dummies, a random walk on the level, and a random walk
+on the same month a year earlier.
+
+<<oos>>=
+T1 <- 120; ya <- y[(T1 + 1):T]
+fit_ts <- lm(y ~ tt + mo, subset = 1:T1)
+f_ts <- predict(fit_ts, newdata = data.frame(tt = (T1 + 1):T,
+                                             mo = mo[(T1 + 1):T]))
+f_rw  <- y[T1:(T - 1)] + mean(diff(y[1:T1]))
+f_srw <- y[(T1 + 1 - 12):(T - 12)] + mean(diff(y[1:T1], lag = 12))
+stats <- function(e, a) c(ME = mean(e), MPE = 100*mean(e/a), MSE = mean(e^2),
+                          MAE = mean(abs(e)), MAPE = 100*mean(abs(e/a)))
+round(rbind(trend_plus_season = stats(ya - f_ts, ya),
+            random_walk = stats(ya - f_rw, ya),
+            seasonal_random_walk = stats(ya - f_srw, ya)), 4)
+@
+
+The plain random walk has the smallest $\ME$ and the largest $\MSE$: it is unbiased on
+average and wrong every month, because it carries no seasonal term.
+Proposition~\ref{prop:oos-decomp} is the arithmetic behind that.
+
+<<oos-decomp>>=
+e <- ya - f_rw
+c(MSE = mean(e^2), ME_squared = mean(e)^2,
+  variance_term = mean((e - mean(e))^2),
+  difference = mean(e^2) - mean(e)^2 - mean((e - mean(e))^2))
+@
+
+%==============================================================================
+\section{Pitfalls}\label{sec:9.5}
+%==============================================================================
+
+\subsection{Choosing the polynomial degree by fit}\label{sec:9.5.1}
+
+§\ref{sec:9.4.2} showed a degree-$8$ trend with the best $R^2$ of its family forecasting a
+negative passenger count. The same comparison out of sample reverses the ranking.
+
+<<pitfall-poly>>=
+T1 <- 120; ya <- y[(T1 + 1):T]
+t(sapply(c(1, 2, 4, 8), function(dg) {
+  m <- lm(y ~ poly(tt, dg), subset = 1:T1)
+  f <- predict(m, newdata = data.frame(tt = (T1 + 1):T))
+  c(degree = dg, R2_in_sample = summary(m)$r.squared,
+    MSE_out_of_sample = mean((ya - f)^2)) }))
+@
+
+\textbf{Diagnostic.} A trend chosen on $R^2$, and forecasts that leave the range of the
+data faster than the data ever moved.
+\textbf{Fix.} Judge the degree on out-of-sample error (§\ref{sec:9.3.1}). A polynomial is
+an interpolating device; nothing in it knows that a passenger count is positive.
+
+\subsection{Regressing one random walk on another}\label{sec:9.5.2}
+
+Theorem~\ref{thm:rw-mean} says the usual standard error is too small under a random walk,
+by a factor that grows with $T$. The consequence is that two entirely unrelated series can
+look strongly related.
+
+<<pitfall-spurious>>=
+set.seed(2); B <- 2000
+spur <- function(Tn, difference) t(replicate(B, {
+  a <- cumsum(rnorm(Tn)); b <- cumsum(rnorm(Tn))
+  if (difference) { a <- diff(a); b <- diff(b) }
+  m <- lm(a ~ b)
+  c(summary(m)$coefficients[2, 3], summary(m)$r.squared) }))
+tab <- function(difference) t(sapply(c(50, 200, 800), function(Tn) {
+  r <- spur(Tn, difference)
+  c(T = Tn, mean_abs_t = mean(abs(r[, 1])),
+    reject_at_5_percent = mean(abs(r[, 1]) > 1.96),
+    median_R2 = median(r[, 2])) }))
+tab(FALSE)
+@
+
+<<pitfall-spurious-fix>>=
+tab(TRUE)
+@
+
+\textbf{Diagnostic.} A regression between two trending series with a large $t$ statistic, a
+respectable $R^2$, and residuals whose Durbin--Watson statistic is far below $2$.
+\textbf{Fix.} Difference both series first, or model the dependence directly (Unit 10).
+The rejection rate returns to its nominal $5\%$ and the mean $|t|$ to the
+$\sqrt{2/\pi}=0.798$ of a standard normal.
+
+\subsection{Splitting a series at random}\label{sec:9.5.3}
+
+<<pitfall-split>>=
+set.seed(8)
+oos <- function(random) {
+  idx <- if (random) sort(sample(T, T1)) else 1:T1
+  m <- lm(y ~ tt + mo, subset = idx)
+  te <- setdiff(seq_len(T), idx)
+  mean((y[te] - predict(m, data.frame(tt = tt[te], mo = mo[te])))^2)
+}
+c(chronological_split = oos(FALSE), random_split = oos(TRUE),
+  ratio = oos(FALSE)/oos(TRUE))
+@
+
+\textbf{Diagnostic.} A validation set containing dates earlier than some of the training
+dates. Here the random split reports $1{,}129$ against the $2{,}299$ a genuine forecast
+achieves, so the model looks $1.6$ times better than it is.
+\textbf{Fix.} Split on time. A random split lets the fit interpolate between neighbouring
+months instead of extrapolating past the end of the series, which is the only thing a
+forecast ever has to do.
+
+\subsection{Differencing a series that did not need it}\label{sec:9.5.4}
+
+<<pitfall-overdiff>>=
+set.seed(12); z <- 5 + rnorm(400)          # stationary already
+t(sapply(0:2, function(d) {
+  u <- if (d == 0) z else diff(z, differences = d)
+  c(differences = d, variance = var(u),
+    acf1 = acf(u, plot = FALSE)$acf[2]) }))
+@
+
+\textbf{Diagnostic.} A first autocorrelation near $-\tfrac12$ after differencing, and a
+variance larger than before.
+\textbf{Fix.} Difference only when the level wanders. Theorem~\ref{thm:differencing}(ii)
+says that differencing white noise doubles its variance and manufactures a negative
+autocorrelation; a second difference triples it again. The test is whether differencing
+reduces the standard deviation, not whether the result looks flat.
+
+%==============================================================================
+\section{Exercises}\label{sec:9.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:decomp}
+A monthly series has a seasonal swing of about $10\%$ of its level, and the level has
+doubled over the sample. Should the seasonal component be modelled additively or
+multiplicatively, and what does a logarithmic transform do?
+\end{exercise}
+
+\begin{solution}
+Multiplicatively: an additive model would fit one constant swing, too wide at the start of
+the sample and too narrow at the end, exactly the pattern in the left panel of
+Figure~\ref{fig:air}.
+
+By Proposition~\ref{prop:log-decomp}, taking logarithms turns the multiplicative
+decomposition into an additive one and turns the constant proportional swing into a
+constant additive one, $\ln(1.10)=0.0953$ on the log scale whatever the level. A linear
+trend plus seasonal dummies fitted to $\ln y_t$ therefore has a constant seasonal amplitude
+by construction, and back-transforming gives a swing proportional to the level.
+\end{solution}
+
+\begin{exercise}\label{ex:trend-var}
+Derive $\var(\hat\beta_1)$ for the linear trend in time model and compare its rate in $T$
+with that of a slope on an ordinary covariate.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:trend-ls}: $\det(\bX'\bX)=T^2(T^2-1)/12$ and the lower-right entry of the
+inverse is $T/\det$, giving $\var(\hat\beta_1)=12\sigma^2/\{T(T^2-1)\}$, of order
+$\sigma^2T^{-3}$.
+
+For an ordinary covariate, $\var(\hat\beta_1)=\sigma^2/\sum_i(x_i-\bar x)^2$, and if the
+$x_i$ are drawn from a fixed distribution then $\sum_i(x_i-\bar x)^2$ grows like $T$, giving
+order $\sigma^2T^{-1}$. The extra two powers come from the design spreading out: the range
+of $t$ grows with $T$ instead of staying fixed. The gain is genuine only when the errors
+really are uncorrelated.
+\end{solution}
+
+\begin{exercise}\label{ex:seasonal}
+A quarterly series is modelled with an intercept and four quarterly dummies. What goes
+wrong, and what are the two standard repairs? What does the harmonic alternative buy?
+\end{exercise}
+
+\begin{solution}
+The four dummies sum to the intercept column, so the design has rank $4$ with $5$ columns
+and the coefficients are not identified (Proposition~\ref{prop:seasonal-ident}). Drop the
+intercept, in which case each $\hat\alpha_j$ is the quarterly mean
+(Proposition~\ref{prop:seasonal-means}), or drop one dummy, in which case the remaining
+coefficients are contrasts with the omitted quarter. The fitted values are identical.
+
+By Theorem~\ref{thm:fourier} the harmonics $\{1,\cos(\pi t/2),\sin(\pi t/2),\cos(\pi t)\}$
+span the same four-dimensional space, so they fit identically too. What they buy is the
+option of dropping the highest frequency, which imposes a smooth seasonal shape at the cost
+of one parameter; with $s=4$ that saving is small, with $s=12$ or $s=52$ it is not.
+\end{solution}
+
+\begin{exercise}\label{ex:rw-moments}
+Show that a random walk is not stationary, and compute $\corr(y_{t-1},y_t)$ at $t=100$.
+What does this imply about its correlogram?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:rw-moments}, $\var(y_t)=t\sigma_c^2$ depends on $t$, so the second
+requirement of Definition~\ref{def:stationary} fails; if $\mu_c\neq0$ the mean depends on
+$t$ as well.
+
+$\corr(y_{99},y_{100})=\sqrt{99/100}=0.995$. More generally
+$\corr(y_{t-k},y_t)=\sqrt{1-k/t}$, which at $t=100$ is $0.95$ even at lag $k=10$. The
+sample correlogram therefore starts near $1$ and decays almost imperceptibly over the first
+several lags, which is the pattern in the lower-left panel of Figure~\ref{fig:dax} and the
+usual visual test for a random walk.
+\end{solution}
+
+\begin{exercise}\label{ex:rw-forecast}
+A series identified as a random walk ends at $y_T=250$ with average change $\bar c=1.4$ and
+$s_c=6$ over $T=80$ observations. Forecast $y_{T+4}$ and $y_{T+16}$ with approximate $95\%$
+intervals. By what factor does the interval widen?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:rw-forecast} the point forecasts are $250+4(1.4)=255.6$ and
+$250+16(1.4)=272.4$. The half-widths are $2s_c\sqrt l=2(6)\sqrt4=24.0$ and
+$2(6)\sqrt{16}=48.0$, giving $(231.6,\,279.6)$ and $(224.4,\,320.4)$.
+
+The interval widens by $\sqrt{16/4}=2$. The exact error variance
+$l\sigma_c^2(1+l/T)$ inflates these slightly, by $\sqrt{1+4/80}=1.025$ and
+$\sqrt{1+16/80}=1.095$, the estimation of the drift mattering more the further ahead the
+forecast goes.
+\end{solution}
+
+\begin{exercise}\label{ex:rw-mean}
+Show that the variance of the sample mean of a driftless random walk grows with $T$, and
+say what it implies for regressions on trending series.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:rw-mean}: $c_j$ enters $T-j+1$ of the $y_t$, so
+$\var(\sum_ty_t)=\sigma_c^2\sum_m m^2=\sigma_c^2T(T+1)(2T+1)/6$ and
+$\var(\bar y)=\sigma_c^2(T+1)(2T+1)/(6T)\sim T\sigma_c^2/3$.
+
+The usual formula $s_y^2/T$ presumes independence and does not grow. Every standard error
+built on that presumption is therefore too small, by a factor increasing with the length of
+the series, so $t$ statistics are inflated without limit. §\ref{sec:9.5.2} shows two
+independent random walks rejecting the null of no relation $91\%$ of the time at $T=800$.
+\end{solution}
+
+\begin{exercise}\label{ex:differencing}
+What does differencing do to a random walk, to white noise, and to a linear trend with white
+noise errors? How would you tell whether a difference was needed?
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:differencing}. A random walk becomes its own white noise increments. White
+noise becomes a series of doubled variance with first autocorrelation $-\tfrac12$ and
+nothing beyond. A linear trend becomes the constant $\beta_1$ plus the same
+differenced-noise structure, so the trend is removed but the same penalty is paid.
+
+The test is the standard deviation: for a random walk it falls sharply, by a factor of $33$
+on the DAX in §\ref{sec:9.4.3}, and for an already stationary series it rises by
+$\sqrt2$. A first autocorrelation close to $-\tfrac12$ in the differenced series is the
+signature of having differenced once too often.
+\end{solution}
+
+\begin{exercise}\label{ex:oos}
+Two forecasting methods are compared over $24$ validation months. Method A has $\ME=0.1$ and
+$\MSE=900$; method B has $\ME=8$ and $\MSE=100$. Which is better, and what does the
+comparison show about $\ME$?
+\end{exercise}
+
+\begin{solution}
+Method B, decisively: its typical error is about $\sqrt{100}=10$ against $\sqrt{900}=30$.
+
+By Proposition~\ref{prop:oos-decomp}, $\MSE=\ME^2+\widehat\var(e)$, so A has
+$\widehat\var(e)=900-0.01=899.99$ and B has $100-64=36$. A is unbiased and wildly variable;
+B is biased by $8$ and otherwise accurate. $\ME$ measures only the systematic part and is
+near zero whenever errors of both signs cancel, so it must never be used alone. The right
+reading of B's result is that a bias of $8$ has been detected and can be removed, after
+which its $\MSE$ would be about $36$.
+\end{solution}
+
+\begin{exercise}\label{ex:acf}
+For white noise of length $T=200$, what are the mean and standard deviation of $r_5$? What
+do the lines at $\pm2/\sqrt T$ on a correlogram mean, and what do they not mean?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:acf-wn} the known-mean version has mean $0$ and variance
+$1/(T-k)=1/195$, so a standard deviation of $0.0716$; with the mean estimated, the mean of
+$r_5$ is about $-1/T=-0.005$ and the standard deviation about $1/\sqrt{200}=0.0707$.
+§\ref{sec:9.4.5} measures $-0.004$ and $0.070$.
+
+The lines are two standard deviations of $r_k$ under the hypothesis that the series is white
+noise. What they are \emph{not} is a proved $95\%$ band: Chebyshev gives only
+$\prb\{|r_k|>2/\sqrt T\}\leqslant\tfrac14$, and the usual $95\%$ reading rests on a normal
+approximation that the prerequisites do not establish for this statistic. Simulation puts
+the coverage at $95.6\%$ and $95.8\%$ for $T=50$ and $T=200$. A second caution: with $20$
+lags plotted, about one point outside the band is expected even under white noise.
+\end{solution}
+
+\begin{exercise}\label{ex:dw}
+A regression on quarterly data over $15$ years gives $\DW=0.8$. Estimate the first
+residual autocorrelation and say what it implies for the reported standard errors.
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:dw-r1}, $\DW\approx2(1-r_1)$ up to a term of order $1/T$, so
+$r_1\approx1-\DW/2=1-0.4=0.6$: strong positive residual autocorrelation over $T=60$
+quarters.
+
+The reported standard errors assume uncorrelated errors and are therefore too small, and
+the $t$ statistics too large, for the reason of Theorem~\ref{thm:rw-mean}: positively
+correlated errors carry less information than the same number of independent ones, so the
+effective sample size is smaller than $60$. The fit should be redone on differences, or the
+dependence modelled directly as in Unit 10.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) verify the closed-form variance of a linear trend slope; (b) show that seasonal
+dummies and harmonics give identical fits; (c) show that the $t$ statistic from regressing
+one random walk on another diverges, and that differencing repairs it.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:9.4.1}, (b) §\ref{sec:9.4.1} and (c) §\ref{sec:9.5.2}. In (c) the point to
+watch is that the divergence is in the \emph{standard error}, not the coefficient: the
+fitted slope between two independent walks is centred at zero, and it is the denominator
+that shrinks too fast. That is why the rejection rate rises with $T$ instead of settling at
+$5\%$, and why differencing, which restores stationarity, restores the nominal size.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,1540 @@
+% Compile:  python build.py 07
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 7\ \ GLM I: Categorical Responses}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{7.\arabic{theorem}}
+\renewcommand\thetheorem  {7.\arabic{theorem}}
+\renewcommand\thelemma    {7.\arabic{theorem}}
+\renewcommand\theproposition{7.\arabic{theorem}}
+\renewcommand\thecorollary{7.\arabic{theorem}}
+\renewcommand\theexample  {7.\arabic{example}}
+\renewcommand\theexercise {7.\arabic{exercise}}
+\renewcommand\thefigure   {7.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Generalised Linear Models I: Categorical Responses}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit07-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 7.\ Generalised Linear Models I:\\[4pt] Categorical Responses}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Binary Responses}\label{sec:7.1}
+%==============================================================================
+
+\begin{reading}
+FREES §11.1--11.2.
+\end{reading}
+
+Throughout, $y_1,\ldots,y_n$ are independent with $y_i\in\{0,1\}$, $\bx_i\in\Real^p$ is a
+non-random covariate vector whose first coordinate is $1$, and
+\begin{equation}\label{eq:binary-model}
+\pi_i = \prb\{y_i=1\mid\bx_i\} , \qquad \eta_i=\bx_i'\bb .
+\end{equation}
+Since $y_i$ is Bernoulli, $\expc[y_i]=\pi_i$ and $\var(y_i)=\pi_i(1-\pi_i)$: the mean
+determines the whole distribution, and the variance is a function of the mean rather than a
+free parameter.
+
+\subsection{The linear probability model}\label{sec:7.1.1}
+
+\begin{definition}[Linear probability model]\label{def:lpm}
+The \emph{linear probability model} takes $\pi_i=\bx_i'\bb$ and estimates $\bb$ by least
+squares.
+\end{definition}
+
+\begin{proposition}[Three defects]\label{prop:lpm-defects}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If $\bx'\bb\in[0,1]$ for every $\bx\in\Real^p$ then $\beta_1=\cdots=\beta_{p-1}=0$,
+      the intercept alone surviving. On a design of finite extent the fitted values need
+      not lie in $[0,1]$ either.
+\item The errors are heteroscedastic by construction:
+      $\var(y_i-\bx_i'\bb)=\bx_i'\bb\,(1-\bx_i'\bb)$, which varies with $i$ unless every
+      $\pi_i$ is the same.
+\item If a fitted value falls outside $[0,1]$ the variance the model implies for that
+      observation is negative.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Suppose $\bx'\bb\in[0,1]$ for all $\bx$ and let $j\geqslant1$ with $\beta_j\neq0$.
+Taking $\bx=(1,0,\ldots,t,\ldots,0)'$ with $t$ in position $j$ gives
+$\beta_0+t\beta_j\in[0,1]$ for every $t\in\Real$, which is false since the left side is
+unbounded in $t$.
+
+(ii) $y_i$ is Bernoulli with mean $\pi_i=\bx_i'\bb$, so its variance is $\pi_i(1-\pi_i)$,
+and the error $y_i-\bx_i'\bb$ has the same variance.
+
+(iii) $t(1-t)<0$ exactly when $t<0$ or $t>1$.
+\end{proof}
+
+\begin{remark}
+Only (ii) is repairable inside the linear model: the weighted least squares and robust
+standard errors of Unit 4 apply, with weights $1/\{\pi_i(1-\pi_i)\}$. Defects (i) and (iii)
+say the model is not a probability model at all. What replaces it is a model in which the
+mean is a fixed increasing transform of $\bx_i'\bb$ with range $(0,1)$.
+\end{remark}
+
+\subsection{Logistic and probit models}\label{sec:7.1.2}
+
+\begin{definition}[Binary regression]\label{def:binreg}
+Let $F:\Real\to(0,1)$ be a continuous, strictly increasing distribution function. The
+\emph{binary regression model with response function $F$} is
+\begin{equation}\label{eq:binreg}
+\pi_i = F(\bx_i'\bb) , \qquad\text{equivalently}\qquad F^{-1}(\pi_i)=\bx_i'\bb ,
+\end{equation}
+and $g=F^{-1}$ is the \emph{link function}. The two cases used here are
+\begin{equation}\label{eq:two-links}
+F(z)=\Lambda(z)=\frac{1}{1+e^{-z}} \ \ \text{(\emph{logistic})},
+\qquad
+F(z)=\Phi(z) \ \ \text{(\emph{probit})} .
+\end{equation}
+\end{definition}
+
+\begin{definition}[Odds and logit]\label{def:odds}
+For $p\in(0,1)$ the \emph{odds} are $p/(1-p)$ and the \emph{logit} is
+$\logit(p)=\ln\{p/(1-p)\}$.
+\end{definition}
+
+\begin{proposition}[The logit is the inverse of $\Lambda$]\label{prop:logit-inverse}
+$\Lambda$ is a strictly increasing distribution function on $\Real$ with
+$\Lambda(-z)=1-\Lambda(z)$, $\Lambda'=\Lambda(1-\Lambda)$, and
+$\logit(\Lambda(z))=z$. Hence the logistic model is $\logit(\pi_i)=\bx_i'\bb$.
+\end{proposition}
+
+\begin{proof}
+$\Lambda'(z)=e^{-z}/(1+e^{-z})^2>0$, and $\Lambda(z)\to0,1$ as $z\to\mp\infty$, so
+$\Lambda$ is a strictly increasing distribution function. Multiplying numerator and
+denominator of $\Lambda(-z)=1/(1+e^{z})$ by $e^{-z}$ gives $e^{-z}/(1+e^{-z})=1-\Lambda(z)$.
+Also $\Lambda(1-\Lambda)=\{1/(1+e^{-z})\}\{e^{-z}/(1+e^{-z})\}=\Lambda'$. Finally
+$\Lambda/(1-\Lambda)=e^{z}$, whose logarithm is $z$.
+\end{proof}
+
+\begin{theorem}[Threshold representation]\label{thm:threshold}
+Let $y_i^\ast=\bx_i'\bb+\varepsilon_i$ with $\varepsilon_i$ independent, each with
+distribution function $F$ symmetric about $0$, and let $y_i=\indc\{y_i^\ast>0\}$. Then
+$\prb\{y_i=1\}=F(\bx_i'\bb)$, which is~\eqref{eq:binreg}.
+\end{theorem}
+
+\begin{proof}
+$\prb\{y_i=1\}=\prb\{\varepsilon_i>-\bx_i'\bb\}=1-F(-\bx_i'\bb)=F(\bx_i'\bb)$, the last
+step by symmetry, $F(-a)=1-F(a)$, which holds for $\Phi$ and, by
+Proposition~\ref{prop:logit-inverse}, for $\Lambda$.
+\end{proof}
+
+\begin{proposition}[Random utility]\label{prop:gumbel}
+Let $\varepsilon_1,\varepsilon_2$ be independent with the standard Gumbel distribution
+function $G(a)=\exp(-e^{-a})$. Then $\varepsilon_2-\varepsilon_1$ has the standard logistic
+distribution. Consequently, if an individual with utilities
+$U_j=V_j+\varepsilon_j$ chooses $j=1$ when $U_1>U_2$, then
+$\prb\{\text{choose }1\}=\Lambda(V_1-V_2)$.
+\end{proposition}
+
+\begin{proof}
+Conditioning on $\varepsilon_1$ and writing $\gamma(a)=G'(a)=e^{-a}\exp(-e^{-a})$,
+\[
+\prb\{\varepsilon_2-\varepsilon_1\leqslant t\}
+= \int_{-\infty}^{\infty} G(t+a)\,\gamma(a)\,\dd a
+= \int_{-\infty}^{\infty} \exp\bigl(-e^{-t}e^{-a}\bigr)\,e^{-a}\exp(-e^{-a})\,\dd a .
+\]
+Substitute $u=e^{-a}$, so $\dd u=-e^{-a}\dd a$ and $u$ runs over $(0,\infty)$:
+\[
+\int_0^\infty \exp\bigl(-u(1+e^{-t})\bigr)\,\dd u = \frac{1}{1+e^{-t}} = \Lambda(t) .
+\]
+For the consequence, $\prb\{U_1>U_2\}=\prb\{\varepsilon_2-\varepsilon_1<V_1-V_2\}$.
+\end{proof}
+
+\begin{theorem}[Odds ratio interpretation]\label{thm:odds-ratio}
+In the logistic model:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item if $x_{ij}\in\{0,1\}$ and the other coordinates are held fixed, then
+      \begin{equation}\label{eq:odds-ratio}
+      e^{\beta_j}
+      = \frac{\odds\{y_i=1\mid x_{ij}=1\}}{\odds\{y_i=1\mid x_{ij}=0\}} ,
+      \end{equation}
+      the \emph{odds ratio} for that covariate;
+\item if $x_{ij}$ is continuous, $\beta_j=\partial\ln\odds\{y_i=1\}/\partial x_{ij}$, so a
+      unit increase multiplies the odds by $e^{\beta_j}$;
+\item the effect on the \emph{probability} is $\partial\pi_i/\partial x_{ij}
+      =\beta_j\pi_i(1-\pi_i)$, which depends on $\bx_i$ and is largest at $\pi_i=1/2$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+By Proposition~\ref{prop:logit-inverse} the model says
+$\ln\odds\{y_i=1\mid\bx_i\}=\bx_i'\bb$. For (i), subtract that identity at $x_{ij}=0$ from
+the same identity at $x_{ij}=1$, the other coordinates being equal: the difference of the
+left sides is the logarithm of the ratio in~\eqref{eq:odds-ratio} and the difference of the
+right sides is $\beta_j$. For (ii), differentiate the identity in $x_{ij}$. For (iii),
+$\pi_i=\Lambda(\bx_i'\bb)$ and $\Lambda'=\Lambda(1-\Lambda)$ by
+Proposition~\ref{prop:logit-inverse}, so the chain rule gives
+$\partial\pi_i/\partial x_{ij}=\beta_j\Lambda'(\eta_i)=\beta_j\pi_i(1-\pi_i)$, and
+$t(1-t)$ is maximised at $t=1/2$.
+\end{proof}
+
+\begin{remark}
+A coefficient in a logistic regression is constant on the log-odds scale and not on the
+probability scale, which is the price of forcing the fitted probability into $(0,1)$. The
+same covariate change moves the probability by $\beta_j\pi(1-\pi)$, four times as much at
+$\pi=1/2$ as at $\pi=0.1$.
+\end{remark}
+
+\begin{proposition}[Logit against probit]\label{prop:logit-probit}
+$\Lambda$ and $\Phi$ are both symmetric about $0$ with value $1/2$ there.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item Their slopes at $0$ agree when the logistic coefficient is $4/\sqrt{2\pi}=1.5958$
+      times the probit one.
+\item The standard logistic distribution has variance $\pi^2/3$, so matching the standard
+      deviation of the latent error in Theorem~\ref{thm:threshold} makes the logistic
+      coefficient $\pi/\sqrt3=1.8138$ times the probit one.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\Lambda'(0)=\Lambda(0)\{1-\Lambda(0)\}=1/4$ and $\Phi'(0)=1/\sqrt{2\pi}$. The models
+$\Lambda(\beta_Lz)$ and $\Phi(\beta_Pz)$ have derivatives $\beta_L/4$ and
+$\beta_P/\sqrt{2\pi}$ at $z=0$, equal when $\beta_L=4\beta_P/\sqrt{2\pi}$.
+
+(ii) The standard logistic density is $\Lambda'(z)=e^{-z}/(1+e^{-z})^2$, symmetric, so the
+mean is $0$ and the variance is $\int z^2\Lambda'(z)\dd z$. Substituting
+$u=\Lambda(z)$, so $z=\ln\{u/(1-u)\}$ and $\dd u=\Lambda'\dd z$,
+\[
+\int_{\Real} z^2\Lambda'(z)\,\dd z = \int_0^1\Bigl(\ln\frac{u}{1-u}\Bigr)^2\dd u
+= 2\int_0^1(\ln u)^2\,\dd u - 2\int_0^1(\ln u)\{\ln(1-u)\}\,\dd u ,
+\]
+after expanding the square and using the symmetry $u\mapsto1-u$ to identify the two
+squared terms. The first integral is $2$ by two integrations by parts. For the second,
+expand $\ln(1-u)=-\sum_{m\geqslant1}u^m/m$ and integrate term by term, justified by
+monotone convergence since every term is of one sign:
+\[
+-\int_0^1(\ln u)\ln(1-u)\,\dd u
+= \sum_{m\geqslant1}\frac1m\int_0^1 u^m\ln u\,\dd u
+= -\sum_{m\geqslant1}\frac{1}{m(m+1)^2} .
+\]
+Since $\frac{1}{m(m+1)^2}=\frac1m-\frac1{m+1}-\frac1{(m+1)^2}$ and the two pieces sum to
+$1-(\pi^2/6-1)=2-\pi^2/6$, the displayed integral is $\pi^2/6-2$ and the second term of the
+variance, $-2\int_0^1(\ln u)\ln(1-u)\,\dd u$, is $2(\pi^2/6-2)$. The variance is therefore
+$2\cdot2+2(\pi^2/6-2)=\pi^2/3$. Matching $\sd$ against the probit's $1$ rescales the
+coefficient by $\pi/\sqrt3$.
+\end{proof}
+
+\begin{remark}
+The two factors, $1.60$ and $1.81$, calibrate different things: the first the slope at
+$\pi=1/2$, the second the scale of the latent error. Neither is exact, since $\Lambda$ and
+$\Phi$ are genuinely different functions; §\ref{sec:7.4.3} reports the ratio actually
+observed on a data set whose events are rare.
+\end{remark}
+
+\subsection{The likelihood}\label{sec:7.1.3}
+
+\begin{definition}[Log-likelihood]\label{def:binlik}
+For the model~\eqref{eq:binreg},
+\begin{equation}\label{eq:binlik}
+\ell(\bb) = \sum_{i=1}^n\Bigl[ y_i\ln F(\bx_i'\bb) + (1-y_i)\ln\bigl\{1-F(\bx_i'\bb)\bigr\}\Bigr] .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Score and information]\label{thm:score-info}
+Write $\eta_i=\bx_i'\bb$, $\pi_i=F(\eta_i)$ and $f=F'$. Then
+\begin{equation}\label{eq:general-score}
+\nabla\ell(\bb) = \sum_{i=1}^n \bx_i\,\frac{f(\eta_i)}{\pi_i(1-\pi_i)}\,(y_i-\pi_i) ,
+\qquad
+\calI(\bb) = \sum_{i=1}^n \frac{f(\eta_i)^2}{\pi_i(1-\pi_i)}\,\bx_i\bx_i' ,
+\end{equation}
+and in the logistic case these reduce to
+\begin{equation}\label{eq:logistic-score}
+\nabla\ell(\bb)=\sum_{i=1}^n\bx_i(y_i-\pi_i)=\bX'(\bY-\bpi) ,
+\qquad
+\calI(\bb)=\sum_{i=1}^n\pi_i(1-\pi_i)\bx_i\bx_i'=\bX'\bW\bX ,
+\end{equation}
+with $\bW=\diag\{\pi_i(1-\pi_i)\}$. In the logistic case $-\nabla^2\ell(\bb)=\calI(\bb)$
+identically, not merely in expectation.
+\end{theorem}
+
+\begin{proof}
+Differentiating~\eqref{eq:binlik} through $\eta_i$ and using $\partial\eta_i/\partial\bb=\bx_i$,
+\[
+\nabla\ell = \sum_i\bx_i\Bigl\{\frac{y_i}{\pi_i}-\frac{1-y_i}{1-\pi_i}\Bigr\}f(\eta_i)
+= \sum_i\bx_i\,\frac{y_i(1-\pi_i)-(1-y_i)\pi_i}{\pi_i(1-\pi_i)}f(\eta_i) ,
+\]
+and the numerator is $y_i-\pi_i$. The information is the variance of the score; the
+summands are independent with mean zero, and $\var(y_i)=\pi_i(1-\pi_i)$, so
+\[
+\calI(\bb)=\sum_i\frac{f(\eta_i)^2}{\pi_i^2(1-\pi_i)^2}\var(y_i)\,\bx_i\bx_i'
+=\sum_i\frac{f(\eta_i)^2}{\pi_i(1-\pi_i)}\bx_i\bx_i' .
+\]
+For the logistic case $f=\Lambda'=\Lambda(1-\Lambda)=\pi_i(1-\pi_i)$ by
+Proposition~\ref{prop:logit-inverse}, so the ratio $f/\{\pi(1-\pi)\}$ is $1$ and
+$f^2/\{\pi(1-\pi)\}=\pi_i(1-\pi_i)$. Differentiating the logistic score once more,
+$\partial\pi_i/\partial\bb=\pi_i(1-\pi_i)\bx_i$ gives
+$\nabla^2\ell=-\sum_i\pi_i(1-\pi_i)\bx_i\bx_i'$, which involves no $y_i$ and therefore
+equals its own expectation.
+\end{proof}
+
+\begin{corollary}[What the score equations force]\label{cor:score-eq}
+At a logistic maximum likelihood estimate $\hat\bb$ with fitted probabilities
+$\hat\pi_i$, every column $\bx_{\cdot j}$ of the design satisfies
+$\sum_i x_{ij}\hat\pi_i=\sum_i x_{ij}y_i$. With an intercept this gives
+$\sum_i\hat\pi_i=\sum_i y_i$, and for a $0/1$ covariate the fitted and observed counts agree
+within each of its two groups.
+\end{corollary}
+
+\begin{proof}
+Setting~\eqref{eq:logistic-score} to zero is $\bX'(\bY-\hat\bpi)=\bzero$, which read
+coordinate by coordinate is the stated identity. The intercept column is $\bone$, and a
+$0/1$ column is the indicator of a group.
+\end{proof}
+
+\begin{theorem}[Concavity]\label{thm:concavity}
+The log-likelihood~\eqref{eq:binlik} is concave in $\bb$ for the logistic and the probit
+response functions, and strictly concave when $\rank(\bX)=p$.
+\end{theorem}
+
+\begin{proof}
+The map $\bb\mapsto\eta_i=\bx_i'\bb$ is linear, so it suffices that
+$\eta\mapsto\ln F(\eta)$ and $\eta\mapsto\ln\{1-F(\eta)\}$ are concave; a concave function
+of a linear map is concave, and a sum of concave functions is concave.
+
+\textbf{Logistic.} $\ln\Lambda(\eta)=-\ln(1+e^{-\eta})$ has second derivative
+$-\Lambda(\eta)\{1-\Lambda(\eta)\}<0$, and $\ln\{1-\Lambda(\eta)\}=\ln\Lambda(-\eta)$ has
+the same second derivative at $-\eta$.
+
+\textbf{Probit.} By symmetry it is enough to treat $\ln\Phi$. Writing $\phi=\Phi'$,
+\[
+(\ln\Phi)''(\eta) = \frac{\phi'\Phi-\phi^2}{\Phi^2}
+= -\frac{\eta\phi\Phi+\phi^2}{\Phi^2} ,
+\]
+using $\phi'(\eta)=-\eta\phi(\eta)$, so the claim is $\eta\Phi(\eta)+\phi(\eta)>0$ for every
+$\eta$. For $\eta\geqslant0$ both terms are positive. For $\eta=-t$ with $t>0$ the claim is
+$\phi(t)>t\{1-\Phi(t)\}$, and
+\[
+1-\Phi(t)=\int_t^\infty\phi(s)\,\dd s < \int_t^\infty\frac st\phi(s)\,\dd s
+= \frac{1}{t}\bigl[-\phi(s)\bigr]_t^\infty = \frac{\phi(t)}{t} ,
+\]
+the inequality because $s/t>1$ on $(t,\infty)$ and $\phi>0$.
+
+\textbf{Strictness.} In both cases the second derivative of the per-observation term is
+strictly negative, so $-\nabla^2\ell(\bb)=\sum_i c_i\bx_i\bx_i'$ with every $c_i>0$; this is
+positive definite exactly when the $\bx_i$ span $\Real^p$, that is when $\rank(\bX)=p$.
+\end{proof}
+
+\begin{theorem}[Separation destroys the estimate]\label{thm:separation}
+Suppose there is $\bc\neq\bzero$ with
+\begin{equation}\label{eq:separation}
+\bx_i'\bc>0 \ \text{ whenever } y_i=1,
+\qquad
+\bx_i'\bc<0 \ \text{ whenever } y_i=0 .
+\end{equation}
+Then, for the logistic model, $\ell(t\bc)$ increases strictly to $0$ as $t\to\infty$, so
+$\sup_{\bb}\ell(\bb)=0$ is not attained and no maximum likelihood estimate exists.
+\end{theorem}
+
+\begin{proof}
+Using $\ln\Lambda(z)=-\ln(1+e^{-z})$ and $\ln\{1-\Lambda(z)\}=-\ln(1+e^{z})$,
+\[
+\ell(t\bc) = -\sum_{i:y_i=1}\ln\bigl(1+e^{-t\bx_i'\bc}\bigr)
+            -\sum_{i:y_i=0}\ln\bigl(1+e^{\,t\bx_i'\bc}\bigr) .
+\]
+Under~\eqref{eq:separation} every exponent is $-t|\bx_i'\bc|$, so each term is
+$-\ln(1+e^{-t|\bx_i'\bc|})$, strictly increasing in $t$ and tending to $0$. Hence
+$\ell(t\bc)\uparrow0$. Since $\ell<0$ everywhere, the supremum $0$ is not attained.
+\end{proof}
+
+\begin{remark}
+Separation is a property of the data, not of the model, and it becomes more likely as $p$
+grows relative to $n$ or as a category becomes rare. Software does not fail: it reports a
+large coefficient with a larger standard error, a residual deviance near zero and fitted
+probabilities equal to $0$ and $1$ to machine precision (§\ref{sec:7.5.1}).
+\end{remark}
+
+\subsection{Iteratively reweighted least squares}\label{sec:7.1.4}
+
+\begin{theorem}[The Newton step is a weighted least squares step]\label{thm:irls}
+For the logistic model let $\bb^{(m)}$ be the current value, and put
+$\eta_i=\bx_i'\bb^{(m)}$, $\pi_i=\Lambda(\eta_i)$, $w_i=\pi_i(1-\pi_i)$ and the
+\emph{working response}
+\begin{equation}\label{eq:working}
+z_i = \eta_i + \frac{y_i-\pi_i}{w_i} .
+\end{equation}
+Then the Newton--Raphson update $\bb^{(m+1)}=\bb^{(m)}+\calI(\bb^{(m)})^{-1}\nabla\ell(\bb^{(m)})$
+is exactly the weighted least squares fit of $\bz$ on $\bX$ with weights $w_i$:
+\begin{equation}\label{eq:irls}
+\bb^{(m+1)} = (\bX'\bW\bX)^{-1}\bX'\bW\bz .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:score-info}, $\nabla\ell=\bX'(\bY-\bpi)$ and $\calI=\bX'\bW\bX$, so
+\[
+\bb^{(m+1)} = \bb^{(m)} + (\bX'\bW\bX)^{-1}\bX'(\bY-\bpi) .
+\]
+Also $\bW\bz = \bW\bX\bb^{(m)}+(\bY-\bpi)$ by~\eqref{eq:working}, so the right side
+of~\eqref{eq:irls} is
+$(\bX'\bW\bX)^{-1}\{\bX'\bW\bX\bb^{(m)}+\bX'(\bY-\bpi)\}$, which is the same vector.
+\end{proof}
+
+\begin{remark}
+Because the logistic observed and expected information coincide
+(Theorem~\ref{thm:score-info}), Newton--Raphson and Fisher scoring are the same algorithm
+here, and by Theorem~\ref{thm:concavity} the objective is concave, so the iteration has one
+stationary point to find. The weights $w_i=\pi_i(1-\pi_i)$ are largest at $\pi_i=1/2$: the
+observations that carry information are those whose outcome is genuinely uncertain.
+\end{remark}
+
+%==============================================================================
+\section{Likelihood Inference and Classification}\label{sec:7.2}
+%==============================================================================
+
+\begin{reading}
+FREES §11.3, §11.9.
+\end{reading}
+
+\subsection{Asymptotics for the logistic estimator}\label{sec:7.2.1}
+
+\begin{theorem}[Sampling distribution of $\hat\bb$]\label{thm:logistic-asymp}
+Consider the logistic model with true parameter $\bb_0$ and suppose the design satisfies
+\begin{enumerate}[label=\textup{(D\arabic*)}]
+\item\label{D1} $|\bx_i|\leqslant M$ for every $i$, with $M$ free of $n$;
+\item\label{D2} $\bF_n = n^{-1}\sum_{i\leqslant n}\pi_i(1-\pi_i)\bx_i\bx_i' \to \bF$
+      positive definite, the $\pi_i$ being evaluated at $\bb_0$.
+\end{enumerate}
+Then with probability tending to one the maximum likelihood estimate $\hat\bb$ exists and is
+unique, $\hat\bb\convp\bb_0$, and
+\begin{equation}\label{eq:logistic-asymp}
+\sqrt n(\hat\bb-\bb_0)\convd N(\bzero,\bF^{-1}) ,
+\qquad
+n^{-1}\calI(\hat\bb)\convp\bF .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The three hypotheses of the concave maximum likelihood theorem of the prerequisites are
+checked in turn, with $\Theta=\Real^p$ and $\ell_i(\bb)=y_i\ln\Lambda(\bx_i'\bb)
++(1-y_i)\ln\{1-\Lambda(\bx_i'\bb)\}$.
+
+\textbf{Concavity and smoothness.} Each $\ell_i$ is concave by
+Theorem~\ref{thm:concavity} and infinitely differentiable, and $\Theta$ is all of
+$\Real^p$. Strict concavity, hence uniqueness, holds when $\rank(\bX)=p$, which~\ref{D2}
+forces for large $n$: a rank deficiency would make $\bF_n$ singular.
+
+\textbf{The score condition.} By Theorem~\ref{thm:score-info},
+$\nabla\ell_i(\bb_0)=\bx_i(y_i-\pi_i)$, which has mean zero and modulus at most
+$|\bx_i|\leqslant M$ since $|y_i-\pi_i|\leqslant1$. Its variance is
+$\pi_i(1-\pi_i)\bx_i\bx_i'$, so the average variance is $\bF_n\to\bF$ by~\ref{D2}.
+
+\textbf{The curvature condition.} By Theorem~\ref{thm:score-info} the negative Hessian
+$\bH_n(\bb)=\sum_i w(\bx_i'\bb)\bx_i\bx_i'$, with $w(\eta)=\Lambda(\eta)\{1-\Lambda(\eta)\}$,
+carries no $y_i$; at $\bb_0$ it equals $n\bF_n$, so $n^{-1}\bH_n(\bb_0)\to\bF$
+deterministically. For the Lipschitz bound,
+$w'=\Lambda(1-\Lambda)(1-2\Lambda)$ has $|w'|\leqslant\tfrac14$, so by the mean value
+theorem and Cauchy--Schwarz
+$|w(\bx_i'\bb)-w(\bx_i'\bb_0)|\leqslant\tfrac14 M|\bb-\bb_0|$, and since
+$\|\bx_i\bx_i'\|=|\bx_i|^2\leqslant M^2$,
+\[
+\|\bH_n(\bb)-\bH_n(\bb_0)\| \leqslant \sum_{i=1}^n
+\bigl|w(\bx_i'\bb)-w(\bx_i'\bb_0)\bigr|\,\|\bx_i\bx_i'\|
+\leqslant n\,\tfrac14 M^3\,|\bb-\bb_0| .
+\]
+So the curvature condition holds with Lipschitz constant $M^3/4$, and the limiting
+curvature is the same $\bF$ as the limiting score variance: the information equality holds
+here because the model is correctly specified. The conclusions are the existence,
+consistency, asymptotic normality and information statements of that theorem.
+\end{proof}
+
+\begin{remark}
+In practice $\bF$ is replaced by $n^{-1}\calI(\hat\bb)$, which is legitimate by the last
+statement of~\eqref{eq:logistic-asymp} and Slutsky's theorem, and one reports
+$\hat\bb\ \dot\sim\ N\bigl(\bb_0,\ \calI(\hat\bb)^{-1}\bigr)$, with
+$\se(\hat\beta_j)$ the square root of the $j$-th diagonal entry of $\calI(\hat\bb)^{-1}$.
+There is no exact $t$ distribution here and no residual degrees of freedom correction: the
+reference distribution is normal, and the printed ratio $\hat\beta_j/\se(\hat\beta_j)$ is a
+$z$ statistic.
+\end{remark}
+
+\subsection{Wald, likelihood ratio, and deviance}\label{sec:7.2.2}
+
+\begin{definition}[Test statistics]\label{def:tests}
+Let $\bR$ be $q\times p$ of rank $q$ and consider $H_0:\bR\bb_0=\br$. Write
+$\hat{\bV}=\calI(\hat\bb)^{-1}$ for the estimated variance of $\hat\bb$ and $\hat\bb^R$ for
+the maximiser of $\ell$ under the restriction. The \emph{Wald} and \emph{likelihood ratio}
+statistics are
+\begin{equation}\label{eq:wald-lr}
+W = (\bR\hat\bb-\br)'(\bR\hat{\bV}\bR')^{-1}(\bR\hat\bb-\br) ,
+\qquad
+\mathit{LR} = 2\bigl\{\ell(\hat\bb)-\ell(\hat\bb^R)\bigr\} .
+\end{equation}
+\end{definition}
+
+\begin{corollary}[Both are $\chi^2_q$]\label{cor:tests}
+Under the conditions of Theorem~\ref{thm:logistic-asymp} and $H_0$, both $W$ and
+$\mathit{LR}$ converge in distribution to $\chi^2_q$. For $q=1$ and $H_0:\beta_j=0$ the
+Wald statistic is the square of the reported $z$ statistic.
+\end{corollary}
+
+\begin{proof}
+Theorem~\ref{thm:logistic-asymp} supplies the hypotheses of the Wald corollary and of the
+likelihood ratio theorem of the prerequisites, the latter after the change of coordinates
+that turns $\bR\bb=\br$ into the vanishing of $q$ coordinates. For $q=1$,
+$W=(\hat\beta_j-0)^2/\hat V_{jj}=\{\hat\beta_j/\se(\hat\beta_j)\}^2$.
+\end{proof}
+
+\begin{definition}[Deviance]\label{def:deviance}
+The \emph{deviance} of a fitted binary regression is
+$D = 2\{\ell_{\mathrm{sat}}-\ell(\hat\bb)\}$, where $\ell_{\mathrm{sat}}$ is the largest
+log-likelihood attainable by any set of fitted probabilities. The \emph{null deviance} is
+the deviance of the intercept-only fit.
+\end{definition}
+
+\begin{proposition}[Deviance for ungrouped binary data]\label{prop:deviance}
+If each $y_i\in\{0,1\}$ then $\ell_{\mathrm{sat}}=0$ and $D=-2\ell(\hat\bb)$. Consequently
+the difference of the deviances of two nested models equals their likelihood ratio
+statistic, while $D$ itself is a function of the fitted probabilities alone.
+\end{proposition}
+
+\begin{proof}
+The saturated fit puts $\hat\pi_i=y_i$, giving per-observation log-likelihood
+$y_i\ln y_i+(1-y_i)\ln(1-y_i)=0$ with the convention $0\ln0=0$; and no set of probabilities
+can do better, since each term of~\eqref{eq:binlik} is a logarithm of a number in $(0,1]$
+and hence at most $0$. So $\ell_{\mathrm{sat}}=0$ and $D=-2\ell(\hat\bb)$. For nested
+models, $D_R-D_U=-2\ell(\hat\bb^R)+2\ell(\hat\bb)=\mathit{LR}$.
+\end{proof}
+
+\begin{remark}
+The saturated model has one parameter per observation, so the number of parameters grows
+with $n$ and the asymptotics of the prerequisites do not apply to $D$ itself: $D$ is not a
+goodness-of-fit statistic for ungrouped binary data, and comparing it with $n-p$ is
+meaningless (§\ref{sec:7.4.2} prints the two). \emph{Differences} of deviances between
+nested models are likelihood ratio statistics, and those are $\chi^2$ by
+Corollary~\ref{cor:tests}.
+\end{remark}
+
+\begin{definition}[Information criteria]\label{def:aic-glm}
+$\AIC = -2\ell(\hat\bb)+2p$ and $\BIC = -2\ell(\hat\bb)+p\ln n$, with $p$ the number of
+estimated parameters.
+\end{definition}
+
+\begin{remark}
+These are the general-likelihood forms. The Gaussian linear model of Unit 5 gave the
+special case $\AIC=(\SSE+2d\hat\sigma^2)/n$ after dropping a constant and dividing by
+$n$, by the proposition there relating $-2\ell+2d$ to $C_p$; the constant and the scale
+differ, so $\AIC$ values are comparable across models fitted to the same response by the
+same likelihood, and across nothing else.
+\end{remark}
+
+\subsection{Classification}\label{sec:7.2.3}
+
+\begin{definition}[Classifier, confusion matrix]\label{def:confusion}
+A \emph{score} is a function $s(\bx)\in\Real$; the associated \emph{classifier at threshold
+$t$} predicts $\hat y=\indc\{s(\bx)>t\}$. Its performance on a sample is recorded in the
+counts
+\begin{ctab}
+\begin{tabular}{lcc}
+\toprule
+ & $y=0$ & $y=1$\\
+\midrule
+$\hat y=0$ & $\mathrm{TN}$ & $\mathrm{FN}$\\
+$\hat y=1$ & $\mathrm{FP}$ & $\mathrm{TP}$\\
+\bottomrule
+\end{tabular}
+\end{ctab}
+and the summaries
+\begin{align}
+\text{sensitivity} &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}, &
+\text{specificity} &= \frac{\mathrm{TN}}{\mathrm{TN}+\mathrm{FP}}, \label{eq:sens-spec}\\
+\text{precision} &= \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}, &
+\text{accuracy} &= \frac{\mathrm{TP}+\mathrm{TN}}{n} . \label{eq:prec-acc}
+\end{align}
+The \emph{false positive rate} is $1-\text{specificity}$.
+\end{definition}
+
+\begin{theorem}[Cost-optimal threshold]\label{thm:cost-threshold}
+Let $(\bX,y)$ have $\prb\{y=1\mid\bX=\bx\}=p(\bx)$, and charge $c_{01}>0$ for predicting
+$0$ when $y=1$ and $c_{10}>0$ for predicting $1$ when $y=0$. Among all classifiers
+$\hat y=h(\bX)$, the expected cost
+$c_{01}\prb\{h(\bX)=0,\,y=1\}+c_{10}\prb\{h(\bX)=1,\,y=0\}$ is minimised by
+\begin{equation}\label{eq:cost-threshold}
+h^\ast(\bx)=\indc\{p(\bx)>t^\ast\} , \qquad t^\ast=\frac{c_{10}}{c_{10}+c_{01}} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Condition on $\bX=\bx$. Predicting $1$ costs $c_{10}\{1-p(\bx)\}$ in expectation and
+predicting $0$ costs $c_{01}p(\bx)$. The first is smaller exactly when
+$c_{10}-c_{10}p(\bx)<c_{01}p(\bx)$, that is $p(\bx)>c_{10}/(c_{10}+c_{01})$. Since the
+total expected cost is the expectation over $\bX$ of the conditional cost, minimising it
+pointwise minimises it overall.
+\end{proof}
+
+\begin{corollary}\label{cor:half-threshold}
+With equal costs $t^\ast=1/2$ and $h^\ast$ is the Bayes classifier of Unit 1, which
+minimises the error rate.
+\end{corollary}
+
+\begin{remark}
+The threshold $1/2$ is a statement about costs, not a default. When one error is ten times
+as expensive as the other, $t^\ast=1/11$. Under class imbalance the two are very different:
+a rule with threshold $1/2$ on a response that is positive $3\%$ of the time can have high
+accuracy and low sensitivity at once, since predicting $0$ always is already $97\%$
+accurate.
+\end{remark}
+
+\subsection{ROC and AUC}\label{sec:7.2.4}
+
+\begin{definition}[ROC curve, AUC]\label{def:roc}
+Let $S^+$ and $S^-$ denote the score of a random positive and a random negative case, with
+distribution functions $F^+$ and $F^-$. The \emph{receiver operating characteristic} is the
+curve traced by
+\begin{equation}\label{eq:roc}
+\bigl(\mathrm{FPR}(t),\ \mathrm{TPR}(t)\bigr)
+=\bigl(1-F^-(t),\ 1-F^+(t)\bigr) , \qquad t\in\Real ,
+\end{equation}
+as $t$ decreases from $+\infty$ to $-\infty$, and $\mathrm{AUC}$ is the area under it.
+\end{definition}
+
+\begin{theorem}[The area is a probability]\label{thm:auc}
+If $F^-$ is continuous and $S^+,S^-$ are independent, then
+\begin{equation}\label{eq:auc}
+\mathrm{AUC} = \prb\{S^+>S^-\} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Parametrise the curve by $u=\mathrm{FPR}(t)=1-F^-(t)$, which increases from $0$ to $1$ as
+$t$ decreases, continuously by hypothesis. The area under the curve is
+\[
+\mathrm{AUC} = \int_0^1 \mathrm{TPR}\,\dd u
+= \int_{\Real}\prb\{S^+>t\}\,\dd F^-(t)
+= \expc\bigl[\,g(S^-)\,\bigr] = \prb\{S^+>S^-\} ,
+\]
+where $g(t)=\prb\{S^+>t\}$. The change of variable is $u=1-F^-(t)$ with
+$\dd u=\dd F^-(t)$, the orientation reversing twice; the third equality is the definition of
+the expectation of $g(S^-)$; and the last is Fubini's theorem applied to the indicator of
+$\{S^+>S^-\}$ under the product law of the independent pair $(S^+,S^-)$.
+\end{proof}
+
+\begin{corollary}[Invariance and calibration]\label{cor:auc-invariance}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If $h$ is strictly increasing then the scores $s$ and $h\circ s$ have the same ROC
+      curve and the same $\mathrm{AUC}$.
+\item If $S^+$ and $S^-$ have the same distribution, $\mathrm{AUC}=1/2$.
+\item $\mathrm{AUC}$ does not depend on the proportion of positives in the sample.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(i) $\{h(S^+)>h(S^-)\}=\{S^+>S^-\}$ because $h$ is strictly increasing, so
+Theorem~\ref{thm:auc} gives the same number; the curve itself is the same set of points,
+reached at the transformed thresholds.
+(ii) By symmetry $\prb\{S^+>S^-\}=\prb\{S^->S^+\}$ and, $F^-$ being continuous, the two sum
+to $1$.
+(iii) Both $F^+$ and $F^-$ are conditional distributions given the class, so neither
+involves the class proportions.
+\end{proof}
+
+\begin{remark}
+Part (i) is why $\mathrm{AUC}$ measures \emph{ranking} and not calibration: replacing every
+fitted probability $\hat\pi$ by $\hat\pi/10$ leaves $\mathrm{AUC}$ untouched and destroys
+every probability statement the model makes. Part (iii) is why $\mathrm{AUC}$ is stable
+under imbalance while precision and accuracy are not: precision has $\mathrm{FP}$ in its
+denominator, and the number of negatives available to be misclassified grows with the
+imbalance.
+\end{remark}
+
+%==============================================================================
+\section{Multi-category Responses}\label{sec:7.3}
+%==============================================================================
+
+\begin{reading}
+FREES §11.5--11.6.
+\end{reading}
+
+Now $y_i$ takes values in $\{1,\ldots,c\}$ with $c\geqslant2$, and
+$\pi_{ij}=\prb\{y_i=j\mid\bx_i\}$, so that $\sum_{j=1}^c\pi_{ij}=1$. Write
+$y_{ij}=\indc\{y_i=j\}$. Since the $c$ indicators of one observation sum to $1$, the
+likelihood of that observation is $\prod_j\pi_{ij}^{y_{ij}}$ and
+\begin{equation}\label{eq:multi-lik}
+\ell = \sum_{i=1}^n\sum_{j=1}^c y_{ij}\ln\pi_{ij} .
+\end{equation}
+
+\subsection{Nominal responses: the generalised logit}\label{sec:7.3.1}
+
+\begin{definition}[Generalised logit]\label{def:genlogit}
+The \emph{generalised logit} model is
+\begin{equation}\label{eq:genlogit}
+\pi_{ij} = \frac{\exp(\bx_i'\bb_j)}{\sum_{k=1}^c\exp(\bx_i'\bb_k)} ,
+\qquad j=1,\ldots,c .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Identifiability and the baseline]\label{prop:baseline}
+Replacing every $\bb_j$ by $\bb_j+\ba$ leaves~\eqref{eq:genlogit} unchanged, for any
+$\ba\in\Real^p$. Hence only the differences $\bb_j-\bb_k$ are identified, the normalisation
+$\bb_c=\bzero$ costs nothing, and under it the model has $(c-1)p$ free parameters and
+\begin{equation}\label{eq:baseline-logodds}
+\ln\frac{\pi_{ij}}{\pi_{ic}} = \bx_i'\bb_j , \qquad j=1,\ldots,c-1 .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Multiplying numerator and denominator of~\eqref{eq:genlogit} by $\exp(-\bx_i'\ba)$ turns
+$\bb_k$ into $\bb_k+\ba$ throughout without changing the value. Taking $\ba=-\bb_c$ makes
+the last vector zero. The ratio $\pi_{ij}/\pi_{ic}$ is
+$\exp(\bx_i'\bb_j)/\exp(\bx_i'\bb_c)=\exp(\bx_i'\bb_j)$ under that normalisation.
+\end{proof}
+
+\begin{remark}
+So a coefficient in a generalised logit is a log odds \emph{against the baseline category},
+and its sign says nothing about $\prb\{y=j\}$ on its own: raising $\bx_i'\bb_j$ raises
+$\pi_{ij}$ only relative to $\pi_{ic}$, while every other $\pi_{ik}$ falls. Which category
+is the baseline is a labelling choice, and the fitted probabilities do not depend on it.
+\end{remark}
+
+\begin{proposition}[$c=2$ is logistic regression]\label{prop:genlogit-binary}
+With $c=2$ and $\bb_2=\bzero$, \eqref{eq:genlogit} is
+$\pi_{i1}=\Lambda(\bx_i'\bb_1)$.
+\end{proposition}
+
+\begin{proof}
+$\pi_{i1}=e^{\bx_i'\bb_1}/(e^{\bx_i'\bb_1}+1)=1/(1+e^{-\bx_i'\bb_1})$.
+\end{proof}
+
+\begin{theorem}[Score and concavity]\label{thm:genlogit-score}
+Under the normalisation $\bb_c=\bzero$, set
+\[
+\bb=(\bb_1',\ldots,\bb_{c-1}')' .
+\]
+Then
+\begin{equation}\label{eq:genlogit-score}
+\frac{\partial\ell}{\partial\bb_j} = \sum_{i=1}^n \bx_i\,(y_{ij}-\pi_{ij}) ,
+\qquad j=1,\ldots,c-1 ,
+\end{equation}
+and $\ell$ is concave in $\bb$.
+\end{theorem}
+
+\begin{proof}
+Under the normalisation, $\ln\pi_{ij}=\bx_i'\bb_j-A(\bV_i)$ with $\bV_i=(\bx_i'\bb_1,
+\ldots,\bx_i'\bb_{c-1})'$ and
+$A(\bv)=\ln\bigl(1+\sum_{k<c}e^{v_k}\bigr)$. Since $\sum_j y_{ij}=1$,
+\eqref{eq:multi-lik} becomes
+\begin{equation}\label{eq:multi-lik-2}
+\ell = \sum_{i=1}^n\Bigl\{\sum_{j<c}y_{ij}\,\bx_i'\bb_j - A(\bV_i)\Bigr\} .
+\end{equation}
+A direct computation gives $\partial A/\partial v_j=e^{v_j}/(1+\sum_{k<c}e^{v_k})=\pi_{ij}$,
+so the chain rule and $\partial\bV_i/\partial\bb_j=\bx_i$ give~\eqref{eq:genlogit-score}.
+
+For concavity, the map $\bb\mapsto\bV_i$ is linear, so it is enough that $A$ is convex.
+Differentiating once more,
+$\partial^2A/\partial v_j\partial v_k=\pi_{ij}(\delta_{jk}-\pi_{ik})$, so for
+$\bu\in\Real^{c-1}$,
+\[
+\bu'\nabla^2A\,\bu = \sum_{j<c}\pi_{ij}u_j^2-\Bigl(\sum_{j<c}\pi_{ij}u_j\Bigr)^2
+= \var(U) \geqslant 0 ,
+\]
+where $U$ is the random variable taking the value $u_j$ with probability $\pi_{ij}$ for
+$j<c$ and the value $0$ with probability $\pi_{ic}$: the first sum is $\expc[U^2]$ and the
+second is $(\expc[U])^2$. So $A$ is convex, $-A$ concave, and the linear part
+of~\eqref{eq:multi-lik-2} contributes nothing to curvature.
+\end{proof}
+
+\begin{corollary}\label{cor:genlogit-fitted}
+At the maximum likelihood estimate, $\sum_i x_{il}\hat\pi_{ij}=\sum_i x_{il}y_{ij}$ for
+every covariate $l$ and every $j<c$. With an intercept, the fitted category counts equal
+the observed ones.
+\end{corollary}
+
+\begin{proof}
+Set~\eqref{eq:genlogit-score} to zero and read coordinate $l$. With
+$x_{i0}\equiv1$ this is $\sum_i\hat\pi_{ij}=\sum_i y_{ij}$ for $j<c$, and the count for
+category $c$ follows because both sides sum to $n$ over $j$.
+\end{proof}
+
+\begin{theorem}[Independence of irrelevant alternatives]\label{thm:iia}
+Under~\eqref{eq:genlogit}, for any two categories $j\neq h$,
+\begin{equation}\label{eq:iia}
+\frac{\pi_{ij}}{\pi_{ih}} = \exp\bigl\{\bx_i'(\bb_j-\bb_h)\bigr\} ,
+\qquad
+\prb\{y_i=j\mid y_i\in\{j,h\}\} = \Lambda\bigl(\bx_i'(\bb_j-\bb_h)\bigr) ,
+\end{equation}
+neither of which involves any other category, its covariates, or its presence in the choice
+set.
+\end{theorem}
+
+\begin{proof}
+The denominator of~\eqref{eq:genlogit} cancels in the ratio, giving the first identity. For
+the second, $\prb\{y_i=j\mid y_i\in\{j,h\}\}=\pi_{ij}/(\pi_{ij}+\pi_{ih})$; dividing
+numerator and denominator by $\pi_{ih}$ and using the first identity gives
+$e^{u}/(1+e^{u})=\Lambda(u)$ with $u=\bx_i'(\bb_j-\bb_h)$.
+\end{proof}
+
+\begin{remark}
+The second identity of~\eqref{eq:iia} is a specification check that costs one extra fit:
+restrict the sample to the two categories, run a binary logistic regression, and compare
+its coefficients with $\hat\bb_j-\hat\bb_h$ from the full fit. Both estimate the same
+vector when the model holds (§\ref{sec:7.4.5}).
+
+The same identity is the model's substantive weakness. If two of the categories are close
+substitutes, adding one of them to the choice set should draw almost entirely from the
+other, and~\eqref{eq:iia} forbids that: the odds between any two categories are unaffected
+by what else is available.
+\end{remark}
+
+\subsection{Ordinal responses: the cumulative logit}\label{sec:7.3.2}
+
+\begin{definition}[Proportional odds model]\label{def:polr}
+Let $\alpha_1<\alpha_2<\cdots<\alpha_{c-1}$ and $\bb\in\Real^{k}$, the covariate vector
+$\bx_i$ now carrying no intercept. The \emph{cumulative logit}, or \emph{proportional
+odds}, model is
+\begin{equation}\label{eq:polr}
+\logit\,\prb\{y_i\leqslant j\mid\bx_i\} = \alpha_j + \bx_i'\bb ,
+\qquad j=1,\ldots,c-1 .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[It is a probability model exactly when the cut points are ordered]
+\label{prop:polr-order}
+Equation~\eqref{eq:polr} determines
+$\pi_{ij}=\Lambda(\alpha_j+\bx_i'\bb)-\Lambda(\alpha_{j-1}+\bx_i'\bb)$ with the conventions
+$\alpha_0=-\infty$, $\alpha_c=+\infty$. Every $\pi_{ij}$ is positive for every $\bx_i$ if
+and only if $\alpha_1<\cdots<\alpha_{c-1}$.
+\end{proposition}
+
+\begin{proof}
+$\pi_{ij}=\prb\{y_i\leqslant j\}-\prb\{y_i\leqslant j-1\}$, and applying $\Lambda$ to both
+sides of~\eqref{eq:polr} gives the displayed difference. $\Lambda$ is strictly increasing
+by Proposition~\ref{prop:logit-inverse}, so the difference is positive exactly when
+$\alpha_j>\alpha_{j-1}$; and this must hold for every $j$ and every $\bx_i$, the value of
+$\bx_i'\bb$ being irrelevant since it is added to both cut points.
+\end{proof}
+
+\begin{theorem}[Latent representation]\label{thm:polr-latent}
+Let $y_i^\ast=-\bx_i'\bb+\varepsilon_i$ with $\varepsilon_i$ standard logistic, and set
+$y_i=j$ when $\alpha_{j-1}<y_i^\ast\leqslant\alpha_j$. Then~\eqref{eq:polr} holds. Taking
+$\varepsilon_i$ standard normal instead gives the \emph{cumulative probit} model
+$\prb\{y_i\leqslant j\}=\Phi(\alpha_j+\bx_i'\bb)$.
+\end{theorem}
+
+\begin{proof}
+$\prb\{y_i\leqslant j\}=\prb\{y_i^\ast\leqslant\alpha_j\}
+=\prb\{\varepsilon_i\leqslant\alpha_j+\bx_i'\bb\}=\Lambda(\alpha_j+\bx_i'\bb)$, and
+applying $\logit$ gives~\eqref{eq:polr}. The probit statement is the same computation with
+$\Phi$ in place of $\Lambda$.
+\end{proof}
+
+\begin{theorem}[Why ``proportional odds'']\label{thm:prop-odds}
+Under~\eqref{eq:polr}, for every cut point $j$ the cumulative odds satisfy
+\begin{equation}\label{eq:prop-odds}
+\frac{\odds\{y_i\leqslant j\mid x_{il}+1\}}{\odds\{y_i\leqslant j\mid x_{il}\}}
+= e^{\beta_l} ,
+\end{equation}
+the other covariates held fixed. The ratio is the same at every $j$: that constancy is the
+content of the model, and it is a restriction, not a consequence of the ordering.
+\end{theorem}
+
+\begin{proof}
+By~\eqref{eq:polr}, $\ln\odds\{y_i\leqslant j\}=\alpha_j+\bx_i'\bb$. Subtracting the same
+identity with $x_{il}$ in place of $x_{il}+1$ leaves $\beta_l$, and $\alpha_j$ cancels;
+exponentiating gives~\eqref{eq:prop-odds}, free of $j$.
+\end{proof}
+
+\begin{corollary}[A diagnostic]\label{cor:polr-check}
+Under~\eqref{eq:polr}, for each $j$ the dichotomised response $\indc\{y_i\leqslant j\}$
+follows a binary logistic regression on $\bx_i$ with intercept $\alpha_j$ and slope vector
+$\bb$, the \emph{same} $\bb$ for every $j$. Fitting the $c-1$ dichotomisations separately
+therefore produces $c-1$ estimates of one vector.
+\end{corollary}
+
+\begin{proof}
+$\prb\{\indc\{y_i\leqslant j\}=1\mid\bx_i\}=\Lambda(\alpha_j+\bx_i'\bb)$ by
+Proposition~\ref{prop:polr-order}, which is Definition~\ref{def:binreg} with response
+function $\Lambda$ and linear predictor $\alpha_j+\bx_i'\bb$.
+\end{proof}
+
+\begin{remark}
+Corollary~\ref{cor:polr-check} is how proportional odds is checked: the $c-1$ separate
+slope vectors should agree up to sampling error, and a systematic drift across $j$ says the
+restriction is wrong. The generalised logit of §\ref{sec:7.3.1} is not a nesting model for
+the proportional odds model, since neither family contains the other, so the two are
+compared by an information criterion rather than by a likelihood ratio test
+(§\ref{sec:7.4.6}).
+\end{remark}
+
+\begin{remark}[Two sign conventions]
+FREES writes the model as in~\eqref{eq:polr}, with $+\bx_i'\bb$. R's \texttt{MASS::polr}
+fits $\logit\,\prb\{y\leqslant j\}=\zeta_j-\bx_i'\bgamma$, so that
+$\bgamma=-\bb$ and $\zeta_j=\alpha_j$: a positive \texttt{polr} coefficient pushes the
+response towards \emph{higher} categories. The two parametrisations give the same fitted
+probabilities and the same log-likelihood, and §\ref{sec:7.4.6} checks that they do.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:7.4}
+%==============================================================================
+
+\begin{reading}
+FREES §11.4.
+\end{reading}
+
+Binary data: \texttt{Default} from \texttt{ISLR2}, default on balance, income and student
+status. Multi-category data: \texttt{Wage} from \texttt{ISLR2}, marital status (nominal)
+and education (ordinal).
+
+<<data-setup>>=
+suppressMessages({library(ISLR2); library(MASS); library(nnet)
+                  library(sandwich)})
+d <- Default; n <- nrow(d); y <- as.numeric(d$default == "Yes")
+ctl <- glm.control(epsilon = 1e-14, maxit = 100)   # tighter than the default
+c(n = n, defaults = sum(y), rate = mean(y))
+@
+
+\subsection{The linear probability model (§\ref{sec:7.1.1})}\label{sec:7.4.1}
+
+<<lpm>>=
+lp <- lm(y ~ balance + income + student, data = d); fv <- fitted(lp)
+c(min_fitted = min(fv), max_fitted = max(fv),
+  fitted_outside_01 = sum(fv < 0 | fv > 1),
+  implied_variance_negative = sum(fv*(1 - fv) < 0), of = n)
+@
+
+Nearly a third of the fitted probabilities are negative, and by
+Proposition~\ref{prop:lpm-defects}(iii) each of those carries a negative implied variance.
+The heteroscedasticity is real but repairable, by the robust standard errors of Unit 4.
+
+<<lpm-robust>>=
+rb <- sqrt(diag(vcovHC(lp, type = "HC1")))
+round(cbind(OLS_se = coef(summary(lp))[, 2], robust_se = rb,
+            ratio = rb/coef(summary(lp))[, 2]), 6)
+@
+
+\subsection{Score, information, IRLS (§\ref{sec:7.1.3}, §\ref{sec:7.1.4})}\label{sec:7.4.2}
+
+<<logistic-fit>>=
+g <- glm(y ~ balance + income + student, data = d, family = binomial,
+         control = ctl)
+X <- model.matrix(g); b <- coef(g); p <- drop(plogis(X %*% b))
+U <- drop(crossprod(X, y - p))           # score: X'(y - pi)
+Info <- t(X) %*% (p*(1 - p) * X)         # information: X'WX
+c(max_abs_score = max(abs(U)), largest_column_entry = max(abs(X)),
+  se_manual_vs_glm = max(abs(sqrt(diag(solve(Info))) -
+                             summary(g)$coefficients[, 2])),
+  smallest_se = min(summary(g)$coefficients[, 2]))
+@
+
+Corollary~\ref{cor:score-eq} is an exact arithmetic identity at the optimum, not an
+approximation: the fitted probabilities reproduce the observed counts overall and within
+each level of any $0/1$ covariate.
+
+<<score-identity>>=
+c(defaults = sum(y), fitted_total = sum(p),
+  student_defaults = sum(y[d$student == "Yes"]),
+  student_fitted = sum(p[d$student == "Yes"]))
+@
+
+Theorem~\ref{thm:irls} says the whole fit is a sequence of weighted least squares steps.
+
+<<irls>>=
+irls <- function(X, y, tol = 1e-13) {
+  b <- rep(0, ncol(X))
+  repeat {
+    eta <- drop(X %*% b); mu <- plogis(eta); w <- mu*(1 - mu)
+    z  <- eta + (y - mu)/w                       # working response
+    bn <- drop(solve(t(X) %*% (w*X), crossprod(X, w*z)))
+    if (max(abs(bn - b)) < tol) return(bn)
+    b <- bn
+  }
+}
+c(irls_vs_glm = max(abs(irls(X, y) - b)), coefficient_scale = max(abs(b)))
+@
+
+\subsection{Odds ratios, and probit against logit (§\ref{sec:7.1.2})}\label{sec:7.4.3}
+
+A unit of \texttt{balance} is one dollar, so its odds ratio per unit is uninformative;
+Theorem~\ref{thm:odds-ratio} applies to any increment, and one standard deviation is the
+readable one.
+
+<<odds-ratios>>=
+sdx <- c(1, sd(d$balance), sd(d$income), 1)
+round(rbind(coefficient = b, odds_ratio_per_unit = exp(b),
+            odds_ratio_per_sd = exp(b*sdx)), 4)
+@
+
+<<probit>>=
+gp <- glm(y ~ balance + income + student, data = d, control = ctl,
+          family = binomial(link = "probit"))
+round(rbind(logit = b, probit = coef(gp), ratio = b/coef(gp)), 5)
+c(slope_match_factor = 4/sqrt(2*pi), sd_match_factor = pi/sqrt(3))
+@
+
+Neither calibration factor of Proposition~\ref{prop:logit-probit} reproduces the observed
+ratios. The three coefficients that are estimated with any precision give ratios near $2$;
+\texttt{income} has $p=0.71$ in both fits, so its ratio of $1.44$ is noise. The two
+response functions differ most in the tails, and this response is positive $3.3\%$ of the
+time, so the fit is determined far from $\pi=1/2$, which is where both factors are
+computed.
+
+\begin{figure}[H]\centering
+<<links-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 1.6, 0.8), cex = 0.85)
+z <- seq(-6, 6, length.out = 601)
+plot(z, plogis(z), type = "l", lwd = 2, col = "#B45309", ylab = expression(F(z)),
+     xlab = "z", main = "response functions")
+lines(z, pnorm(z), lwd = 2, col = "#1E3A8A", lty = 2)
+lines(z, pnorm(z/(pi/sqrt(3))), lwd = 2, col = "#15803D", lty = 3)
+legend("topleft", c("logistic", "probit", "probit, sd matched"), bty = "n",
+       lwd = 2, lty = 1:3, col = c("#B45309", "#1E3A8A", "#15803D"), cex = 0.8)
+plot(z, plogis(z)*(1 - plogis(z)), type = "l", lwd = 2, col = "#B45309",
+     xlab = "z", ylab = "weight", main = "information weights", ylim = c(0, 0.42))
+lines(z, dnorm(z), lwd = 2, col = "#1E3A8A", lty = 2)
+abline(v = 0, col = "grey85")
+par(op)
+@
+\caption{Left: the two response functions of~\eqref{eq:two-links}, and the probit rescaled
+by $\pi/\sqrt3$ so that the latent errors have equal standard deviation
+(Proposition~\ref{prop:logit-probit}). Right: the weights $w_i$ each observation receives
+in the information matrix of Theorem~\ref{thm:score-info}, largest where the outcome is
+most uncertain.}\label{fig:links}
+\end{figure}
+
+\subsection{Wald, likelihood ratio, deviance (§\ref{sec:7.2.1}--§\ref{sec:7.2.2})}
+\label{sec:7.4.4}
+
+<<wald-lr>>=
+g0 <- glm(y ~ balance + income, data = d, family = binomial, control = ctl)
+V  <- solve(Info); j <- which(names(b) == "studentYes")
+W  <- unname(b[j]^2 / V[j, j]); LR <- as.numeric(2*(logLik(g) - logLik(g0)))
+c(Wald = W, z_statistic_squared = summary(g)$coefficients[j, 3]^2,
+  LR = LR, deviance_drop = deviance(g0) - deviance(g),
+  p_Wald = pchisq(W, 1, lower.tail = FALSE),
+  p_LR = pchisq(LR, 1, lower.tail = FALSE))
+@
+
+The two statistics test the same hypothesis and are both $\chi^2_1$ in the limit
+(Corollary~\ref{cor:tests}), but they are different numbers in finite samples, here
+$7.494$ against $7.421$. The likelihood ratio equals the drop in deviance exactly, which is
+Proposition~\ref{prop:deviance}.
+
+<<deviance>>=
+c(deviance = deviance(g), minus_2_loglik = -2*as.numeric(logLik(g)),
+  residual_df = n - length(b), null_deviance = g$null.deviance,
+  AIC_manual = -2*as.numeric(logLik(g)) + 2*length(b), AIC = AIC(g))
+@
+
+The deviance is $-2\ell(\hat\bb)$ to machine precision, as
+Proposition~\ref{prop:deviance} requires, and it is nowhere near its residual degrees of
+freedom: for ungrouped binary data that comparison carries no information about fit.
+
+\subsection{Classification and ROC (§\ref{sec:7.2.3}--§\ref{sec:7.2.4})}\label{sec:7.4.5}
+
+<<confusion>>=
+s <- fitted(g)
+tab <- t(sapply(c(0.5, 0.2, 1/11, mean(y)), function(t) {
+  yh <- as.numeric(s > t)
+  TN <- sum(yh == 0 & y == 0); FP <- sum(yh == 1 & y == 0)
+  FN <- sum(yh == 0 & y == 1); TP <- sum(yh == 1 & y == 1)
+  c(threshold = t, TN = TN, FP = FP, FN = FN, TP = TP,
+    sensitivity = TP/(TP + FN), specificity = TN/(TN + FP),
+    precision = TP/(TP + FP), accuracy = (TP + TN)/length(y)) }))
+round(tab, 4)
+c(accuracy_of_predicting_zero_always = 1 - mean(y))
+@
+
+At the conventional threshold the rule finds $31.5\%$ of the defaults and is $97.3\%$
+accurate, against $96.7\%$ for the rule that never predicts a default: almost all of the
+accuracy comes from the class proportions. The third row is the cost-optimal threshold of
+Theorem~\ref{thm:cost-threshold} when a missed default costs ten times a false alarm.
+
+Theorem~\ref{thm:auc} and Corollary~\ref{cor:auc-invariance} give five routes to one number.
+
+<<auc>>=
+np <- sum(y == 1); nn <- sum(y == 0)
+rank_auc <- function(v) (sum(rank(v)[y == 1]) - np*(np + 1)/2)/(np*nn)
+thr <- sort(unique(c(-Inf, s, Inf)), decreasing = TRUE)
+tpr <- sapply(thr, function(t) mean(s[y == 1] > t))
+fpr <- sapply(thr, function(t) mean(s[y == 0] > t))
+c(rank_form = rank_auc(s),
+  wilcoxon = unname(wilcox.test(s[y == 1], s[y == 0])$statistic)/(np*nn),
+  trapezoid = sum(diff(fpr)*(head(tpr, -1) + tail(tpr, -1))/2),
+  on_the_logit_scale = rank_auc(log(s/(1 - s))),
+  after_dividing_by_ten = rank_auc(s/10))
+@
+
+\begin{figure}[H]\centering
+<<roc-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+lo <- log(s/(1 - s))
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 1.6, 0.8), cex = 0.85)
+d0 <- density(lo[y == 0]); d1 <- density(lo[y == 1])
+plot(d0, lwd = 2, col = "#1E3A8A", xlim = range(lo),
+     ylim = c(0, max(d0$y, d1$y)), main = "linear predictor by class",
+     xlab = expression(hat(eta)), ylab = "density")
+lines(d1, lwd = 2, col = "#B45309")
+for (t0 in c(0.5, 0.2, 1/11)) abline(v = log(t0/(1 - t0)), lty = 3, col = "grey45")
+legend("topright", c("y = 0", "y = 1"), bty = "n", lwd = 2,
+       col = c("#1E3A8A", "#B45309"), cex = 0.8)
+plot(fpr, tpr, type = "l", lwd = 2, col = "#B45309", asp = 1,
+     xlab = "1 - specificity", ylab = "sensitivity", main = "ROC")
+abline(0, 1, lty = 3, col = "grey55")
+for (t0 in c(0.5, 0.2, 1/11)) {
+  points(mean(s[y == 0] > t0), mean(s[y == 1] > t0), pch = 19, col = "#1E3A8A")
+  text(mean(s[y == 0] > t0), mean(s[y == 1] > t0), sprintf(" %.2f", t0),
+       pos = 4, cex = 0.75) }
+par(op)
+@
+\caption{Left: the fitted linear predictor by observed class, with the three thresholds of
+the table marked. Right: the ROC curve~\eqref{eq:roc} with the same three thresholds; the
+dotted diagonal is the curve of a score carrying no information
+(Corollary~\ref{cor:auc-invariance}(ii)).}\label{fig:roc}
+\end{figure}
+
+Theorem~\ref{thm:cost-threshold} is a statement about the true conditional probability, so
+it is checked on data simulated from a known logistic model.
+
+<<cost-threshold>>=
+set.seed(3); N <- 200000
+xg <- rnorm(N); pt <- plogis(-2 + 1.5*xg); yg <- rbinom(N, 1, pt)
+grid <- seq(0.005, 0.9, by = 0.005)
+t(sapply(c(1, 5, 10, 50), function(r) {
+  cs <- sapply(grid, function(t) {
+    yh <- as.numeric(pt > t)
+    r*sum(yh == 0 & yg == 1) + sum(yh == 1 & yg == 0) })
+  c(cost_ratio = r, empirical_argmin = grid[which.min(cs)],
+    theory = 1/(1 + r)) }))
+@
+
+\subsection{Nominal responses (§\ref{sec:7.3.1})}\label{sec:7.4.6}
+
+<<multinom>>=
+w <- Wage
+m <- multinom(maritl ~ age + education, data = w, trace = FALSE)
+B <- coef(m); Xm <- model.matrix(~ age + education, data = w)
+Vm <- cbind(0, Xm %*% t(B)); Pm <- exp(Vm)/rowSums(exp(Vm))
+P  <- predict(m, type = "probs"); yi <- as.integer(w$maritl)
+c(rows_sum_to_one = max(abs(rowSums(P) - 1)),
+  manual_vs_predict = max(abs(Pm - P)),
+  manual_loglik = sum(log(Pm[cbind(seq_len(nrow(Pm)), yi)])),
+  multinom_loglik = as.numeric(logLik(m)),
+  free_parameters = length(B),
+  c_minus_1_times_p = (nlevels(w$maritl) - 1)*ncol(Xm))
+@
+
+Corollary~\ref{cor:genlogit-fitted} again holds exactly, and
+Proposition~\ref{prop:baseline} says the choice of baseline is immaterial.
+
+<<multinom-checks>>=
+Y <- model.matrix(~ maritl - 1, data = w)
+rbind(observed = colSums(Y), fitted = colSums(P))
+w2 <- w; w2$maritl <- relevel(w$maritl, ref = "3. Widowed")
+m2 <- multinom(maritl ~ age + education, data = w2, trace = FALSE)
+c(max_probability_difference =
+    max(abs(predict(m2, type = "probs")[, levels(w$maritl)] - P)),
+  loglik_original = as.numeric(logLik(m)),
+  loglik_rebased = as.numeric(logLik(m2)))
+@
+
+Theorem~\ref{thm:iia} says the conditional model on two categories is a binary logistic
+regression with coefficient $\bb_j-\bb_h$, so restricting the sample must reproduce the
+difference of the full fit.
+
+<<iia-check>>=
+sub <- droplevels(subset(w, maritl %in% c("2. Married", "4. Divorced")))
+gb  <- glm(I(maritl == "4. Divorced") ~ age + education, data = sub,
+           family = binomial)
+round(rbind(from_the_multinomial = B["4. Divorced", ] - B["2. Married", ],
+            two_category_logistic = coef(gb)), 4)
+@
+
+\subsection{Ordinal responses (§\ref{sec:7.3.2})}\label{sec:7.4.7}
+
+<<polr>>=
+o  <- polr(education ~ age + jobclass + health, data = w, Hess = TRUE)
+Xo <- model.matrix(~ age + jobclass + health, data = w)[, -1, drop = FALSE]
+al <- unname(o$zeta); bb <- -unname(o$coefficients)  # FREES parametrisation
+cum <- sapply(al, function(a) plogis(a + drop(Xo %*% bb)))
+pm  <- cbind(cum, 1) - cbind(0, cum); yo <- as.integer(w$education)
+c(manual_loglik = sum(log(pm[cbind(seq_len(nrow(pm)), yo)])),
+  polr_loglik = as.numeric(logLik(o)),
+  probabilities_vs_predict = max(abs(pm - predict(o, type = "probs"))),
+  cut_points_increasing = all(diff(al) > 0))
+round(rbind(beta_of_equation_polr = bb,
+            gamma_reported_by_polr = unname(o$coefficients)), 5)
+@
+
+Corollary~\ref{cor:polr-check}: the four dichotomisations $\indc\{y\leqslant j\}$ are
+logistic regressions sharing one slope vector under the model.
+
+<<polr-check>>=
+sep <- sapply(1:4, function(j)
+  coef(glm(I(as.integer(education) <= j) ~ age + jobclass + health,
+           data = w, family = binomial))[-1])
+colnames(sep) <- paste0("y<=", 1:4)
+round(cbind(sep, proportional_odds = bb), 4)
+@
+
+The slopes drift steadily across the cut points instead of agreeing, so the proportional
+odds restriction is doubtful here. The two families are not nested
+(§\ref{sec:7.3.2}), so they are compared by an information criterion.
+
+<<polr-vs-multinom>>=
+mo <- multinom(education ~ age + jobclass + health, data = w, trace = FALSE)
+c(polr_loglik = as.numeric(logLik(o)),
+  polr_parameters = length(coef(o)) + length(o$zeta), polr_AIC = AIC(o),
+  multinom_loglik = as.numeric(logLik(mo)),
+  multinom_parameters = length(coef(mo)), multinom_AIC = AIC(mo))
+@
+
+%==============================================================================
+\section{Pitfalls}\label{sec:7.5}
+%==============================================================================
+
+\subsection{Reading a separated fit as a strong effect}\label{sec:7.5.1}
+
+Theorem~\ref{thm:separation} says that when a linear combination of the covariates
+separates the two outcomes the maximum likelihood estimate does not exist. Software returns
+a number anyway.
+
+<<pitfall-separation>>=
+xs <- c(1, 2, 3, 4, 5, 6); ys <- c(0, 0, 0, 1, 1, 1)
+gs <- suppressWarnings(glm(ys ~ xs, family = binomial))
+c(slope = unname(coef(gs)[2]), se = summary(gs)$coefficients[2, 2],
+  z = summary(gs)$coefficients[2, 3], deviance = deviance(gs),
+  iterations = gs$iter, min_fitted = min(fitted(gs)),
+  max_fitted = max(fitted(gs)))
+loglik <- function(t) { z <- t*(xs - 3.5)
+  sum(ys*plogis(z, log.p = TRUE) + (1 - ys)*plogis(-z, log.p = TRUE)) }
+rbind(slope = c(1, 5, 20, 100, 1000),
+      loglik = sapply(c(1, 5, 20, 100, 1000), loglik))
+@
+
+\textbf{Diagnostic.} A very large coefficient with a far larger standard error, a $z$
+statistic near zero, a residual deviance near zero, fitted probabilities at $0$ and $1$,
+and the iteration limit approached.
+\textbf{Fix.} Report the separation itself, which is the finding; or penalise the
+likelihood, for instance by the ridge penalty of Unit 6 applied to $\ell$, which restores a
+maximum because the penalised objective is coercive.
+
+\subsection{Comparing coefficients across models}\label{sec:7.5.2}
+
+In the linear model, dropping a covariate that is independent of the others leaves their
+coefficients alone (Unit 3). Logistic coefficients move anyway.
+
+\begin{proposition}[Non-collapsibility]\label{prop:noncollapse}
+Let $x_2$ take the values $\pm1$ with probability $\tfrac12$ each, independently of $x_1$,
+and let $\prb\{y=1\mid x_1,x_2\}=\Lambda(\beta_1x_1+\beta_2x_2)$. Then
+$\prb\{y=1\mid x_1\}=\Psi(\beta_1x_1)$ with
+$\Psi(u)=\tfrac12\{\Lambda(u+\beta_2)+\Lambda(u-\beta_2)\}$, and
+\begin{equation}\label{eq:noncollapse}
+\frac{\partial}{\partial x_1}\logit\,\prb\{y=1\mid x_1\}\Big|_{x_1=0}
+= 4\Lambda'(\beta_2)\,\beta_1
+= \frac{4e^{\beta_2}}{(1+e^{\beta_2})^2}\,\beta_1 ,
+\end{equation}
+whose modulus is strictly less than $|\beta_1|$ unless $\beta_2=0$.
+\end{proposition}
+
+\begin{proof}
+The tower property gives
+$\prb\{y=1\mid x_1\}=\expc[\Lambda(\beta_1x_1+\beta_2x_2)\mid x_1]=\Psi(\beta_1x_1)$, the
+independence of $x_1$ and $x_2$ being what removes $x_1$ from the averaging. Write
+$q(x_1)=\Psi(\beta_1x_1)$. Then
+$\partial\logit q/\partial x_1=q'/\{q(1-q)\}$ with $q'=\beta_1\Psi'(\beta_1x_1)$. At
+$x_1=0$, $\Lambda(\beta_2)+\Lambda(-\beta_2)=1$ by Proposition~\ref{prop:logit-inverse}, so
+$q=\tfrac12$ and $q(1-q)=\tfrac14$. Also $\Lambda'$ is even, since
+$\Lambda'(-z)=\Lambda(-z)\{1-\Lambda(-z)\}=\{1-\Lambda(z)\}\Lambda(z)$, so
+$\Psi'(0)=\tfrac12\{\Lambda'(\beta_2)+\Lambda'(-\beta_2)\}=\Lambda'(\beta_2)$, giving
+\eqref{eq:noncollapse}. Finally $4\Lambda'(t)=4e^{t}/(1+e^{t})^2$ equals $1$ at $t=0$ and is
+strictly smaller elsewhere, because $(1+e^t)^2-4e^t=(1-e^t)^2>0$ for $t\neq0$.
+\end{proof}
+
+<<pitfall-collapse>>=
+b1 <- 1
+t(sapply(c(0.5, 1, 2, 3), function(b2) {
+  Psi <- function(u) (plogis(u + b2) + plogis(u - b2))/2
+  h <- 1e-5
+  c(beta2 = b2,
+    numeric_slope = (qlogis(Psi(b1*h)) - qlogis(Psi(-b1*h)))/(2*h),
+    formula = 4*plogis(b2)*(1 - plogis(b2))*b1) }))
+@
+
+<<pitfall-collapse-sim>>=
+set.seed(9); N <- 400000; x1 <- rnorm(N)
+t(sapply(c(0, 1, 2, 3), function(b2) {
+  x2 <- sample(c(-1, 1), N, TRUE)
+  yy <- rbinom(N, 1, plogis(b1*x1 + b2*x2))
+  c(beta2 = b2,
+    logistic_with_x2 = coef(glm(yy ~ x1 + x2, family = binomial))[2],
+    logistic_without = coef(glm(yy ~ x1, family = binomial))[2],
+    linear_with_x2 = coef(lm(yy ~ x1 + x2))[2],
+    linear_without = coef(lm(yy ~ x1))[2]) }))
+@
+
+\textbf{Diagnostic.} A logistic coefficient that changes when an unrelated covariate is
+added or removed, with no correlation between the two covariates to blame.
+\textbf{Fix.} Do not read the change as confounding: it is the odds ratio failing to be
+collapsible. Compare models on the probability scale, through fitted values or average
+marginal effects, or fix the covariate set before interpreting anything.
+
+\subsection{Accuracy at threshold one half}\label{sec:7.5.3}
+
+<<pitfall-accuracy>>=
+c(accuracy_at_half = mean((s > 0.5) == (y == 1)),
+  accuracy_predicting_zero = mean(y == 0),
+  sensitivity_at_half = sum(s > 0.5 & y == 1)/sum(y == 1),
+  AUC = rank_auc(s))
+@
+
+\textbf{Diagnostic.} High accuracy on an imbalanced response, with sensitivity far below
+it, and a threshold that was never chosen but inherited.
+\textbf{Fix.} Choose the threshold from the costs by Theorem~\ref{thm:cost-threshold}, and
+report sensitivity and specificity, or the whole ROC curve, alongside any single number.
+Accuracy is the average of specificity and sensitivity weighted by the class proportions,
+here $0.967$ and $0.033$, so a rule can be accurate while finding almost none of the
+positives.
+
+\subsection{Assuming proportional odds}\label{sec:7.5.4}
+
+The restriction of Theorem~\ref{thm:prop-odds} is testable and is frequently false. Fitting
+\texttt{polr} without checking it produces one slope where the data ask for several, and
+the single slope is an average that describes no cut point.
+
+<<pitfall-polr>>=
+round(cbind(sep, proportional_odds = bb), 4)
+c(jobclass_slope_max_over_min = max(abs(sep[2, ]))/min(abs(sep[2, ])),
+  polr_AIC = AIC(o), multinom_AIC = AIC(mo))
+@
+
+\textbf{Diagnostic.} Slopes from the $c-1$ dichotomisations that drift monotonically across
+$j$ rather than scattering about a common value.
+\textbf{Fix.} Report the separate fits, or use the generalised logit, which imposes no
+ordering and no common slope, at the cost of $(c-2)k$ extra parameters and of discarding
+the ordering that the response actually has.
+
+%==============================================================================
+\section{Exercises}\label{sec:7.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:lpm}
+Give three reasons not to model a binary response by least squares on the covariates, and
+say which of them a weighted least squares fit repairs.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:lpm-defects}: (i) the fitted mean is a probability but
+$\bx'\bb$ is unbounded, so the model cannot hold over the whole covariate space and the
+fitted values need not lie in $[0,1]$; (ii) the errors are heteroscedastic by construction,
+with variance $\pi_i(1-\pi_i)$; (iii) where a fitted value leaves $[0,1]$ the variance the
+model itself implies is negative.
+
+Weighted least squares with weights $1/\{\pi_i(1-\pi_i)\}$, or the robust standard errors
+of Unit 4, repair (ii) alone. Defects (i) and (iii) are properties of the mean
+specification and survive any reweighting.
+\end{solution}
+
+\begin{exercise}\label{ex:odds}
+A logistic regression of default on a $0/1$ indicator of being a student gives coefficient
+$0.40$. State the odds ratio, and compute the change in the probability of default that
+this implies for a customer whose probability is $0.02$ and for one whose probability is
+$0.50$.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:odds-ratio}(i) the odds ratio is $e^{0.40}=1.492$: the odds of default
+are about $49\%$ higher for students.
+
+For the probabilities, work on the odds scale. At $\pi=0.02$ the odds are
+$0.02/0.98=0.02041$; multiplying by $1.492$ gives $0.03046$, hence
+$\pi'=0.03046/1.03046=0.02956$, a rise of $0.0096$. At $\pi=0.50$ the odds are $1$;
+multiplying gives $1.492$ and $\pi'=1.492/2.492=0.5987$, a rise of $0.0987$, ten times as
+large. The derivative approximation of Theorem~\ref{thm:odds-ratio}(iii) predicts
+$0.40\times0.02\times0.98=0.0078$ and $0.40\times0.25=0.10$ respectively, close in the
+second case and less so in the first, where the change is not small on the odds scale.
+\end{solution}
+
+\begin{exercise}\label{ex:concave}
+Prove that the logistic log-likelihood is concave, and that the probit log-likelihood is
+too. Where does the probit argument need a bound on the normal tail?
+\end{exercise}
+
+\begin{solution}
+Both are Theorem~\ref{thm:concavity}. For the logistic case
+$(\ln\Lambda)''=-\Lambda(1-\Lambda)<0$ directly. For the probit case the requirement
+reduces to $\eta\Phi(\eta)+\phi(\eta)>0$ for every $\eta$, which is immediate for
+$\eta\geqslant0$ and, for $\eta=-t<0$, is the Mills bound $1-\Phi(t)<\phi(t)/t$. That bound
+is proved by writing $1-\Phi(t)=\int_t^\infty\phi$ and using $s/t>1$ on $(t,\infty)$ to
+compare with $\int_t^\infty(s/t)\phi(s)\,\dd s=\phi(t)/t$. The tail bound is exactly what
+rules out the log-likelihood turning convex far out in the tail, where $\Phi$ is
+exponentially small and its logarithm behaves like $-\eta^2/2$.
+\end{solution}
+
+\begin{exercise}\label{ex:separation}
+Six observations have $x=1,\ldots,6$ and $y=0,0,0,1,1,1$. Show that no maximum likelihood
+estimate exists, and say what a package reports.
+\end{exercise}
+
+\begin{solution}
+Take $\bc=(-3.5,1)'$, so that $\bx_i'\bc=x_i-3.5$, which is negative for $x_i\leqslant3$
+and positive for $x_i\geqslant4$: the data are separated in the sense
+of~\eqref{eq:separation}. By Theorem~\ref{thm:separation} the log-likelihood along $t\bc$
+increases strictly to $0$, and since $\ell<0$ everywhere the supremum $0$ is not attained.
+
+A package stops at its iteration or tolerance limit and reports a large coefficient with a
+much larger standard error, a residual deviance numerically zero, and fitted probabilities
+of exactly $0$ and $1$; §\ref{sec:7.5.1} prints all four.
+\end{solution}
+
+\begin{exercise}\label{ex:irls}
+Show that the Newton step for the logistic model is a weighted least squares fit, identify
+the weights and the working response, and say why Newton--Raphson and Fisher scoring
+coincide here.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:irls}: the weights are $w_i=\pi_i(1-\pi_i)$ and the working response is
+$z_i=\eta_i+(y_i-\pi_i)/w_i$, and the update is $(\bX'\bW\bX)^{-1}\bX'\bW\bz$. The two
+algorithms coincide because for the logistic model the Hessian
+$-\nabla^2\ell=\sum_i\pi_i(1-\pi_i)\bx_i\bx_i'$ contains no $y_i$
+(Theorem~\ref{thm:score-info}), so the observed information already equals the expected
+information and there is nothing for Fisher scoring to replace.
+\end{solution}
+
+\begin{exercise}\label{ex:wald-lr}
+A logistic fit reports $\hat\beta=0.65$ with standard error $0.24$; dropping the variable
+raises the deviance by $7.10$. Compute the Wald statistic and the likelihood ratio
+statistic, and explain why they differ.
+\end{exercise}
+
+\begin{solution}
+$W=(0.65/0.24)^2=7.335$ and $\mathit{LR}=7.10$, the latter because a deviance difference
+between nested models \emph{is} the likelihood ratio statistic
+(Proposition~\ref{prop:deviance}). Both are referred to $\chi^2_1$, giving $p=0.0068$ and
+$p=0.0077$.
+
+They differ because they are different functions of the data that happen to share a
+limiting distribution (Corollary~\ref{cor:tests}). The Wald statistic uses a quadratic
+approximation to $\ell$ centred at $\hat\bb$, and the likelihood ratio uses the actual
+heights of the two maximised log-likelihoods; the approximation is exact only when $\ell$
+is exactly quadratic, which it is not. The gap grows with $|\hat\beta|$, and in the
+separated case of Theorem~\ref{thm:separation} the Wald statistic collapses to nearly zero
+while the likelihood ratio does not.
+\end{solution}
+
+\begin{exercise}\label{ex:deviance}
+For $n=500$ ungrouped binary observations and a model with $p=6$ parameters, the residual
+deviance is $412$. Is the model adequate?
+\end{exercise}
+
+\begin{solution}
+The question cannot be answered from that number. By Proposition~\ref{prop:deviance} the
+deviance of an ungrouped binary fit is $-2\ell(\hat\bb)$, a function of the fitted
+probabilities alone; the saturated model it is measured against has one parameter per
+observation, so its parameter count grows with $n$ and the asymptotics behind the
+$\chi^2$ approximation do not apply. Comparing $412$ with $n-p=494$ is meaningless.
+
+What is available: differences of deviances between nested models, which are likelihood
+ratio statistics, and out-of-sample assessment.
+\end{solution}
+
+\begin{exercise}\label{ex:threshold}
+A missed default costs $20$ times a false alarm. What threshold should the fitted
+probability be compared against, and what happens to sensitivity and specificity as the
+cost ratio grows?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:cost-threshold}, $t^\ast=c_{10}/(c_{10}+c_{01})=1/21=0.0476$.
+
+As $c_{01}/c_{10}$ grows the threshold falls towards $0$, so more cases are predicted
+positive: $\mathrm{TP}$ and $\mathrm{FP}$ both increase, sensitivity increases towards $1$
+and specificity falls towards $0$. In the limit every case is predicted positive, which is
+optimal when a miss is infinitely expensive. The ROC curve is the locus of the attainable
+pairs, and moving the threshold moves along it.
+\end{solution}
+
+\begin{exercise}\label{ex:auc}
+Show that the area under the ROC curve equals $\prb\{S^+>S^-\}$, and deduce that dividing
+every fitted probability by $10$ leaves the area unchanged. Is that a virtue?
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:auc}: parametrise the curve by $u=1-F^-(t)$, so that
+$\mathrm{AUC}=\int\prb\{S^+>t\}\,\dd F^-(t)=\prb\{S^+>S^-\}$ by independence and
+conditioning on $S^-$. Since $s\mapsto s/10$ is strictly increasing,
+Corollary~\ref{cor:auc-invariance}(i) applies and the area is unchanged.
+
+It is a virtue for comparing rankings and a defect for anything else. A model whose fitted
+probabilities are all ten times too small ranks cases perfectly well and is useless for the
+decision of Theorem~\ref{thm:cost-threshold}, which compares a probability with a
+threshold. Ranking and calibration are separate properties and $\mathrm{AUC}$ measures only
+the first.
+\end{solution}
+
+\begin{exercise}\label{ex:iia}
+In a generalised logit with four categories, explain why adding a constant vector to every
+$\bb_j$ changes nothing, and state what the model implies about the odds between two
+categories when a third is removed from the choice set.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:baseline}: multiplying numerator and denominator
+of~\eqref{eq:genlogit} by $e^{-\bx_i'\ba}$ shows the probabilities depend on the $\bb_j$
+only through their differences, so the model has $(c-1)p$ free parameters and the
+normalisation $\bb_c=\bzero$ is free.
+
+By Theorem~\ref{thm:iia} the odds $\pi_{ij}/\pi_{ih}$ are $\exp\{\bx_i'(\bb_j-\bb_h)\}$,
+which mentions no other category: removing one leaves the odds between the survivors
+untouched. That is independence of irrelevant alternatives, and it is implausible whenever
+two categories are close substitutes, since removing one of a pair of substitutes should
+send its share mostly to the other.
+\end{solution}
+
+\begin{exercise}\label{ex:polr}
+State the proportional odds model, prove the interpretation of $\beta_l$, and describe a
+check of the restriction that needs only binary logistic regressions.
+\end{exercise}
+
+\begin{solution}
+The model is~\eqref{eq:polr}, $\logit\prb\{y_i\leqslant j\}=\alpha_j+\bx_i'\bb$ with
+$\alpha_1<\cdots<\alpha_{c-1}$, the ordering being what keeps every category probability
+positive (Proposition~\ref{prop:polr-order}).
+
+By Theorem~\ref{thm:prop-odds}, a unit increase in $x_{il}$ multiplies the cumulative odds
+$\odds\{y_i\leqslant j\}$ by $e^{\beta_l}$, and the factor is the same at every cut point
+$j$ because $\alpha_j$ cancels in the difference.
+
+The check is Corollary~\ref{cor:polr-check}: under the model, $\indc\{y_i\leqslant j\}$ is a
+logistic regression on $\bx_i$ with slope $\bb$ for every $j$, so fitting the $c-1$
+dichotomisations separately gives $c-1$ estimates of one vector. Systematic drift across
+$j$ contradicts the restriction; §\ref{sec:7.5.4} shows such a drift.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) reproduce a \texttt{glm} logistic fit by iteratively reweighted least squares;
+(b) compute the area under the ROC curve three ways; (c) show that a logistic coefficient
+changes when an independent covariate is dropped, while a linear one does not.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:7.4.2}, (b) §\ref{sec:7.4.5} and (c) §\ref{sec:7.5.2}. In (a) the point is
+that no optimiser is needed: each step is one weighted least squares solve, and the
+concavity of Theorem~\ref{thm:concavity} guarantees there is a single stationary point to
+converge to. In (c) note that the two covariates are independent by construction, so the
+omitted-variable bias formula of Unit 3 predicts no change, and the linear fit shows none;
+the logistic change is Proposition~\ref{prop:noncollapse}.
+\end{solution}
+
+\end{document}

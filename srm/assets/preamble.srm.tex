@@ -1,0 +1,233 @@
+% srm — Society of Actuaries, "Exam SRM — Statistics for Risk Modeling:
+% Sample Questions and Solutions" (February 2026 revision, 75 pp.)
+%
+% Per-document overrides. The master \input's this AFTER the shared assets/preamble.tex,
+% so everything here layers on top of the committed base without touching it.
+%
+% HAND-WRITTEN from the page images (all 75 rendered at 150 dpi and read; the phi on p56
+% and the MT-Extra ellipses re-cropped at 600 dpi).
+%
+% ⚠ THIS SOURCE IS NOT A PAPER AND NOT A BOOK. It is a flat list of 75 multiple-choice
+% questions and their 75 solutions, and it has NO sections, NO theorems, NO numbered
+% equations and NO reference list. Almost nothing in the base preamble's apparatus applies;
+% what it needs instead is the four environments below. The base is still the right base —
+% `article`, amsmath, graphicx, enumitem, booktabs — so this patch only ADDS.
+
+% =============================================================== the four environments ==
+%
+% The deliverable interleaves the source's two halves: each question is immediately
+% followed by its own solution. `texify_qa_merge.py` does the pairing, and it can only do
+% that if each item is delimited and carries its printed number, hence the mandatory
+% number argument on both `question` and `solution`.
+%
+% ⚠ THE NUMBER IS AN ARGUMENT, NOT AN AUTO-INCREMENT. 1-75 looks contiguous but is not
+% self-checking: four numbers (17, 28, 47, 65) were withdrawn in August 2023 and the source
+% still prints them, as the bare word DELETED. An auto-incrementing counter would renumber
+% the 71 live questions the moment the merge dropped a deleted one, and nothing downstream
+% would notice — the numbers would still run 1..71 without a gap. Taking the number from the
+% page makes a mis-paired item a compile-visible wrong number instead.
+%
+% ⚠ AND THE COUNTER IS STILL STEPPED, via \refstepcounter, so that \label records what
+% LaTeX actually set. That is what lets verify.py read `\newlabel{q:33}{{33}...}` back out
+% of the .aux and assert the printed number equals the number the page shows — the one
+% check that catches a numbering shift from a cause nobody thought to test for.
+
+% ⚠ \makeatletter IS LOAD-BEARING. This file is \input from the master's preamble, and an
+% \input'ed .tex is NOT a .sty: `@` keeps catcode 12 there, so the private \srm@... names
+% below would parse as \srm followed by the letters "@itemlist" and the first \newcommand
+% would die with "Missing \begin{document}" — an error that names neither the macro nor the
+% file. (It did, on the first smoke run.)
+\makeatletter
+
+\newcounter{srmq}
+\newcounter{srms}
+
+% The question's geometry: the number hangs at the left margin and the body is indented
+% past it, as the source sets it. 2.2em holds "75." with room to spare.
+\newcommand{\srm@itemlist}{%
+  \setlength{\labelwidth}{2.2em}%
+  \setlength{\labelsep}{0.6em}%
+  \setlength{\leftmargin}{2.8em}%
+  \setlength{\itemindent}{0pt}%
+  \setlength{\listparindent}{0pt}%
+  \setlength{\parsep}{0.4\baselineskip}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\topsep}{0pt}%
+  \setlength{\partopsep}{0pt}%
+}
+
+% The solution's geometry: NO label box, and the same 2.8em left edge as the question's
+% BODY, so a solution reads as subordinate to the question it now sits under.
+%
+% ⚠ THE HEAD MUST NOT BE A LIST LABEL. The obvious \item[\textbf{Solution.}] puts the word
+% in a \labelwidth-wide box, and LaTeX right-aligns a label in that box and lets an oversize
+% one hang out to the LEFT. "Solution." is about twice 2.2em, so it hung 2em past the list's
+% own margin and every solution head printed further left than the question number above it
+% — the visual hierarchy exactly inverted. Widening \labelwidth instead would have indented
+% every solution body 5em. So: an empty label, and the head run in as ordinary bold text.
+\newcommand{\srm@sollist}{%
+  \setlength{\labelwidth}{0pt}%
+  \setlength{\labelsep}{0pt}%
+  \setlength{\leftmargin}{2.8em}%
+  \setlength{\itemindent}{0pt}%
+  \setlength{\listparindent}{0pt}%
+  \setlength{\parsep}{0.4\baselineskip}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\topsep}{0pt}%
+  \setlength{\partopsep}{0pt}%
+}
+
+% \begin{question}{33} ... \end{question}
+\newenvironment{question}[1]{%
+  \par\addvspace{1.4\baselineskip}%
+  \setcounter{srmq}{\numexpr#1-1\relax}\refstepcounter{srmq}%
+  \begin{list}{}{\srm@itemlist}%
+  \item[\textbf{\thesrmq.}]\label{q:#1}\ignorespaces
+}{%
+  \end{list}%
+}
+
+% \begin{solution}{33}{E} ... \end{solution}
+%
+% ⚠ THE KEY ARGUMENT MAY BE EMPTY, and for exactly one solution it must be: solution 7
+% (p58) carries no "Key:" line at all — it is four lines of prose and nothing else. A
+% one-argument environment would have forced a key to be invented for it.
+%
+% The three printed spellings "Key: E", "Key E" (solution 13) and "Key:D" (solutions 66 and
+% 75) are NORMALISED to one here, because the head is re-typeset from the letter rather than
+% transcribed. That is the one deliberate departure from reproduce-what-is-printed in this
+% conversion; it is recorded in README.md and asserted by verify.py, which checks all 71
+% letters against the page.
+\newcommand{\srm@key}[1]{\if\relax\detokenize{#1}\relax\else\ \textbf{Key:~#1}\fi}
+\newenvironment{solution}[2]{%
+  \par\addvspace{0.7\baselineskip}%
+  \setcounter{srms}{\numexpr#1-1\relax}\refstepcounter{srms}%
+  \begin{list}{}{\srm@sollist}%
+  \item\label{s:#1}\textbf{Solution.}\srm@key{#2}\quad\ignorespaces
+}{%
+  \end{list}\addvspace{0.3\baselineskip}%
+}
+
+% The five answer choices, printed "(A)" ... "(E)". \Alph* is the letter, so a dropped
+% choice re-letters the ones after it — which verify.py catches by counting five per
+% question and by checking the rendered letters against the .aux.
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{label=(\Alph*), ref=(\Alph*), align=left,
+                  leftmargin=2.8em, labelwidth=2.2em, labelsep=0.6em,
+                  topsep=0.6\baselineskip, itemsep=0.15\baselineskip, parsep=0pt}
+
+% The roman-numbered statement list a question offers for "Determine which of the following
+% statements is/are true": I., II., III., and on questions 5, 6 and 74 also IV.
+\newlist{statements}{enumerate}{1}
+\setlist[statements]{label=\Roman*., ref=\Roman*, align=left,
+                     leftmargin=3.2em, labelwidth=2.6em, labelsep=0.6em,
+                     topsep=0.6\baselineskip, itemsep=0.15\baselineskip, parsep=0pt}
+
+% The lower-case roman "given" list: i), ii), iii), iv). Note the CLOSING PAREN ONLY — the
+% source prints "i)", never "(i)", and never a full stop.
+\newlist{given}{enumerate}{1}
+\setlist[given]{label=\roman*), ref=\roman*, align=left,
+                leftmargin=2.8em, labelwidth=2.2em, labelsep=0.6em,
+                topsep=0.4\baselineskip, itemsep=0.15\baselineskip, parsep=0pt}
+
+% ========================================================================= paragraphs ==
+%
+% The source is a Word document set BLOCK STYLE throughout: not one paragraph on any of its
+% 75 pages is first-line indented, and paragraphs are separated by vertical space instead.
+% `article`'s default is the opposite, so without this the front matter's 18 update lines —
+% each its own paragraph — would print as an indented staircase, and every solution's second
+% paragraph would step in under the first.
+%
+% A modest fixed \parskip with a little stretch: enough to separate, not so springy that the
+% lists (whose \parsep and \topsep are set explicitly above) start to wobble.
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5\baselineskip plus 0.15\baselineskip minus 0.1\baselineskip}
+
+% ========================================================================== furniture ==
+
+% The word the source prints, alone, for each of the four withdrawn numbers. Upright roman
+% capitals, exactly as on the page — NOT \textsc, which would set small capitals.
+\newcommand{\deleted}{DELETED}
+
+% The two half-titles, "QUESTIONS" (p2) and "SOLUTIONS" (p57). The converter emits one at
+% the head of its division; `texify_qa_merge.py` KEEPS them in `--order original` and DROPS
+% them in the default interleaved order, where a heading announcing a half that no longer
+% exists would be a lie.
+\newcommand{\srmpart}[1]{%
+  \par\addvspace{1.2\baselineskip}%
+  {\centering\bfseries #1\par}%
+  \addvspace{0.4\baselineskip}%
+}
+
+% =========================================================================== figures ==
+%
+% 17 figures, cropped out of the source by texify_figs_srm.py into assets/figs/srm_<key>.pdf
+% and placed with \srmfig{<key>}. Keys are per QUESTION (q35, q48c), never per division —
+% see SKILL.srm.md for the full table.
+%
+% ⚠ THIS IS NOT THE PIPELINE'S USUAL `<book>_<NN>_figs.pdf` + `page=<k>` CONVENTION, and
+% deliberately so. That convention indexes a figure by its position within a division's
+% figure file, which here would mean the answer-choice picture of question 48 is "page 8 of
+% srm_02_figs.pdf" — a number that silently changes meaning the moment a division boundary
+% moves, with no way for a reader or a check to notice. A key naming the question cannot
+% drift.
+%
+% Natural size when it fits the measure, shrunk to the measure when it does not: two of the
+% seventeen (q39 at 474pt, q57 at 495pt) are wider than the 470pt text block, and the three
+% panels of question 26 are 114pt and must NOT be blown up to fill it.
+%
+% ⚠ AND A FIGURE IS OFTEN THE WHOLE OF A LIST ITEM — question 48's five answer choices are
+% each nothing but a picture, and question 26's three roman items likewise. A list label is
+% not typeset by \item; it is parked and inserted by \everypar when the item's first
+% PARAGRAPH starts. If that first paragraph is the centred graphic, the label is prepended to
+% it and lands on the picture's BASELINE — i.e. at the bottom-left of a 140pt-tall panel,
+% where "(A)" reads as if it belonged to the choice below. (Observed: all five of question
+% 48's letters.)
+%
+% \if@inlabel is exactly "a label is parked and waiting", so open and close an empty
+% paragraph to let it out FIRST, and only there. Testing \ifhmode instead cannot work: an
+% item's start and an ordinary between-paragraphs position are both vertical mode, and
+% unconditionally emitting the empty paragraph would pad every one of the other nine figures
+% with a blank line.
+\newsavebox{\srm@figbox}
+\newcommand{\srmfig}[1]{%
+  \if@inlabel\leavevmode\par\fi
+  \par\addvspace{0.5\baselineskip}%
+  \begin{center}%
+    \sbox{\srm@figbox}{\includegraphics{assets/figs/srm_#1.pdf}}%
+    \ifdim\wd\srm@figbox>\linewidth
+      \resizebox{\linewidth}{!}{\usebox{\srm@figbox}}%
+    \else
+      \usebox{\srm@figbox}%
+    \fi
+  \end{center}%
+  \addvspace{0.5\baselineskip}%
+}
+
+% ========================================================================= operators ==
+%
+% The base declares \expc as \mathsf{E} and \var as an upright "var", the fleet's house
+% style. This source prints ITALIC "E(...)" and italic "Var(...)", and it is a study aid for
+% candidates who will meet the SOA's notation in the exam room, so the macros are re-pointed
+% at the source's own glyphs. The macro NAMES stay the base's, so the house rule "never
+% \mathbb{E}, never a bare E" still binds and the notation is uniform across all 75 items.
+%
+% \DeclareMathOperator is \newcommand underneath and refuses to redefine; \let ...\relax
+% first is the documented way round, and is the same trick assets/preamble.tex's siblings
+% use to free an amsthm counter.
+\let\expc\relax  \DeclareMathOperator{\expc}{\mathit{E}}
+\let\var\relax   \DeclareMathOperator{\var}{\mathit{Var}}
+\let\cov\relax   \DeclareMathOperator{\cov}{\mathit{Cov}}
+\let\cor\relax   \DeclareMathOperator{\cor}{\mathit{Corr}}
+
+% ====================================================================== bibliography ==
+%
+% NOTHING TO DO, AND NOTHING TO ADD. This source has no reference list. It names its
+% textbooks in running prose — "See Page 242 of Regression Modeling with Actuarial and
+% Financial Applications", "see page 307 of Frees", "Section 8.1 of An Introduction to
+% Statistical Learning" — with the title in italics and the page as ordinary words. Those
+% are TEXT, not citations: there is no \cite anywhere in the body, natbib is loaded by the
+% base but never used, and the master emits no \bibliography. A .bib invented to hold them
+% would print a reference list the source does not have.
+
+\makeatother

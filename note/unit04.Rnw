@@ -1,0 +1,1109 @@
+% Compile:  python build.py 04
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 4\ \ Regression Diagnostics}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{4.\arabic{theorem}}
+\renewcommand\thetheorem  {4.\arabic{theorem}}
+\renewcommand\thelemma    {4.\arabic{theorem}}
+\renewcommand\theproposition{4.\arabic{theorem}}
+\renewcommand\thecorollary{4.\arabic{theorem}}
+\renewcommand\theexample  {4.\arabic{example}}
+\renewcommand\theexercise {4.\arabic{exercise}}
+\renewcommand\thefigure   {4.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Regression Diagnostics}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit04-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont Unit 4.\ Regression Diagnostics}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{The Iterative Modelling Process}\label{sec:4.1}
+%==============================================================================
+
+\begin{reading}
+FREES §5.1.
+\end{reading}
+
+\begin{remark}
+Fitting is one step of a loop: specify a model, fit it, criticise the fit, respecify. The
+criticism step is this unit. Each of the classical assumptions of Unit 2 has a diagnostic
+attached to it, and a different remedy:
+\begin{ctab}[\small]
+\begin{tabular}{@{}lll@{}}
+\toprule
+Assumption & Diagnostic & Section \\
+\midrule
+\Aref{1} linearity           & residuals against fitted values      & §\ref{sec:4.2} \\
+\Aref{3} constant variance   & residual spread against fitted values; Breusch--Pagan & §\ref{sec:4.5} \\
+\Aref{3} uncorrelated errors & residuals against time or index      & Unit 9 \\
+\Aref{4} full rank           & VIF, condition number                & §\ref{sec:4.4} \\
+\Aref{5} normality           & normal quantile plot of residuals    & §\ref{sec:4.2} \\
+(none)                       & leverage, Cook's distance            & §\ref{sec:4.3} \\
+\bottomrule
+\end{tabular}
+\end{ctab}
+The last row has no assumption attached: an influential observation violates nothing, but a
+conclusion resting on one observation is worth knowing about.
+\end{remark}
+
+%==============================================================================
+\section{Residual Analysis}\label{sec:4.2}
+%==============================================================================
+
+\begin{reading}
+FREES §5.3 · ISLR §3.3.3.
+\end{reading}
+
+\subsection{Standardised and studentised residuals}\label{sec:4.2.1}
+
+By the residual-variance theorem of Unit 2, $\var(e_i) = \sigma^2(1-h_{ii})$: the raw residuals have
+unequal variances even under \Aref{3}, so they are not comparable across observations
+until rescaled.
+
+\begin{definition}[Standardised and studentised residuals]\label{def:resid}
+With $s^2 = \SSE/(n-k-1)$ and $s_{(i)}^2$ the same quantity computed with observation $i$
+deleted,
+\begin{equation}\label{eq:resid}
+r_i = \frac{e_i}{s\sqrt{1-h_{ii}}}
+\quad\text{(standardised)},
+\qquad
+t_i = \frac{e_i}{s_{(i)}\sqrt{1-h_{ii}}}
+\quad\text{(studentised, or deleted)} .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[The deleted variance without refitting]\label{thm:s2i}
+\begin{equation}\label{eq:s2i}
+s_{(i)}^2 = \frac{(n-k-1)s^2 - e_i^2/(1-h_{ii})}{n-k-2} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By the deletion identity of Lemma~\ref{lem:deletion} below,
+$y_i - \bx_i'\hat\bb^{(-i)} = e_i/(1-h_{ii})$, and the residual sum of squares of the
+deleted fit satisfies
+$\SSE_{(i)} = \SSE - e_i^2/(1-h_{ii})$: removing observation $i$ removes its contribution
+to $\SSE$, inflated by the same factor that inflates its prediction error. Dividing by its
+degrees of freedom $n-1-k-1 = n-k-2$ gives~\eqref{eq:s2i}.
+\end{proof}
+
+\begin{remark}
+$t_i$ has a $t_{n-k-2}$ distribution under \Aref{1}--\Aref{5}, whereas $r_i$ does not have
+a $t$ distribution at all: its numerator and denominator both contain $e_i$, so an
+observation with a large residual inflates $s$ and partly hides itself. Deleting the
+observation from the variance estimate removes that feedback, which is why $t_i$ is the
+statistic for testing whether observation $i$ is an outlier. The conventional flag is
+$|r_i| > 2$.
+\end{remark}
+
+\subsection{What to plot}\label{sec:4.2.2}
+
+\begin{remark}
+Residuals are plotted against \emph{fitted values}, not against the response: by
+the residual identities of Unit 2, $\hat\bY'\mathbf{e} = 0$ but $\bY'\mathbf{e} = \SSE \neq 0$, so a
+plot against $y_i$ shows a spurious upward trend in every data set.
+\begin{itemize}
+\item Curvature in residuals against fitted values indicates a violation of \Aref{1}: the
+      remedy is a transformation or an added term (Unit 3 §3.4).
+\item A fan or funnel indicates non-constant variance, §\ref{sec:4.5}.
+\item A normal quantile plot bearing on \Aref{5} matters only for exact small-sample
+      inference; in large samples the central limit theorem carries the $t$ and $F$
+      statistics regardless.
+\end{itemize}
+\end{remark}
+
+%==============================================================================
+\section{Influential Observations}\label{sec:4.3}
+%==============================================================================
+
+\begin{reading}
+FREES §5.4 · ISLR §3.3.3.
+\end{reading}
+
+\begin{remark}[Three different things]
+An \emph{outlier} has an unusual response given its predictors: large $|t_i|$. A
+\emph{high-leverage} point has unusual predictors, irrespective of its response: large
+$h_{ii}$. An \emph{influential} point is one whose removal materially changes the fit,
+which requires both. A high-leverage point that happens to lie on the fitted surface is
+not influential.
+\end{remark}
+
+\begin{remark}[Leverage thresholds]
+$h_{ii}$ averages $(k+1)/n$ by the leverage theorem of Unit 2. FREES declares high leverage at
+$h_{ii} > 3(k+1)/n$; ISLR uses $2(k+1)/n$. Both are conventions, not tests.
+\end{remark}
+
+\begin{lemma}[Deletion identity]\label{lem:deletion}
+Let $\hat\bb^{(-i)}$ be the least squares estimate with observation $i$ removed. Then
+\begin{equation}\label{eq:deletion}
+\hat\bb - \hat\bb^{(-i)} = \frac{(\bX'\bX)^{-1}\bx_i\,e_i}{1-h_{ii}} ,
+\qquad
+y_i - \bx_i'\hat\bb^{(-i)} = \frac{e_i}{1-h_{ii}} .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+This is the deletion identity of Unit 1, proved there from the Sherman--Morrison formula applied to
+$\bX'\bX - \bx_i\bx_i'$. The second identity follows from the first on premultiplying by
+$\bx_i'$ and subtracting from $y_i$.
+\end{proof}
+
+\begin{definition}[Cook's distance]\label{def:cook}
+\begin{equation}\label{eq:cook}
+D_i = \frac{\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)'\bX'\bX\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)}
+           {(k+1)s^2}
+    = \frac{\sum_{j=1}^n \bigl(\hat y_j - \hat y_j^{(-i)}\bigr)^2}{(k+1)s^2} .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Computable form of Cook's distance]\label{thm:cook}
+\begin{equation}\label{eq:cook-form}
+\boxed{\;D_i = \frac{e_i^2}{(k+1)s^2}\cdot\frac{h_{ii}}{(1-h_{ii})^2}
+            = \frac{r_i^2}{k+1}\cdot\frac{h_{ii}}{1-h_{ii}} . \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Substituting~\eqref{eq:deletion} into~\eqref{eq:cook},
+\[
+\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)'\bX'\bX\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)
+= \frac{e_i^2}{(1-h_{ii})^2}\,\bx_i'(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1}\bx_i
+= \frac{e_i^2\,h_{ii}}{(1-h_{ii})^2} ,
+\]
+since $\bx_i'(\bX'\bX)^{-1}\bx_i = h_{ii}$. Dividing by $(k+1)s^2$ gives the first form;
+substituting $e_i^2 = r_i^2 s^2 (1-h_{ii})$ gives the second.
+\end{proof}
+
+\begin{remark}
+The second form separates the two ingredients: $r_i^2$ measures how unusual the response
+is and $h_{ii}/(1-h_{ii})$ how unusual the predictors are. $D_i$ is large only when both
+are appreciable, which is the formal content of the distinction above. A common flag is
+$D_i > 1$, or $D_i > 4/n$ for a more sensitive screen.
+\end{remark}
+
+\begin{definition}[DFFITS and DFBETAS]\label{def:dffits}
+\begin{equation}\label{eq:dffits}
+\mathrm{DFFITS}_i = \frac{\hat y_i - \hat y_i^{(-i)}}{s_{(i)}\sqrt{h_{ii}}} ,
+\qquad
+\mathrm{DFBETAS}_{j,i}
+= \frac{\hat\beta_j - \hat\beta_j^{(-i)}}{s_{(i)}\sqrt{[(\bX'\bX)^{-1}]_{jj}}} .
+\end{equation}
+\end{definition}
+
+\begin{proposition}\label{prop:dffits}
+$\mathrm{DFFITS}_i = t_i\sqrt{h_{ii}/(1-h_{ii})}$.
+\end{proposition}
+
+\begin{proof}
+By~\eqref{eq:deletion}, $\hat y_i - \hat y_i^{(-i)} = \bx_i'(\hat\bb-\hat\bb^{(-i)})
+= h_{ii}e_i/(1-h_{ii})$. Dividing by $s_{(i)}\sqrt{h_{ii}}$,
+\[
+\mathrm{DFFITS}_i = \frac{h_{ii}\,e_i}{(1-h_{ii})\,s_{(i)}\sqrt{h_{ii}}}
+= \frac{e_i}{s_{(i)}\sqrt{1-h_{ii}}}\sqrt{\frac{h_{ii}}{1-h_{ii}}}
+= t_i\sqrt{\frac{h_{ii}}{1-h_{ii}}} . \qedhere
+\]
+\end{proof}
+
+\begin{remark}
+$D_i$ and $\mathrm{DFFITS}_i$ measure the same thing on different scales, one using $s$
+and the other $s_{(i)}$; they rank observations almost identically. DFBETAS is the finer
+instrument, reporting which \emph{coefficient} an observation moves, at the cost of $k+1$
+numbers per observation. A conventional flag is $|\mathrm{DFFITS}_i| > 2\sqrt{(k+1)/n}$.
+\end{remark}
+
+%==============================================================================
+\section{Collinearity}\label{sec:4.4}
+%==============================================================================
+
+\begin{reading}
+FREES §5.5.
+\end{reading}
+
+\begin{definition}[Variance inflation factor]\label{def:vif}
+Let $R_j^2$ be the coefficient of determination from regressing $x_j$ on the other $k-1$
+explanatory variables and an intercept. Then
+\begin{equation}\label{eq:vif}
+\VIF_j = \frac{1}{1-R_j^2} .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[VIF and the standard error]\label{thm:vif}
+For $j = 1,\ldots,k$,
+\begin{equation}\label{eq:se-vif}
+\SE(\hat\beta_j) = \frac{s}{s_{x_j}\sqrt{n-1}}\,\sqrt{\VIF_j} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+By the Frisch--Waugh--Lovell theorem of Unit 2, applied with $\bX_1 = \bx_j$ and
+$\bX_2$ the remaining columns, $\hat\beta_j$ is the slope from regressing $\bY$ on
+$\bM_2\bx_j$, so
+\[
+\var(\hat\beta_j) = \frac{\sigma^2}{\bx_j'\bM_2\bx_j} .
+\]
+Now $\bx_j'\bM_2\bx_j$ is the residual sum of squares from regressing $x_j$ on the other
+variables, which is $(1-R_j^2)$ times its total sum of squares $(n-1)s_{x_j}^2$. Hence
+\[
+\var(\hat\beta_j) = \frac{\sigma^2}{(n-1)s_{x_j}^2(1-R_j^2)}
+= \frac{\sigma^2}{(n-1)s_{x_j}^2}\,\VIF_j ,
+\]
+and replacing $\sigma$ by $s$ and taking the square root gives~\eqref{eq:se-vif}.
+\end{proof}
+
+\begin{remark}
+$\VIF_j\geqslant1$, with equality iff $x_j$ is orthogonal to the other explanatory
+variables; it is the factor by which collinearity multiplies the \emph{variance} of
+$\hat\beta_j$ over that orthogonal ideal. The usual flag is $\VIF_j > 10$, equivalently
+$R_j^2 > 0.9$. Note that~\eqref{eq:se-vif} contains no $\VIF$ for the intercept, and that
+$\VIF$ is unaffected by the response: collinearity is a property of $\bX$.
+\end{remark}
+
+\begin{remark}[What collinearity does and does not do]
+Collinearity does not bias $\hat\bb$, does not violate any of \Aref{1}--\Aref{5}, and does
+not damage prediction at predictor combinations resembling those observed. What it does is
+inflate standard errors, so that individually insignificant coefficients coexist with a
+highly significant joint $F$ (Unit 3 §\ref{sec:4.4}), and make estimates unstable across
+samples. The remedies are to drop one of the redundant variables, to combine them, or to
+shrink; ridge regression (Unit 6) is the direct attack, replacing $(\bX'\bX)^{-1}$ by
+$(\bX'\bX+\lambda\bI)^{-1}$.
+\end{remark}
+
+%==============================================================================
+\section{Heteroscedasticity}\label{sec:4.5}
+%==============================================================================
+
+\begin{reading}
+FREES §5.7.
+\end{reading}
+
+Assume \Aref{1}, \Aref{2} and \Aref{4}, but replace \Aref{3} by
+$\var(\be) = \bOmega = \diag(\sigma_1^2,\ldots,\sigma_n^2)$.
+
+\begin{theorem}[OLS under heteroscedasticity]\label{thm:hetero}
+The least squares estimator remains unbiased, but
+\begin{equation}\label{eq:sandwich}
+\var(\hat\bb) = (\bX'\bX)^{-1}
+  \Bigl(\sum_{i=1}^n \sigma_i^2\,\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1}
+\;\neq\; \sigma^2(\bX'\bX)^{-1} ,
+\end{equation}
+and $\hat\bb$ is no longer best linear unbiased.
+\end{theorem}
+
+\begin{proof}
+Unbiasedness used only \Aref{1}--\Aref{2}, so it survives. For the variance, apply
+$\var(\bA\bz)=\bA\var(\bz)\bA'$ to $\hat\bb-\bb = (\bX'\bX)^{-1}\bX'\be$:
+\[
+\var(\hat\bb) = (\bX'\bX)^{-1}\bX'\bOmega\bX(\bX'\bX)^{-1} ,
+\]
+and $\bX'\bOmega\bX = \sum_i \sigma_i^2\bx_i\bx_i'$. The Gauss--Markov proof used
+$\var(\be)=\sigma^2\bI$ at the step $\var(\tilde\bb)=\sigma^2\bC\bC'$, so its conclusion no
+longer follows; Theorem~\ref{thm:gls} exhibits an unbiased linear estimator with smaller
+variance.
+\end{proof}
+
+\begin{remark}
+The reported standard errors, built from $s^2(\bX'\bX)^{-1}$, estimate the wrong quantity.
+They may be too small or too large: which, depends on whether the large variances sit at
+high-leverage or low-leverage points.
+\end{remark}
+
+\begin{definition}[White's heteroscedasticity-consistent estimator]\label{def:hc}
+Replacing the unknown $\sigma_i^2$ in~\eqref{eq:sandwich} by the squared residuals,
+\begin{equation}\label{eq:hc}
+\widehat{\var}(\hat\bb) = (\bX'\bX)^{-1}
+  \Bigl(\sum_{i=1}^n c\,e_i^2\,\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1} ,
+\end{equation}
+with $c=1$ for HC0 and $c = n/(n-k-1)$ for the small-sample-corrected HC1.
+\end{definition}
+
+\begin{remark}
+The coefficients are untouched: only the standard errors change. This is the cheapest
+response to heteroscedasticity of unknown form, and requires no model for $\sigma_i^2$.
+\end{remark}
+
+\begin{theorem}[Weighted least squares is best linear unbiased]\label{thm:gls}
+Define
+\[
+\bW = \bOmega^{-1} = \diag(1/\sigma_1^2,\ldots,1/\sigma_n^2)
+\]
+and
+\begin{equation}\label{eq:wls}
+\hat\bb_W = (\bX'\bW\bX)^{-1}\bX'\bW\bY ,
+\end{equation}
+the minimiser of $\sum_i w_i(y_i-\bx_i'\bb)^2$ with $w_i = 1/\sigma_i^2$. Then $\hat\bb_W$
+is unbiased with $\var(\hat\bb_W) = (\bX'\bW\bX)^{-1}$, and it is best linear unbiased.
+\end{theorem}
+
+\begin{proof}
+Put $\bW^{1/2} = \diag(1/\sigma_i)$ and transform to
+$\bY^\ast = \bW^{1/2}\bY$, $\bX^\ast = \bW^{1/2}\bX$, $\be^\ast = \bW^{1/2}\be$. Then
+\[
+\var(\be^\ast) = \bW^{1/2}\bOmega\bW^{1/2} = \bI_n ,
+\]
+so the starred model satisfies \Aref{1}--\Aref{4} with $\sigma^2=1$. Ordinary least
+squares on it is
+\[
+(\bX^{\ast\prime}\bX^\ast)^{-1}\bX^{\ast\prime}\bY^\ast
+= (\bX'\bW\bX)^{-1}\bX'\bW\bY = \hat\bb_W ,
+\]
+which by the Gauss--Markov theorem is best linear unbiased among estimators linear in
+$\bY^\ast$, and hence in $\bY$, the map $\bY\mapsto\bY^\ast$ being linear and
+invertible. Its variance is $1\cdot(\bX^{\ast\prime}\bX^\ast)^{-1} = (\bX'\bW\bX)^{-1}$.
+\end{proof}
+
+\begin{remark}
+Weighted least squares therefore \emph{is} ordinary least squares, on data rescaled so
+that every observation has unit error variance: an observation with large $\sigma_i^2$ is
+down-weighted because it carries less information. The practical obstacle is that
+$\sigma_i^2$ is unknown; it is usually modelled as a function of the predictors or of the
+fitted value, or sidestepped by transforming the response so that the variance is
+approximately constant.
+\end{remark}
+
+\subsection{Detecting heteroscedasticity}\label{sec:4.5.1}
+
+Plot the residuals against the fitted values and look for a fan. The Breusch--Pagan test
+formalises this.
+
+\begin{definition}[Variance model and hypothesis]\label{def:bp-model}
+Let $\bY = \bX\bb+\be$ with $\varepsilon_i$ independent $N(0,\sigma_i^2)$ and
+\begin{equation}\label{eq:bp-model}
+\sigma_i^2 = h(\alpha_0 + \bz_i'\bgamma) = h(\bw_i'\balpha),
+\qquad \bw_i = \binom{1}{\bz_i},\ \ \balpha = \binom{\alpha_0}{\bgamma},
+\end{equation}
+where $\bz_i$ is a known $p$-vector, $h>0$ is differentiable and $h'(\alpha_0)\neq0$. The
+null hypothesis is $H_0\colon\bgamma=\bzero$, under which $\sigma_i^2 = h(\alpha_0)$ does
+not vary with $i$. Write $\bZ$ for the $n\times p$ matrix with rows $\bz_i'$,
+$\bW = [\bone\ \bZ]$, and $\bM_0 = \bI_n - n^{-1}\bone\bone'$.
+\end{definition}
+
+\begin{lemma}[Score for the variance parameters]\label{lem:bp-score}
+With $u_i = y_i - \bx_i'\bb$, the log-likelihood
+\begin{equation}\label{eq:bp-loglik}
+\ell(\bb,\balpha) = -\frac n2\ln(2\pi) - \frac12\sum_{i=1}^n \ln\sigma_i^2
+  - \frac12\sum_{i=1}^n \frac{u_i^2}{\sigma_i^2}
+\end{equation}
+has
+\begin{equation}\label{eq:bp-U}
+\frac{\partial\ell}{\partial\balpha}
+= \frac12\sum_{i=1}^n \frac{h'(\bw_i'\balpha)}{\sigma_i^2}
+  \left(\frac{u_i^2}{\sigma_i^2}-1\right)\bw_i .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Since $\sigma_i^2 = h(\bw_i'\balpha)$, the chain rule gives
+$\partial\sigma_i^2/\partial\balpha = h'(\bw_i'\balpha)\,\bw_i$, and therefore
+$\partial(\sigma_i^{-2})/\partial\balpha = -\sigma_i^{-4}h'(\bw_i'\balpha)\bw_i$.
+Differentiating the two sums in~\eqref{eq:bp-loglik} term by term,
+\[
+\frac{\partial}{\partial\balpha}\Bigl(-\tfrac12\ln\sigma_i^2\Bigr)
+= -\frac{h'(\bw_i'\balpha)}{2\sigma_i^2}\bw_i ,
+\qquad
+\frac{\partial}{\partial\balpha}\Bigl(-\tfrac12\frac{u_i^2}{\sigma_i^2}\Bigr)
+= \frac{u_i^2\,h'(\bw_i'\balpha)}{2\sigma_i^4}\bw_i ,
+\]
+and adding them gives the summand of~\eqref{eq:bp-U}.
+\end{proof}
+
+\begin{lemma}[Fourth moment]\label{lem:fourth}
+If $Z\sim N(0,1)$ then $\expc[Z^4]=3$; hence $\var(Z^2)=2$, and for
+$\varepsilon\sim N(0,\sigma^2)$, $\var(\varepsilon^2/\sigma^2)=2$.
+\end{lemma}
+
+\begin{proof}
+The standard normal density satisfies $\varphi'(z) = -z\varphi(z)$, so integrating by parts,
+\[
+\expc[Z^4] = \int z^3\cdot z\varphi(z)\,\dd z = -\int z^3\varphi'(z)\,\dd z
+= \Bigl[-z^3\varphi(z)\Bigr]_{-\infty}^{\infty} + 3\int z^2\varphi(z)\,\dd z = 0 + 3 ,
+\]
+the boundary term vanishing because $\varphi$ decays faster than any polynomial grows.
+Then $\var(Z^2) = \expc[Z^4]-(\expc[Z^2])^2 = 3-1 = 2$.
+\end{proof}
+
+\begin{lemma}[Covariance of the score]\label{lem:bp-info}
+$\dfrac{\partial\ell}{\partial\balpha}$ has covariance matrix
+\begin{equation}\label{eq:bp-I}
+\bI_{\balpha} = \frac12\sum_{i=1}^n \frac{h'(\bw_i'\balpha)^2}{\sigma_i^4}\,\bw_i\bw_i' ,
+\end{equation}
+and it is uncorrelated with $\partial\ell/\partial\bb$.
+\end{lemma}
+
+\begin{proof}
+The $i$-th summand of~\eqref{eq:bp-U} is $(h'_i/2\sigma_i^2)(u_i^2/\sigma_i^2-1)\bw_i$
+with $h'_i = h'(\bw_i'\balpha)$. By Lemma~\ref{lem:fourth},
+$\var(u_i^2/\sigma_i^2-1) = 2$, so that summand has covariance
+$(h_i'^2/4\sigma_i^4)\cdot2\cdot\bw_i\bw_i'$. The summands are independent across $i$, so
+the covariances add, giving~\eqref{eq:bp-I}.
+
+For the second claim, $\partial\ell/\partial\bb = \sum_i \bx_i u_i/\sigma_i^2$ is linear in
+the $u_i$ while~\eqref{eq:bp-U} is a function of the $u_i^2$; for a symmetric distribution
+$\expc[u_i^3]=0$, so
+$\cov\bigl(u_i,\ u_i^2/\sigma_i^2-1\bigr) = \expc[u_i^3]/\sigma_i^2 = 0$.
+\end{proof}
+
+\begin{lemma}[Restricted maximum likelihood]\label{lem:bp-restricted}
+Under $H_0$ the maximisers of~\eqref{eq:bp-loglik} are $\tilde\bb = \hat\bb$, the least
+squares estimator, and $\tilde\sigma^2 = \SSE/n$. Consequently, writing
+\begin{equation}\label{eq:bp-g}
+g_i = \frac{e_i^2}{\tilde\sigma^2}-1 ,
+\end{equation}
+one has $\bone'\bg = 0$ and hence $\bZ'\bg = \bZ'\bM_0\bg$.
+\end{lemma}
+
+\begin{proof}
+Under $H_0$ all $\sigma_i^2$ equal a common $\sigma^2$, so~\eqref{eq:bp-loglik} is the
+homoscedastic normal log-likelihood, whose maximisers are $\hat\bb$ and $\SSE/n$ by the
+maximum likelihood theorem of Unit 2. Then
+\[
+\bone'\bg = \sum_{i=1}^n\Bigl(\frac{e_i^2}{\tilde\sigma^2}-1\Bigr)
+= \frac{\SSE}{\SSE/n}-n = 0 ,
+\]
+and $\bZ'\bM_0\bg = \bZ'\bg - n^{-1}(\bZ'\bone)(\bone'\bg) = \bZ'\bg$.
+\end{proof}
+
+\begin{remark}
+The identity $\bone'\bg=0$ is the reason the scaling in~\eqref{eq:bp-g} must be
+$\tilde\sigma^2 = \SSE/n$ and not $s^2 = \SSE/(n-k-1)$: only the maximum likelihood
+estimator makes the score component along the intercept column of $\bW$ vanish, which is
+what the next theorem needs.
+\end{remark}
+
+\begin{definition}[Score statistic]\label{def:bp-LM}
+Evaluate the score at the restricted maximiser. Its $\bb$-component and its
+$\alpha_0$-component are then zero, the first because $\tilde\bb$ maximises over $\bb$,
+the second by Lemma~\ref{lem:bp-restricted}, so only $\bU_{\bgamma}$ survives, and the
+\emph{score} (Lagrange multiplier) statistic is
+\begin{equation}\label{eq:bp-LMdef}
+LM = \bU_{\bgamma}'\,\bigl[\bigl(\bI_{\balpha}^{-1}\bigr)_{\bgamma\bgamma}\bigr]^{-1}\,
+     \bU_{\bgamma} ,
+\end{equation}
+the middle factor being the inverse of the $\bgamma\bgamma$ block of $\bI_{\balpha}^{-1}$,
+which by Lemma~\ref{lem:bp-info} is the relevant covariance once the nuisance parameters
+$\bb$ and $\alpha_0$ are accounted for.
+\end{definition}
+
+\begin{theorem}[The Breusch--Pagan statistic]\label{thm:bp}
+Under $H_0$, the statistic~\eqref{eq:bp-LMdef} equals
+\begin{equation}\label{eq:bp-LM}
+\boxed{\;LM = \tfrac12\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg) = \tfrac12\,\SSR_z \;}
+\end{equation}
+where $\SSR_z$ is the regression sum of squares from regressing $\bg$ (equivalently
+$e_i^2/\tilde\sigma^2$, or $e_i^2$ up to the scaling below) on $\bZ$ with an intercept.
+In particular $LM$ does not depend on $h$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1: the score.} Under $H_0$ the variances are all $\tilde\sigma^2$ and
+$h'(\bw_i'\tilde\balpha) = h'(\tilde\alpha_0) =: h_0'$ for every $i$, so
+Lemma~\ref{lem:bp-score} gives
+\[
+\bU_{\balpha} = \frac{h_0'}{2\tilde\sigma^2}\sum_{i=1}^n g_i\bw_i
+= \frac{h_0'}{2\tilde\sigma^2}\,\bW'\bg ,
+\qquad\text{hence}\qquad
+\bU_{\bgamma} = \frac{h_0'}{2\tilde\sigma^2}\,\bZ'\bg .
+\]
+
+\textbf{Step 2: the covariance.} By Lemma~\ref{lem:bp-info} with $\sigma_i^2$ and $h_i'$
+constant,
+\[
+\bI_{\balpha} = c\,\bW'\bW, \qquad c = \frac{h_0'^2}{2\tilde\sigma^4} .
+\]
+For a partitioned symmetric matrix the $\bgamma\bgamma$ block of the inverse is the inverse
+of the Schur complement, and the Schur complement of the leading $(1,1)$ entry of
+$\bW'\bW = \bigl(\begin{smallmatrix} n & \bone'\bZ\\ \bZ'\bone & \bZ'\bZ\end{smallmatrix}\bigr)$
+is
+\[
+\bZ'\bZ - \bZ'\bone\,n^{-1}\bone'\bZ = \bZ'\bM_0\bZ .
+\]
+Hence $\bigl[(\bI_{\balpha}^{-1})_{\bgamma\bgamma}\bigr]^{-1} = c\,\bZ'\bM_0\bZ$, and
+\[
+LM = \frac1c\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)\cdot\frac{h_0'^2}{4\tilde\sigma^4}
+   = \frac{2\tilde\sigma^4}{h_0'^2}\cdot\frac{h_0'^2}{4\tilde\sigma^4}\,
+     (\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg) ,
+\]
+which is the first equality of~\eqref{eq:bp-LM}. The factor $h_0'^2$ cancels, so the
+statistic is the same for every differentiable $h$ with $h'(\alpha_0)\neq0$: the test has
+power against a whole family of variance models without committing to one.
+
+\textbf{Step 3: identification with $\SSR_z$.} Regressing $\bg$ on $\bW = [\bone\ \bZ]$,
+the regression sum of squares is $\bg'(\bH_W-\bH_0)\bg$ with $\bH_W$ the projection onto
+$\calC(\bW)$ and $\bH_0 = n^{-1}\bone\bone'$. By Frisch--Waugh--Lovell (Unit 3),
+$\bH_W-\bH_0 = \bM_0\bZ(\bZ'\bM_0\bZ)^{-1}\bZ'\bM_0$, so
+\[
+\SSR_z = (\bZ'\bM_0\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bM_0\bg)
+       = (\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)
+\]
+using $\bZ'\bM_0\bg = \bZ'\bg$ from Lemma~\ref{lem:bp-restricted}. Finally, replacing
+$\bg$ by $e_i^2/\tilde\sigma^2 = g_i+1$ changes the regressand by a constant vector, which
+is absorbed by the intercept and leaves $\SSR_z$ unchanged.
+\end{proof}
+
+\begin{theorem}[Null distribution]\label{thm:bp-null}
+Assume $H_0$, that $n^{-1}\bZ'\bM_0\bZ \to \bQ$ positive definite, that
+$\max_i h_{ii}\to0$, and that the $\bz_i$ satisfy a Lindeberg condition. Then
+\begin{equation}\label{eq:bp-chisq}
+LM \convd \chi^2_p .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1: replace residuals by errors.} $e_i = \varepsilon_i - \bx_i'(\hat\bb-\bb)$,
+and $\hat\bb-\bb = O_p(n^{-1/2})$, so $e_i^2 = \varepsilon_i^2 + O_p(n^{-1/2})$ uniformly
+under $\max_i h_{ii}\to0$; likewise $\tilde\sigma^2 = \sigma^2 + O_p(n^{-1/2})$. Hence
+$n^{-1/2}\bZ'\bg = n^{-1/2}\sum_i \bz_i(\varepsilon_i^2/\sigma^2-1) + o_p(1)$.
+
+\textbf{Step 2: central limit theorem.} The summands
+$\bz_i(\varepsilon_i^2/\sigma^2-1)$ are independent with mean zero, and by
+Lemma~\ref{lem:fourth} each has covariance $2\,\bz_i\bz_i'$. Their average covariance is
+$2n^{-1}\bZ'\bZ$, and centring by the intercept replaces this by $2n^{-1}\bZ'\bM_0\bZ\to2\bQ$.
+The Lindeberg--Feller central limit theorem gives
+\[
+n^{-1/2}\bZ'\bg \convd N(\bzero,\ 2\bQ) .
+\]
+
+\textbf{Step 3: the quadratic form.} By~\eqref{eq:bp-LM},
+\[
+LM = \tfrac12\bigl(n^{-1/2}\bZ'\bg\bigr)'\bigl(n^{-1}\bZ'\bM_0\bZ\bigr)^{-1}
+      \bigl(n^{-1/2}\bZ'\bg\bigr) ,
+\]
+and $n^{-1}\bZ'\bM_0\bZ\to\bQ$. If $\bV\sim N(\bzero,2\bQ)$ then
+$(2\bQ)^{-1/2}\bV\sim N(\bzero,\bI_p)$, so $\tfrac12\bV'\bQ^{-1}\bV = \|(2\bQ)^{-1/2}\bV\|^2
+\sim\chi^2_p$ by the chi-square theorem for quadratic forms of Unit 2. The continuous
+mapping theorem transfers this to the limit of $LM$.
+\end{proof}
+
+\begin{remark}[Where the limit theory comes from]
+Step 2 uses the Lindeberg--Feller central limit theorem in its weighted form and Step 3 the
+continuous mapping theorem. Neither is assumed: the \emph{Mathematical Prerequisites} note proves the Lindeberg--Feller
+theorem and its weighted-sums corollary, the continuous mapping theorem, Slutsky's theorem
+, which is what permits $\sigma^2$ and the scale $\kappa$ to be replaced by consistent
+estimates, and the theorem on quadratic forms of asymptotically normal vectors that
+converts $\bZ'\bg$ into a $\chi^2_p$ limit. The only things taken as given anywhere in that
+chain are the completeness of $\Real$ and the four convergence theorems of the Lebesgue
+integral.
+\end{remark}
+
+\begin{theorem}[Koenker's studentised statistic]\label{thm:bp-koenker}
+Drop normality, retaining independence, $\expc[\varepsilon_i]=0$, $\var(\varepsilon_i)=\sigma^2$
+and $\tau^2 := \var(\varepsilon_i^2) = \expc[\varepsilon_i^4]-\sigma^4 < \infty$. Then
+$n^{-1/2}\bZ'\bg \convd N(\bzero,\ (\tau^2/\sigma^4)\bQ)$, so~\eqref{eq:bp-LM} is
+misscaled by the factor $\tau^2/(2\sigma^4)$. Estimating $\tau^2$ by
+$\hat\tau^2 = n^{-1}\sum_i(e_i^2-\tilde\sigma^2)^2$ gives the correctly scaled statistic
+\begin{equation}\label{eq:bp-koenker}
+LM_{\mathrm{stud}}
+= \frac{\tilde\sigma^4}{\hat\tau^2}\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)
+= n\,R_z^2 \convd \chi^2_p ,
+\end{equation}
+where $R_z^2$ is the coefficient of determination from regressing $e_i^2$ on $\bZ$ with an
+intercept. Moreover
+\begin{equation}\label{eq:bp-ratio}
+\frac{LM}{LM_{\mathrm{stud}}} = \frac{\hat\tau^2}{2\tilde\sigma^4} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Only Lemma~\ref{lem:fourth} used normality, and only to assert
+$\var(\varepsilon_i^2/\sigma^2)=2$; in general that variance is $\tau^2/\sigma^4$. Repeating
+Step 2 of Theorem~\ref{thm:bp-null} with this value gives the stated limit, and the
+quadratic form standardised by $\sigma^4/\tau^2$ rather than $1/2$ is $\chi^2_p$.
+
+For the identification, put $\bv = (e_1^2,\ldots,e_n^2)'$, so that $\bar v = \tilde\sigma^2$
+and $\bg = \bM_0\bv/\tilde\sigma^2$. Since $(\bH_W-\bH_0)\bone=\bzero$ we have
+$\bM_0(\bH_W-\bH_0) = \bH_W-\bH_0$, hence
+\[
+\SSR_z = \bg'(\bH_W-\bH_0)\bg
+= \tilde\sigma^{-4}\,\bv'\bM_0(\bH_W-\bH_0)\bM_0\bv
+= \tilde\sigma^{-4}\,\bv'(\bH_W-\bH_0)\bv
+= \frac{\SSR_v}{\tilde\sigma^4},
+\]
+where $\SSR_v$ is the regression sum of squares from regressing $\bv$ on $[\bone\ \bZ]$.
+Also $\hat\tau^2 = n^{-1}\sum_i(e_i^2-\bar v)^2 = \SST_v/n$. Therefore
+\[
+LM_{\mathrm{stud}} = \frac{\tilde\sigma^4}{\hat\tau^2}\,\SSR_z
+= \frac{\tilde\sigma^4}{\SST_v/n}\cdot\frac{\SSR_v}{\tilde\sigma^4}
+= n\,\frac{\SSR_v}{\SST_v} = n R_z^2 ,
+\]
+and dividing $LM = \SSR_z/2$ by this gives~\eqref{eq:bp-ratio}.
+\end{proof}
+
+\begin{remark}[Which one R computes, and what their ratio measures]
+\texttt{lmtest::bptest} returns $LM_{\mathrm{stud}}$ \emph{by default}; the statistic of
+Theorem~\ref{thm:bp} is \texttt{bptest(m, studentize = FALSE)}. The two can differ
+substantially, so a hand computation following Theorem~\ref{thm:bp} compared against a bare
+\texttt{bptest} call will appear to disagree.
+
+By~\eqref{eq:bp-ratio} the ratio is $\hat\tau^2/(2\tilde\sigma^4)$, which estimates
+$\var(\varepsilon^2)/\{2\var(\varepsilon)^2\}$, which is exactly $1$ when the errors are normal,
+by Lemma~\ref{lem:fourth}. The ratio is therefore itself a measurement: how far the fourth
+moment of the errors departs from the normal value. §\ref{sec:4.6.4} computes it.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:4.6}
+%==============================================================================
+
+\begin{reading}
+ISLR §3.6.3.
+\end{reading}
+
+<<data-setup>>=
+library(ISLR2)
+fit <- lm(medv ~ lstat + age + rm, data = Boston)
+X <- model.matrix(fit); y <- Boston$medv
+n <- nrow(X); k <- ncol(X) - 1L
+e <- residuals(fit); h <- hatvalues(fit)
+s2 <- sum(e^2) / (n - k - 1)
+c(n = n, k = k, df = n - k - 1)
+@
+
+\subsection{Residuals (§\ref{sec:4.2})}\label{sec:4.6.1}
+
+<<resid-check>>=
+r_man <- e / (sqrt(s2) * sqrt(1 - h))                    # standardised
+s2i   <- ((n-k-1)*s2 - e^2/(1-h)) / (n-k-2)              # deleted variance
+t_man <- e / (sqrt(s2i) * sqrt(1 - h))                   # studentised
+c(rstandard = max(abs(r_man - rstandard(fit))),
+  rstudent  = max(abs(t_man - rstudent(fit))),
+  sd_raw    = sd(e), sd_standardised = sd(r_man))
+@
+
+The studentised residual exceeds the standardised one exactly where the observation
+inflates $s$:
+
+<<resid-compare>>=
+i <- which.max(abs(e))
+c(index = i, e_i = e[i], h_ii = h[i],
+  standardised = r_man[i], studentised = t_man[i],
+  s = sqrt(s2), s_deleted = sqrt(s2i[i]))
+@
+
+<<outlier-count>>=
+c(flag_2  = sum(abs(r_man) > 2),
+  flag_3  = sum(abs(r_man) > 3),
+  expected_2_if_normal = round(2 * pnorm(-2) * n, 1))
+@
+
+\subsection{Influence (§\ref{sec:4.3})}\label{sec:4.6.2}
+
+The deletion identity of Lemma~\ref{lem:deletion}, against $n$ explicit refits:
+
+<<deletion-check>>=
+b <- coef(fit); XtXi <- solve(t(X) %*% X)
+idx <- c(1, 100, 215, 373, 506)
+delta_man <- sapply(idx, function(i)
+  drop(XtXi %*% X[i, ] * e[i] / (1 - h[i])))
+delta_ref <- sapply(idx, function(i)
+  b - coef(lm(medv ~ lstat + age + rm, data = Boston[-i, ])))
+c(max_abs_diff = max(abs(delta_man - delta_ref)))
+@
+
+<<cook-check>>=
+D_man <- e^2 / ((k+1) * s2) * h / (1 - h)^2               # first form
+D_alt <- r_man^2 / (k+1) * h / (1 - h)                    # second form
+c(form1_vs_R = max(abs(D_man - cooks.distance(fit))),
+  form2_vs_R = max(abs(D_alt - cooks.distance(fit))),
+  max_D = max(D_man), n_above_4_over_n = sum(D_man > 4/n))
+@
+
+<<dffits-check>>=
+dff_man <- t_man * sqrt(h / (1 - h))                      # Proposition
+c(dffits_vs_R = max(abs(dff_man - dffits(fit))),
+  dfbetas_vs_R = max(abs(
+    (b["lstat"] - sapply(idx, function(i)
+       coef(lm(medv ~ lstat + age + rm, data = Boston[-i, ]))[["lstat"]])) /
+    (sqrt(s2i[idx]) * sqrt(XtXi["lstat", "lstat"])) -
+    dfbetas(fit)[idx, "lstat"])))
+@
+
+Outlier, leverage and influence rank different observations:
+
+<<three-lists>>=
+top <- function(v) order(abs(v), decreasing = TRUE)[1:5]
+rbind(by_studentised = top(t_man),
+      by_leverage    = top(h),
+      by_cooks_D     = top(D_man))
+@
+
+\subsection{Collinearity (§\ref{sec:4.4})}\label{sec:4.6.3}
+
+<<vif-check>>=
+suppressMessages(library(car))
+Xn <- X[, -1, drop = FALSE]
+vif_man <- sapply(seq_len(ncol(Xn)), function(j)
+  1 / (1 - summary(lm(Xn[, j] ~ Xn[, -j]))$r.squared))    # 1/(1 - R_j^2)
+rbind(manual = vif_man, car = vif(fit))
+@
+
+Theorem~\ref{thm:vif} against the standard errors R reports:
+
+<<vif-se>>=
+sx  <- apply(Xn, 2, sd)
+se_from_vif <- sqrt(s2) / (sx * sqrt(n - 1)) * sqrt(vif_man)
+rbind(from_VIF = se_from_vif,
+      lm       = coef(summary(fit))[-1, "Std. Error"])
+@
+
+Adding a nearly redundant column inflates the standard errors without touching the fit:
+
+<<collinear-demo>>=
+set.seed(1)
+Boston$lstat2 <- Boston$lstat + rnorm(n, sd = 0.01)      # almost a copy
+m_col <- lm(medv ~ lstat + lstat2 + age + rm, data = Boston)
+rbind(
+  se  = c(base = coef(summary(fit))["lstat", "Std. Error"],
+          with_copy = coef(summary(m_col))["lstat", "Std. Error"]),
+  t   = c(coef(summary(fit))["lstat", "t value"],
+          coef(summary(m_col))["lstat", "t value"]))
+c(R2_base = summary(fit)$r.squared, R2_col = summary(m_col)$r.squared,
+  VIF_lstat = vif(m_col)[["lstat"]])
+@
+
+\subsection{Heteroscedasticity (§\ref{sec:4.5})}\label{sec:4.6.4}
+
+A design where the truth is known: $\var(\varepsilon_i)$ grows with $x_i$.
+
+<<hetero-setup>>=
+set.seed(2)
+nh   <- 300
+xh   <- runif(nh, 1, 10)
+sig  <- 0.5 * xh                                          # true sd_i
+yh   <- 2 + 1.5 * xh + rnorm(nh, sd = sig)
+mh   <- lm(yh ~ xh)
+c(beta_true = 1.5, beta_hat = coef(mh)[["xh"]])           # still unbiased
+@
+
+Theorem~\ref{thm:bp} is an identity between three expressions. All three are computed
+below, together with the two facts the proof turns on: $\bone'\bg=0$ and
+$\bZ'\bg = \bZ'\bM_0\bg$.
+
+<<bp-identities>>=
+suppressMessages({library(lmtest); library(sandwich)})
+eh   <- residuals(mh); SSEh <- sum(eh^2)
+s2t  <- SSEh / nh                              # restricted MLE, Lemma 4.14
+g    <- eh^2 / s2t - 1
+Z    <- cbind(xh); M0 <- diag(nh) - matrix(1/nh, nh, nh)
+c(one_prime_g   = sum(g),                      # = 0
+  Ztg_eq_ZtM0g  = max(abs(t(Z) %*% g - t(Z) %*% M0 %*% g)))
+@
+
+<<bp-three-forms>>=
+LM_quad <- 0.5 * as.numeric(t(t(Z) %*% g) %*% solve(t(Z) %*% M0 %*% Z) %*% (t(Z) %*% g))
+aux     <- lm(g ~ Z)
+LM_SSR  <- sum((fitted(aux) - mean(g))^2) / 2  # SSR_z / 2
+c(quadratic_form = LM_quad, SSR_z_over_2 = LM_SSR,
+  bptest_orig    = bptest(mh, studentize = FALSE)$statistic[["BP"]],
+  p_value        = pchisq(LM_quad, df = ncol(Z), lower.tail = FALSE))
+@
+
+The statistic does not depend on $h$: the same $LM$ arises whether the variance model is
+$\sigma_i^2 = \alpha_0+\bz_i'\bgamma$, $\exp(\alpha_0+\bz_i'\bgamma)$, or any other
+differentiable $h$, because $h_0'$ cancelled in Step 2 of the proof. Nothing in the
+computation above refers to $h$ at all.
+
+Koenker's studentised statistic of Theorem~\ref{thm:bp-koenker}, and the two identities
+its proof establishes:
+
+<<bp-koenker>>=
+v     <- eh^2
+auxv  <- lm(v ~ Z)
+SSRv  <- sum((fitted(auxv) - mean(v))^2); SSTv <- sum((v - mean(v))^2)
+tau2  <- SSTv / nh                             # estimate of var(eps^2)
+c(n_R2_z        = nh * SSRv / SSTv,
+  LM_stud_defn  = (s2t^2 / tau2) * 2 * LM_quad,
+  bptest_default = bptest(mh)$statistic[["BP"]],
+  SSR_z         = 2 * LM_SSR, SSR_v_over_s2t4 = SSRv / s2t^2)
+@
+
+<<bp-ratio>>=
+c(ratio_observed = LM_quad / (nh * SSRv / SSTv),
+  tau2_over_2s4  = tau2 / (2 * s2t^2),         # equation (14)
+  tau2_over_s4   = tau2 / s2t^2,               # = 2 under normality
+  p_orig = bptest(mh, studentize = FALSE)$p.value,
+  p_stud = bptest(mh)$p.value)
+@
+
+Both reject overwhelmingly, but they are not the same statistic. The ratio is
+$\hat\tau^2/(2\tilde\sigma^4)$ exactly, as~\eqref{eq:bp-ratio} requires, and
+$\hat\tau^2/\tilde\sigma^4$ is well above the value $2$ that Lemma~\ref{lem:fourth} gives
+under normality: the squared residuals are more dispersed than a normal error would
+produce, which is precisely the circumstance in which the studentised form is the one to
+report.
+
+Weighted least squares with the true weights, three ways: the closed
+form~\eqref{eq:wls}, \texttt{lm(weights=)}, and ordinary least squares on the
+$\sqrt{w}$-rescaled data of Theorem~\ref{thm:gls}:
+
+<<wls-check>>=
+Xh <- cbind(1, xh)
+w  <- 1 / sig^2
+b_wls <- drop(solve(t(Xh) %*% diag(w) %*% Xh, t(Xh) %*% diag(w) %*% yh))
+m_wls <- lm(yh ~ xh, weights = w)
+Xs <- sqrt(w) * Xh; ys <- sqrt(w) * yh
+b_scaled <- drop(solve(t(Xs) %*% Xs, t(Xs) %*% ys))
+rbind(closed_form = b_wls, lm_weights = coef(m_wls), rescaled_OLS = b_scaled)
+@
+
+<<wls-efficiency>>=
+V_hc1 <- vcovHC(mh, type = "HC1")
+rbind(OLS = coef(summary(mh))[, "Std. Error"],
+      HC1 = sqrt(diag(V_hc1)),
+      WLS = coef(summary(m_wls))[, "Std. Error"])
+@
+
+The WLS standard errors are the smallest, as Theorem~\ref{thm:gls} requires; OLS with HC1
+is honest about its uncertainty but does not recover the lost efficiency.
+
+%==============================================================================
+\section{Pitfalls}\label{sec:4.7}
+%==============================================================================
+
+\subsection{Deleting an observation because it is influential}\label{sec:4.7.1}
+
+Influence is a reason to investigate, not to delete: an unusual observation may be the
+most informative one.
+
+<<pitfall-delete>>=
+i_max <- which.max(D_man)
+m_drop <- lm(medv ~ lstat + age + rm, data = Boston[-i_max, ])
+rbind(with = coef(fit), without = coef(m_drop),
+      pct_change = 100 * (coef(m_drop) - coef(fit)) / abs(coef(fit)))
+@
+
+\textbf{Diagnostic.} Report the fit with and without the point and let the size of the
+change speak.
+\textbf{Fix.} Delete only for a documented reason, such as a recording error or a unit that
+does not belong to the population of interest.
+
+\subsection{Treating a high-leverage point as an error}\label{sec:4.7.2}
+
+Leverage depends on $\bX$ alone, so a high-leverage point may be perfectly well fitted and
+carry no influence at all.
+
+<<pitfall-leverage>>=
+lev_top <- order(h, decreasing = TRUE)[1:5]
+round(cbind(leverage = h[lev_top], studentised = t_man[lev_top],
+            cooks_D = D_man[lev_top]), 4)
+@
+
+\textbf{Diagnostic.} Large $h_{ii}$ with small $|t_i|$ and small $D_i$.
+\textbf{Fix.} Judge influence by $D_i$ or DFFITS, which combine both ingredients
+(Theorem~\ref{thm:cook}).
+
+\subsection{Reading collinearity off pairwise correlations}\label{sec:4.7.3}
+
+A variable can be nearly a linear combination of several others while correlating weakly
+with each.
+
+<<pitfall-pairwise>>=
+set.seed(3)
+z1 <- rnorm(200); z2 <- rnorm(200); z3 <- z1 + z2 + rnorm(200, sd = 0.05)
+yz <- z1 + z2 + rnorm(200)
+mz <- lm(yz ~ z1 + z2 + z3)
+c(cor_z1_z3 = cor(z1, z3), cor_z2_z3 = cor(z2, z3),
+  max_pairwise = max(abs(cor(cbind(z1, z2, z3))[upper.tri(diag(3))])))
+vif(mz)
+@
+
+\textbf{Diagnostic.} Pairwise correlations near $0.7$ but VIFs in the hundreds.
+\textbf{Fix.} VIF, which regresses each predictor on \emph{all} the others.
+
+\subsection{Ignoring heteroscedasticity because the coefficients look fine}\label{sec:4.7.4}
+
+The point estimates are unbiased (Theorem~\ref{thm:hetero}); it is the standard errors,
+and therefore every $t$, $p$ and interval, that are wrong.
+
+<<pitfall-hetero>>=
+ci_ols <- confint(mh)["xh", ]
+ci_hc1 <- coefci(mh, vcov. = vcovHC(mh, type = "HC1"))["xh", ]
+rbind(OLS = ci_ols, HC1 = ci_hc1,
+      width = c(diff(ci_ols), diff(ci_hc1)))
+@
+
+\textbf{Diagnostic.} Compare the two sets of standard errors; a material gap means the
+usual formula is not to be trusted.
+\textbf{Fix.} Report HC1, or model the variance and use weighted least squares.
+
+%==============================================================================
+\section{Exercises}\label{sec:4.8}
+%==============================================================================
+
+\begin{exercise}\label{ex:standardise}
+Explain why raw residuals are not comparable across observations, and why the studentised
+residual, not the standardised one, is used to test whether an observation is an outlier.
+\end{exercise}
+
+\begin{solution}
+By the residual-variance theorem of Unit 2, $\var(e_i)=\sigma^2(1-h_{ii})$, which varies with $i$: a
+high-leverage point has a residual that is small by construction, so comparing raw
+residuals confuses a well-fitted point with a high-leverage one.
+
+Standardising by $s\sqrt{1-h_{ii}}$ equalises the variances but leaves $e_i$ in both
+numerator and denominator, since observation $i$ contributes to $s$. A genuine outlier
+inflates $s$ and so shrinks its own $r_i$, masking itself. The studentised residual uses
+$s_{(i)}$, computed without observation $i$, so the observation affects only the numerator;
+it has an exact $t_{n-k-2}$ distribution and is the correct test statistic.
+\end{solution}
+
+\begin{exercise}\label{ex:cook-num}
+A regression has $n=100$, $k=4$, $s = 3.2$. An observation has $e_i = 9.1$ and
+$h_{ii}=0.22$. Compute its standardised residual and Cook's distance, and say whether each
+exceeds its conventional flag.
+\end{exercise}
+
+\begin{solution}
+\[
+r_i = \frac{9.1}{3.2\sqrt{1-0.22}} = \frac{9.1}{3.2(0.8832)} = 3.22 ,
+\]
+which exceeds $2$: an outlier by the usual convention. By~\eqref{eq:cook-form},
+\[
+D_i = \frac{r_i^2}{k+1}\cdot\frac{h_{ii}}{1-h_{ii}}
+    = \frac{10.37}{5}\cdot\frac{0.22}{0.78} = 2.074(0.2821) = 0.585 .
+\]
+Against the flag $D_i>1$ this is not influential; against the more sensitive $4/n = 0.04$
+it is. Its leverage $0.22$ also exceeds $2(k+1)/n = 0.10$, so the observation is unusual in
+both respects and worth examining.
+\end{solution}
+
+\begin{exercise}\label{ex:deletion}
+Derive $y_i - \bx_i'\hat\bb^{(-i)} = e_i/(1-h_{ii})$ from the deletion identity, and use it
+to explain why $\SSE_{(i)} = \SSE - e_i^2/(1-h_{ii})$.
+\end{exercise}
+
+\begin{solution}
+From~\eqref{eq:deletion}, $\bx_i'(\hat\bb-\hat\bb^{(-i)}) = h_{ii}e_i/(1-h_{ii})$, so
+\[
+y_i - \bx_i'\hat\bb^{(-i)} = e_i + \frac{h_{ii}e_i}{1-h_{ii}}
+= e_i\Bigl(1+\frac{h_{ii}}{1-h_{ii}}\Bigr) = \frac{e_i}{1-h_{ii}} .
+\]
+
+For the second claim, the deleted fit minimises the sum of squares over the remaining
+$n-1$ observations. Its residual sum of squares is the full-sample $\SSE$ less the
+contribution of observation $i$, adjusted for the fact that the remaining fit no longer
+accommodates it; the algebra gives exactly $\SSE - e_i^2/(1-h_{ii})$, which is what makes
+Theorem~\ref{thm:s2i} computable without refitting.
+\end{solution}
+
+\begin{exercise}\label{ex:vif-num}
+In a model with four predictors, regressing $x_2$ on the other three gives $R_2^2 = 0.94$.
+Compute $\VIF_2$, and state the factor by which collinearity has widened the confidence
+interval for $\beta_2$ relative to an orthogonal design.
+\end{exercise}
+
+\begin{solution}
+$\VIF_2 = 1/(1-0.94) = 16.7$, above the conventional flag of $10$.
+
+By~\eqref{eq:se-vif} the standard error carries $\sqrt{\VIF_2}$, so the interval is
+$\sqrt{16.7} = 4.08$ times wider than it would be were $x_2$ orthogonal to the others. The
+point estimate is unaffected: collinearity costs precision, not unbiasedness.
+\end{solution}
+
+\begin{exercise}\label{ex:collinear-consequences}
+Two predictors have $\VIF = 30$ each; both $t$ statistics are below $1$, yet the overall
+$F$ is $85$ on $2$ and $200$ degrees of freedom. Is this a contradiction? What would you do?
+\end{exercise}
+
+\begin{solution}
+Not a contradiction. The individual $t$ tests ask whether each variable adds anything
+\emph{given the other}, and with $\VIF=30$ the two carry nearly the same information, so
+neither adds much once the other is present. The $F$ asks whether the pair together adds
+anything, and it plainly does. The estimates are individually imprecise and strongly
+correlated with each other.
+
+Options: keep both, since prediction is unharmed and the pair is jointly significant; drop
+one, if they measure the same construct; combine them into a single index; or shrink with
+ridge regression (Unit 6). What is not defensible is concluding from the $t$ statistics
+that neither variable matters.
+\end{solution}
+
+\begin{exercise}\label{ex:hetero-consequences}
+Under heteroscedasticity, which of the following remain valid: unbiasedness of $\hat\bb$;
+$\var(\hat\bb) = \sigma^2(\bX'\bX)^{-1}$; the Gauss--Markov theorem; the $t$ distribution
+of the usual statistic?
+\end{exercise}
+
+\begin{solution}
+Only unbiasedness. Its proof used \Aref{1}--\Aref{2} alone
+(Theorem~\ref{thm:hetero}).
+
+The variance formula fails, being replaced by the sandwich~\eqref{eq:sandwich}.
+Gauss--Markov fails, since its proof used $\var(\be)=\sigma^2\bI$; weighted least squares
+is the efficient estimator instead (Theorem~\ref{thm:gls}). The usual $t$ statistic fails
+because its denominator estimates the wrong variance, so its $p$-values are wrong in an
+unknown direction. HC1 standard errors repair this without touching the estimates.
+\end{solution}
+
+\begin{exercise}\label{ex:wls}
+Show that weighted least squares with $w_i = 1/\sigma_i^2$ is ordinary least squares on the
+data $(y_i/\sigma_i,\ \bx_i/\sigma_i)$, and explain the weighting intuitively.
+\end{exercise}
+
+\begin{solution}
+The transformation is Theorem~\ref{thm:gls}: with $\bW^{1/2}=\diag(1/\sigma_i)$, the
+starred model has $\var(\be^\ast)=\bI$ and OLS on it gives
+$(\bX'\bW\bX)^{-1}\bX'\bW\bY$, which is $\hat\bb_W$.
+
+Intuitively, dividing observation $i$ by $\sigma_i$ puts every observation on a common
+noise scale. An observation with large $\sigma_i$ says little about the regression line and
+receives a small weight $1/\sigma_i^2$; a precise observation receives a large one. Least
+squares weights all observations equally, which is right only when they are equally
+informative.
+\end{solution}
+
+\begin{exercise}\label{ex:which-diagnostic}
+For each symptom, name the assumption at risk and one remedy: (a) residuals curve as a
+function of the fitted values; (b) residual spread widens with the fitted value;
+(c) one observation has $D_i = 4$; (d) two predictors have $\VIF = 45$.
+\end{exercise}
+
+\begin{solution}
+(a) \Aref{1}, linearity. Add a quadratic term or transform a variable (Unit 3 §3.4).
+
+(b) \Aref{3}, constant variance. Report HC1 standard errors, use weighted least squares, or
+transform the response (§\ref{sec:4.5}).
+
+(c) No assumption. Influence is not a violation; investigate the observation, report the
+fit with and without it, and delete only for a documented reason.
+
+(d) \Aref{4} is not violated, $\bX'\bX$ being still invertible, but it is nearly so. Drop or
+combine one of the pair, or shrink (Unit 6).
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) verify Cook's distance from~\eqref{eq:cook-form} against
+\texttt{cooks.distance}; (b) confirm the deletion identity against explicit refits;
+(c) compare OLS, HC1 and WLS standard errors on heteroscedastic data.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:4.6.2}, (b) the first chunk there, (c) §\ref{sec:4.6.4}. In (c), weighted
+least squares is smallest on both coefficients, as Theorem~\ref{thm:gls} requires, because
+it is the only one of the three that uses the true $\sigma_i^2$. HC1 and OLS do not order
+each other: HC1 is larger than OLS on the slope and smaller on the intercept, which is the
+point of it. HC1 is not an inflated OLS standard error but an estimate of a different
+quantity, the true sampling variability, and that can lie on either side of the one the
+constant-variance formula reports.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,89 @@
+% texify — shared master preamble for JOURNAL ARTICLES.
+%
+% This is the committed base. `--master` inlines it verbatim, then \input's the
+% per-paper patch assets/preamble.<paper>.tex, then opens the document. Nothing here
+% is scraped from the source; edit it by hand.
+%
+% CLASS IS `article`, ON PURPOSE. The textbook pipeline this was forked from used
+% `report`, where \thesection expands to \thechapter.\arabic{section}; with no
+% \chapter ever issued the chapter counter stays 0 and a paper's "1. Introduction"
+% prints as "0.1". That repo worked around it with three \counterwithout calls.
+% `article` has no chapter at all, so the trap cannot occur -- and \chapter is
+% undefined, which turns a converter that emits one into a hard compile error
+% instead of a silent mis-numbering.
+%
+% NUMBERING IS FLAT HERE (equations 1,2,3...; theorems 1,2,3...). Papers differ:
+% many number within sections ((2.1), Theorem 3.4). That is a per-paper decision, so
+% the \counterwithin calls live in assets/preamble.<paper>.tex, not here.
+
+\documentclass[11pt]{article}
+\usepackage[margin=25mm]{geometry}
+
+\usepackage{amsmath,amsthm,amssymb,amsfonts}   % amssymb: \leqslant \geqslant \rightleftarrows
+\usepackage{mathtools}
+\usepackage{booktabs,array}
+\usepackage[shortlabels]{enumitem}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\graphicspath{{src/}{./}}
+
+% Numeric [n] citations -- the dominant style in mathematics journals (prose names the
+% author, then a bracketed number: "Ross [2, p. 67]"). A paper that cites author-year
+% instead flips this at run time from its own preamble patch with
+%     \setcitestyle{authoryear,round,aysep={},yysep={;},notesep={, }}
+% -- package options cannot be changed after loading, so \setcitestyle is the only way
+% to do it without editing this file. natbib loads BEFORE hyperref so cites hyperlink.
+\usepackage[numbers,sort&compress]{natbib}
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black,
+            citecolor=blue!60!black}
+
+% -------------------------------------------------------------- theorem-likes --
+% A generic paper set. `theorem` owns the counter and lemma/proposition/corollary/
+% definition share it -- the usual mathematics-journal convention (Theorem 1, Lemma 2,
+% Theorem 3, ...). A paper that numbers them independently, or that needs an
+% environment not listed here, overrides in its own assets/preamble.<paper>.tex --
+% never by editing this file. (Splitting an environment back off a shared amsthm
+% counter is fiddly: see the \let\the<env>\relax note in assets/preamble.white.tex.)
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}{Example}
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\theoremstyle{plain}
+
+% ----------------------------------------------------------------- operators --
+% House-fixed glyphs for probability/statistics. The conversion contract mandates these
+% over \mathbb{P} / \mathbb{E} / \Pr / \mathbb{1}, so notation stays uniform across
+% papers even when the sources disagree. Unused by a paper that has no such operators.
+\usepackage{dsfont}
+\DeclareMathOperator\prb{\mathsf{P}}
+\DeclareMathOperator\expc{\mathsf{E}}
+\DeclareMathOperator\var{var}
+\DeclareMathOperator\cov{cov}
+\DeclareMathOperator\cor{cor}
+\DeclareMathOperator\indc{\mathds{1}}
+\DeclareMathOperator\tr{tr}
+\DeclareMathOperator\diag{diag}
+\DeclareMathOperator\rk{rank}
+
+% Differentials and Euler's number roman: \dd x, \e^{x}.
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\e}{\mathrm{e}}
+
+\setlength{\jot}{4pt}
+
+\input{assets/preamble.srm.tex}
+\begin{document}
+
+\input{srm_body}
+
+\end{document}

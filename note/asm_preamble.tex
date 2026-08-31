@@ -1,0 +1,346 @@
+% =============================================================================
+%  asm_preamble.tex
+%  Shared LaTeX preamble for 精算統計模型 (Actuarial Statistical Models) units.
+%  -----------------------------------------------------------------------------
+%  Loaded by every unitNN.Rnw immediately after \documentclass[17pt]{extarticle}:
+%
+%    \documentclass[17pt]{extarticle}
+%    \input{asm_preamble.tex}
+%
+%  Unit-specific configuration that must remain in unitNN.Rnw, after this
+%  \input but before \begin{document}:
+%    \fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ N\ \ <title>}}
+%    \setcounter{theorem}{0}\setcounter{example}{0}
+%    \renewcommand\thedefinition{N.\arabic{theorem}}
+%    \renewcommand\thetheorem  {N.\arabic{theorem}}
+%    \renewcommand\theexample  {N.\arabic{example}}
+%    \renewcommand\theexercise {N.\arabic{exercise}}
+%    \renewcommand\thefigure   {N.\arabic{figure}}
+%    \title{\color{hdrBG}\bfseries\Huge <title>}\author{}\date{}
+%
+%  Derived from bda/note/bda_preamble.tex so the two courses render as one
+%  family. The ASM-specific additions are the `reading` and `srmbox`
+%  environments (§ "course furniture" below) and the linear-model macro block
+%  carried over from mva/note/clm.tex, so that clm/mlm material can be pasted
+%  in without renaming a single symbol.
+% =============================================================================
+
+\usepackage[
+  paperwidth=257mm,
+  paperheight=144.5mm,
+  top=9mm,bottom=9mm,left=6mm,right=6mm,
+  headheight=7mm,headsep=2mm,footskip=19pt
+]{geometry}
+
+\usepackage{amsmath,amsthm,amssymb,amsfonts}
+\usepackage{xstring}  % \IfDecimal used by ctab for numeric-vs-font dispatch
+\usepackage{booktabs,array,longtable,tabularx}
+\usepackage[shortlabels]{enumitem}
+\setlist[itemize,1]{leftmargin=1.5em, labelsep=0.35em}
+\usepackage{mathtools}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{float}   % [H] placement: the slide format has no room for floats
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,decorations.markings}
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{theorems,skins,breakable}
+\usepackage{etoolbox}
+\usepackage[round,authoryear]{natbib}  % before hyperref so \citep hyperlinks
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!70!black,citecolor=blue!60!black}
+
+% Source code highlighting (requires pygmentize; compile with -shell-escape)
+\usepackage[cache=false]{minted}
+\setminted{fontsize=\small, frame=single, framesep=2mm, rulecolor=gray!40,
+  bgcolor=gray!5, breaklines=false, tabsize=2,
+  autogobble=true,
+  linenos=true,
+  numbersep=5pt,
+  xleftmargin=2.5em}
+
+\renewcommand{\theFancyVerbLine}{%
+  \textcolor{gray!60}{\scriptsize\arabic{FancyVerbLine}}}
+
+% The course page, the schedule and the exam papers are in Chinese; the notes
+% are in English with Chinese only for administrative furniture. xeCJK is
+% loaded so either can appear without breaking the build.
+\usepackage{xeCJK}
+\setCJKmainfont{Noto Serif CJK TC}
+\setCJKsansfont{Noto Sans CJK TC}
+\setCJKmonofont{Noto Sans Mono CJK TC}
+
+% Course-wide colour palette (shared with bda so the two courses match).
+\definecolor{hdrBG}{HTML}{1E3A8A}
+\definecolor{accent}{HTML}{0EA5E9}
+\definecolor{defBG}{HTML}{EFF6FF}\definecolor{defFR}{HTML}{2563EB}
+\definecolor{thmBG}{HTML}{FEF3C7}\definecolor{thmFR}{HTML}{B45309}
+\definecolor{exaBG}{HTML}{FEF2F2}\definecolor{exaFR}{HTML}{B91C1C}
+\definecolor{proofBG}{HTML}{F8FAFC}\definecolor{proofFR}{HTML}{64748B}
+\definecolor{exBG}{HTML}{FFF7ED}\definecolor{exFR}{HTML}{C2410C}
+\definecolor{solBG}{HTML}{F0FDF4}\definecolor{solFR}{HTML}{15803D}
+\definecolor{rmkBG}{HTML}{F1F5F9}\definecolor{rmkFR}{HTML}{94A3B8}
+\definecolor{readBG}{HTML}{F8FAFC}\definecolor{readFR}{HTML}{1E3A8A}
+
+% Header / footer skeleton. \fancyhead[L] is set per-unit in unitNN.Rnw.
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\color{hdrBG!30}\hrule width\textwidth height0.4pt}
+\fancyhead[R]{\small\color{hdrBG}\leftmark}
+\fancyfoot[R]{\small\color{gray}\thepage}
+\renewcommand{\sectionmark}[1]{\markboth{\S\thesection~#1}{}}
+
+% Theorem-like environments. All use \theoremstyle{definition} so the body
+% renders upright (no italic in statements, proofs, or solutions).
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}{Exercise}
+\newtheorem*{remark}{Remark}
+
+% ---------------------------------------------------------------- solutions --
+% Solutions always print. There was once a second, "student" edition that
+% suppressed them, produced by `build.py --student` and a \studentedition
+% toggle read here; it was removed on the instructor's instruction. Do not
+% reintroduce it: there is one PDF per unit.
+\newenvironment{solution}{\par\noindent\textbf{\color{solFR}Solution.}\,}{\hfill\color{solFR}$\blacksquare$\par}
+
+% tcolorbox styling for theorem-like environments.
+\tcolorboxenvironment{definition}{enhanced,breakable,colback=defBG,colframe=defFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
+\tcolorboxenvironment{theorem}{enhanced,breakable,colback=thmBG,colframe=thmFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
+\tcolorboxenvironment{lemma}{enhanced,breakable,colback=thmBG,colframe=thmFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
+\tcolorboxenvironment{proposition}{enhanced,breakable,colback=thmBG,colframe=thmFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
+\tcolorboxenvironment{corollary}{enhanced,breakable,colback=thmBG,colframe=thmFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
+\tcolorboxenvironment{example}{enhanced,breakable,colback=exaBG,colframe=exaFR,leftrule=3pt,rightrule=0pt,toprule=0pt,bottomrule=0pt,arc=0pt,left=3mm,right=2mm,top=1mm,bottom=1mm,before skip=4pt,after skip=4pt}
+\tcolorboxenvironment{proof}{enhanced,breakable,colback=proofBG,colframe=proofFR,leftrule=2pt,rightrule=0pt,toprule=0pt,bottomrule=0pt,arc=0pt,left=3mm,right=2mm,top=1mm,bottom=1mm,before skip=4pt,after skip=4pt}
+\tcolorboxenvironment{exercise}{enhanced,breakable,colback=exBG,colframe=exFR,leftrule=3pt,rightrule=0pt,toprule=0pt,bottomrule=0pt,arc=0pt,left=3mm,right=2mm,top=1mm,bottom=1mm,before skip=4pt,after skip=4pt}
+\tcolorboxenvironment{solution}{enhanced,breakable,colback=solBG,colframe=solFR,leftrule=3pt,rightrule=0pt,toprule=0pt,bottomrule=0pt,arc=0pt,left=3mm,right=2mm,top=1mm,bottom=1mm,before skip=3pt,after skip=6pt}
+\tcolorboxenvironment{remark}{enhanced,breakable,colback=rmkBG,colframe=rmkFR,leftrule=2pt,rightrule=0pt,toprule=0pt,bottomrule=0pt,arc=0pt,left=3mm,right=2mm,top=1mm,bottom=1mm,before skip=4pt,after skip=4pt}
+
+% =========================================================== course furniture ==
+%
+% \begin{reading} ... \end{reading} — the required-reading pointer. Goes
+% immediately under a \section, before any prose. One line, no prose.
+\newtcolorbox{reading}{enhanced, breakable, colback=readBG, colframe=readFR!35,
+  boxrule=0.5pt, arc=1pt, left=3mm, right=3mm, top=1.2mm, bottom=1.2mm,
+  fontupper=\small, before skip=4pt, after skip=6pt}
+
+% NOTE ON HOUSE STYLE. There is deliberately no `motivation`, `suppremark` or
+% `srmbox` environment here, though bda_preamble.tex has the first two. This
+% course follows clm.tex: definition, theorem, proof, and a SHORT factual
+% remark. Framing prose, study tips, "why this matters" asides and SOA
+% alignment tables are not part of it. If a passage cannot be stated as a
+% definition, a theorem, a proof, or one terse remark, it does not go in.
+
+% \periodmark{...} — the 50-minute boundary. Every unit is delivered in three
+% periods; these mark where the second and third begin, so the deck can be
+% paused without hunting for a natural stopping point.
+\newcommand{\periodmark}[1]{%
+  \par\vspace{1.5mm}%
+  \begin{tcolorbox}[enhanced, colback=accent!8, colframe=accent!55,
+    boxrule=0.5pt, arc=1pt, left=3mm, right=3mm, top=1mm, bottom=1mm,
+    fontupper=\small\bfseries\color{hdrBG}]
+  #1
+  \end{tcolorbox}%
+  \vspace{1mm}}
+
+% \begin{derivation}[...] ... \end{derivation} — a side derivation kept off the
+% main line of argument. Mathematics only; not a place for commentary.
+\newtcolorbox{derivation}[1][Derivation]{breakable, enhanced, colback=green!5,
+  colframe=green!40!black, coltitle=white,
+  title=\textbf{#1}, fonttitle=\bfseries,
+  attach boxed title to top left={yshift=-2mm,xshift=3mm},
+  boxed title style={colback=green!40!black}}
+
+% Centered tabular block; see bda_preamble.tex for the full contract.
+%   \begin{ctab} ... \end{ctab}          % no scaling
+%   \begin{ctab}[0.85] ... \end{ctab}    % \scalebox at 0.85
+%   \begin{ctab}[\small] ... \end{ctab}  % shrink the body font instead
+% With a numeric scale the body cannot break across pages (\scalebox makes one
+% hbox); for a long table that must break, use {\centering ... \par} by hand.
+\newsavebox{\ctabsavebox}
+\newenvironment{ctab}[1][1.0]
+  {\def\ctabarg{#1}\edef\ctabargstr{\detokenize{#1}}%
+   \par\vspace{2mm}\begin{lrbox}{\ctabsavebox}%
+   \IfDecimal{\ctabargstr}{}{#1}\ignorespaces}
+  {\end{lrbox}\noindent{\centering
+    \IfDecimal{\ctabargstr}%
+      {\scalebox{\ctabarg}{\usebox{\ctabsavebox}}}%
+      {\usebox{\ctabsavebox}}\par}%
+   \vspace{2mm}}
+
+% Emphasis: bold rather than italic (italic is hard to read projected).
+\renewcommand{\emph}[1]{\textbf{#1}}
+
+% Proof heading: bold (override amsthm's default \itshape).
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+  \pushQED{\qed}%
+  \normalfont \topsep6\p@\@plus6\p@\relax
+  \trivlist
+  \item[\hskip\labelsep
+        \bfseries
+    #1\@addpunct{.}]\ignorespaces
+}{%
+  \popQED\endtrivlist\@endpefalse
+}
+\makeatother
+
+% ================================================================= operators ==
+\usepackage{dsfont}
+\DeclareMathOperator\prb{\mathsf{P}}
+\DeclareMathOperator\expc{\mathsf{E}}
+\DeclareMathOperator\var{var}
+\DeclareMathOperator\cov{cov}
+\DeclareMathOperator\cor{cor}
+\DeclareMathOperator\corr{corr}
+\DeclareMathOperator\indc{\mathds{1}}
+\DeclareMathOperator\dom{dom}
+\DeclareMathOperator\diag{diag}
+\DeclareMathOperator\rank{rank}
+\DeclareMathOperator\rk{rank}
+\DeclareMathOperator\nul{null}
+\DeclareMathOperator\col{col}
+\DeclareMathOperator\tr{tr}
+\DeclareMathOperator\df{df}
+\DeclareMathOperator\plim{plim}
+\DeclareMathOperator\avec{vec}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator\logit{logit}
+\DeclareMathOperator\odds{odds}
+\DeclareMathOperator\se{se}
+\DeclareMathOperator\sign{sign}
+\DeclareMathOperator\sd{sd}
+
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ds}{\displaystyle}
+\newcommand{\ie}{\;\Longrightarrow\;}
+\newcommand{\ifff}{\;\Longleftrightarrow\;}
+
+% Convergence arrows, spelled as in EconometricsWithR/abridged.Rnw so that its
+% asymptotic material (robust standard errors, the LR statistic, ADF) pastes in
+% unchanged. Those were the ONLY two macros that file defines and this one did
+% not; everything else already matches, both descending from clm.tex.
+\newcommand{\convd}{\xrightarrow{\,d\,}}
+\newcommand{\convp}{\xrightarrow{\,p\,}}
+
+% ------------------------------------------------------- linear-model macros --
+% Carried over verbatim from mva/note/clm.tex so that CLM and MLM material can
+% be pasted into a unit without renaming a symbol. Do not "tidy" these names.
+\newcommand{\SST}{\mathrm{SST}}
+\newcommand{\SSR}{\mathrm{SSR}}
+\newcommand{\SSE}{\mathrm{SSE}}
+\newcommand{\MSR}{\mathrm{MSR}}
+\newcommand{\MSE}{\mathrm{MSE}}
+\newcommand{\SE}{\mathrm{SE}}
+\newcommand{\RSS}{\mathrm{RSS}}
+\newcommand{\TSS}{\mathrm{TSS}}
+\newcommand{\AIC}{\mathrm{AIC}}
+\newcommand{\BIC}{\mathrm{BIC}}
+\newcommand{\PVE}{\mathrm{PVE}}
+\newcommand{\CV}{\mathrm{CV}}
+\newcommand{\ME}{\mathrm{ME}}
+\newcommand{\MPE}{\mathrm{MPE}}
+\newcommand{\MAE}{\mathrm{MAE}}
+\newcommand{\MAPE}{\mathrm{MAPE}}
+\newcommand{\DW}{\mathrm{DW}}
+\newcommand{\VIF}{\mathrm{VIF}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bY}{\mathbf{Y}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bx}{\mathbf{x}}
+\def\bb{\boldsymbol{\beta}}
+\newcommand{\be}{\boldsymbol{\varepsilon}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bH}{\mathbf{H}}
+\newcommand{\bM}{\mathbf{M}}
+\newcommand{\bR}{\mathbf{R}}
+\newcommand{\br}{\mathbf{r}}
+\def\bc{\mathbf{c}}
+\newcommand{\bone}{\mathbf{1}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bZ}{\mathbf{Z}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bD}{\mathbf{D}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bQ}{\mathbf{Q}}
+\newcommand{\bS}{\mathbf{S}}
+\newcommand{\bs}{\mathbf{s}}
+\newcommand{\bt}{\mathbf{t}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bV}{\mathbf{V}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bh}{\mathbf{h}}
+\newcommand{\bk}{\mathbf{k}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bW}{\mathbf{W}}
+\newcommand{\bd}{\mathbf{d}}
+\newcommand{\bF}{\mathbf{F}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\bff}{\mathbf{f}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\bfeta}{\boldsymbol{\eta}}
+\newcommand{\calI}{\mathcal{I}}
+\newcommand{\bG}{\mathbf{G}}
+\newcommand{\bK}{\mathbf{K}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\blam}{\boldsymbol{\lambda}}
+\newcommand{\bphi}{\boldsymbol{\phi}}
+\newcommand{\bgamma}{\boldsymbol{\gamma}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bSig}{\boldsymbol{\Sigma}}
+\newcommand{\bLam}{\boldsymbol{\Lambda}}
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\bGam}{\boldsymbol{\Gamma}}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\calC}{\mathcal{C}}
+\newcommand{\calA}{\mathcal{A}}
+\newcommand{\calB}{\mathcal{B}}
+\newcommand{\calX}{\mathcal{X}}
+\newcommand{\calF}{\mathcal{F}}
+\newcommand{\calG}{\mathcal{G}}
+\newcommand{\calN}{\mathcal{N}}
+\newcommand{\calD}{\mathcal{D}}
+\newcommand{\calL}{\mathcal{L}}
+\newcommand{\calS}{\mathcal{S}}
+\newcommand{\calO}{\mathcal{O}}
+\newcommand{\calE}{\mathcal{E}}
+\newcommand{\calT}{\mathcal{T}}
+
+% Hyperlinkable Gauss--Markov assumption labels. \Atarget{3} plants an
+% invisible anchor at the START OF ASSUMPTION 3's BODY; \Aref{3} prints "A3"
+% linked back to it. Usage:
+%     \begin{enumerate}[label=\textup{(A\arabic*)}]
+%     \item\Atarget{1} \emph{Linearity}: ...
+%
+% ⚠ THE ANCHOR MUST NOT GO IN THE enumitem `label=` KEY. A label is re-expanded
+% by hyperref's \Hy@wrapper@babel inside an \edef, where \hypertarget's
+% argument handling collapses: the build dies with a cascade of "Undefined
+% control sequence \x" and "Missing control sequence inserted", one pair per
+% item, and the message points at the \begin{enumerate} line rather than at
+% anything recognisable. (Observed on the first build of unit03.)
+\newcommand{\Atarget}[1]{\hypertarget{ass:A#1}{}}
+\newcommand{\Aref}[1]{\hyperlink{ass:A#1}{A#1}}
+
+% ================================================================== spacing ===
+\usepackage{parskip}
+\setlength{\parskip}{3pt}\setlength{\jot}{4pt}
+
+\usepackage{titlesec}
+\titleformat{\section}{\color{hdrBG}\normalfont\Large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\color{accent}\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{1pt}

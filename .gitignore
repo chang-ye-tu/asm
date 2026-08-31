@@ -1,0 +1,57 @@
+# Local agent/session state (never publish)
+.codex-home/
+**/.codex-home/
+**/.claude/settings.local.json
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# R / knitr local state
+.RData
+.Rhistory
+.Ruserdata
+.Rproj.user/
+*_cache/
+*_files/
+
+# LaTeX intermediates (the course PDFs themselves are intentionally committed)
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
+*.xdv
+_minted*/
+*.minted
+
+# Local packaging output
+/dist/
+
+# Redundant copy of the official SRM input.  The pipeline's canonical input is
+# srm/src/srm.pdf; the interleaved course draft is srm/srm.pdf.
+/srm-qa.pdf

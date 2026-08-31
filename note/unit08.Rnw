@@ -1,0 +1,1653 @@
+% Compile:  python build.py 08
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 8\ \ GLM II: Counts}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{8.\arabic{theorem}}
+\renewcommand\thetheorem  {8.\arabic{theorem}}
+\renewcommand\thelemma    {8.\arabic{theorem}}
+\renewcommand\theproposition{8.\arabic{theorem}}
+\renewcommand\thecorollary{8.\arabic{theorem}}
+\renewcommand\theexample  {8.\arabic{example}}
+\renewcommand\theexercise {8.\arabic{exercise}}
+\renewcommand\thefigure   {8.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Generalised Linear Models II: Counts and the Exponential Family}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit08-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 8.\ Generalised Linear Models II:\\[4pt] Counts and the Exponential Family}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Poisson Regression}\label{sec:8.1}
+%==============================================================================
+
+\begin{reading}
+FREES §12.1.
+\end{reading}
+
+\subsection{The Poisson distribution and exposure}\label{sec:8.1.1}
+
+\begin{definition}[Poisson]\label{def:poisson}
+$y$ has the \emph{Poisson} distribution with mean $\mu>0$, written $y\sim\mathrm{Pois}(\mu)$,
+if
+\begin{equation}\label{eq:poisson}
+\prb\{y=j\} = \frac{\mu^j}{j!}e^{-\mu} , \qquad j=0,1,2,\ldots
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Moments and additivity]\label{prop:poisson-basic}
+Let $y\sim\mathrm{Pois}(\mu)$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item The probability generating function is $G(s)=\expc[s^y]=e^{\mu(s-1)}$ for every
+      $s\in\Real$.
+\item $\expc[y]=\mu$ and $\var(y)=\mu$: the mean and the variance are equal, a property
+      called \emph{equidispersion}.
+\item If $y_1,\ldots,y_m$ are independent with $y_j\sim\mathrm{Pois}(\mu_j)$ then
+      $\sum_j y_j\sim\mathrm{Pois}(\sum_j\mu_j)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\expc[s^y]=e^{-\mu}\sum_{j\geqslant0}(\mu s)^j/j!=e^{-\mu}e^{\mu s}$, the series
+converging absolutely for every $s$.
+
+(ii) Differentiating the series term by term, which is legitimate inside its interval of
+convergence, $G'(1)=\expc[y]=\mu$ and $G''(1)=\expc[y(y-1)]=\mu^2$, so
+$\var(y)=\mu^2+\mu-\mu^2=\mu$.
+
+(iii) The generating function of the sum is the product
+$\prod_j e^{\mu_j(s-1)}=e^{(\sum_j\mu_j)(s-1)}$ by independence. Two distributions on the
+non-negative integers with the same generating function are equal, since the coefficients
+of a convergent power series are determined by the function; and the right side is the
+generating function of $\mathrm{Pois}(\sum_j\mu_j)$.
+\end{proof}
+
+\begin{definition}[Exposure]\label{def:exposure}
+An \emph{exposure} $E_i>0$ is a known measure of the amount of risk observed: policy-years,
+vehicle-months, population at risk. The model with exposure is
+$\expc[y_i]=E_i\mu_i$, where $\mu_i$ is a rate per unit of exposure.
+\end{definition}
+
+\begin{remark}
+Proposition~\ref{prop:poisson-basic}(iii) is why exposures are natural for counts: a policy
+observed for two years, with an independent $\mathrm{Pois}(\mu)$ count in each, produces a
+$\mathrm{Pois}(2\mu)$ total. Fractional exposures extend the same relation by definition
+rather than by proof.
+\end{remark}
+
+\subsection{The regression model}\label{sec:8.1.2}
+
+\begin{definition}[Poisson regression]\label{def:poisreg}
+Given non-random $\bx_i\in\Real^p$ with first coordinate $1$ and exposures $E_i$, the
+\emph{Poisson regression model} with \emph{logarithmic link} takes $y_1,\ldots,y_n$
+independent with
+\begin{equation}\label{eq:poisreg}
+y_i\sim\mathrm{Pois}(\mu_i) ,
+\qquad
+\ln\mu_i = \ln E_i + \bx_i'\bb .
+\end{equation}
+The term $\ln E_i$, a covariate whose coefficient is fixed at $1$, is called an
+\emph{offset}.
+\end{definition}
+
+\begin{proposition}[Interpretation]\label{prop:pois-interp}
+Under~\eqref{eq:poisreg}:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $\mu_i = E_i\exp(\bx_i'\bb)$, which is positive for every $\bb$ and every $\bx_i$;
+\item a unit increase in $x_{ij}$, the other coordinates and the exposure held fixed,
+      multiplies the mean by $e^{\beta_j}$;
+\item $\partial\ln\mu_i/\partial x_{ij}=\beta_j$, so $\beta_j$ is the proportional change in
+      the mean per unit change in the covariate;
+\item with a categorical design and a logarithmic link the fitted mean factorises,
+      $\mu = B\cdot A_1\cdot A_2\cdots$, one factor per level: a \emph{multiplicative}
+      rating structure.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Exponentiate~\eqref{eq:poisreg}. (ii) The ratio of the two means is
+$\exp\{(x_{ij}+1)\beta_j-x_{ij}\beta_j\}=e^{\beta_j}$, every other term cancelling.
+(iii) Differentiate $\ln\mu_i=\ln E_i+\bx_i'\bb$. (iv) With $\bx_i'\bb=\beta_0+\alpha_{a(i)}
++\tau_{u(i)}$ for level indicators, $\mu_i=e^{\beta_0}e^{\alpha_{a(i)}}e^{\tau_{u(i)}}$.
+\end{proof}
+
+\begin{remark}
+The offset is not an estimated coefficient. Putting $\ln E_i$ in as an ordinary covariate
+estimates a coefficient $\gamma$ and fits $\mu_i=E_i^{\gamma}e^{\bx_i'\bb}$, a different
+model; the offset is the restriction $\gamma=1$, which is what proportionality of the mean
+to exposure asserts.
+\end{remark}
+
+\subsection{The likelihood}\label{sec:8.1.3}
+
+\begin{theorem}[Score, information, concavity]\label{thm:pois-score}
+For the model~\eqref{eq:poisreg} the log-likelihood, score and information are
+\begin{align}
+\ell(\bb) &= \sum_{i=1}^n\bigl\{y_i(\ln E_i+\bx_i'\bb) - E_ie^{\bx_i'\bb} - \ln y_i!\bigr\},
+   \label{eq:pois-loglik}\\
+\nabla\ell(\bb) &= \sum_{i=1}^n\bx_i(y_i-\mu_i) = \bX'(\bY-\bmu),
+\qquad
+\calI(\bb) = \sum_{i=1}^n\mu_i\bx_i\bx_i' = \bX'\bW\bX ,
+   \label{eq:pois-score}
+\end{align}
+with $\bW=\diag(\mu_i)$. The Hessian is $-\calI(\bb)$ identically, so observed and expected
+information agree; $\ell$ is concave, and strictly concave when $\rank(\bX)=p$.
+\end{theorem}
+
+\begin{proof}
+Summing the logarithm of~\eqref{eq:poisson} at the observed value of each $y_i$, and using
+$\ln\mu_i=\ln E_i+\bx_i'\bb$ gives~\eqref{eq:pois-loglik}. Differentiating,
+$\partial\mu_i/\partial\bb=\mu_i\bx_i$, so
+$\nabla\ell=\sum_i\bx_i y_i-\sum_i\mu_i\bx_i$, which is~\eqref{eq:pois-score}, and
+differentiating once more gives $\nabla^2\ell=-\sum_i\mu_i\bx_i\bx_i'$, free of the $y_i$
+and hence equal to its own expectation. That matrix is negative semi-definite because every
+$\mu_i>0$, and negative definite exactly when the $\bx_i$ span $\Real^p$.
+\end{proof}
+
+\begin{corollary}[What the score equations force]\label{cor:pois-score-eq}
+At the maximum likelihood estimate, $\sum_i x_{ij}\hat\mu_i=\sum_i x_{ij}y_i$ for every
+covariate $j$. With an intercept, $\sum_i\hat\mu_i=\sum_i y_i$: the fitted counts reproduce
+the observed total, and within each level of a categorical covariate.
+\end{corollary}
+
+\begin{proof}
+Setting~\eqref{eq:pois-score} to zero is $\bX'(\bY-\hat\bmu)=\bzero$; read coordinate by
+coordinate, with $x_{i0}\equiv1$ for the intercept and $x_{ij}$ the indicator of a level.
+\end{proof}
+
+\begin{theorem}[Iteratively reweighted least squares]\label{thm:pois-irls}
+With $\eta_i=\ln E_i+\bx_i'\bb^{(m)}$, $\mu_i=e^{\eta_i}$, $w_i=\mu_i$ and working response
+$z_i=\bx_i'\bb^{(m)}+(y_i-\mu_i)/\mu_i$, the Newton step is
+$\bb^{(m+1)}=(\bX'\bW\bX)^{-1}\bX'\bW\bz$.
+\end{theorem}
+
+\begin{proof}
+The Newton step is $\bb^{(m)}+(\bX'\bW\bX)^{-1}\bX'(\bY-\bmu)$ by
+Theorem~\ref{thm:pois-score}. Since $\bW\bz=\bW\bX\bb^{(m)}+(\bY-\bmu)$ by the definition of
+$z_i$, the stated formula equals
+$(\bX'\bW\bX)^{-1}\{\bX'\bW\bX\bb^{(m)}+\bX'(\bY-\bmu)\}$, which is the same vector.
+\end{proof}
+
+\subsection{Asymptotics}\label{sec:8.1.4}
+
+\begin{theorem}[Sampling distribution]\label{thm:pois-asymp}
+Consider~\eqref{eq:poisreg} with true parameter $\bb_0$ and suppose
+\begin{enumerate}[label=\textup{(D\arabic*)}]
+\item\label{P1} $|\bx_i|\leqslant M$ and $c\leqslant E_i\leqslant C$ for constants free of
+      $i$;
+\item\label{P2} $\bF_n=n^{-1}\sum_{i\leqslant n}\mu_i\bx_i\bx_i'\to\bF$ positive definite,
+      the $\mu_i$ evaluated at $\bb_0$.
+\end{enumerate}
+Then with probability tending to one $\hat\bb$ exists and is unique, $\hat\bb\convp\bb_0$,
+and
+\begin{equation}\label{eq:pois-asymp}
+\sqrt n(\hat\bb-\bb_0)\convd N(\bzero,\bF^{-1}) ,
+\qquad n^{-1}\calI(\hat\bb)\convp\bF .
+\end{equation}
+The Wald and likelihood ratio statistics of Unit 7 are $\chi^2_q$ in the limit.
+\end{theorem}
+
+\begin{proof}
+The three hypotheses of the concave maximum likelihood theorem of the prerequisites are
+checked with $\Theta=\Real^p$ and $\ell_i$ the $i$-th summand
+of~\eqref{eq:pois-loglik}.
+
+\textbf{Concavity and smoothness.} Theorem~\ref{thm:pois-score}.
+
+\textbf{The score condition.} $\nabla\ell_i(\bb_0)=\bx_i(y_i-\mu_i)$ has mean zero and
+variance $\mu_i\bx_i\bx_i'$, so the average variance is $\bF_n\to\bF$ by~\ref{P2}. The
+summands are \emph{not} bounded, since $y_i$ is not, so the bounded-summand corollary of the
+prerequisites does not apply; the Lyapunov corollary does. Under~\ref{P1} the means
+$\mu_i=E_ie^{\bx_i'\bb_0}$ lie in a fixed interval $[m_-,m_+]$ with $m_->0$, and the fourth
+central moment of a Poisson variable is $\mu+3\mu^2$, so
+\[
+\expc|\bx_i(y_i-\mu_i)|^4 = |\bx_i|^4\,\expc(y_i-\mu_i)^4
+\leqslant M^4(m_++3m_+^2) ,
+\]
+bounded uniformly in $i$. Taking $\delta=2$ in the Lyapunov corollary gives
+$n^{-1/2}\bU_n\convd N(\bzero,\bF)$.
+
+\textbf{The curvature condition.} $\bH_n(\bb)=\sum_iE_ie^{\bx_i'\bb}\bx_i\bx_i'$ is
+non-random and equals $n\bF_n$ at $\bb_0$, so $n^{-1}\bH_n(\bb_0)\to\bF$: the limiting
+curvature is the same $\bF$ as the limiting score variance, which is the information
+equality for this correctly specified model. For the Lipschitz bound, on
+$|\bb-\bb_0|\leqslant\delta_0$ the exponents $\bx_i'\bb$ lie in a fixed compact interval, so
+$|e^{\bx_i'\bb}-e^{\bx_i'\bb_0}|\leqslant K|\bx_i||\bb-\bb_0|$ by the mean value theorem
+with $K$ the largest value of the exponential on that interval, and hence
+\[
+\|\bH_n(\bb)-\bH_n(\bb_0)\|\leqslant\sum_{i=1}^nC K M^3|\bb-\bb_0| = nCKM^3|\bb-\bb_0| .
+\]
+The conclusions are the existence, consistency, asymptotic normality, information and
+likelihood ratio statements of that theorem and its corollaries.
+\end{proof}
+
+\begin{remark}
+The fourth moment of a centred Poisson variable is used only to make the Lyapunov ratio
+finite; any $\delta>0$ would do. Condition~\ref{P1} keeps the means away from $0$ and
+$\infty$, which is what makes the moment bound uniform: a design in which some $\mu_i$
+drifts to zero has no such bound, and the asymptotics of a cell with almost no exposure are
+not covered.
+\end{remark}
+
+%==============================================================================
+\section{Overdispersion and Other Count Models}\label{sec:8.2}
+%==============================================================================
+
+\begin{reading}
+FREES §12.3--12.4.
+\end{reading}
+
+\subsection{Detecting overdispersion}\label{sec:8.2.1}
+
+\begin{definition}[Over- and underdispersion]\label{def:overdisp}
+Counts with $\var(y_i)>\expc[y_i]$ are \emph{overdispersed} relative to the Poisson, and
+\emph{underdispersed} when the inequality is reversed.
+\end{definition}
+
+\begin{proposition}[A moment test]\label{prop:moment-test}
+Let $T_i=(y_i-\mu_i)^2-y_i$ with $\mu_i=\expc[y_i]$. If $y_i$ is Poisson then
+$\expc[T_i]=0$. If instead $\var(y_i)=\mu_i+\alpha\,v(\mu_i)$ for some $\alpha$ and a known
+function $v>0$, then $\expc[T_i]=\alpha\,v(\mu_i)$, so the least squares slope of $T_i$ on
+$v(\mu_i)$ through the origin estimates $\alpha$.
+\end{proposition}
+
+\begin{proof}
+$\expc[(y_i-\mu_i)^2]=\var(y_i)$ and $\expc[y_i]=\mu_i$, so
+$\expc[T_i]=\var(y_i)-\mu_i$, which is $0$ under equidispersion and $\alpha v(\mu_i)$ under
+the stated alternative. Regressing $T_i$ on $v(\mu_i)$ without an intercept has
+expectation $\alpha$ for its slope, the design being non-random once the $\mu_i$ are.
+\end{proof}
+
+\begin{definition}[Pearson statistic and dispersion estimate]\label{def:pearson}
+With fitted means $\hat\mu_i$ and $p$ estimated coefficients,
+\begin{equation}\label{eq:phihat}
+X^2 = \sum_{i=1}^n\frac{(y_i-\hat\mu_i)^2}{\hat\mu_i} ,
+\qquad
+\hat\phi = \frac{X^2}{n-p} .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Consistency of $\hat\phi$]\label{prop:phihat}
+Suppose $\expc[y_i]=\mu_i$ and $\var(y_i)=\phi\mu_i$, that $\mu_i\in[m_-,m_+]$ with
+$m_->0$, that $\sup_i\expc[(y_i-\mu_i)^4]<\infty$, and that
+$\hat\bb-\bb_0=O_p(n^{-1/2})$ with $|\bx_i|\leqslant M$. Then $\hat\phi\convp\phi$.
+\end{proposition}
+
+\begin{proof}
+Write $r_i=y_i-\mu_i$ and $\delta_i=\hat\mu_i-\mu_i$. Since
+$\mu(\eta)=E_ie^{\eta}$ is Lipschitz on the compact range of $\bx_i'\bb$ for
+$\bb$ near $\bb_0$, $\max_i|\delta_i|\leqslant K|\hat\bb-\bb_0|=O_p(n^{-1/2})$.
+
+First, the infeasible version. $\expc[r_i^2/\mu_i]=\phi$ and
+$\var(r_i^2/\mu_i)\leqslant\expc[r_i^4]/m_-^2$, bounded, so by Chebyshev
+\begin{equation}\label{eq:phi-tilde}
+\tilde\phi = \frac1n\sum_{i=1}^n\frac{r_i^2}{\mu_i}\ \convp\ \phi .
+\end{equation}
+
+Next, the difference. On the event $\max_i|\delta_i|\leqslant m_-/2$, whose probability
+tends to $1$, every $\hat\mu_i\geqslant m_-/2$ and
+\[
+\frac{(r_i-\delta_i)^2}{\hat\mu_i}-\frac{r_i^2}{\mu_i}
+= -\,\frac{r_i^2\delta_i}{\mu_i\hat\mu_i} + \frac{\delta_i^2-2r_i\delta_i}{\hat\mu_i} .
+\]
+Averaging over $i$ and bounding, with $\Delta=\max_i|\delta_i|$,
+\[
+\Bigl|\frac1n\sum_i\Bigl\{\frac{(r_i-\delta_i)^2}{\hat\mu_i}-\frac{r_i^2}{\mu_i}\Bigr\}\Bigr|
+\leqslant \frac{2\Delta}{m_-^2}\cdot\frac1n\sum_i r_i^2
+ + \frac{2}{m_-}\Bigl(\Delta^2+2\Delta\cdot\frac1n\sum_i|r_i|\Bigr) .
+\]
+Both averages $n^{-1}\sum_ir_i^2$ and $n^{-1}\sum_i|r_i|$ are $O_p(1)$, their expectations
+being bounded, and $\Delta=O_p(n^{-1/2})$, so the whole bound is $o_p(1)$. With
+$n/(n-p)\to1$ and~\eqref{eq:phi-tilde}, $\hat\phi\convp\phi$.
+\end{proof}
+
+\begin{remark}
+The residual deviance divided by $n-p$ is a second dispersion estimate. The two are not
+equal and need not be close: the Pearson statistic weights by $\hat\mu_i$ and the deviance
+by a logarithmic discrepancy, and §\ref{sec:8.4.3} prints both on the same fit.
+\end{remark}
+
+\subsection{Quasi-Poisson and the sandwich}\label{sec:8.2.2}
+
+\begin{theorem}[Quasi-Poisson]\label{thm:quasipois}
+Suppose $y_1,\ldots,y_n$ are independent with
+\begin{equation}\label{eq:quasi}
+\expc[y_i]=\mu_i=E_ie^{\bx_i'\bb_0} ,
+\qquad
+\var(y_i)=\phi\mu_i ,
+\end{equation}
+and that $\sup_i\expc|y_i-\mu_i|^{2+\delta}<\infty$ for some $\delta>0$, with~\ref{P1}
+and~\ref{P2} of Theorem~\ref{thm:pois-asymp}. Let $\hat\bb$ maximise the Poisson
+log-likelihood~\eqref{eq:pois-loglik}, whatever the true distribution. Then
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $\hat\bb$ is the same vector as under the Poisson model: the estimator depends on the
+      data only through the score equations $\bX'(\bY-\bmu)=\bzero$;
+\item $\hat\bb\convp\bb_0$ and $\sqrt n(\hat\bb-\bb_0)\convd N(\bzero,\ \phi\bF^{-1})$;
+\item the correct standard errors are $\sqrt{\phi}$ times the Poisson ones.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) is the definition of $\hat\bb$: nothing outside~\eqref{eq:pois-loglik} enters its
+computation.
+
+(ii) Apply the concave maximum likelihood theorem of the prerequisites with $\ell_n$ the
+Poisson log-likelihood, which is a criterion function rather than the true log-likelihood.
+The hypotheses are checked as in Theorem~\ref{thm:pois-asymp}, with two changes. The score
+still has mean zero, $\expc[\bx_i(y_i-\mu_i)]=\bzero$, because the \emph{mean} is correctly
+specified; that is all the theorem requires. Its variance is now
+$\phi\mu_i\bx_i\bx_i'$, so $\bF_n\to\phi\bF$, and the Lyapunov corollary of the
+prerequisites gives the central limit theorem under the assumed $(2+\delta)$-moment bound.
+The curvature is unchanged, $n^{-1}\bH_n(\bb_0)=n^{-1}\sum_i\mu_i\bx_i\bx_i'\to\bF$, so the
+limiting curvature is $\bG=\bF$ while the limiting score variance is $\phi\bF$. The
+sandwich of that theorem is
+\[
+\bG^{-1}(\phi\bF)\bG^{-1} = \bF^{-1}(\phi\bF)\bF^{-1} = \phi\bF^{-1} .
+\]
+
+(iii) Standard errors are square roots of diagonal entries of $n^{-1}$ times the asymptotic
+variance, so multiplying that variance by $\phi$ multiplies each by $\sqrt\phi$.
+\end{proof}
+
+\begin{remark}
+Under~\eqref{eq:quasi} the information equality fails by exactly the factor $\phi$, and the
+whole effect of overdispersion on inference is that constant. The point estimates need no
+correction, the standard errors need one factor, and the likelihood ratio statistic needs
+dividing by $\hat\phi$ before being referred to $\chi^2$, since it is a difference of
+criterion values, not of log-likelihoods.
+\end{remark}
+
+\begin{proposition}[Fully robust standard errors]\label{prop:sandwich-pois}
+If only $\expc[y_i]=\mu_i$ is assumed, with $\var(y_i)=\sigma_i^2$ unrestricted and the
+moment conditions of Theorem~\ref{thm:quasipois}, then
+$\sqrt n(\hat\bb-\bb_0)\convd N(\bzero,\bG^{-1}\bF\bG^{-1})$ with
+$\bG=\lim n^{-1}\sum_i\mu_i\bx_i\bx_i'$ and $\bF=\lim n^{-1}\sum_i\sigma_i^2\bx_i\bx_i'$,
+estimated by
+\begin{equation}\label{eq:pois-sandwich}
+\widehat{\var}(\hat\bb)
+= \Bigl(\sum_i\hat\mu_i\bx_i\bx_i'\Bigr)^{-1}
+  \Bigl(\sum_i(y_i-\hat\mu_i)^2\bx_i\bx_i'\Bigr)
+  \Bigl(\sum_i\hat\mu_i\bx_i\bx_i'\Bigr)^{-1} .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The argument of Theorem~\ref{thm:quasipois}(ii) is unchanged except that the score variance
+is $\sum_i\sigma_i^2\bx_i\bx_i'$, giving $\bF$ as stated and the sandwich of the
+prerequisites' theorem. The middle matrix of~\eqref{eq:pois-sandwich} is consistent for
+$n\bF$ because $\expc[(y_i-\mu_i)^2]=\sigma_i^2$ and the plug-in error is $o_p(1)$ by the
+argument of Proposition~\ref{prop:phihat}.
+\end{proof}
+
+\begin{remark}
+Quasi-Poisson forces the ratio of the robust to the model-based standard error to be the
+same constant $\sqrt{\hat\phi}$ for every coefficient. The sandwich does not, and a wide
+spread of those ratios is evidence that $\var(y_i)=\phi\mu_i$ is itself wrong
+(§\ref{sec:8.4.3}).
+\end{remark}
+
+\subsection{The negative binomial}\label{sec:8.2.3}
+
+\begin{definition}[Negative binomial]\label{def:nb}
+For $\mu>0$ and $\theta>0$, $y\sim\mathrm{NB}(\mu,\theta)$ if
+\begin{equation}\label{eq:nb}
+\prb\{y=j\} = \frac{\Gamma(j+\theta)}{j!\,\Gamma(\theta)}
+              \Bigl(\frac{\theta}{\theta+\mu}\Bigr)^{\!\theta}
+              \Bigl(\frac{\mu}{\theta+\mu}\Bigr)^{\!j} ,
+\qquad j=0,1,2,\ldots
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Poisson--gamma mixture]\label{thm:poisson-gamma}
+Let $\lambda$ have the gamma density with shape $\theta$ and rate $\theta/\mu$, so that
+$\expc[\lambda]=\mu$ and $\var(\lambda)=\mu^2/\theta$, and let $y\mid\lambda\sim
+\mathrm{Pois}(\lambda)$. Then $y\sim\mathrm{NB}(\mu,\theta)$, and
+\begin{equation}\label{eq:nb-moments}
+\expc[y]=\mu , \qquad \var(y)=\mu+\frac{\mu^2}{\theta} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $\rho=\theta/\mu$. Integrating out $\lambda$,
+\[
+\prb\{y=j\}=\int_0^\infty\frac{\lambda^je^{-\lambda}}{j!}\,
+\frac{\rho^\theta}{\Gamma(\theta)}\lambda^{\theta-1}e^{-\rho\lambda}\,\dd\lambda
+= \frac{\rho^\theta}{j!\,\Gamma(\theta)}\int_0^\infty\lambda^{j+\theta-1}
+  e^{-(1+\rho)\lambda}\,\dd\lambda .
+\]
+The integral is $\Gamma(j+\theta)/(1+\rho)^{j+\theta}$, by the definition of the gamma
+function after the substitution $u=(1+\rho)\lambda$, so
+\[
+\prb\{y=j\}=\frac{\Gamma(j+\theta)}{j!\,\Gamma(\theta)}
+\Bigl(\frac{\rho}{1+\rho}\Bigr)^{\!\theta}\Bigl(\frac{1}{1+\rho}\Bigr)^{\!j} ,
+\]
+and $\rho/(1+\rho)=\theta/(\theta+\mu)$ while $1/(1+\rho)=\mu/(\theta+\mu)$, which
+is~\eqref{eq:nb}.
+
+For the moments, the tower property of the prerequisites gives
+$\expc[y]=\expc[\lambda]=\mu$, and the conditional variance decomposition there gives
+$\var(y)=\expc[\var(y\mid\lambda)]+\var(\expc[y\mid\lambda])
+=\expc[\lambda]+\var(\lambda)=\mu+\mu^2/\theta$.
+\end{proof}
+
+\begin{corollary}[The Poisson is the limit]\label{cor:nb-limit}
+For fixed $j$ and $\mu$, $\prb\{y=j\}\to\mu^je^{-\mu}/j!$ as $\theta\to\infty$, and
+$\var(y)\downarrow\mu$.
+\end{corollary}
+
+\begin{proof}
+The variance statement is immediate from~\eqref{eq:nb-moments}. For the mass function,
+\[
+\frac{\Gamma(j+\theta)}{\Gamma(\theta)\theta^j}
+= \prod_{l=0}^{j-1}\frac{\theta+l}{\theta}\ \longrightarrow\ 1 ,
+\]
+a product of $j$ factors each tending to $1$; and rewriting~\eqref{eq:nb} as
+\[
+\frac{\Gamma(j+\theta)}{\Gamma(\theta)\theta^j}\cdot\frac{\mu^j}{j!}\cdot
+\Bigl(1+\frac\mu\theta\Bigr)^{-\theta}\Bigl(1+\frac\mu\theta\Bigr)^{-j} ,
+\]
+the third factor tends to $e^{-\mu}$ and the fourth to $1$.
+\end{proof}
+
+\begin{proposition}[Concavity in $\bb$ for fixed $\theta$]\label{prop:nb-concave}
+With $\mu_i=E_ie^{\bx_i'\bb}$ and $\theta$ fixed, the negative binomial log-likelihood is
+concave in $\bb$, strictly so when $\rank(\bX)=p$.
+\end{proposition}
+
+\begin{proof}
+Dropping terms free of $\bb$, the $i$-th contribution is
+$y_i\ln\mu_i-(y_i+\theta)\ln(\theta+\mu_i)$. As a function of $\eta=\bx_i'\bb$, with
+$\mu=E_ie^{\eta}$ and $\dd\mu/\dd\eta=\mu$, the first derivative is
+\[
+y_i-\frac{(y_i+\theta)\mu}{\theta+\mu} ,
+\qquad\text{and the second is}\qquad
+-\frac{(y_i+\theta)\,\theta\mu}{(\theta+\mu)^2}\ \leqslant\ 0 ,
+\]
+using $\dd/\dd\eta\{\mu/(\theta+\mu)\}=\theta\mu/(\theta+\mu)^2$. Composing with the linear
+map $\bb\mapsto\bx_i'\bb$ preserves concavity, and the second derivative is strictly
+negative unless $y_i=0$ and $\theta=0$, so the sum is strictly concave when the $\bx_i$
+span.
+\end{proof}
+
+\begin{remark}
+For fixed $\theta$ the model is a linear exponential family in $\mu$ with variance function
+$V(\mu)=\mu+\mu^2/\theta$ (§\ref{sec:8.3}). With $\theta$ estimated it is not, and the
+joint likelihood in $(\bb,\theta)$ is maximised by alternating between the concave problem
+of Proposition~\ref{prop:nb-concave} and a one-dimensional search in $\theta$. The Poisson
+sits on the boundary $\theta=\infty$ of the parameter space, so a likelihood ratio test of
+Poisson against negative binomial does not have the $\chi^2_1$ limit of Unit 7; the
+comparison is made by an information criterion.
+\end{remark}
+
+\subsection{Excess zeros}\label{sec:8.2.4}
+
+\begin{definition}[Zero-inflated and hurdle models]\label{def:zip}
+Let $g_i$ be a count mass function with mean $\mu_i$, and $\pi_i\in(0,1)$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item The \emph{zero-inflated} model mixes a point mass at $0$ with $g_i$:
+      \begin{equation}\label{eq:zip}
+      \prb\{y_i=j\} = \begin{cases}
+        \pi_i + (1-\pi_i)g_i(0), & j=0,\\
+        (1-\pi_i)g_i(j), & j\geqslant1 .
+      \end{cases}
+      \end{equation}
+\item The \emph{hurdle} model replaces the zero probability outright:
+      \begin{equation}\label{eq:hurdle}
+      \prb\{y_i=j\} = \begin{cases}
+        \pi_i, & j=0,\\
+        k_i\,g_i(j), & j\geqslant1 ,
+      \end{cases}
+      \qquad k_i=\frac{1-\pi_i}{1-g_i(0)} .
+      \end{equation}
+\end{enumerate}
+In both, $\pi_i$ is modelled by a binary regression, usually logistic, and $\mu_i$ by a log
+link.
+\end{definition}
+
+\begin{theorem}[Moments]\label{thm:zip-moments}
+Let $g_i$ be the $\mathrm{Pois}(\mu_i)$ mass function.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item Under~\eqref{eq:zip},
+      $\expc[y_i]=(1-\pi_i)\mu_i$ and
+      \begin{equation}\label{eq:zip-var}
+      \var(y_i)=(1-\pi_i)\mu_i+\pi_i(1-\pi_i)\mu_i^2
+      =\expc[y_i]+\pi_i(1-\pi_i)\mu_i^2 ,
+      \end{equation}
+      so a zero-inflated Poisson is always overdispersed.
+\item Under~\eqref{eq:hurdle}, $\expc[y_i]=k_i\mu_i$ and
+      $\var(y_i)=k_i\mu_i+k_i(1-k_i)\mu_i^2$, which exceeds the mean when $k_i<1$ and falls
+      below it when $k_i>1$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) Let $B$ be the indicator of the point mass, so $\prb\{B=1\}=\pi_i$ and
+$y_i=(1-B)N$ with $N\sim\mathrm{Pois}(\mu_i)$ independent of $B$. Then
+$\expc[y_i]=(1-\pi_i)\mu_i$ and, since $(1-B)^2=1-B$,
+\[
+\expc[y_i^2]=\expc[(1-B)N^2]=(1-\pi_i)(\mu_i+\mu_i^2) .
+\]
+Subtracting the square of the mean,
+$\var(y_i)=(1-\pi_i)\mu_i+(1-\pi_i)\mu_i^2-(1-\pi_i)^2\mu_i^2$, and the last two terms
+combine to $(1-\pi_i)\mu_i^2\{1-(1-\pi_i)\}=\pi_i(1-\pi_i)\mu_i^2$. That quantity is
+strictly positive for $\pi_i\in(0,1)$, so the variance exceeds the mean.
+
+(ii) Under~\eqref{eq:hurdle}, $\expc[y_i]=k_i\sum_{j\geqslant1}j\,g_i(j)=k_i\mu_i$ and
+$\expc[y_i^2]=k_i\sum_{j\geqslant1}j^2g_i(j)=k_i(\mu_i+\mu_i^2)$, the $j=0$ terms
+contributing nothing in either sum. Subtracting gives
+$k_i\mu_i+k_i\mu_i^2-k_i^2\mu_i^2$.
+\end{proof}
+
+\begin{theorem}[The hurdle likelihood separates]\label{thm:hurdle-sep}
+Let $\pi_i=\pi(\bx_i;\bgamma)$ and $g_i=g(\cdot;\bx_i,\bb)$ with $\bgamma$ and $\bb$
+functionally unrelated. Then the log-likelihood of~\eqref{eq:hurdle} is
+\begin{equation}\label{eq:hurdle-sep}
+\ell(\bgamma,\bb) =
+\underbrace{\sum_{i}\Bigl[\indc\{y_i=0\}\ln\pi_i+\indc\{y_i>0\}\ln(1-\pi_i)\Bigr]}_{\ell_1(\bgamma)}
++\underbrace{\sum_{i:y_i>0}\ln\frac{g_i(y_i)}{1-g_i(0)}}_{\ell_2(\bb)} ,
+\end{equation}
+so the two halves may be maximised separately: $\ell_1$ is a binary regression on
+$\indc\{y_i=0\}$ and $\ell_2$ is a zero-truncated count regression.
+\end{theorem}
+
+\begin{proof}
+Summing the logarithm of~\eqref{eq:hurdle} at each observed value, an observation with $y_i=0$
+contributes $\ln\pi_i$ and one with $y_i>0$ contributes
+$\ln k_i+\ln g_i(y_i)=\ln(1-\pi_i)-\ln(1-g_i(0))+\ln g_i(y_i)$. Collecting the terms in
+$\pi_i$ and the terms in $g_i$ gives~\eqref{eq:hurdle-sep}, and since no parameter appears
+in both sums, maximising the total is maximising each.
+\end{proof}
+
+\begin{corollary}[The hurdle reproduces the zero count]\label{cor:hurdle-zeros}
+If the zero part is a logistic regression with an intercept only, then
+$\hat\pi=n^{-1}\#\{i:y_i=0\}$ and the fitted expected number of zeros equals the observed
+number exactly.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:hurdle-sep} the zero part is a Bernoulli log-likelihood for
+$\indc\{y_i=0\}$ with a single parameter, and by the score identity of Unit 7 the fitted
+probability reproduces the observed proportion. The fitted expected count of zeros is
+$n\hat\pi$, which is that proportion times $n$.
+\end{proof}
+
+\begin{remark}
+The zero-inflated model has no such property: its zero probability
+$\pi_i+(1-\pi_i)e^{-\mu_i}$ mixes both parts, and the two parameters are estimated jointly
+from the whole sample. The two models also mean different things. Zero inflation says some
+subjects can only produce a zero; the hurdle says every subject faces one mechanism for
+crossing zero and another for how far past it to go.
+\end{remark}
+
+%==============================================================================
+\section{The Linear Exponential Family}\label{sec:8.3}
+%==============================================================================
+
+\begin{reading}
+FREES §13.1--13.3, §13.5--13.6, §13.9.
+\end{reading}
+
+\subsection{Definition and moments}\label{sec:8.3.1}
+
+\begin{definition}[Linear exponential family]\label{def:lef}
+Fix $\phi>0$ and a $\sigma$-finite measure $\nu$ on $\Real$ that is not concentrated at a
+single point. Put
+\[
+\Theta=\Bigl\{\theta\in\Real:\ \int e^{y\theta/\phi}\,\dd\nu(y)<\infty\Bigr\} ,
+\]
+assume its interior $\Theta^\circ$ is non-empty, and define the \emph{cumulant function}
+\begin{equation}\label{eq:cumulant}
+b(\theta) = \phi\,\ln\!\int e^{y\theta/\phi}\,\dd\nu(y) , \qquad \theta\in\Theta^\circ .
+\end{equation}
+The \emph{linear exponential family} generated by $(\nu,\phi)$ is the set of densities with
+respect to $\nu$
+\begin{equation}\label{eq:lef}
+f(y;\theta,\phi) = \exp\Bigl\{\frac{y\theta-b(\theta)}{\phi}\Bigr\} ,
+\qquad \theta\in\Theta^\circ ,
+\end{equation}
+with $\theta$ the \emph{natural parameter} and $\phi$ the \emph{dispersion}.
+\end{definition}
+
+\begin{remark}
+Writing $\dd\nu(y)=e^{S(y,\phi)}\dd\lambda(y)$ for a reference measure $\lambda$ recovers
+the form $\exp\{(y\theta-b(\theta))/\phi+S(y,\phi)\}$ in which the family is usually
+displayed. The definition above makes $\int f\,\dd\nu=1$ true by construction rather than
+by assumption.
+\end{remark}
+
+\begin{theorem}[Moments]\label{thm:lef-moments}
+On $\Theta^\circ$ the function $b$ is twice differentiable and, for $y$ distributed
+according to $f(\cdot;\theta,\phi)$,
+\begin{equation}\label{eq:lef-moments}
+\expc_\theta[y]=b'(\theta) , \qquad \var_\theta(y)=\phi\,b''(\theta) .
+\end{equation}
+Consequently $b$ is strictly convex on $\Theta^\circ$ and $b'$ is strictly increasing.
+\end{theorem}
+
+\begin{proof}
+Write $A(\theta)=\int e^{y\theta/\phi}\dd\nu(y)$, so that $b=\phi\ln A$. Fix
+$\theta_0\in\Theta^\circ$ and $\delta>0$ with $[\theta_0-2\delta,\theta_0+2\delta]\subset
+\Theta$.
+
+\textbf{Domination.} For $k\geqslant0$ and $u\geqslant0$ the inequality
+$e^u\geqslant u^k/k!$ gives $|y|^k\leqslant k!(\phi/\delta)^ke^{|y|\delta/\phi}$. For
+$|\theta-\theta_0|<\delta$,
+\[
+e^{|y|\delta/\phi}e^{y\theta/\phi}
+= \begin{cases} e^{y(\theta+\delta)/\phi}\leqslant e^{y(\theta_0+2\delta)/\phi}, & y\geqslant0,\\
+                e^{y(\theta-\delta)/\phi}\leqslant e^{y(\theta_0-2\delta)/\phi}, & y<0,\end{cases}
+\]
+in each case because the exponent is increased. Hence
+\begin{equation}\label{eq:lef-dom}
+|y|^k e^{y\theta/\phi} \leqslant k!\,(\phi/\delta)^k
+\bigl\{e^{y(\theta_0+2\delta)/\phi}+e^{y(\theta_0-2\delta)/\phi}\bigr\} =: g_k(y) ,
+\end{equation}
+and $g_k$ is $\nu$-integrable because $\theta_0\pm2\delta\in\Theta$.
+
+\textbf{Differentiation.} Applying the differentiation-under-the-integral theorem of the
+prerequisites twice, with $g_1$ and $g_2$ of~\eqref{eq:lef-dom} as dominating functions,
+$A$ is twice differentiable on $(\theta_0-\delta,\theta_0+\delta)$ with
+\[
+A'(\theta)=\frac1\phi\int y\,e^{y\theta/\phi}\dd\nu(y) ,
+\qquad
+A''(\theta)=\frac1{\phi^2}\int y^2 e^{y\theta/\phi}\dd\nu(y) .
+\]
+Since $f(y;\theta,\phi)=e^{y\theta/\phi}/A(\theta)$ by~\eqref{eq:cumulant}
+and~\eqref{eq:lef}, the two integrals are $A(\theta)\expc_\theta[y]$ and
+$A(\theta)\expc_\theta[y^2]$, so $A'=A\expc_\theta[y]/\phi$ and
+$A''=A\expc_\theta[y^2]/\phi^2$. Therefore
+\[
+b'(\theta)=\phi\frac{A'}{A}=\expc_\theta[y] ,
+\qquad
+b''(\theta)=\phi\,\frac{A''A-(A')^2}{A^2}
+=\frac{1}{\phi}\bigl\{\expc_\theta[y^2]-(\expc_\theta[y])^2\bigr\}
+=\frac{\var_\theta(y)}{\phi} .
+\]
+Finally $\var_\theta(y)>0$ because $\nu$, and hence the law of $y$, is not concentrated at a
+point; so $b''>0$.
+\end{proof}
+
+\begin{definition}[Variance function; weights]\label{def:varfun}
+By Theorem~\ref{thm:lef-moments} the map $\theta\mapsto\mu=b'(\theta)$ is a strictly
+increasing bijection onto its range, so $\theta=(b')^{-1}(\mu)$ and
+\begin{equation}\label{eq:varfun}
+\var(y)=\phi\,V(\mu) , \qquad V(\mu)=b''\bigl((b')^{-1}(\mu)\bigr) ,
+\end{equation}
+the \emph{variance function}. When observation $i$ carries a known weight $w_i>0$ its
+dispersion is $\phi_i=\phi/w_i$, so $\var(y_i)=\phi V(\mu_i)/w_i$.
+\end{definition}
+
+\begin{ctab}[0.92]
+\begin{tabular}{lcccc}
+\toprule
+Family & $b(\theta)$ & $\mu=b'(\theta)$ & $V(\mu)$ & canonical link $(b')^{-1}(\mu)$\\
+\midrule
+Normal            & $\theta^2/2$        & $\theta$                    & $1$          & $\mu$\\
+Bernoulli         & $\ln(1+e^{\theta})$ & $e^{\theta}/(1+e^{\theta})$ & $\mu(1-\mu)$ & $\logit\mu$\\
+Poisson           & $e^{\theta}$        & $e^{\theta}$                & $\mu$        & $\ln\mu$\\
+Negative binomial & $-\theta_\ast\ln(1-e^{\theta})$ & $\theta_\ast e^{\theta}/(1-e^{\theta})$
+                                                                      & $\mu+\mu^2/\theta_\ast$ & $\ln\{\mu/(\mu+\theta_\ast)\}$\\
+Gamma             & $-\ln(-\theta)$     & $-1/\theta$                 & $\mu^2$      & $-1/\mu$\\
+Inverse Gaussian  & $-\sqrt{-2\theta}$  & $(-2\theta)^{-1/2}$         & $\mu^3$      & $-1/(2\mu^2)$\\
+Tweedie, $1<p<2$  & \multicolumn{2}{c}{see §\ref{sec:8.3.4}}          & $\mu^p$      & $\mu^{1-p}/(1-p)$\\
+\bottomrule
+\end{tabular}
+\end{ctab}
+
+\noindent
+The negative binomial row treats its shape $\theta_\ast$ as known, which is what makes it a
+one-parameter family; the Bernoulli and Poisson rows have $\phi=1$.
+
+\subsection{Link functions}\label{sec:8.3.2}
+
+\begin{definition}[Generalised linear model]\label{def:glm}
+A \emph{generalised linear model} consists of independent $y_1,\ldots,y_n$ from one linear
+exponential family with weights $w_i$, together with a strictly monotone differentiable
+\emph{link} $g$ and the systematic component
+\begin{equation}\label{eq:glm}
+g(\mu_i) = \eta_i = \bx_i'\bb .
+\end{equation}
+The link is \emph{canonical} when $g=(b')^{-1}$, equivalently when $\theta_i=\eta_i$.
+\end{definition}
+
+\begin{proposition}[Why the canonical link is special]\label{prop:canonical}
+Under the canonical link the log-likelihood is
+$\ell(\bb)=\phi^{-1}\sum_i w_i\{y_i\bx_i'\bb-b(\bx_i'\bb)\}+\text{const}$, which is concave
+in $\bb$, strictly so when $\rank(\bX)=p$; the observed and expected information coincide;
+and the score equations are $\sum_iw_i(y_i-\mu_i)\bx_i=\bzero$.
+\end{proposition}
+
+\begin{proof}
+Substituting $\theta_i=\bx_i'\bb$ into~\eqref{eq:lef} with dispersion $\phi/w_i$ gives the
+displayed form. Each $-b(\bx_i'\bb)$ is concave because $b$ is convex
+(Theorem~\ref{thm:lef-moments}) and $\bb\mapsto\bx_i'\bb$ is linear. Differentiating,
+\[
+\nabla\ell = \frac1\phi\sum_iw_i\{y_i-b'(\bx_i'\bb)\}\bx_i
+           = \frac1\phi\sum_iw_i(y_i-\mu_i)\bx_i ,
+\qquad
+-\nabla^2\ell = \frac1\phi\sum_iw_ib''(\bx_i'\bb)\bx_i\bx_i' ,
+\]
+the second free of the $y_i$ and hence equal to its expectation, and positive definite
+when the $\bx_i$ span, since $b''>0$.
+\end{proof}
+
+\begin{theorem}[Score and information, general link]\label{thm:glm-score}
+For any differentiable strictly monotone link,
+\begin{equation}\label{eq:glm-score}
+\nabla\ell(\bb) = \sum_{i=1}^n \frac{w_i}{\phi}\,
+   \frac{y_i-\mu_i}{V(\mu_i)}\,\frac{\dd\mu_i}{\dd\eta_i}\,\bx_i ,
+\qquad
+\calI(\bb) = \sum_{i=1}^n \frac{w_i}{\phi}\,
+   \frac{1}{V(\mu_i)}\Bigl(\frac{\dd\mu_i}{\dd\eta_i}\Bigr)^{\!2}\bx_i\bx_i' .
+\end{equation}
+Under the canonical link $\dd\mu_i/\dd\eta_i=V(\mu_i)$ and~\eqref{eq:glm-score} reduces to
+the expressions of Proposition~\ref{prop:canonical}.
+\end{theorem}
+
+\begin{proof}
+With dispersion $\phi/w_i$, the $i$-th log-likelihood term is
+$w_i\{y_i\theta_i-b(\theta_i)\}/\phi$ up to a constant, so
+$\partial\ell_i/\partial\theta_i=w_i(y_i-\mu_i)/\phi$. The chain rule through
+$\theta_i\mapsto\mu_i\mapsto\eta_i\mapsto\bb$ needs $\dd\theta_i/\dd\mu_i$: differentiating
+$\mu_i=b'(\theta_i)$ gives $\dd\mu_i/\dd\theta_i=b''(\theta_i)=V(\mu_i)$, so
+$\dd\theta_i/\dd\mu_i=1/V(\mu_i)$. Multiplying by $\dd\mu_i/\dd\eta_i$ and
+$\partial\eta_i/\partial\bb=\bx_i$ gives the score.
+
+The information is the variance of the score. The summands are independent with mean zero
+and $\var(y_i)=\phi V(\mu_i)/w_i$, so
+\[
+\calI(\bb)=\sum_i\frac{w_i^2}{\phi^2V(\mu_i)^2}
+  \Bigl(\frac{\dd\mu_i}{\dd\eta_i}\Bigr)^{\!2}\var(y_i)\,\bx_i\bx_i' ,
+\]
+and substituting $\var(y_i)$ leaves~\eqref{eq:glm-score}. For the canonical link
+$\eta_i=\theta_i$, so $\dd\mu_i/\dd\eta_i=b''(\theta_i)=V(\mu_i)$ and the ratio
+$(\dd\mu_i/\dd\eta_i)/V(\mu_i)$ is $1$.
+\end{proof}
+
+\begin{theorem}[Iteratively reweighted least squares]\label{thm:glm-irls}
+Let
+\begin{equation}\label{eq:glm-irls}
+W_i = \frac{w_i}{\phi V(\mu_i)}\Bigl(\frac{\dd\mu_i}{\dd\eta_i}\Bigr)^{\!2} ,
+\qquad
+z_i = \eta_i + \frac{y_i-\mu_i}{\dd\mu_i/\dd\eta_i} ,
+\end{equation}
+both evaluated at the current $\bb^{(m)}$. The Fisher scoring step is
+\[
+\bb^{(m+1)}=\bb^{(m)}+\calI(\bb^{(m)})^{-1}\nabla\ell(\bb^{(m)}) .
+\]
+It equals the weighted least squares fit $(\bX'\bW\bX)^{-1}\bX'\bW\bz$, with
+$\bW=\diag(W_i)$. The step does not involve $\phi$, which cancels.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:glm-score}, $\calI=\bX'\bW\bX$ and
+$\nabla\ell=\sum_iW_i(z_i-\eta_i)\bx_i=\bX'\bW(\bz-\bfeta)$, since
+$W_i(z_i-\eta_i)=W_i(y_i-\mu_i)/(\dd\mu_i/\dd\eta_i)$ and substituting $W_i$
+from~\eqref{eq:glm-irls} gives the score summand. Hence
+\[
+\bb^{(m)}+(\bX'\bW\bX)^{-1}\bX'\bW(\bz-\bX\bb^{(m)}) = (\bX'\bW\bX)^{-1}\bX'\bW\bz ,
+\]
+using $\bfeta=\bX\bb^{(m)}$. Both $\bW$ and $\calI$ carry the factor $1/\phi$, which
+cancels between them.
+\end{proof}
+
+\subsection{Deviance and residuals}\label{sec:8.3.3}
+
+\begin{definition}[Deviance]\label{def:glm-deviance}
+Let $\tilde\theta_i$ solve $b'(\tilde\theta_i)=y_i$, the \emph{saturated} fit, and let
+$\hat\theta_i$ be the fitted natural parameters. The \emph{deviance} is
+\begin{equation}\label{eq:glm-deviance}
+D = 2\sum_{i=1}^n w_i\bigl\{y_i(\tilde\theta_i-\hat\theta_i)
+     - b(\tilde\theta_i)+b(\hat\theta_i)\bigr\}
+  = \sum_{i=1}^n d_i ,
+\end{equation}
+and the \emph{scaled deviance} is $D/\phi=2\{\ell_{\mathrm{sat}}-\ell(\hat\bb)\}$.
+\end{definition}
+
+\begin{proposition}[Non-negativity and special cases]\label{prop:deviance-cases}
+Every $d_i\geqslant0$, with equality only when $\hat\mu_i=y_i$. For the three standard
+families,
+\begin{align}
+\text{normal:} \quad & D=\sum_iw_i(y_i-\hat\mu_i)^2 , \label{eq:dev-normal}\\
+\text{Poisson:}\quad & D=2\sum_i\Bigl\{y_i\ln\frac{y_i}{\hat\mu_i}-(y_i-\hat\mu_i)\Bigr\} ,
+   \label{eq:dev-pois}\\
+\text{gamma:}  \quad & D=2\sum_i\Bigl\{-\ln\frac{y_i}{\hat\mu_i}
+                       +\frac{y_i-\hat\mu_i}{\hat\mu_i}\Bigr\} , \label{eq:dev-gamma}
+\end{align}
+with the convention $0\ln0=0$.
+\end{proposition}
+
+\begin{proof}
+Put $h(\theta)=y_i\theta-b(\theta)$, so $d_i=2w_i\{h(\tilde\theta_i)-h(\hat\theta_i)\}$.
+Now $h'(\theta)=y_i-b'(\theta)$ vanishes at $\tilde\theta_i$ and $h''=-b''<0$, so $h$ is
+strictly concave with its maximum at $\tilde\theta_i$; hence $d_i\geqslant0$ with equality
+only at $\hat\theta_i=\tilde\theta_i$, that is $\hat\mu_i=y_i$.
+
+Normal: $b(\theta)=\theta^2/2$, $\theta=\mu$, so
+$d_i=2w_i\{y_i(y_i-\hat\mu_i)-\tfrac12y_i^2+\tfrac12\hat\mu_i^2\}=w_i(y_i-\hat\mu_i)^2$.
+Poisson: $b(\theta)=e^\theta$, $\theta=\ln\mu$, $w_i=1$, so
+$d_i=2\{y_i\ln y_i-y_i\ln\hat\mu_i-y_i+\hat\mu_i\}$, which is~\eqref{eq:dev-pois}.
+Gamma: $b(\theta)=-\ln(-\theta)$ and $\theta=-1/\mu$, so
+$d_i=2w_i\{-y_i/y_i+y_i/\hat\mu_i+\ln y_i-\ln\hat\mu_i\}$ with $w_i=1$, which
+is~\eqref{eq:dev-gamma}.
+\end{proof}
+
+\begin{definition}[Residuals]\label{def:glm-residuals}
+The \emph{Pearson} and \emph{deviance} residuals are
+\begin{equation}\label{eq:glm-residuals}
+r^P_i = \frac{\sqrt{w_i}\,(y_i-\hat\mu_i)}{\sqrt{V(\hat\mu_i)}} ,
+\qquad
+r^D_i = \sign(y_i-\hat\mu_i)\sqrt{d_i} ,
+\end{equation}
+so that $\sum_i(r^P_i)^2=X^2$, the Pearson statistic, and $\sum_i(r^D_i)^2=D$.
+\end{definition}
+
+\begin{remark}
+Raw residuals $y_i-\hat\mu_i$ are useless for diagnostics in a GLM because their variance
+$\phi V(\mu_i)/w_i$ moves with the fit: a plot of them against $\hat\mu_i$ shows the
+variance function, not a lack of fit. Both residuals in~\eqref{eq:glm-residuals} are
+constructed to have variance approximately $\phi$; the deviance residual is usually the
+more nearly symmetric of the two for skewed families, and it is the one whose squares add
+to a quantity with a familiar interpretation.
+\end{remark}
+
+\subsection{The Tweedie family}\label{sec:8.3.4}
+
+\begin{definition}[Tweedie]\label{def:tweedie}
+The \emph{Tweedie} family with index $p$ is the linear exponential family with variance
+function $V(\mu)=\mu^p$. For $p\notin\{1,2\}$,
+\begin{equation}\label{eq:tweedie-b}
+\theta = \frac{\mu^{1-p}}{1-p} ,
+\qquad
+b(\theta) = \frac{\mu^{2-p}}{2-p} ,
+\end{equation}
+$\mu$ being written for $\{(1-p)\theta\}^{1/(1-p)}$. The cases $p=0,1,2,3$ are the normal,
+Poisson, gamma and inverse Gaussian.
+\end{definition}
+
+\begin{proposition}\label{prop:tweedie-b}
+The pair~\eqref{eq:tweedie-b} satisfies $b'(\theta)=\mu$ and $b''(\theta)=\mu^p$.
+\end{proposition}
+
+\begin{proof}
+From $\theta=\mu^{1-p}/(1-p)$, $\dd\theta/\dd\mu=\mu^{-p}$. Then
+$\dd b/\dd\mu=\mu^{1-p}$, so $b'(\theta)=(\dd b/\dd\mu)(\dd\mu/\dd\theta)
+=\mu^{1-p}\mu^{p}=\mu$, and differentiating once more,
+$b''(\theta)=(\dd\mu/\dd\theta)=\mu^{p}$.
+\end{proof}
+
+\begin{lemma}[Sum of gammas]\label{lem:gamma-sum}
+If $X\sim\mathrm{Gamma}(\alpha,\gamma)$ and $Y\sim\mathrm{Gamma}(\beta,\gamma)$ are
+independent, with density $\gamma^\alpha u^{\alpha-1}e^{-\gamma u}/\Gamma(\alpha)$ on
+$(0,\infty)$, then $X+Y\sim\mathrm{Gamma}(\alpha+\beta,\gamma)$.
+\end{lemma}
+
+\begin{proof}
+First, $\Gamma(\alpha)\Gamma(\beta)=\Gamma(\alpha+\beta)B(\alpha,\beta)$ with
+$B(\alpha,\beta)=\int_0^1t^{\alpha-1}(1-t)^{\beta-1}\dd t$: substituting $u=st$,
+$v=s(1-t)$ with Jacobian $s$ in the double integral and using Fubini--Tonelli,
+\[
+\Gamma(\alpha)\Gamma(\beta)=\int_0^\infty\!\!\int_0^\infty u^{\alpha-1}v^{\beta-1}e^{-u-v}
+\dd u\,\dd v
+= \int_0^\infty s^{\alpha+\beta-1}e^{-s}\dd s\int_0^1 t^{\alpha-1}(1-t)^{\beta-1}\dd t .
+\]
+Now convolve: for $s>0$,
+\[
+f_{X+Y}(s)=\frac{\gamma^{\alpha+\beta}e^{-\gamma s}}{\Gamma(\alpha)\Gamma(\beta)}
+\int_0^s u^{\alpha-1}(s-u)^{\beta-1}\dd u
+= \frac{\gamma^{\alpha+\beta}e^{-\gamma s}s^{\alpha+\beta-1}}{\Gamma(\alpha)\Gamma(\beta)}
+  B(\alpha,\beta) ,
+\]
+substituting $u=st$, and the first display turns the constant into
+$\gamma^{\alpha+\beta}/\Gamma(\alpha+\beta)$.
+\end{proof}
+
+\begin{theorem}[Compound Poisson--gamma]\label{thm:tweedie}
+Let $N\sim\mathrm{Pois}(\lambda)$ and let $Y_1,Y_2,\ldots$ be independent
+$\mathrm{Gamma}(\alpha,\gamma)$ variables independent of $N$, and set
+$S=\sum_{j\leqslant N}Y_j$, an empty sum being $0$. Given $\mu>0$, $\phi>0$ and
+$1<p<2$, put
+\begin{equation}\label{eq:tweedie-param}
+\lambda=\frac{\mu^{2-p}}{\phi(2-p)} ,
+\qquad
+\alpha=\frac{2-p}{p-1} ,
+\qquad
+\frac1\gamma=\phi(p-1)\mu^{p-1} .
+\end{equation}
+Then all three are positive,
+\begin{equation}\label{eq:tweedie-moments}
+\expc[S]=\mu , \qquad \var(S)=\phi\mu^p , \qquad \prb\{S=0\}=e^{-\lambda} ,
+\end{equation}
+and for $y>0$ the law of $S$ has density
+\begin{equation}\label{eq:tweedie-density}
+f_S(y)=\sum_{k=1}^{\infty}e^{-\lambda}\frac{\lambda^k}{k!}\,
+\frac{\gamma^{k\alpha}}{\Gamma(k\alpha)}\,y^{k\alpha-1}e^{-\gamma y}
+\end{equation}
+with respect to Lebesgue measure.
+\end{theorem}
+
+\begin{proof}
+Positivity is clear from $1<p<2$. By the random-sum corollary of the prerequisites, with
+$\expc[Y_1]=\alpha/\gamma$ and $\var(Y_1)=\alpha/\gamma^2$,
+\[
+\expc[S]=\expc[N]\,\expc[Y_1]=\lambda\frac{\alpha}{\gamma} ,
+\qquad
+\var(S)=\expc[N]\var(Y_1)+\var(N)(\expc Y_1)^2
+=\frac{\lambda\alpha}{\gamma^2}(1+\alpha) ,
+\]
+using $\expc[N]=\var(N)=\lambda$.
+Now $\alpha/\gamma=\{(2-p)/(p-1)\}\phi(p-1)\mu^{p-1}=\phi(2-p)\mu^{p-1}$, so
+$\expc[S]=\{\mu^{2-p}/(\phi(2-p))\}\phi(2-p)\mu^{p-1}=\mu$. Also
+$1+\alpha=1/(p-1)$, so
+\[
+\var(S)=\Bigl(\frac{\lambda\alpha}{\gamma}\Bigr)\frac{1+\alpha}{\gamma}
+= \mu\cdot\frac{1}{p-1}\cdot\phi(p-1)\mu^{p-1} = \phi\mu^p .
+\]
+Since every $Y_j>0$ almost surely, $S=0$ exactly when $N=0$, of probability $e^{-\lambda}$.
+
+For the density, condition on $N=k\geqslant1$: by Lemma~\ref{lem:gamma-sum} and induction,
+$Y_1+\cdots+Y_k\sim\mathrm{Gamma}(k\alpha,\gamma)$. Hence for a Borel $B\subset(0,\infty)$,
+\[
+\prb\{S\in B\}=\sum_{k\geqslant1}\prb\{N=k\}\int_B
+\frac{\gamma^{k\alpha}}{\Gamma(k\alpha)}y^{k\alpha-1}e^{-\gamma y}\dd y ,
+\]
+and interchanging the sum and the integral, legitimate by Tonelli since every term is
+non-negative, exhibits~\eqref{eq:tweedie-density} as the density.
+\end{proof}
+
+\begin{remark}
+The Tweedie with $1<p<2$ is the natural model for an insurance loss on a policy: a point
+mass at zero for the policies with no claim, and a continuous positive part for the
+aggregate of those that do. The frequency and severity are not separately identified from
+the aggregate alone; what the fit delivers is the mean $\mu$ and the pair $(\phi,p)$, and
+$p$ interpolates between the Poisson at $p=1$ and the gamma at $p=2$. Fitting proceeds by
+maximising the likelihood over $\bb$ for a grid of $p$, since $p$ enters
+$V(\mu)=\mu^p$ and not the linear predictor.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:8.4}
+%==============================================================================
+
+\begin{reading}
+FREES §12.2, §13.4.
+\end{reading}
+
+Four data sets are used. Counts: \texttt{Bikeshare} from \texttt{ISLR2}, hourly bicycle
+rentals. Counts with exposure: \texttt{Insurance} from \texttt{MASS}, third-party motor
+claims with the number of policy holders as the exposure. Excess zeros:
+\texttt{bioChemists} from \texttt{pscl}. Severities: the \texttt{AutoCollision} table of
+FREES §13.2, entered from the printed page.
+
+<<data-setup>>=
+suppressMessages({library(ISLR2); library(MASS); library(pscl)
+                  library(statmod); library(tweedie)})
+d <- Bikeshare; n <- nrow(d); y <- d$bikers
+ctl <- glm.control(epsilon = 1e-14, maxit = 200)
+c(n = n, mean = mean(y), variance = var(y), zeros = sum(y == 0))
+@
+
+\subsection{Score, information, IRLS (§\ref{sec:8.1.3})}\label{sec:8.4.1}
+
+<<poisson-fit>>=
+g <- glm(bikers ~ mnth + hr + workingday + temp + weathersit,
+         data = d, family = poisson, control = ctl)
+X <- model.matrix(g); b <- coef(g); mu <- fitted(g)
+U <- drop(crossprod(X, y - mu))          # score: X'(y - mu)
+Info <- t(X) %*% (mu * X)                # information: X'WX
+c(parameters = length(b), max_abs_score = max(abs(U)),
+  se_manual_vs_glm = max(abs(sqrt(diag(solve(Info))) -
+                             summary(g)$coefficients[, 2])),
+  smallest_se = min(summary(g)$coefficients[, 2]))
+@
+
+<<score-identity>>=
+c(total_observed = sum(y), total_fitted = sum(mu),
+  workingday_observed = sum(y[d$workingday == 1]),
+  workingday_fitted = sum(mu[d$workingday == 1]))
+@
+
+<<irls>>=
+irls <- function(X, y, off = rep(0, length(y)), tol = 1e-12) {
+  b <- c(log(mean(y)), rep(0, ncol(X) - 1))
+  repeat {
+    eta <- drop(X %*% b) + off; m <- exp(eta); w <- m
+    z  <- eta - off + (y - m)/w
+    bn <- drop(solve(t(X) %*% (w*X), crossprod(X, w*z)))
+    if (max(abs(bn - b)) < tol) return(bn)
+    b <- bn
+  }
+}
+c(irls_vs_glm = max(abs(irls(X, y) - b)), coefficient_scale = max(abs(b)))
+@
+
+\subsection{Exposure and the offset (§\ref{sec:8.1.2})}\label{sec:8.4.2}
+
+<<offset>>=
+ins <- MASS::Insurance
+gi <- glm(Claims ~ District + Group + Age + offset(log(Holders)),
+          data = ins, family = poisson, control = ctl)
+c(rows = nrow(ins), observed_claims = sum(ins$Claims),
+  fitted_claims = sum(fitted(gi)), deviance = deviance(gi),
+  residual_df = df.residual(gi),
+  pearson_over_df = sum(residuals(gi, "pearson")^2)/df.residual(gi))
+round(exp(coef(gi)), 4)
+@
+
+Multiplicative rating in the sense of Proposition~\ref{prop:pois-interp}(iv): the fitted
+claim rate is a base rate times one factor per level. Here the Pearson statistic per degree
+of freedom is close to $1$, so the Poisson variance assumption survives on this data.
+
+\subsection{Overdispersion (§\ref{sec:8.2.1}--§\ref{sec:8.2.2})}\label{sec:8.4.3}
+
+<<dispersion>>=
+phi <- sum((y - mu)^2/mu)/(n - length(b))
+gq <- glm(bikers ~ mnth + hr + workingday + temp + weathersit,
+          data = d, family = quasipoisson, control = ctl)
+c(phi_pearson = phi, phi_reported = summary(gq)$dispersion,
+  deviance_over_df = deviance(g)/(n - length(b)),
+  coefficients_identical = max(abs(coef(gq) - b)),
+  se_ratio_minus_sqrt_phi =
+    max(abs(summary(gq)$coefficients[, 2]/summary(g)$coefficients[, 2] -
+            sqrt(phi))),
+  sqrt_phi = sqrt(phi))
+@
+
+Theorem~\ref{thm:quasipois} is exact arithmetic here: the coefficients agree to the last
+bit and every standard error is multiplied by the same $\sqrt{\hat\phi}=5.06$. The two
+dispersion estimates of §\ref{sec:8.2.1} differ, $25.60$ against $26.50$.
+
+The moment test of Proposition~\ref{prop:moment-test} estimates the coefficient $\alpha$ in
+$\var(y)=\mu+\alpha v(\mu)$ by a regression through the origin.
+
+<<moment-test>>=
+Ti <- (y - mu)^2 - y
+c(alpha_v_equals_mu  = unname(coef(lm(Ti ~ mu - 1))),
+  alpha_v_equals_mu2 = unname(coef(lm(Ti ~ I(mu^2) - 1))),
+  implied_theta = 1/unname(coef(lm(Ti ~ I(mu^2) - 1))))
+@
+
+Both slopes are far from zero, which is the point of the test. Neither reproduces the
+corresponding maximum likelihood quantity: $1+\hat\alpha=34.9$ against $\hat\phi=25.6$, and
+$1/\hat\alpha=10.2$ against $\hat\theta=3.76$. The regressions are unweighted, so
+observations with large $\hat\mu_i$, whose $T_i$ have far the largest variance, dominate
+them; the test is a diagnostic for the null, not an estimator to report.
+
+The sandwich of Proposition~\ref{prop:sandwich-pois} makes no assumption about the shape of
+the variance.
+
+<<sandwich>>=
+G <- t(X) %*% (mu * X); Fm <- t(X) %*% ((y - mu)^2 * X)
+sw <- sqrt(diag(solve(G) %*% Fm %*% solve(G)))
+r  <- sw/summary(g)$coefficients[, 2]
+c(smallest_ratio = min(r), largest_ratio = max(r),
+  quasi_poisson_ratio = sqrt(phi))
+@
+
+Quasi-Poisson forces one ratio for every coefficient; the sandwich finds ratios from
+$0.16$ to $7.07$. The variance is not a constant multiple of the mean on this data, and the
+quasi-Poisson standard error is too large for some coefficients and too small for others.
+
+\subsection{The negative binomial (§\ref{sec:8.2.3})}\label{sec:8.4.4}
+
+<<negbin>>=
+nb <- glm.nb(bikers ~ mnth + hr + workingday + temp + weathersit,
+             data = d, control = ctl)
+mun <- fitted(nb)
+c(theta = nb$theta, se_theta = nb$SE.theta,
+  poisson_AIC = AIC(g), negbin_AIC = AIC(nb),
+  poisson_pearson_over_df = phi,
+  negbin_pearson_over_df =
+    sum((y - mun)^2/(mun + mun^2/nb$theta))/(n - length(b) - 1))
+@
+
+Theorem~\ref{thm:poisson-gamma} is checked by simulating the mixture and comparing with the
+negative binomial mass function.
+
+<<poisson-gamma>>=
+set.seed(5); N <- 400000; th <- 2.5; mu0 <- 3
+lam <- rgamma(N, shape = th, rate = th/mu0)      # mean mu0, var mu0^2/th
+ym  <- rpois(N, lam)
+round(rbind(simulated = as.numeric(table(factor(ym, levels = 0:8))/N),
+            negative_binomial = dnbinom(0:8, size = th, mu = mu0)), 5)
+c(simulated_mean = mean(ym), theory = mu0,
+  simulated_var = var(ym), theory_var = mu0 + mu0^2/th)
+@
+
+\begin{figure}[H]\centering
+<<meanvar-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+br <- quantile(mu, seq(0, 1, length.out = 26))
+ct <- cut(mu, br, include.lowest = TRUE)
+mm <- tapply(mu, ct, mean); vv <- tapply(y, ct, var)
+plot(mm, vv, log = "xy", pch = 19, col = "grey30", xlab = expression(hat(mu)),
+     ylab = "within-bin variance", main = "mean against variance")
+xx <- exp(seq(log(min(mm)), log(max(mm)), length.out = 100))
+lines(xx, xx, lwd = 2, col = "#1E3A8A")
+lines(xx, xx + xx^2/nb$theta, lwd = 2, col = "#B45309", lty = 2)
+legend("topleft", c("Poisson", "negative binomial"), bty = "n", lwd = 2,
+       lty = 1:2, col = c("#1E3A8A", "#B45309"), cex = 0.8)
+plot(log(mu), residuals(g, "deviance"), pch = 46, col = "grey35",
+     xlab = expression(log(hat(mu))), ylab = "deviance residual",
+     main = "Poisson deviance residuals")
+abline(h = 0, col = "#1E3A8A", lwd = 2)
+par(op)
+@
+\caption{Left: the within-bin variance of \texttt{bikers} against the fitted Poisson mean,
+in $25$ bins of equal size, with the Poisson line $V=\mu$ and the fitted negative binomial
+curve $V=\mu+\mu^2/\hat\theta$. Right: deviance residuals of the Poisson fit, which should
+have variance about $1$ and instead reach $\pm20$.}\label{fig:meanvar}
+\end{figure}
+
+\subsection{Excess zeros (§\ref{sec:8.2.4})}\label{sec:8.4.5}
+
+<<zeros>>=
+data("bioChemists", package = "pscl"); bc <- bioChemists
+f0 <- art ~ fem + mar + kid5 + phd + ment
+gp <- glm(f0, data = bc, family = poisson, control = ctl)
+nb2 <- glm.nb(f0, data = bc, control = ctl)
+zi <- zeroinfl(art ~ fem + mar + kid5 + phd + ment | 1, data = bc)
+hu <- hurdle(art ~ fem + mar + kid5 + phd + ment | 1, data = bc)
+c(n = nrow(bc), mean = mean(bc$art), variance = var(bc$art))
+c(poisson = AIC(gp), negbin = AIC(nb2), zip = AIC(zi), hurdle = AIC(hu))
+@
+
+<<zero-counts>>=
+c(observed_zeros = sum(bc$art == 0),
+  poisson_expected = sum(dpois(0, fitted(gp))),
+  negbin_expected = sum(dnbinom(0, size = nb2$theta, mu = fitted(nb2))),
+  zip_expected = sum(predict(zi, type = "prob")[, 1]),
+  hurdle_expected = sum(predict(hu, type = "prob")[, 1]))
+@
+
+The Poisson expects $191$ zeros where $275$ occur. The hurdle reproduces $275$ exactly,
+which is Corollary~\ref{cor:hurdle-zeros}, and the negative binomial comes close without
+being constructed to.
+
+<<zip-manual>>=
+Xz <- model.matrix(~ fem + mar + kid5 + phd + ment, data = bc)
+cf <- coef(zi)
+mz <- drop(exp(Xz %*% cf[grep("^count_", names(cf))]))
+p0 <- plogis(cf[[grep("^zero_", names(cf))]])
+a  <- bc$art
+ll <- sum(ifelse(a == 0, log(p0 + (1 - p0)*dpois(0, mz)),
+                 log(1 - p0) + dpois(a, mz, log = TRUE)))
+c(manual_loglik = ll, zeroinfl_loglik = as.numeric(logLik(zi)), pi_hat = p0,
+  zip_mean = mean((1 - p0)*mz), sample_mean = mean(a),
+  zip_variance = mean((1 - p0)*mz + p0*(1 - p0)*mz^2),
+  sample_variance = var(a))
+@
+
+Theorem~\ref{thm:zip-moments} gives a variance of $2.25$ against a sample variance of
+$3.71$: zero inflation produces overdispersion but not enough of it here, which is why the
+negative binomial has the smaller $\AIC$.
+
+<<hurdle-manual>>=
+cfh <- coef(hu)
+mh  <- drop(exp(Xz %*% cfh[grep("^count_", names(cfh))]))
+p1  <- plogis(cfh[[grep("^zero_", names(cfh))]])
+llh <- sum(ifelse(a == 0, log(1 - p1),
+                  log(p1) + dpois(a, mh, log = TRUE) -
+                  log(1 - dpois(0, mh))))
+c(manual_loglik = llh, hurdle_loglik = as.numeric(logLik(hu)),
+  fitted_p_positive = p1, observed_fraction_positive = mean(a > 0))
+@
+
+\subsection{The exponential family (§\ref{sec:8.3.1}, §\ref{sec:8.3.3})}\label{sec:8.4.6}
+
+Theorem~\ref{thm:lef-moments} says $b'(\theta)$ is the mean and $b''(\theta)$ the variance
+divided by $\phi$; both are checked here by numerical differentiation of the cumulant
+functions of the table in §\ref{sec:8.3.1}.
+
+<<cumulants>>=
+fam <- list(
+  normal   = list(b = function(t) t^2/2,           th = 1.7),
+  Bernoulli= list(b = function(t) log(1 + exp(t)), th = qlogis(0.3)),
+  Poisson  = list(b = function(t) exp(t),          th = log(2.5)),
+  gamma    = list(b = function(t) -log(-t),        th = -1/4),
+  invGauss = list(b = function(t) -sqrt(-2*t),     th = -1/(2*3^2)))
+h <- 1e-5
+round(t(sapply(fam, function(f) {
+  t0 <- f$th
+  c(theta = t0, b_prime = (f$b(t0+h) - f$b(t0-h))/(2*h),
+    b_second = (f$b(t0+h) - 2*f$b(t0) + f$b(t0-h))/h^2) })), 5)
+@
+
+The targets are $\mu=1.7$ with $V=1$; $\mu=0.3$ with $V=\mu(1-\mu)=0.21$; $\mu=2.5$ with
+$V=\mu$; $\mu=4$ with $V=\mu^2=16$; and $\mu=3$ with $V=\mu^3=27$.
+
+<<deviance>>=
+di <- 2*(ifelse(y == 0, 0, y*log(y/mu)) - (y - mu))   # Poisson deviance terms
+dr <- sign(y - mu)*sqrt(pmax(di, 0))
+c(deviance_manual = sum(di), deviance_glm = deviance(g),
+  residuals_max_diff = max(abs(dr - residuals(g, "deviance"))),
+  pearson_manual = sum((y - mu)^2/mu),
+  pearson_glm = sum(residuals(g, "pearson")^2))
+@
+
+\subsection{A gamma severity model (§\ref{sec:8.3.2})}\label{sec:8.4.7}
+
+The \texttt{AutoCollision} table of FREES §13.2: average claim severity in pounds by driver
+age group and vehicle use, with the claim count as the weight $w_i$.
+
+<<autocollision>>=
+sev <- c(250.48,274.78,244.52,797.80, 213.71,298.60,298.13,362.23,
+         250.57,248.56,297.90,342.31, 229.09,228.48,293.87,367.46,
+         153.62,201.67,238.21,256.21, 208.59,202.80,236.06,352.49,
+         207.57,202.67,253.63,340.56, 192.00,196.33,259.79,342.58)
+cnt <- c(21,40,23,5,  63,171,92,44,   140,343,318,129, 123,448,361,169,
+         151,479,381,166, 245,970,719,304, 266,859,504,162, 260,578,312,96)
+ac <- data.frame(sev, cnt,
+  age = factor(rep(c("17-20","21-24","25-29","30-34","35-39","40-49",
+                     "50-59","60+"), each = 4)),
+  use = factor(rep(c("Pleasure","DriveShort","DriveLong","Business"), 8),
+               levels = c("Pleasure","DriveShort","DriveLong","Business")))
+gg <- glm(sev ~ age + use, data = ac, family = Gamma(link = "log"),
+          weights = cnt)
+c(cells = nrow(ac), total_claims = sum(cnt),
+  dispersion = summary(gg)$dispersion, deviance = deviance(gg),
+  residual_df = df.residual(gg))
+round(exp(coef(gg)), 4)
+@
+
+The exponentiated coefficients are the multiplicative rating factors of
+Proposition~\ref{prop:pois-interp}(iv): a base of $\pounds254.90$ for a $17$--$20$ driver
+using the vehicle for pleasure, times $1.644$ for business use and times $0.765$ for the
+oldest age group. FREES reports $254.90$ and $419.07$ for the first row of its fitted
+table, against $254.90$ and $254.90\times1.6441=419.08$ here.
+
+\subsection{Tweedie (§\ref{sec:8.3.4})}\label{sec:8.4.8}
+
+Theorem~\ref{thm:tweedie} is checked by simulating the compound Poisson--gamma sum from the
+reparametrisation~\eqref{eq:tweedie-param}.
+
+<<tweedie-sim>>=
+set.seed(11); N <- 300000; mu0 <- 4; phi0 <- 2.5; p0 <- 1.6
+lam <- mu0^(2 - p0)/(phi0*(2 - p0))
+al  <- (2 - p0)/(p0 - 1)
+gam <- 1/(phi0*(p0 - 1)*mu0^(p0 - 1))
+Nn  <- rpois(N, lam)
+S   <- vapply(Nn, function(k) if (k == 0) 0 else
+              sum(rgamma(k, shape = al, rate = gam)), numeric(1))
+c(lambda = lam, alpha = al, rate = gam,
+  simulated_mean = mean(S), theory_mean = mu0,
+  simulated_var = var(S), theory_var = phi0*mu0^p0,
+  simulated_P0 = mean(S == 0), theory_P0 = exp(-lam))
+@
+
+The series~\eqref{eq:tweedie-density} against the package density.
+
+<<tweedie-density>>=
+yv <- c(1, 4, 10)
+series <- sapply(yv, function(u)
+  sum(sapply(1:200, function(k)
+    exp(-lam)*lam^k/factorial(k)*dgamma(u, shape = k*al, rate = gam))))
+rbind(y = yv, series = series,
+      dtweedie = dtweedie(yv, xi = p0, mu = mu0, phi = phi0))
+@
+
+<<tweedie-glm>>=
+set.seed(12); nt <- 4000
+xt <- runif(nt, -1, 1)
+yt <- rtweedie(nt, xi = p0, mu = exp(1 + 0.8*xt), phi = phi0)
+gt <- glm(yt ~ xt, family = tweedie(var.power = p0, link.power = 0))
+c(true_intercept = 1, true_slope = 0.8, fitted = coef(gt),
+  zero_fraction = mean(yt == 0),
+  dispersion = summary(gt)$dispersion, true_phi = phi0)
+@
+
+\begin{figure}[H]\centering
+<<tweedie-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+for (pp in c(1.3, 1.6)) {
+  yv2 <- seq(0.02, 20, length.out = 400)
+  lm2 <- mu0^(2 - pp)/(phi0*(2 - pp))
+  plot(yv2, dtweedie(yv2, xi = pp, mu = mu0, phi = phi0), type = "l", lwd = 2,
+       col = "#B45309", xlab = "y", ylab = "density",
+       main = bquote(p == .(pp)), ylim = c(0, 0.26))
+  segments(0, 0, 0, exp(-lm2), lwd = 3, col = "#1E3A8A")
+  points(0, exp(-lm2), pch = 19, col = "#1E3A8A")
+  text(1.0, exp(-lm2), sprintf("P(0) = %.2f", exp(-lm2)), pos = 4, cex = 0.8)
+}
+par(op)
+@
+\caption{Tweedie densities at $\mu=4$, $\phi=2.5$ and two indices. The spike at the origin
+is the point mass $e^{-\lambda}$ of Theorem~\ref{thm:tweedie}; the curve is the density
+\eqref{eq:tweedie-density} of the positive part. Larger $p$ puts more mass at zero and
+makes the positive part more skewed.}\label{fig:tweedie}
+\end{figure}
+
+%==============================================================================
+\section{Pitfalls}\label{sec:8.5}
+%==============================================================================
+
+\subsection{Poisson standard errors on overdispersed counts}\label{sec:8.5.1}
+
+<<pitfall-se>>=
+j <- which(names(b) == "temp")
+c(coefficient = unname(b[j]),
+  poisson_se = summary(g)$coefficients[j, 2],
+  quasi_se = summary(gq)$coefficients[j, 2],
+  sandwich_se = unname(sw[j]),
+  poisson_z = summary(g)$coefficients[j, 3],
+  quasi_t = summary(gq)$coefficients[j, 3])
+@
+
+\textbf{Diagnostic.} A Pearson statistic per degree of freedom far from $1$, together with
+$z$ statistics in the hundreds. Every coefficient looks decisive because the model is
+asserting that a count with mean $200$ has standard deviation $14$.
+\textbf{Fix.} Estimate the dispersion and use Theorem~\ref{thm:quasipois}, or fit a model
+whose variance function can match the data, or use the sandwich of
+Proposition~\ref{prop:sandwich-pois}. Note also that a likelihood ratio statistic must be
+divided by $\hat\phi$ before it is referred to $\chi^2$: it is a difference of criterion
+values, not of log-likelihoods.
+
+\subsection{Exposure entered as a covariate}\label{sec:8.5.2}
+
+An offset asserts that the mean is proportional to the exposure. Estimating a coefficient
+for $\ln E_i$ instead relaxes that to $\mu_i\propto E_i^{\gamma}$, which is a different
+model and is rarely what is meant.
+
+<<pitfall-offset>>=
+g2 <- glm(Claims ~ District + Group + Age + log(Holders), data = ins,
+          family = poisson, control = ctl)
+c(gamma_hat = unname(coef(g2)["log(Holders)"]),
+  se = summary(g2)$coefficients["log(Holders)", 2],
+  LR_against_offset = deviance(gi) - deviance(g2),
+  p_value = pchisq(deviance(gi) - deviance(g2), 1, lower.tail = FALSE),
+  effect_of_doubling_exposure_offset = 2,
+  effect_of_doubling_exposure_covariate =
+    2^unname(coef(g2)["log(Holders)"]))
+@
+
+\textbf{Diagnostic.} A coefficient on $\ln E_i$ reported among the others, and rates that
+are not proportional to exposure. Here $\hat\gamma=1.20$ and the restriction $\gamma=1$ is
+not rejected, yet doubling the exposure multiplies the fitted claims by $2.30$ rather than
+by $2$.
+\textbf{Fix.} Use \texttt{offset(log(E))} when the model is a rate. If proportionality is
+genuinely in doubt, fit both and test, and say which was used.
+
+\subsection{Testing Poisson against negative binomial by a likelihood ratio}
+\label{sec:8.5.3}
+
+The Poisson is the $\theta\to\infty$ limit of the negative binomial
+(Corollary~\ref{cor:nb-limit}), not an interior point of its parameter space, so the
+likelihood ratio theorem of Unit 7 does not apply: its proof requires the null value to be
+interior, which is where the Taylor expansion of the score is taken.
+
+<<pitfall-lrt>>=
+LR <- 2*(as.numeric(logLik(nb2)) - as.numeric(logLik(gp)))
+c(LR = LR, naive_p_chisq_1 = pchisq(LR, 1, lower.tail = FALSE),
+  poisson_AIC = AIC(gp), negbin_AIC = AIC(nb2),
+  theta_hat = nb2$theta, se_theta = nb2$SE.theta)
+@
+
+\textbf{Diagnostic.} A $p$-value quoted from $\chi^2_1$ for a hypothesis on the boundary of
+the parameter space.
+\textbf{Fix.} Compare by an information criterion, which needs no null distribution, or use
+the moment test of Proposition~\ref{prop:moment-test}, whose null hypothesis
+$\alpha=0$ is interior to $\alpha\in\Real$ once under- as well as overdispersion is
+allowed.
+
+\subsection{Reading the deviance as a goodness-of-fit statistic}\label{sec:8.5.4}
+
+The rule that the deviance of a correct model should be about $n-p$ is an asymptotic
+statement in which each mean grows, not in which $n$ grows. Below, the model is exactly
+correct and only the size of the means changes.
+
+<<pitfall-deviance>>=
+set.seed(21); nn <- 2000
+t(sapply(c(0.3, 1, 5, 50), function(m) {
+  D <- replicate(200, deviance(glm(rpois(nn, m) ~ 1, family = poisson)))
+  c(mu = m, mean_deviance = mean(D), n_minus_p = nn - 1,
+    sd_deviance = sd(D), chi_square_sd = sqrt(2*(nn - 1))) }))
+@
+
+\textbf{Diagnostic.} A deviance far from its degrees of freedom on data whose counts are
+mostly $0$ and $1$, read as evidence of misspecification.
+\textbf{Fix.} With small means, compare deviances between nested models, which is a valid
+likelihood ratio, rather than comparing one deviance with $n-p$; and use the Pearson
+statistic, whose expectation is $n-p$ times the dispersion whatever the size of the means,
+for the dispersion itself.
+
+%==============================================================================
+\section{Exercises}\label{sec:8.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:poisson-basic}
+Prove that a sum of independent Poisson variables is Poisson, and explain why this makes an
+exposure natural for count data.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:poisson-basic}(iii): the generating function of the sum is the
+product $\prod_je^{\mu_j(s-1)}=e^{(\sum\mu_j)(s-1)}$, which is the generating function of
+$\mathrm{Pois}(\sum_j\mu_j)$; two laws on the non-negative integers with the same
+generating function agree, the coefficients of a convergent power series being determined
+by it.
+
+A policy observed for $m$ periods, each contributing an independent
+$\mathrm{Pois}(\mu)$ count, therefore has a $\mathrm{Pois}(m\mu)$ total: the mean is
+proportional to the amount of exposure, which is what
+$\ln\mu_i=\ln E_i+\bx_i'\bb$ encodes with the coefficient of $\ln E_i$ fixed at $1$.
+\end{solution}
+
+\begin{exercise}\label{ex:offset}
+A Poisson regression of claims on policy characteristics uses $\texttt{offset(log(E))}$ and
+reports a coefficient $0.28$ for a binary covariate. Interpret it. What changes if
+$\ln E$ is entered as an ordinary covariate?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:pois-interp}(ii) the claim rate per unit of exposure is multiplied
+by $e^{0.28}=1.323$ when the covariate switches on, the exposure held fixed: a $32\%$ higher
+frequency.
+
+Entering $\ln E$ as a covariate estimates a coefficient $\gamma$ and fits
+$\mu_i=E_i^{\gamma}e^{\bx_i'\bb}$. The model no longer says that the expected count is
+proportional to exposure, so a fitted ``rate'' $\mu_i/E_i=E_i^{\gamma-1}e^{\bx_i'\bb}$
+depends on the size of the policy, and rates from policies of different exposure are not
+comparable. §\ref{sec:8.5.2} shows $\hat\gamma=1.20$ on real data, and doubling the
+exposure then multiplies the fitted claims by $2.30$ rather than by $2$.
+\end{solution}
+
+\begin{exercise}\label{ex:pois-score}
+Derive the Poisson score and information, and state what the score equations force about
+the fitted values.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:pois-score}: $\nabla\ell=\sum_i\bx_i(y_i-\mu_i)$ and
+$\calI=\sum_i\mu_i\bx_i\bx_i'$, the Hessian being $-\calI$ identically because
+$\partial\mu_i/\partial\bb=\mu_i\bx_i$ carries no $y_i$.
+
+Corollary~\ref{cor:pois-score-eq}: at the optimum $\sum_ix_{ij}\hat\mu_i=\sum_ix_{ij}y_i$
+for every covariate. With an intercept the fitted counts add to the observed total, and
+within each level of a categorical covariate the fitted and observed counts agree. That is
+why a Poisson fit with a saturated categorical design reproduces the cell counts exactly.
+\end{solution}
+
+\begin{exercise}\label{ex:quasi}
+A Poisson fit reports $\hat\beta=0.42$ with standard error $0.05$, and the Pearson statistic
+is $3{,}600$ on $900$ degrees of freedom. Give the quasi-Poisson standard error and the
+corrected $z$ statistic, and say what happens to the point estimate.
+\end{exercise}
+
+\begin{solution}
+$\hat\phi=3600/900=4$, so by Theorem~\ref{thm:quasipois} the standard error is
+$\sqrt4\times0.05=0.10$ and the statistic falls from $0.42/0.05=8.4$ to
+$0.42/0.10=4.2$. The point estimate is unchanged: the quasi-Poisson estimator solves the
+same score equations $\bX'(\bY-\bmu)=\bzero$, which involve no variance assumption.
+
+The conclusion is unaffected here, both statistics being large, but a Poisson $z$ of $2.5$
+would become $1.25$ and the sign of the conclusion would change.
+\end{solution}
+
+\begin{exercise}\label{ex:nb}
+Show that a Poisson mean drawn from a gamma distribution yields a negative binomial, and
+give the resulting mean and variance. Why can the Poisson not be tested against it with a
+$\chi^2_1$ likelihood ratio?
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:poisson-gamma}: integrating the Poisson mass function against the
+$\mathrm{Gamma}(\theta,\theta/\mu)$ density leaves
+$\Gamma(j+\theta)/\{j!\Gamma(\theta)\}$ times $\{\theta/(\theta+\mu)\}^\theta$ and
+$\{\mu/(\theta+\mu)\}^j$, which is~\eqref{eq:nb}. Conditioning gives $\expc[y]=\mu$ and
+$\var(y)=\expc[\lambda]+\var(\lambda)=\mu+\mu^2/\theta$.
+
+The Poisson is recovered only as $\theta\to\infty$ (Corollary~\ref{cor:nb-limit}), so it
+lies on the boundary of the negative binomial parameter space rather than in its interior.
+The likelihood ratio theorem of the prerequisites expands the score in a neighbourhood of
+the null value, which does not exist here, and its $\chi^2$ conclusion fails. An
+information criterion, or the moment test of Proposition~\ref{prop:moment-test}, avoids the
+difficulty.
+\end{solution}
+
+\begin{exercise}\label{ex:zip}
+A zero-inflated Poisson has $\pi=0.3$ and $\mu=2$. Compute the mean, the variance and the
+probability of a zero, and verify that the variance exceeds the mean.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:zip-moments}(i), $\expc[y]=(1-0.3)\times2=1.4$ and
+\[
+\var(y)=1.4+0.3\times0.7\times4 = 1.4+0.84 = 2.24 ,
+\]
+which exceeds the mean by $\pi(1-\pi)\mu^2=0.84$, positive for any $\pi\in(0,1)$.
+
+The probability of a zero is $\pi+(1-\pi)e^{-\mu}=0.3+0.7e^{-2}=0.3+0.0947=0.3947$,
+against $e^{-2}=0.135$ for a Poisson with the same $\mu$ and $0.2466$ for a Poisson with the
+same \emph{mean} $1.4$.
+\end{solution}
+
+\begin{exercise}\label{ex:hurdle}
+Show that the hurdle log-likelihood separates into two pieces, and deduce that with an
+intercept-only zero part the fitted number of zeros equals the observed number.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:hurdle-sep}: substituting~\eqref{eq:hurdle} and using
+$\ln k_i=\ln(1-\pi_i)-\ln(1-g_i(0))$ collects the terms into a Bernoulli log-likelihood for
+$\indc\{y_i=0\}$ and a zero-truncated count log-likelihood, with no parameter in both.
+
+With only an intercept in the first piece the Bernoulli maximum likelihood estimate is the
+sample proportion of zeros, so $n\hat\pi$ is the observed number of zeros
+(Corollary~\ref{cor:hurdle-zeros}). The zero-inflated model has no such property: its zero
+probability $\pi_i+(1-\pi_i)e^{-\mu_i}$ draws on both parts, which are fitted jointly.
+\end{solution}
+
+\begin{exercise}\label{ex:lef}
+For the linear exponential family, prove $\expc[y]=b'(\theta)$ and $\var(y)=\phi b''(\theta)$
+and identify the variance function of the gamma.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:lef-moments}: the bound
+$|y|^ke^{y\theta/\phi}\leqslant k!(\phi/\delta)^k\{e^{y(\theta_0+2\delta)/\phi}
++e^{y(\theta_0-2\delta)/\phi}\}$ dominates the first two $\theta$-derivatives of the
+integrand uniformly near $\theta_0$, so the differentiation-under-the-integral theorem of
+the prerequisites applies twice to $A(\theta)=\int e^{y\theta/\phi}\dd\nu$; then
+$b'=\phi A'/A=\expc[y]$ and $b''=\phi(A''A-(A')^2)/A^2=\var(y)/\phi$.
+
+For the gamma, $b(\theta)=-\ln(-\theta)$ on $\theta<0$, so $b'(\theta)=-1/\theta=\mu$ and
+$b''(\theta)=1/\theta^2=\mu^2$: the variance function is $V(\mu)=\mu^2$, and
+$\var(y)=\phi\mu^2$. The coefficient of variation $\sqrt{\var y}/\expc y=\sqrt\phi$ is
+constant, which is why a gamma with a logarithmic link is the standard model for a
+severity.
+\end{solution}
+
+\begin{exercise}\label{ex:irls-glm}
+Write down the IRLS weights and working response for a general link, and check that they
+reduce to the Poisson case of §\ref{sec:8.1.3} and to the logistic case of Unit 7.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:glm-irls}: $W_i=w_i(\dd\mu_i/\dd\eta_i)^2/\{\phi V(\mu_i)\}$ and
+$z_i=\eta_i+(y_i-\mu_i)/(\dd\mu_i/\dd\eta_i)$.
+
+Poisson with a log link: $\phi=1$, $w_i=1$, $V(\mu)=\mu$ and $\dd\mu/\dd\eta=\mu$, so
+$W_i=\mu_i^2/\mu_i=\mu_i$ and $z_i=\eta_i+(y_i-\mu_i)/\mu_i$, which is
+Theorem~\ref{thm:pois-irls}.
+
+Logistic: $\phi=1$, $V(\pi)=\pi(1-\pi)$ and $\dd\pi/\dd\eta=\pi(1-\pi)$, so
+$W_i=\pi_i(1-\pi_i)$ and $z_i=\eta_i+(y_i-\pi_i)/\{\pi_i(1-\pi_i)\}$, which is the
+weighted least squares step of Unit 7. In both the link is canonical, which is why
+$\dd\mu/\dd\eta$ equals $V(\mu)$ and the weight collapses to $V(\mu_i)$.
+\end{solution}
+
+\begin{exercise}\label{ex:deviance-glm}
+Derive the Poisson deviance from the general definition and explain why the deviance of a
+correct model need not be close to $n-p$.
+\end{exercise}
+
+\begin{solution}
+Proposition~\ref{prop:deviance-cases}: with $b(\theta)=e^{\theta}$ and $\theta=\ln\mu$, the
+saturated fit solves $e^{\tilde\theta_i}=y_i$, so
+$d_i=2\{y_i\ln y_i-y_i\ln\hat\mu_i-y_i+\hat\mu_i\}$ and summing gives~\eqref{eq:dev-pois}.
+
+The reference $n-p$ comes from an approximation that improves as each $\mu_i$ grows, not as
+$n$ grows: the deviance is a sum of $n$ terms, each a discrepancy for one observation, and
+with $\mu_i$ of order one those terms are not close to squared standard normals.
+§\ref{sec:8.5.4} shows the mean deviance of a correct intercept-only Poisson fit at
+$1{,}683$ against $n-p=1{,}999$ when $\mu=0.3$, and at $2{,}003$ when $\mu=50$.
+\end{solution}
+
+\begin{exercise}\label{ex:tweedie}
+Show that the compound Poisson--gamma sum with the parametrisation
+\eqref{eq:tweedie-param} has mean $\mu$, variance $\phi\mu^p$ and an atom at zero, and say
+what happens as $p\to1$ and $p\to2$.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:tweedie}: conditioning on $N$ gives $\expc[S]=\lambda\alpha/\gamma$ and
+$\var(S)=\lambda\alpha(1+\alpha)/\gamma^2$; substituting
+$\alpha/\gamma=\phi(2-p)\mu^{p-1}$ and $1+\alpha=1/(p-1)$ turns these into $\mu$ and
+$\phi\mu^p$. The atom is $\prb\{N=0\}=e^{-\lambda}$ with
+$\lambda=\mu^{2-p}/\{\phi(2-p)\}$, since every gamma summand is strictly positive.
+
+As $p\downarrow1$, $\alpha=(2-p)/(p-1)\to\infty$ and the gamma summand degenerates to a
+constant while $\lambda\to\mu/\phi$: the limit is a scaled Poisson, and $V(\mu)=\mu$. As
+$p\uparrow2$, $\lambda\to\infty$ so the atom at zero vanishes, $\alpha\to0$, and the limit
+is the gamma with $V(\mu)=\mu^2$. The index $p$ therefore interpolates between a pure count
+and a pure positive severity, and $1<p<2$ is the range with both an atom and a continuous
+part.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) reproduce a Poisson \texttt{glm} by iteratively reweighted least squares;
+(b) show that the quasi-Poisson coefficients equal the Poisson ones and its standard errors
+are $\sqrt{\hat\phi}$ times as large; (c) simulate a Poisson mixed over a gamma and match
+the negative binomial mass function.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:8.4.1}, (b) §\ref{sec:8.4.3} and (c) §\ref{sec:8.4.4}. In (b) the two
+statements are exact rather than approximate, and the printed differences are at the level
+of floating-point arithmetic; the interesting number is the spread of the sandwich ratios,
+from $0.16$ to $7.07$, which says that the single constant $\hat\phi$ of quasi-Poisson does
+not describe this variance function either.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,1826 @@
+% Compile:  python build.py 06
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 6\ \ Shrinkage, High Dimensions, KNN}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{6.\arabic{theorem}}
+\renewcommand\thetheorem  {6.\arabic{theorem}}
+\renewcommand\thelemma    {6.\arabic{theorem}}
+\renewcommand\theproposition{6.\arabic{theorem}}
+\renewcommand\thecorollary{6.\arabic{theorem}}
+\renewcommand\theexample  {6.\arabic{example}}
+\renewcommand\theexercise {6.\arabic{exercise}}
+\renewcommand\thefigure   {6.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Shrinkage, High Dimensions, KNN}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit06-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 6.\ Shrinkage, High Dimensions, KNN}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Ridge Regression}\label{sec:6.1}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.2.1.
+\end{reading}
+
+Throughout §\ref{sec:6.1} and §\ref{sec:6.2}, $\bY\in\Real^n$ and $\bX$ is $n\times k$ with
+columns $\bx_1,\ldots,\bx_k$; no column of ones is included, the intercept being treated
+separately in §\ref{sec:6.1.2}. No rank condition is imposed on $\bX$, and $k$ may exceed
+$n$.
+
+\subsection{The estimator}\label{sec:6.1.1}
+
+\begin{definition}[Ridge regression]\label{def:ridge}
+For $\lambda\geqslant0$ the \emph{ridge} criterion is
+\begin{equation}\label{eq:ridge-obj}
+Q_\lambda(\bb) = |\bY-\bX\bb|^2 + \lambda|\bb|^2
+= \sum_{i=1}^n\Bigl(Y_i-\sum_{j=1}^k x_{ij}\beta_j\Bigr)^2 + \lambda\sum_{j=1}^k\beta_j^2 ,
+\end{equation}
+and a \emph{ridge estimator} is a minimiser of $Q_\lambda$ over $\Real^k$.
+\end{definition}
+
+\begin{theorem}[Existence, uniqueness, closed form]\label{thm:ridge-closed}
+For every $\lambda>0$ the matrix $\bX'\bX+\lambda\bI$ is positive definite, $Q_\lambda$ has
+exactly one minimiser, and
+\begin{equation}\label{eq:ridge-closed}
+\boxed{\;\hat\bb_\lambda = (\bX'\bX+\lambda\bI)^{-1}\bX'\bY .\;}
+\end{equation}
+No condition on $\rank(\bX)$ is needed.
+\end{theorem}
+
+\begin{proof}
+For $\bc\neq\bzero$, $\bc'(\bX'\bX+\lambda\bI)\bc = |\bX\bc|^2+\lambda|\bc|^2>0$, so
+$\bX'\bX+\lambda\bI$ is positive definite and in particular invertible.
+
+Expanding~\eqref{eq:ridge-obj},
+\begin{equation}\label{eq:ridge-expand}
+Q_\lambda(\bb) = |\bY|^2 - 2\bb'\bX'\bY + \bb'(\bX'\bX+\lambda\bI)\bb .
+\end{equation}
+Write $\bA=\bX'\bX+\lambda\bI$ and $\hat\bb=\bA^{-1}\bX'\bY$. Completing the square,
+\[
+Q_\lambda(\bb) = |\bY|^2 - \hat\bb'\bA\hat\bb + (\bb-\hat\bb)'\bA(\bb-\hat\bb) ,
+\]
+since $\bb'\bA\bb-2\bb'\bA\hat\bb = (\bb-\hat\bb)'\bA(\bb-\hat\bb)-\hat\bb'\bA\hat\bb$ and
+$\bA\hat\bb=\bX'\bY$. The first two terms are free of $\bb$ and the third is positive
+unless $\bb=\hat\bb$.
+\end{proof}
+
+\begin{remark}
+At $\lambda=0$ the criterion is least squares, and~\eqref{eq:ridge-closed} reduces to the
+normal equations of Unit 2, which require $\rank(\bX)=k$ to be solvable uniquely. The term
+$\lambda\bI$ removes that requirement: a rank-deficient or wider-than-tall design has a
+unique ridge estimator for every $\lambda>0$.
+\end{remark}
+
+\begin{proposition}[Constrained form]\label{prop:ridge-constrained}
+Fix $s>0$. If $\hat\bb$ minimises $|\bY-\bX\bb|^2$ subject to $|\bb|^2\leqslant s$, then
+there is $\lambda\geqslant0$ with $\hat\bb$ minimising $Q_\lambda$. Conversely, if $\hat\bb$
+minimises $Q_\lambda$ for some $\lambda\geqslant0$, then $\hat\bb$ minimises
+$|\bY-\bX\bb|^2$ subject to $|\bb|^2\leqslant|\hat\bb|^2$.
+\end{proposition}
+
+\begin{proof}
+Both halves are the case $P(\bb)=|\bb|^2$ of Theorem~\ref{thm:lasso-equivalence} below,
+whose proof uses nothing about the penalty beyond convexity and vanishing at the
+origin.
+\end{proof}
+
+\subsection{The intercept and the units of measurement}\label{sec:6.1.2}
+
+\begin{proposition}[The intercept is not penalised]\label{prop:ridge-intercept}
+Let $\bX$ have centred columns, $\bone'\bx_j=0$ for each $j$, and consider minimising
+$|\bY-\beta_0\bone-\bX\bb|^2+\lambda|\bb|^2$ over $(\beta_0,\bb)$. The minimiser has
+$\hat\beta_0=\bar Y$, and $\hat\bb$ is the ridge estimator~\eqref{eq:ridge-closed} computed
+from the centred response $\bY-\bar Y\bone$.
+\end{proposition}
+
+\begin{proof}
+For fixed $\bb$ the criterion is a quadratic in $\beta_0$ with minimiser
+$\hat\beta_0 = \bone'(\bY-\bX\bb)/n = \bar Y$, the second term vanishing because every
+column of $\bX$ is centred. Substituting, the criterion becomes
+$|(\bY-\bar Y\bone)-\bX\bb|^2+\lambda|\bb|^2$, which is~\eqref{eq:ridge-obj} with the
+centred response.
+\end{proof}
+
+\begin{proposition}[Least squares is scale equivariant, ridge is not]\label{prop:equivariance}
+Let $\bD=\diag(d_1,\ldots,d_k)$ with every $d_j>0$, and replace $\bX$ by $\bX\bD$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item Least squares: if $\hat\bb$ minimises $|\bY-\bX\bb|^2$ then $\bD^{-1}\hat\bb$
+      minimises $|\bY-\bX\bD\bb|^2$, and the two fitted vectors are equal.
+\item Ridge: $\hat\bb_\lambda(\bX\bD) = \bD^{-1}\bgamma$, where $\bgamma$ minimises
+      \begin{equation}\label{eq:ridge-weighted}
+      |\bY-\bX\bgamma|^2 + \lambda\sum_{j=1}^k \frac{\gamma_j^2}{d_j^2} .
+      \end{equation}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Substitute $\bgamma=\bD\bb$, so that $\bX\bD\bb=\bX\bgamma$ and $\bb=\bD^{-1}\bgamma$. The
+sum of squares depends on $\bb$ only through $\bgamma$, which gives (i). The penalty is
+$|\bb|^2=|\bD^{-1}\bgamma|^2=\sum_j\gamma_j^2/d_j^2$, which gives (ii).
+\end{proof}
+
+\begin{remark}
+Changing the unit in which $\bx_j$ is recorded changes the ridge fit, because it changes
+the weight $\lambda/d_j^2$ that the penalty places on that coordinate: a column recorded in
+smaller units has a larger $d_j$ and is penalised less. Since a choice of unit carries no
+information about the response, the columns are standardised before penalising. The
+convention used throughout is
+\begin{equation}\label{eq:standardise}
+\tilde x_{ij} = \frac{x_{ij}-\bar x_j}{\hat s_j},
+\qquad \hat s_j^2 = \frac1n\sum_{i=1}^n(x_{ij}-\bar x_j)^2 ,
+\end{equation}
+so that each column has mean $0$ and $|\tilde\bx_j|^2=n$. Divisor $n$ rather than $n-1$ is
+the convention \texttt{glmnet} uses internally, and matching it is what makes the
+comparisons of §\ref{sec:6.4} exact.
+\end{remark}
+
+\subsection{Shrinkage of the principal components}\label{sec:6.1.3}
+
+\begin{theorem}[Ridge through the singular value decomposition]\label{thm:ridge-svd}
+Let $\bX=\bU\bD\bV'$ be the singular value decomposition of the prerequisites, with
+$r=\rank(\bX)$, $\bU$ of size $n\times r$ and $\bV$ of size $k\times r$ having orthonormal
+columns, and $\bD=\diag(d_1,\ldots,d_r)$ with $d_1\geqslant\cdots\geqslant d_r>0$. For
+$\lambda>0$,
+\begin{align}
+\hat\bb_\lambda &= \sum_{j=1}^{r}\frac{d_j}{d_j^2+\lambda}\,(\bu_j'\bY)\,\bv_j ,
+   \label{eq:ridge-svd-b}\\
+\hat\bY_\lambda = \bX\hat\bb_\lambda
+   &= \sum_{j=1}^{r}\frac{d_j^2}{d_j^2+\lambda}\,(\bu_j'\bY)\,\bu_j . \label{eq:ridge-svd-y}
+\end{align}
+\end{theorem}
+
+\begin{proof}
+Write $\bb^\star$ for the right-hand side of~\eqref{eq:ridge-svd-b}, that is
+$\bb^\star=\bV(\bD^2+\lambda\bI)^{-1}\bD\bU'\bY$. Using $\bX'\bX=\bV\bD^2\bV'$ and
+$\bV'\bV=\bI_r$,
+\[
+(\bX'\bX+\lambda\bI)\bb^\star
+= \bV\bD^2(\bD^2+\lambda\bI)^{-1}\bD\bU'\bY + \lambda\bV(\bD^2+\lambda\bI)^{-1}\bD\bU'\bY
+= \bV\bD\bU'\bY = \bX'\bY ,
+\]
+the two middle terms combining because $\bD^2+\lambda\bI$ commutes with its own inverse.
+So $\bb^\star$ solves the normal equations, and by Theorem~\ref{thm:ridge-closed} it is the
+unique ridge estimator. Applying $\bX=\bU\bD\bV'$ to it gives
+$\bX\bb^\star=\bU\bD(\bD^2+\lambda\bI)^{-1}\bD\bU'\bY$, which is~\eqref{eq:ridge-svd-y}.
+\end{proof}
+
+\begin{corollary}[Ridge shrinks the principal component coefficients]\label{cor:ridge-pc}
+Let $\bX$ be centred, so that by Unit 5 the loading vectors of its principal components are
+the $\bv_j$, the score vectors are $\bz_j=\bX\bv_j=d_j\bu_j$, and the $j$-th sample variance
+is $d_j^2/(n-1)$. Write $\hat\theta_j=\bz_j'\bY/|\bz_j|^2$ for the coefficient of $\bz_j$ in
+the least squares fit. Then
+\begin{equation}\label{eq:pc-shrink}
+\hat\bY_\lambda = \sum_{j=1}^{r}\frac{d_j^2}{d_j^2+\lambda}\,\hat\theta_j\,\bz_j ,
+\qquad
+\hat\bY_{0} = \sum_{j=1}^{r}\hat\theta_j\,\bz_j .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The scores are orthogonal by Unit 5, so the least squares fit on $\bz_1,\ldots,\bz_r$ is the
+sum of the separate projections, giving the second display and
+$\hat\theta_j=\bz_j'\bY/d_j^2$. Substituting $\bu_j=\bz_j/d_j$
+into~\eqref{eq:ridge-svd-y} gives
+$\hat\bY_\lambda=\sum_j\{d_j^2/(d_j^2+\lambda)\}(\bz_j'\bY/d_j^2)\bz_j$.
+\end{proof}
+
+\begin{remark}
+The factor $d_j^2/(d_j^2+\lambda)$ lies in $(0,1)$, increases in $d_j$ and decreases in
+$\lambda$. Ridge therefore shrinks hardest along the directions in which the design varies
+least, which are exactly the directions in which the least squares coefficient is least
+well determined. Principal components regression makes the same distinction discretely,
+multiplying the first $M$ coefficients by $1$ and the rest by $0$; ridge replaces that step
+function by a smooth one.
+\end{remark}
+
+\begin{proposition}[Conditioning]\label{prop:ridge-cond}
+If $\rank(\bX)=k$ then, in the notation of the prerequisites,
+\begin{equation}\label{eq:ridge-kappa}
+\kappa(\bX'\bX+\lambda\bI)=\frac{d_1^2+\lambda}{d_k^2+\lambda}
+\;\leqslant\;\frac{d_1^2}{d_k^2}=\kappa(\bX'\bX) ,
+\end{equation}
+with strict inequality when $\lambda>0$ and $d_1>d_k$.
+\end{proposition}
+
+\begin{proof}
+$\bX'\bX+\lambda\bI=\bV(\bD^2+\lambda\bI)\bV'$ is symmetric positive definite with
+eigenvalues $d_j^2+\lambda$, so its condition number is the ratio of the extreme ones by
+the operator-norm proposition of the prerequisites. For $a>b>0$ the map
+$t\mapsto(a+t)/(b+t)$ has derivative $(b-a)/(b+t)^2<0$, so it is strictly decreasing.
+\end{proof}
+
+\begin{remark}
+Collinearity was measured in Unit 4 by the variance inflation factor and in the
+prerequisites by $\kappa(\bX'\bX)$. Ridge attacks it directly: adding $\lambda$ to every
+eigenvalue leaves the large ones nearly unchanged and lifts the small ones away from zero.
+\end{remark}
+
+\subsection{Effective degrees of freedom}\label{sec:6.1.4}
+
+\begin{definition}[Linear smoother]\label{def:smoother}
+A fitting rule is a \emph{linear smoother} if $\hat\bY=\bS\bY$ for a matrix $\bS$
+determined by the design alone. Its \emph{effective degrees of freedom} are $\tr(\bS)$.
+\end{definition}
+
+\begin{proposition}[Ridge is a linear smoother]\label{prop:ridge-smoother}
+$\hat\bY_\lambda=\bS_\lambda\bY$ with
+$\bS_\lambda=\bX(\bX'\bX+\lambda\bI)^{-1}\bX'$, and
+\begin{equation}\label{eq:ridge-df}
+\df(\lambda)=\tr(\bS_\lambda)=\sum_{j=1}^{r}\frac{d_j^2}{d_j^2+\lambda} .
+\end{equation}
+It decreases strictly from $r$ at $\lambda=0$ to $0$ as $\lambda\to\infty$.
+\end{proposition}
+
+\begin{proof}
+The form of $\bS_\lambda$ is immediate from~\eqref{eq:ridge-closed}. By
+Theorem~\ref{thm:ridge-svd}, $\bS_\lambda=\sum_j\{d_j^2/(d_j^2+\lambda)\}\bu_j\bu_j'$, and
+$\tr(\bu_j\bu_j')=\bu_j'\bu_j=1$ by the cyclic property of the trace. Each summand in
+$\df(\lambda)$ is strictly decreasing in $\lambda$ with limits $1$ and $0$.
+\end{proof}
+
+\begin{theorem}[Mallows for a linear smoother]\label{thm:mallows-smoother}
+Let $\bY=\bmu+\be$ with $\expc[\be]=\bzero$ and $\var(\be)=\sigma^2\bI$, let
+$\bY^{\mathrm{new}}=\bmu+\be^{\mathrm{new}}$ be an independent replicate at the same
+design, and let $\hat\bY=\bS\bY$. Then, with
+$\mathrm{Err}_{\mathrm{in}}=n^{-1}\expc|\bY^{\mathrm{new}}-\hat\bY|^2$ and
+$\SSE=|\bY-\hat\bY|^2$,
+\begin{equation}\label{eq:mallows-smoother}
+\boxed{\;n\,\mathrm{Err}_{\mathrm{in}} = \expc[\SSE]+2\sigma^2\tr(\bS) . \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Put $\bM=\bI-\bS$. By the quadratic-form lemma of the prerequisites,
+\[
+\expc[\SSE]=\expc|\bM\bY|^2=\sigma^2\tr(\bM'\bM)+|\bM\bmu|^2 .
+\]
+Since $\be^{\mathrm{new}}$ has mean zero and is independent of $\bY$,
+\[
+n\,\mathrm{Err}_{\mathrm{in}} = n\sigma^2+\expc|\bmu-\bS\bY|^2
+= n\sigma^2+\expc|\bM\bmu-\bS\be|^2
+= n\sigma^2+|\bM\bmu|^2+\sigma^2\tr(\bS'\bS) ,
+\]
+using $\bmu-\bS\bY=\bM\bmu-\bS\be$ and $\expc[\be]=\bzero$. Subtracting and expanding
+$\tr(\bM'\bM)=n-2\tr(\bS)+\tr(\bS'\bS)$,
+\[
+n\,\mathrm{Err}_{\mathrm{in}}-\expc[\SSE]
+= n\sigma^2+\sigma^2\tr(\bS'\bS)-\sigma^2\bigl(n-2\tr(\bS)+\tr(\bS'\bS)\bigr)
+= 2\sigma^2\tr(\bS) .
+\qedhere
+\]
+\end{proof}
+
+\begin{remark}
+With $\bS=\bH$ the projection of Unit 2, $\tr(\bH)=d$ and~\eqref{eq:mallows-smoother} is the
+Mallows theorem of Unit 5. Nothing in the proof uses idempotency or symmetry, so the same
+accounting holds for ridge, and the price of a fit is $\tr(\bS)$ rather than the number of
+coefficients estimated. Ridge estimates all $k$ of them and pays $\df(\lambda)\leqslant r$.
+\end{remark}
+
+\begin{proposition}[Self-influence formula]\label{prop:df-cov}
+For a linear smoother, $\sum_{i=1}^n\cov(\hat Y_i,Y_i)=\sigma^2\tr(\bS)$.
+\end{proposition}
+
+\begin{proof}
+$\cov(\hat Y_i,Y_i)=\cov\bigl(\sum_l S_{il}Y_l,\ Y_i\bigr)=\sigma^2 S_{ii}$ because the
+$Y_l$ are uncorrelated with common variance $\sigma^2$. Summing over $i$ gives the trace.
+\end{proof}
+
+\subsection{Why shrinkage can help}\label{sec:6.1.5}
+
+\begin{proposition}[Bias and variance]\label{prop:ridge-mse}
+Assume $\bY=\bX\bb+\be$ with $\expc[\be]=\bzero$, $\var(\be)=\sigma^2\bI$, and write
+$\bA_\lambda=\bX'\bX+\lambda\bI$. Then
+\begin{equation}\label{eq:ridge-bias-var}
+\expc[\hat\bb_\lambda]-\bb = -\lambda\bA_\lambda^{-1}\bb ,
+\qquad
+\var(\hat\bb_\lambda)=\sigma^2\bA_\lambda^{-1}\bX'\bX\bA_\lambda^{-1} .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+$\hat\bb_\lambda=\bA_\lambda^{-1}\bX'\bY$ is linear in $\bY$, so
+$\expc[\hat\bb_\lambda]=\bA_\lambda^{-1}\bX'\bX\bb
+=\bA_\lambda^{-1}(\bA_\lambda-\lambda\bI)\bb=\bb-\lambda\bA_\lambda^{-1}\bb$, and the
+variance is $\bA_\lambda^{-1}\bX'\var(\bY)\bX\bA_\lambda^{-1}$ by the linear-map
+proposition of the prerequisites.
+\end{proof}
+
+\begin{theorem}[Some ridge always beats least squares]\label{thm:hoerl-kennard}
+Assume in addition $\rank(\bX)=k$ and $\sigma^2>0$. Let $\gamma_1\geqslant\cdots\geqslant
+\gamma_k>0$ be the eigenvalues of $\bX'\bX$ with orthonormal eigenvectors
+$\bv_1,\ldots,\bv_k$, put $\alpha_j=\bv_j'\bb$, and let
+$R(\lambda)=\expc|\hat\bb_\lambda-\bb|^2$ be the total mean squared error. Then
+\begin{equation}\label{eq:HK-R}
+R(\lambda)=\sum_{j=1}^k\frac{\sigma^2\gamma_j}{(\gamma_j+\lambda)^2}
+          +\sum_{j=1}^k\frac{\lambda^2\alpha_j^2}{(\gamma_j+\lambda)^2} ,
+\qquad
+R'(\lambda)=\sum_{j=1}^k\frac{2\gamma_j(\lambda\alpha_j^2-\sigma^2)}{(\gamma_j+\lambda)^3} .
+\end{equation}
+Consequently $R$ is strictly decreasing on $[0,\sigma^2/\max_j\alpha_j^2)$, and in
+particular there is $\lambda>0$ with $R(\lambda)<R(0)$: the least squares estimator is
+inadmissible under total squared error.
+\end{theorem}
+
+\begin{proof}
+By the spectral theorem write $\bX'\bX=\bV\bLam\bV'$ with $\bLam=\diag(\gamma_j)$ and $\bV$
+orthogonal, so $\bA_\lambda^{-1}=\bV(\bLam+\lambda\bI)^{-1}\bV'$. Applying the bias--variance decomposition
+of Unit 1 to each coordinate and summing,
+\[
+R(\lambda)=\sum_{j}\expc(\hat\beta_{\lambda j}-\beta_j)^2
+=\tr\{\var(\hat\bb_\lambda)\}+|\expc[\hat\bb_\lambda]-\bb|^2 ,
+\]
+and by~\eqref{eq:ridge-bias-var},
+\[
+\tr\{\var(\hat\bb_\lambda)\}
+=\sigma^2\tr\bigl\{(\bLam+\lambda\bI)^{-1}\bLam(\bLam+\lambda\bI)^{-1}\bigr\}
+=\sum_j\frac{\sigma^2\gamma_j}{(\gamma_j+\lambda)^2} ,
+\]
+using $\bV'\bV=\bI$ and the cyclic property of the trace, while
+$|\lambda\bA_\lambda^{-1}\bb|^2=\lambda^2|(\bLam+\lambda\bI)^{-1}\bV'\bb|^2
+=\sum_j\lambda^2\alpha_j^2/(\gamma_j+\lambda)^2$.
+
+Differentiating term by term,
+\[
+\frac{\dd}{\dd\lambda}\frac{\sigma^2\gamma_j}{(\gamma_j+\lambda)^2}
+=\frac{-2\sigma^2\gamma_j}{(\gamma_j+\lambda)^3},
+\qquad
+\frac{\dd}{\dd\lambda}\frac{\lambda^2\alpha_j^2}{(\gamma_j+\lambda)^2}
+=\frac{2\lambda\alpha_j^2(\gamma_j+\lambda)-2\lambda^2\alpha_j^2}{(\gamma_j+\lambda)^3}
+=\frac{2\lambda\alpha_j^2\gamma_j}{(\gamma_j+\lambda)^3} ,
+\]
+and adding gives the stated $R'$.
+
+Every $\gamma_j$ is positive, so each summand of $R'(\lambda)$ is negative as soon as
+$\lambda\alpha_j^2<\sigma^2$ for every $j$, that is for
+$\lambda<\sigma^2/\max_j\alpha_j^2$. At $\lambda=0$ in particular
+$R'(0)=-2\sigma^2\sum_j\gamma_j^{-2}<0$.
+\end{proof}
+
+\begin{remark}
+The interval on which $R$ decreases depends on $\sigma^2$ and on $\bb$, both unknown, so the
+theorem does not deliver a usable $\lambda$; it shows only that a beneficial one exists.
+The gain is largest when some $\gamma_j$ is small, since the variance term
+$\sigma^2\sum_j\gamma_j^{-1}$ at $\lambda=0$ is then large while the bias introduced along
+that direction is bounded by $\alpha_j^2$. Choosing $\lambda$ is left to cross-validation
+(§\ref{sec:6.2.6}).
+\end{remark}
+
+%==============================================================================
+\section{The Lasso and the Elastic Net}\label{sec:6.2}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.2.2--6.2.3.
+\end{reading}
+
+\subsection{Definition and basic structure}\label{sec:6.2.1}
+
+\begin{definition}[Lasso]\label{def:lasso}
+For $\lambda\geqslant0$ the \emph{lasso} criterion is
+\begin{equation}\label{eq:lasso-obj}
+L_\lambda(\bb) = |\bY-\bX\bb|^2 + \lambda\|\bb\|_1 ,
+\qquad \|\bb\|_1=\sum_{j=1}^k|\beta_j| ,
+\end{equation}
+and a \emph{lasso estimator} is a minimiser of $L_\lambda$ over $\Real^k$. The
+\emph{active set} of a candidate $\bb$ is $A(\bb)=\{j:\beta_j\neq0\}$.
+\end{definition}
+
+\begin{theorem}[Existence; the fit is unique even when the estimator is not]
+\label{thm:lasso-exist}
+For $\lambda>0$ the criterion $L_\lambda$ attains its minimum. If $\hat\bb$ and $\hat\bb'$
+are both minimisers then $\bX\hat\bb=\bX\hat\bb'$ and $\|\hat\bb\|_1=\|\hat\bb'\|_1$.
+\end{theorem}
+
+\begin{proof}
+$L_\lambda$ is continuous, and
+$\|\bb\|_1^2=|\bb|^2+2\sum_{i<j}|\beta_i||\beta_j|\geqslant|\bb|^2$ gives
+$L_\lambda(\bb)\geqslant\lambda|\bb|\to\infty$, so $L_\lambda$ is coercive and attains its
+minimum by the coercive-minimisation lemma of the prerequisites.
+
+Let $\hat\bb,\hat\bb'$ be minimisers with common value $m$, and suppose
+$\bX\hat\bb\neq\bX\hat\bb'$. Put $\bb_t=t\hat\bb+(1-t)\hat\bb'$ for $t\in(0,1)$. The map
+$\bw\mapsto|\bY-\bw|^2$ is strictly convex, so
+\[
+|\bY-\bX\bb_t|^2 < t|\bY-\bX\hat\bb|^2+(1-t)|\bY-\bX\hat\bb'|^2 ,
+\]
+while $\|\bb_t\|_1\leqslant t\|\hat\bb\|_1+(1-t)\|\hat\bb'\|_1$ by the triangle inequality.
+Adding, $L_\lambda(\bb_t)<m$, which is impossible. Hence $\bX\hat\bb=\bX\hat\bb'$, the two
+sums of squares agree, and so do the two penalties.
+\end{proof}
+
+\begin{theorem}[The penalised and constrained forms]\label{thm:lasso-equivalence}
+Let $P:\Real^k\to[0,\infty)$ be convex with $P(\bzero)=0$, and let
+$g(\bb)=|\bY-\bX\bb|^2$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If $\hat\bb$ minimises $g+\lambda P$ for some $\lambda\geqslant0$, then $\hat\bb$
+      minimises $g$ subject to $P(\bb)\leqslant P(\hat\bb)$.
+\item If $s>0$ and $\hat\bb$ minimises $g$ subject to $P(\bb)\leqslant s$, then there is
+      $\lambda\geqslant0$ such that $\hat\bb$ minimises $g+\lambda P$ over $\Real^k$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) Let $P(\bb)\leqslant P(\hat\bb)$. Then
+$g(\hat\bb)+\lambda P(\hat\bb)\leqslant g(\bb)+\lambda P(\bb)\leqslant g(\bb)+\lambda
+P(\hat\bb)$, and cancelling gives $g(\hat\bb)\leqslant g(\bb)$.
+
+(ii) Apply the convex programme of the prerequisites with $\calD=\Real^k$, objective
+$f_0=g$ and the single constraint $f_1(\bb)=P(\bb)-s$, both convex. The optimal value
+$p^\star=g(\hat\bb)$ is finite, and Slater's condition holds at $\tilde\bb=\bzero$, where
+$f_1(\bzero)=-s<0$. By the strong duality theorem the dual optimum is attained at some
+$\lambda\geqslant0$, and
+\[
+g(\hat\bb)=p^\star=\inf_{\bb}\bigl\{g(\bb)+\lambda(P(\bb)-s)\bigr\}
+\leqslant g(\hat\bb)+\lambda\bigl(P(\hat\bb)-s\bigr)\leqslant g(\hat\bb) ,
+\]
+the last step because $\lambda\geqslant0$ and $P(\hat\bb)\leqslant s$. Both inequalities are
+therefore equalities. Equality on the right gives $\lambda(P(\hat\bb)-s)=0$, and equality on
+the left gives $\inf_{\bb}\{g(\bb)+\lambda P(\bb)\}-\lambda s=g(\hat\bb)$. Adding the first to
+the second,
+\[
+\inf_{\bb}\{g(\bb)+\lambda P(\bb)\} = g(\hat\bb)+\lambda P(\hat\bb) ,
+\]
+so the infimum is attained at $\hat\bb$.
+\end{proof}
+
+\begin{remark}
+Taking $P(\bb)=\|\bb\|_1$ gives the lasso in its two equivalent forms and
+$P(\bb)=|\bb|^2$ gives Proposition~\ref{prop:ridge-constrained}. The correspondence between
+$\lambda$ and $s$ is data-dependent: it runs through
+$s=P(\hat\bb_\lambda)$ in one direction and through the multiplier of the constraint in the
+other.
+\end{remark}
+
+\subsection{Optimality conditions}\label{sec:6.2.2}
+
+\begin{theorem}[Stationarity for the lasso]\label{thm:lasso-kkt}
+Let $\lambda>0$ and $\bc=\bX'(\bY-\bX\hat\bb)$, so that $c_j=\bx_j'(\bY-\bX\hat\bb)$. Then
+$\hat\bb$ minimises $L_\lambda$ if and only if
+\begin{equation}\label{eq:lasso-kkt}
+2c_j = \lambda\,\sign(\hat\beta_j) \ \ \text{ for } \hat\beta_j\neq0 ,
+\qquad
+|2c_j| \leqslant \lambda \ \ \text{ for } \hat\beta_j=0 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+$L_\lambda$ is convex, so by the directional lemma of the prerequisites $\hat\bb$ is a
+minimiser if and only if $L_\lambda'(\hat\bb;\bv)\geqslant0$ for every $\bv\in\Real^k$. The
+first term of $L_\lambda$ is differentiable with gradient $-2\bX'(\bY-\bX\bb)$, so it
+contributes $-2\bv'\bc$. For the second term, coordinate by coordinate,
+\[
+\lim_{t\downarrow0}\frac{|\hat\beta_j+tv_j|-|\hat\beta_j|}{t}
+= \begin{cases} v_j\sign(\hat\beta_j), & \hat\beta_j\neq0,\\[2pt] |v_j|, & \hat\beta_j=0,\end{cases}
+\]
+the first case because the sign is unchanged for small $t$. Hence
+\begin{equation}\label{eq:lasso-dd}
+L_\lambda'(\hat\bb;\bv)
+=\sum_{j:\hat\beta_j\neq0}\bigl\{-2c_j+\lambda\sign(\hat\beta_j)\bigr\}v_j
+ +\sum_{j:\hat\beta_j=0}\bigl\{-2c_jv_j+\lambda|v_j|\bigr\} .
+\end{equation}
+
+Suppose $\hat\bb$ is a minimiser. Taking $\bv=\pm\mathbf{e}_j$ with $\mathbf{e}_j$ the
+$j$-th standard basis vector:
+if $\hat\beta_j\neq0$ the requirement is $\pm\{-2c_j+\lambda\sign(\hat\beta_j)\}\geqslant0$,
+forcing $2c_j=\lambda\sign(\hat\beta_j)$; if $\hat\beta_j=0$ it is
+$\mp2c_j+\lambda\geqslant0$, that is $|2c_j|\leqslant\lambda$.
+
+Conversely, under~\eqref{eq:lasso-kkt} every term of the first sum
+in~\eqref{eq:lasso-dd} vanishes and every term of the second is
+$\geqslant-|2c_j||v_j|+\lambda|v_j|\geqslant0$, so $L_\lambda'(\hat\bb;\bv)\geqslant0$ for
+all $\bv$.
+\end{proof}
+
+\begin{corollary}[The smallest $\lambda$ that kills every coefficient]\label{cor:lambda-max}
+$\bzero$ is a lasso estimator if and only if
+$\lambda\geqslant\lambda_{\max}:=2\max_j|\bx_j'\bY|$.
+\end{corollary}
+
+\begin{proof}
+Put $\hat\bb=\bzero$ in Theorem~\ref{thm:lasso-kkt}: every coefficient is zero, so the
+condition is $|2\bx_j'\bY|\leqslant\lambda$ for every $j$.
+\end{proof}
+
+\begin{theorem}[Sparsity]\label{thm:lasso-sparse}
+For $\lambda>0$ there is a lasso estimator $\hat\bb$ whose active columns
+$\{\bx_j:j\in A(\hat\bb)\}$ are linearly independent. In particular
+$|A(\hat\bb)|\leqslant\rank(\bX)\leqslant\min(n,k)$.
+\end{theorem}
+
+\begin{proof}
+Among the minimisers choose one, $\hat\bb$, and suppose its active columns are linearly
+dependent: there is $\bv\neq\bzero$ with $v_j=0$ for $j\notin A(\hat\bb)$ and
+$\bX\bv=\bzero$. For $t$ in a neighbourhood of $0$ every active coordinate
+$\hat\beta_j+tv_j$ keeps the sign of $\hat\beta_j$, so
+\[
+\|\hat\bb+t\bv\|_1=\sum_{j\in A}\sign(\hat\beta_j)(\hat\beta_j+tv_j)=\|\hat\bb\|_1+tc,
+\qquad c=\sum_{j\in A}\sign(\hat\beta_j)v_j ,
+\]
+while $\bX(\hat\bb+t\bv)=\bX\hat\bb$ leaves the sum of squares unchanged. Thus
+$L_\lambda(\hat\bb+t\bv)=L_\lambda(\hat\bb)+\lambda tc$ near $t=0$, which is minimised at
+$t=0$ only if $c=0$; so $c=0$ and $L_\lambda$ is constant along the segment.
+
+Let $t^+=\min\{-\hat\beta_j/v_j:\ j\in A,\ v_j\neq0,\ -\hat\beta_j/v_j>0\}$, finite because
+$\bv$ has a nonzero coordinate in $A$ and, replacing $\bv$ by $-\bv$ if necessary, at least
+one ratio is positive. On $[0,t^+]$ no active coordinate changes sign, so
+$L_\lambda(\hat\bb+t^+\bv)=L_\lambda(\hat\bb)$, and $\hat\bb+t^+\bv$ is a minimiser whose
+active set is a proper subset of $A(\hat\bb)$.
+
+Repeating strictly decreases the active set, so the procedure stops, and it can only stop
+at a minimiser whose active columns are independent. A set of independent columns of $\bX$
+has at most $\rank(\bX)$ members.
+\end{proof}
+
+\begin{remark}
+The bound is a genuine restriction only when $k>n$: a lasso fit can then involve at most
+$n$ predictors however small $\lambda$ is, whereas ridge always involves all $k$. It is a
+statement about the existence of a sparse solution, not about every solution; when the
+active columns are dependent the estimator is not unique and a solver may return a less
+sparse member of the same solution set, all of them sharing one fitted vector by
+Theorem~\ref{thm:lasso-exist}.
+\end{remark}
+
+\begin{figure}[H]\centering
+<<constraint-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+set.seed(4)
+nn <- 60
+x1 <- rnorm(nn); x2 <- 0.6*x1 + sqrt(1 - 0.6^2)*rnorm(nn)
+Xm <- scale(cbind(x1, x2), TRUE, FALSE)
+yv <- 1.0*x1 + rnorm(nn, sd = 1.0); yv <- yv - mean(yv)
+A  <- crossprod(Xm); bh <- drop(solve(A, crossprod(Xm, yv)))
+sft <- function(a, t) sign(a)*pmax(abs(a) - t, 0)
+bl <- { b <- c(0, 0); ss <- colSums(Xm^2); lam <- 40
+  for (it in 1:3000) { r <- yv - Xm %*% b
+    for (j in 1:2) { r <- r + Xm[, j]*b[j]
+      b[j] <- sft(sum(Xm[, j]*r), lam/2)/ss[j]; r <- r - Xm[, j]*b[j] } }
+  b }
+s  <- sum(abs(bl))
+lr <- uniroot(function(l) sqrt(sum(solve(A + l*diag(2), crossprod(Xm, yv))^2)) - s,
+              c(1e-8, 1e5))$root
+br <- drop(solve(A + lr*diag(2), crossprod(Xm, yv)))
+qf <- function(b) drop(t(b - bh) %*% A %*% (b - bh))
+g  <- seq(-0.85, 1.75, length.out = 320)
+Zc <- outer(g, g, Vectorize(function(a, b) qf(c(a, b))))
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 1.8, 0.8), cex = 0.85)
+th <- seq(0, 2*pi, length.out = 400)
+for (w in 1:2) {
+  bs <- if (w == 1) bl else br
+  cl <- if (w == 1) "#B45309" else "#1E3A8A"
+  contour(g, g, Zc, levels = qf(bs)*c(0.12, 0.42, 1.9, 3.2), drawlabels = FALSE,
+          col = "grey65", asp = 1, xlab = expression(beta[1]),
+          ylab = if (w == 1) expression(beta[2]) else "",
+          main = if (w == 1) "lasso" else "ridge")
+  contour(g, g, Zc, levels = qf(bs), drawlabels = FALSE, col = "grey30",
+          lwd = 1.4, add = TRUE)
+  abline(h = 0, v = 0, col = "grey88")
+  if (w == 1) polygon(c(s, 0, -s, 0), c(0, s, 0, -s), border = cl, lwd = 2,
+                      col = adjustcolor(cl, 0.10))
+  else        polygon(s*cos(th), s*sin(th), border = cl, lwd = 2,
+                      col = adjustcolor(cl, 0.10))
+  points(bs[1], bs[2], pch = 19, col = cl, cex = 1.3)
+  points(bh[1], bh[2], pch = 19, col = "grey25", cex = 1.0)
+  text(bh[1], bh[2], expression(hat(beta)), pos = 4, cex = 0.95)
+}
+par(op)
+@
+\caption{The constrained form of Theorem~\ref{thm:lasso-equivalence} at $k=2$, with a
+common budget $s$. Grey curves are contours of $|\bY-\bX\bb|^2$ centred at $\hat\bb$, the
+darker one passing through the solution. The $\ell_1$ ball has corners on the axes, so the
+first contour to reach it touches a corner; the $\ell_2$ ball is
+smooth.}\label{fig:constraint}
+\end{figure}
+
+\subsection{The orthonormal design}\label{sec:6.2.3}
+
+\begin{lemma}[Scalar soft thresholding]\label{lem:soft}
+For $a\in\Real$ and $\tau>0$, the function $h(b)=(b-a)^2+2\tau|b|$ has the unique minimiser
+\begin{equation}\label{eq:soft}
+S_\tau(a) = \sign(a)\,(|a|-\tau)_+ =
+\begin{cases}
+a-\tau, & a>\tau,\\
+0, & |a|\leqslant\tau,\\
+a+\tau, & a<-\tau .
+\end{cases}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+$h$ is continuous, coercive and strictly convex, so it has a unique minimiser by the
+coercive-minimisation lemma of the prerequisites. Since $h$ with data $-a$ evaluated at
+$-b$ equals $h$ with data $a$ evaluated at $b$, it suffices to treat $a\geqslant0$.
+
+For $b<0$ and $a\geqslant0$, $(b-a)^2=(|b|+a)^2\geqslant(|b|-a)^2$, so
+$h(b)\geqslant h(|b|)$: the minimiser lies in $[0,\infty)$. There
+$h(b)=(b-a)^2+2\tau b$ is a parabola with vertex $a-\tau$, so its minimiser over
+$[0,\infty)$ is $\max(a-\tau,0)$.
+\end{proof}
+
+\begin{theorem}[Ridge and lasso under an orthonormal design]\label{thm:orthonormal}
+Suppose $\bX'\bX=\bI$, and write $\hat\beta_j=\bx_j'\bY$ for the least squares
+coefficients. Then
+\begin{equation}\label{eq:ortho-formulas}
+\hat\beta_j^{\,\mathrm{ridge}} = \frac{\hat\beta_j}{1+\lambda} ,
+\qquad
+\hat\beta_j^{\,\mathrm{lasso}} = S_{\lambda/2}(\hat\beta_j)
+= \sign(\hat\beta_j)\bigl(|\hat\beta_j|-\tfrac\lambda2\bigr)_+ .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+With $\bX'\bX=\bI$ the least squares estimator is $\hat\bb=\bX'\bY$ and, by Pythagoras
+applied to the orthogonal decomposition $\bY-\bX\bb=(\bY-\bX\hat\bb)+\bX(\hat\bb-\bb)$,
+\[
+|\bY-\bX\bb|^2 = |\bY-\bX\hat\bb|^2+|\hat\bb-\bb|^2
+= |\bY-\bX\hat\bb|^2+\sum_{j=1}^k(\beta_j-\hat\beta_j)^2 .
+\]
+Both criteria therefore separate into $k$ scalar problems. The ridge problem
+$\min_b\{(b-\hat\beta_j)^2+\lambda b^2\}$ has derivative
+$2(b-\hat\beta_j)+2\lambda b$, vanishing at $b=\hat\beta_j/(1+\lambda)$, and the objective
+is strictly convex. The lasso problem is Lemma~\ref{lem:soft} with $2\tau=\lambda$.
+\end{proof}
+
+\begin{figure}[H]\centering
+<<shrink-fig, echo=FALSE, fig.width=6.4, fig.height=2.7>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 1.2, 0.6), cex = 0.85)
+a <- seq(-3, 3, length.out = 601); lam <- 1
+plot(a, a/(1+lam), type = "l", lwd = 2, col = "#1E3A8A", asp = 1,
+     xlab = expression(hat(beta)[j]), ylab = "penalised coefficient",
+     main = "ridge", ylim = c(-3, 3))
+abline(0, 1, lty = 3, col = "grey50"); abline(h = 0, v = 0, col = "grey85")
+plot(a, sign(a)*pmax(abs(a) - lam/2, 0), type = "l", lwd = 2, col = "#B45309",
+     asp = 1, xlab = expression(hat(beta)[j]), ylab = "",
+     main = "lasso", ylim = c(-3, 3))
+abline(0, 1, lty = 3, col = "grey50"); abline(h = 0, v = 0, col = "grey85")
+par(op)
+@
+\caption{Shrinkage under an orthonormal design at $\lambda=1$
+(Theorem~\ref{thm:orthonormal}). The dotted line is the identity. Ridge multiplies every
+least squares coefficient by $1/(1+\lambda)$; the lasso subtracts $\lambda/2$ from the
+modulus and sets to zero everything below that threshold.}\label{fig:shrink}
+\end{figure}
+
+\begin{remark}
+Ridge shrinks by a constant factor, so no coefficient is ever exactly zero. The lasso
+shrinks by a constant amount and therefore zeroes every coefficient with
+$|\hat\beta_j|\leqslant\lambda/2$: selection and shrinkage happen in one operation. For a
+general design the two statements survive only qualitatively, and the exact description is
+Theorem~\ref{thm:lasso-kkt}.
+\end{remark}
+
+\subsection{Coordinate descent}\label{sec:6.2.4}
+
+\begin{proposition}[The coordinate update]\label{prop:cd-update}
+Fix $j$ and all coordinates but the $j$-th, and let
+$\br^{(j)}=\bY-\sum_{l\neq j}\bx_l\beta_l$ be the partial residual. Assume
+$\bx_j\neq\bzero$. The minimiser of $\beta_j\mapsto L_\lambda(\bb)$ is
+\begin{equation}\label{eq:cd-update}
+\beta_j \;\longleftarrow\; \frac{S_{\lambda/2}\bigl(\bx_j'\br^{(j)}\bigr)}{|\bx_j|^2} .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+As a function of $\beta_j$ alone the criterion is, up to terms free of $\beta_j$,
+\[
+|\br^{(j)}-\bx_j\beta_j|^2+\lambda|\beta_j|
+= |\bx_j|^2\Bigl(\beta_j-\frac{\bx_j'\br^{(j)}}{|\bx_j|^2}\Bigr)^2
+  +\lambda|\beta_j| + \text{const} .
+\]
+Dividing by $|\bx_j|^2$ puts it in the form of Lemma~\ref{lem:soft} with
+$a=\bx_j'\br^{(j)}/|\bx_j|^2$ and $\tau=\lambda/(2|\bx_j|^2)$, whose minimiser is
+$\sign(a)(|a|-\tau)_+$. Multiplying numerator and denominator by $|\bx_j|^2$ turns that
+into~\eqref{eq:cd-update}.
+\end{proof}
+
+\begin{theorem}[Coordinate-wise optimality is optimality]\label{thm:cd-valid}
+Suppose every column of $\bX$ is nonzero and $\bb$ satisfies~\eqref{eq:cd-update} for every
+$j$ simultaneously. Then $\bb$ minimises $L_\lambda$.
+\end{theorem}
+
+\begin{proof}
+Fix $j$ and write $z=\bx_j'\br^{(j)}$. Since $\bY-\bX\bb=\br^{(j)}-\bx_j\beta_j$,
+\[
+c_j=\bx_j'(\bY-\bX\bb) = z - |\bx_j|^2\beta_j .
+\]
+If $\beta_j=0$ then~\eqref{eq:cd-update} forces $|z|\leqslant\lambda/2$ and $c_j=z$, so
+$|2c_j|\leqslant\lambda$. If $\beta_j\neq0$ then $|\bx_j|^2\beta_j=\sign(z)(|z|-\lambda/2)$
+with $\sign(\beta_j)=\sign(z)$, whence
+\[
+c_j = z-\sign(z)|z|+\sign(z)\tfrac\lambda2 = \tfrac\lambda2\sign(\beta_j) .
+\]
+So~\eqref{eq:lasso-kkt} holds at every coordinate, and Theorem~\ref{thm:lasso-kkt}
+applies.
+\end{proof}
+
+\begin{remark}
+The two results together are an algorithm: sweep $j=1,\ldots,k$ applying the closed-form
+update~\eqref{eq:cd-update}, and stop when a sweep changes nothing. Each update is $O(n)$
+once the residual is carried along, and a converged sweep certifies a global minimum by
+Theorem~\ref{thm:cd-valid}. This is what \texttt{glmnet} implements, over a decreasing grid
+of $\lambda$ starting at $\lambda_{\max}$ of Corollary~\ref{cor:lambda-max}, where the
+solution is $\bzero$, and using the previous solution as the starting point at the next
+$\lambda$.
+\end{remark}
+
+\subsection{The elastic net}\label{sec:6.2.5}
+
+\begin{definition}[Elastic net]\label{def:enet}
+For $\lambda_1,\lambda_2\geqslant0$ the \emph{elastic net} criterion is
+\begin{equation}\label{eq:enet-obj}
+E(\bb)=|\bY-\bX\bb|^2+\lambda_1\|\bb\|_1+\lambda_2|\bb|^2 .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Uniqueness]\label{prop:enet-unique}
+If $\lambda_2>0$ then $E$ has exactly one minimiser.
+\end{proposition}
+
+\begin{proof}
+$|\bY-\bX\bb|^2+\lambda_1\|\bb\|_1$ is convex and $\lambda_2|\bb|^2$ is strictly convex, so
+$E$ is strictly convex; it is coercive because $E(\bb)\geqslant\lambda_2|\bb|^2$. Apply the
+coercive-minimisation lemma of the prerequisites.
+\end{proof}
+
+\begin{theorem}[Grouping]\label{thm:grouping}
+Suppose $\bx_j=\bx_l$ for some $j\neq l$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item If $\lambda_2>0$, the elastic net estimator satisfies $\hat\beta_j=\hat\beta_l$.
+\item If $\lambda_2=0$ and $\lambda_1>0$ and $\hat\bb$ is a lasso estimator with
+      $\hat\beta_j\hat\beta_l\geqslant0$, then replacing $(\hat\beta_j,\hat\beta_l)$ by
+      $(t,\ \hat\beta_j+\hat\beta_l-t)$ gives another lasso estimator for every $t$
+      between $0$ and $\hat\beta_j+\hat\beta_l$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+Let $\pi$ be the permutation of $\Real^k$ that exchanges coordinates $j$ and $l$. Since
+$\bx_j=\bx_l$, $\bX\pi(\bb)=\bX\bb$, and both penalties are invariant under $\pi$, so
+$E(\pi(\bb))=E(\bb)$ for every $\bb$.
+
+(i) By Proposition~\ref{prop:enet-unique} the minimiser $\hat\bb$ is unique, and
+$\pi(\hat\bb)$ is also a minimiser, so $\pi(\hat\bb)=\hat\bb$, that is
+$\hat\beta_j=\hat\beta_l$.
+
+(ii) Write $\sigma=\hat\beta_j+\hat\beta_l$ and let $\bb_t$ be $\hat\bb$ with the pair
+replaced by $(t,\sigma-t)$. Then $\bX\bb_t=\bX\hat\bb$, so the sums of squares agree. For
+$t$ between $0$ and $\sigma$ both $t$ and $\sigma-t$ have the sign of $\sigma$, so
+$|t|+|\sigma-t|=|\sigma|$; and $\hat\beta_j\hat\beta_l\geqslant0$ gives
+$|\hat\beta_j|+|\hat\beta_l|=|\sigma|$ as well. The penalties therefore agree, and
+$E(\bb_t)=E(\hat\bb)$.
+
+The hypothesis in (ii) is automatic: $\bx_j=\bx_l$ makes $c_j=c_l$ in
+Theorem~\ref{thm:lasso-kkt}, and~\eqref{eq:lasso-kkt} then forces
+$\sign(\hat\beta_j)=\sign(\hat\beta_l)$ whenever both are nonzero.
+\end{proof}
+
+\begin{remark}
+Two perfectly correlated predictors are shared equally by the elastic net and split
+arbitrarily by the lasso: the whole segment in (ii) consists of minimisers, and which one a
+solver returns depends on the solver. Near-duplicates behave the same way to a good
+approximation, which is why a lasso active set is unstable under resampling when the
+predictors are strongly correlated (§\ref{sec:6.5.3}).
+\end{remark}
+
+\begin{proposition}[Elastic net under an orthonormal design]\label{prop:enet-ortho}
+If $\bX'\bX=\bI$ then
+$\hat\beta_j^{\,\mathrm{enet}} = S_{\lambda_1/2}(\hat\beta_j)/(1+\lambda_2)$.
+\end{proposition}
+
+\begin{proof}
+As in Theorem~\ref{thm:orthonormal} the problem separates, and the $j$-th scalar criterion
+is $(b-\hat\beta_j)^2+\lambda_1|b|+\lambda_2b^2$. Completing the square in the two
+quadratic terms,
+\[
+(1+\lambda_2)\Bigl(b-\frac{\hat\beta_j}{1+\lambda_2}\Bigr)^2+\lambda_1|b|
++\text{const} ,
+\]
+and dividing by $1+\lambda_2$ gives Lemma~\ref{lem:soft} with
+$a=\hat\beta_j/(1+\lambda_2)$ and $\tau=\lambda_1/\{2(1+\lambda_2)\}$. Its minimiser is
+$\sign(a)(|a|-\tau)_+=S_{\lambda_1/2}(\hat\beta_j)/(1+\lambda_2)$.
+\end{proof}
+
+\begin{remark}
+\texttt{glmnet} parametrises the same family by a mixing parameter $\alpha\in[0,1]$ and one
+tuning constant, with $\alpha=1$ the lasso and $\alpha=0$ ridge. The translation between
+its constant and the $\lambda$ of~\eqref{eq:lasso-obj} and~\eqref{eq:ridge-obj} is
+established numerically in §\ref{sec:6.4.3}.
+\end{remark}
+
+\subsection{Choosing the tuning parameter}\label{sec:6.2.6}
+
+The criteria of Unit 5 are unavailable for the lasso, since $\SSE$ is not a $\chi^2$
+multiple and the number of estimated parameters is not the right charge; and in the
+high-dimensional case of §\ref{sec:6.3} the estimate $\hat\sigma^2$ they need does not
+exist. Cross-validation needs neither.
+
+\begin{definition}[Cross-validated tuning]\label{def:cv-lambda}
+Fix a grid $\lambda_1>\cdots>\lambda_G$ and a partition of $\{1,\ldots,n\}$ into $V$ folds
+$F_1,\ldots,F_V$. Let $\hat f^{(-v)}_{\lambda}$ be the fit obtained from the data outside
+$F_v$ at tuning constant $\lambda$. The \emph{cross-validation curve} and its standard
+error are
+\begin{equation}\label{eq:cv-curve}
+\CV(\lambda)=\frac1n\sum_{v=1}^V\sum_{i\in F_v}\bigl(Y_i-\hat f^{(-v)}_\lambda(x_i)\bigr)^2 ,
+\qquad
+\SE(\lambda)=\sqrt{\frac{1}{V-1}\sum_{v=1}^V \frac{|F_v|}{n}\,\bigl(e_v(\lambda)-\CV(\lambda)\bigr)^2} ,
+\end{equation}
+where $e_v(\lambda)=|F_v|^{-1}\sum_{i\in F_v}(Y_i-\hat f_\lambda^{(-v)}(x_i))^2$ is the
+$v$-th fold's mean error. Two selections are in use:
+\begin{equation}\label{eq:lambda-rules}
+\lambda_{\min}=\argmin_\lambda \CV(\lambda),
+\qquad
+\lambda_{1\SE}=\max\bigl\{\lambda:\ \CV(\lambda)\leqslant
+   \CV(\lambda_{\min})+\SE(\lambda_{\min})\bigr\} .
+\end{equation}
+\end{definition}
+
+\begin{remark}
+$\CV$ is an average of $n$ terms and $\SE$ an estimate of its standard deviation from $V$
+fold means, so $\lambda_{1\SE}$ is the most heavily penalised model whose error is within
+sampling noise of the best. It is the more parsimonious of the two, and by
+Theorem~\ref{thm:lasso-kkt} a larger $\lambda$ can only turn coefficients off, so it selects
+a subset of what $\lambda_{\min}$ selects whenever the active sets are nested along the
+path.
+\end{remark}
+
+\begin{remark}
+The grid runs from $\lambda_{\max}$ of Corollary~\ref{cor:lambda-max}, at which the fit is
+$\bzero$, down to a small multiple of it, equally spaced on the log scale. Everything used
+in the fit, standardisation included, must be recomputed inside each fold: the pitfall of Unit 1
+about selecting predictors before cross-validating applies unchanged here.
+\end{remark}
+
+%==============================================================================
+\section{High Dimensions and Nearest Neighbours}\label{sec:6.3}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.4, §3.5.
+\end{reading}
+
+\subsection{Least squares when \texorpdfstring{$k\geqslant n$}{k >= n}}\label{sec:6.3.1}
+
+Let $\bX_+ = [\bone\ \bX]$ be the design with its intercept column, of size $n\times(k+1)$,
+and let $\bH$ be the projection onto $\calC(\bX_+)$.
+
+\begin{theorem}[A perfect fit carries no information]\label{thm:highdim-perfect}
+If $\rank(\bX_+)=n$ then $\bH=\bI$, so every residual is zero, $\SSE=0$ and $R^2=1$,
+whatever $\bY$ is.
+\end{theorem}
+
+\begin{proof}
+$\calC(\bX_+)$ is a subspace of $\Real^n$ of dimension $n$, hence all of $\Real^n$. The
+orthogonal projection onto $\Real^n$ is the identity, so $\hat\bY=\bY$ and
+$\SSE=|\bY-\hat\bY|^2=0$; and $R^2=1-\SSE/\SST=1$ whenever $\SST>0$.
+\end{proof}
+
+\begin{corollary}\label{cor:highdim-criteria}
+Under the hypothesis of Theorem~\ref{thm:highdim-perfect} with $\rank(\bX_+)=n=k+1$: the
+residual variance estimate $\hat\sigma^2=\SSE/(n-k-1)$ is $0/0$, and $C_p$, $\AIC$, $\BIC$
+and $\bar R^2$, all of which are built from $\SSE$ and $\hat\sigma^2$, are undefined. With
+$d<n$ parameters they are defined, but $R^2$ is non-decreasing in $d$ and reaches $1$ at
+$d=n$ whatever the response, so it ranks every nested sequence in favour of the largest
+model.
+\end{corollary}
+
+\begin{proof}
+The first statement is Theorem~\ref{thm:highdim-perfect} together with $n-k-1=0$. The
+second is the monotonicity of $R^2$ from Unit 2, applied along a nested sequence of designs
+whose column space grows to $\Real^n$, where Theorem~\ref{thm:highdim-perfect} gives
+$\SSE=0$.
+\end{proof}
+
+\begin{proposition}[Non-uniqueness]\label{prop:highdim-nonunique}
+Let $\hat\bb$ satisfy the normal equations $\bX_+'\bX_+\hat\bb=\bX_+'\bY$. The set of least
+squares solutions is $\hat\bb+\calN(\bX_+)$, an affine subspace of dimension
+$k+1-\rank(\bX_+)$, and every member gives the same fitted vector. If $k+1>n$ this
+dimension is at least $k+1-n>0$.
+\end{proposition}
+
+\begin{proof}
+$|\bY-\bX_+\bb|^2$ depends on $\bb$ only through $\bX_+\bb$, and the minimum is attained
+exactly when $\bX_+\bb=\bH\bY$ by the projection theorem of Unit 2. The solution set of
+$\bX_+\bb=\bH\bY$ is $\hat\bb+\calN(\bX_+)$, whose dimension is
+$k+1-\rank(\bX_+)$ by rank--nullity, and $\rank(\bX_+)\leqslant n$ always.
+\end{proof}
+
+\begin{remark}
+R signals the degeneracy by returning \texttt{NA} for $k+1-\rank(\bX_+)$ of the
+coefficients: it fits a maximal independent subset of the columns and refuses to report the
+rest. The reported model is one arbitrary member of the affine family of
+Proposition~\ref{prop:highdim-nonunique}.
+\end{remark}
+
+\subsection{Regularised fitting in high dimensions}\label{sec:6.3.2}
+
+Ridge and the lasso are defined without any rank condition, and the results already proved
+say precisely how they behave when $k$ is large.
+
+\begin{proposition}\label{prop:highdim-summary}
+For $\lambda>0$ and any $n,k$:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item the ridge estimator exists and is unique (Theorem~\ref{thm:ridge-closed}), and its
+      effective degrees of freedom satisfy $\df(\lambda)<\rank(\bX)\leqslant\min(n,k)$
+      (Proposition~\ref{prop:ridge-smoother});
+\item a lasso estimator exists, all of them share one fitted vector
+      (Theorem~\ref{thm:lasso-exist}), and one of them has at most
+      $\rank(\bX)\leqslant\min(n,k)$ nonzero coefficients
+      (Theorem~\ref{thm:lasso-sparse});
+\item if $k>n$ the columns of $\bX$ are linearly dependent, so some predictor is an exact
+      linear combination of the others.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) and (ii) restate the cited results, using $\rank(\bX)\leqslant\min(n,k)$ and, in (i),
+$d_j^2/(d_j^2+\lambda)<1$ for every $j$ when $\lambda>0$. For (iii), $k$ vectors in
+$\Real^n$ with $k>n$ are dependent, so a nontrivial combination vanishes and any column
+with a nonzero coefficient in it is a combination of the others.
+\end{proof}
+
+\begin{remark}
+Part (iii) is the exact form of the warning that a selected set of predictors is not
+identifiable when $k>n$: a different sample, or a different solver, can return a disjoint
+set with the same fitted values. Reported error must then come from data untouched by the
+fitting, and $\SSE$, $R^2$ and the $p$-values of Unit 3 computed on the training data are
+worthless by Theorem~\ref{thm:highdim-perfect}.
+\end{remark}
+
+\subsection{Nearest neighbour regression}\label{sec:6.3.3}
+
+\begin{definition}[KNN regression]\label{def:knn-reg}
+Given training pairs $(x_1,Y_1),\ldots,(x_n,Y_n)$ with $x_i\in\Real^k$, an integer
+$K\leqslant n$ and a point $x_0$, let $\calN_0=\calN_K(x_0)$ be the set of indices of the
+$K$ training inputs nearest $x_0$ in Euclidean distance. The \emph{KNN regression estimate}
+is
+\begin{equation}\label{eq:knn-reg}
+\hat f(x_0)=\frac1K\sum_{i\in\calN_0}Y_i .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Pointwise error]\label{thm:knn-mse}
+Treat the inputs as fixed and let $Y_i=f(x_i)+\varepsilon_i$ with the $\varepsilon_i$
+uncorrelated, mean zero and variance $\sigma^2$. Let $Y_0=f(x_0)+\varepsilon_0$ be a new
+observation at $x_0$, uncorrelated with the training errors. Then
+\begin{equation}\label{eq:knn-mse}
+\expc\bigl[(Y_0-\hat f(x_0))^2\bigr]
+= \underbrace{\sigma^2}_{\text{irreducible}}
++ \underbrace{\Bigl(f(x_0)-\frac1K\sum_{i\in\calN_0}f(x_i)\Bigr)^{\!2}}_{\text{bias}^2}
++ \underbrace{\frac{\sigma^2}{K}}_{\text{variance}} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The inputs being fixed, $\calN_0$ is a fixed index set, and $\hat f(x_0)$ is an average of
+$K$ uncorrelated variables, so
+\[
+\expc[\hat f(x_0)]=\frac1K\sum_{i\in\calN_0}f(x_i),
+\qquad
+\var(\hat f(x_0))=\frac{\sigma^2}{K} .
+\]
+Since $\varepsilon_0$ is uncorrelated with $\hat f(x_0)$ and has mean zero,
+\[
+\expc\bigl[(Y_0-\hat f(x_0))^2\bigr]
+=\sigma^2+\expc\bigl[(f(x_0)-\hat f(x_0))^2\bigr]
+=\sigma^2+\bigl(f(x_0)-\expc[\hat f(x_0)]\bigr)^2+\var(\hat f(x_0)) ,
+\]
+the last step being the bias--variance decomposition of Unit 1.
+\end{proof}
+
+\begin{proposition}[Average variance of the two fits]\label{prop:knn-vs-ols-var}
+Let $\bX_+$ have full column rank $k+1$ and let $\hat Y_i$ be the least squares fitted
+values. Then
+\begin{equation}\label{eq:avg-var}
+\frac1n\sum_{i=1}^n\var(\hat Y_i)=\frac{\sigma^2(k+1)}{n} ,
+\qquad\text{while}\qquad
+\frac1n\sum_{i=1}^n\var\bigl(\hat f(x_i)\bigr)=\frac{\sigma^2}{K}
+\end{equation}
+for the KNN fit at the training inputs. The two are equal at $K=n/(k+1)$.
+\end{proposition}
+
+\begin{proof}
+$\var(\hat Y_i)=\sigma^2h_{ii}$ by Unit 2, and $\sum_ih_{ii}=\tr(\bH)=k+1$ because $\bH$ is
+a projection of rank $k+1$. The KNN statement is the variance computed in the proof of
+Theorem~\ref{thm:knn-mse}, which does not depend on $i$.
+\end{proof}
+
+\begin{remark}
+The variance of the nearest neighbour fit does not involve $k$ at all. Everything the
+dimension does to KNN it does through the bias term of~\eqref{eq:knn-mse}, which is
+controlled by how far the $K$ nearest inputs actually are from $x_0$.
+\end{remark}
+
+\subsection{The curse of dimensionality}\label{sec:6.3.4}
+
+\begin{theorem}[Distance to the nearest neighbours]\label{thm:curse}
+Let $x_1,\ldots,x_n$ be independent and uniform on the cube
+$C=[-\tfrac12,\tfrac12]^k$, and let $R_K$ be the $K$-th smallest of
+$\|x_1\|_\infty,\ldots,\|x_n\|_\infty$, the sup-norm distance from the centre of $C$ to its
+$K$-th nearest neighbour among the sample. For $0\leqslant r\leqslant\tfrac12$,
+\begin{equation}\label{eq:curse-cdf}
+\prb\{R_K\leqslant r\} = \prb\bigl\{\mathrm{Bin}\bigl(n,(2r)^k\bigr)\geqslant K\bigr\} .
+\end{equation}
+In particular the median of $R_1$ is
+\begin{equation}\label{eq:curse-median}
+m(n,k)=\tfrac12\bigl(1-2^{-1/n}\bigr)^{1/k} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The coordinates $x_{i1},\ldots,x_{ik}$ are independent and uniform on
+$[-\tfrac12,\tfrac12]$, so
+\[
+\prb\{\|x_i\|_\infty\leqslant r\}=\prod_{j=1}^k\prb\{|x_{ij}|\leqslant r\}=(2r)^k .
+\]
+The events are independent across $i$, so the number of points within distance $r$ is
+binomial with $n$ trials and success probability $(2r)^k$, and $R_K\leqslant r$ exactly when
+that count is at least $K$.
+
+For $K=1$ this reads $\prb\{R_1>r\}=\{1-(2r)^k\}^n$. Setting the right side to $\tfrac12$
+gives $(2r)^k=1-2^{-1/n}$ and hence~\eqref{eq:curse-median}.
+\end{proof}
+
+\begin{proposition}[Neighbourhoods are not local]\label{prop:cube-fraction}
+A cube centred at the origin, with side $\ell$, contained in $C$, carries probability
+$\ell^k$. To carry a fraction $p$ of the distribution it must have side $\ell=p^{1/k}$.
+\end{proposition}
+
+\begin{proof}
+Independence of the coordinates again: the probability is $\prod_{j\leqslant k}\ell=\ell^k$.
+\end{proof}
+
+\begin{corollary}[Neighbourhood radius bounds the bias]\label{cor:knn-bias}
+Suppose $|f(u)-f(v)|\leqslant L\|u-v\|_\infty$ for all $u,v\in\Real^k$. Then the bias term
+of~\eqref{eq:knn-mse} satisfies
+\begin{equation}\label{eq:knn-bias}
+\Bigl|f(x_0)-\frac1K\sum_{i\in\calN_0}f(x_i)\Bigr|
+\;\leqslant\; L\max_{i\in\calN_0}\|x_i-x_0\|_\infty .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The left side is $|K^{-1}\sum_{i\in\calN_0}\{f(x_0)-f(x_i)\}|$, at most the average of
+$L\|x_0-x_i\|_\infty$ over $i\in\calN_0$, itself at most the maximum.
+\end{proof}
+
+\begin{remark}
+Equation~\eqref{eq:curse-median} is the quantitative content of the phrase \emph{curse of
+dimensionality}: with $n=500$ points in $k=10$ dimensions the typical nearest neighbour of
+the centre sits at sup-norm distance $0.259$, over half the way to the boundary of a cube
+of half-side $0.5$, whereas in one dimension it sits at $0.0007$. The neighbours that
+enter~\eqref{eq:knn-reg} are then not near, the bound~\eqref{eq:knn-bias} is weak, and the
+average in~\eqref{eq:knn-reg} estimates something other than $f(x_0)$. Increasing $n$ is
+almost no help: $m(n,k)$ falls only like $n^{-1/k}$, so at $k=10$ raising $n$ from $100$ to
+$5000$ moves the typical distance only from $0.304$ to $0.206$.
+\end{remark}
+
+\subsection{Nearest neighbours against least squares}\label{sec:6.3.5}
+
+\begin{remark}
+Collecting the three results: least squares carries a variance $\sigma^2(k+1)/n$ and a bias
+that is zero exactly when $f$ is linear in the given predictors; KNN carries a variance
+$\sigma^2/K$ that ignores $k$ and a bias governed by the neighbourhood radius, which by
+Theorem~\ref{thm:curse} grows quickly with $k$. So least squares wins whenever $f$ is close
+to linear, and KNN wins when $f$ is far from linear and $k$ is small. Adding predictors
+that do not enter $f$ costs least squares $\sigma^2/n$ per predictor and costs KNN a
+deterioration in the bias with no compensating gain, which is why the crossover in
+§\ref{sec:6.4.6} occurs at a small $k$. When the two are close, least squares is preferred
+for the inferential machinery of Units 2 and 3, which KNN does not have.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:6.4}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.5, §3.6.
+\end{reading}
+
+Data: \texttt{Hitters} from \texttt{ISLR2}, salary on the other variables, rows with
+missing salary removed. The design is centred and scaled by~\eqref{eq:standardise}.
+
+<<data-setup>>=
+suppressMessages({library(ISLR2); library(MASS); library(glmnet); library(FNN)})
+d   <- na.omit(Hitters); n <- nrow(d)
+X   <- model.matrix(Salary ~ ., d)[, -1]
+sdn <- function(v) sqrt(mean((v - mean(v))^2))   # divisor n
+Xs  <- scale(X, center = TRUE, scale = apply(X, 2, sdn))
+y   <- d$Salary; yc <- y - mean(y); k <- ncol(Xs)
+c(n = n, k = k, max_col_mean = max(abs(colMeans(Xs))),
+  max_col_ss_less_n = max(abs(colSums(Xs^2) - n)))
+@
+
+\subsection{The ridge estimator (§\ref{sec:6.1.1}, §\ref{sec:6.1.3})}\label{sec:6.4.1}
+
+Three routes to the same vector: the linear solve of~\eqref{eq:ridge-closed}, the singular
+value expansion of Theorem~\ref{thm:ridge-svd}, and \texttt{MASS::lm.ridge}, whose
+coefficients are reported on the original scale and are put back on the standardised one.
+
+<<ridge-three-ways>>=
+lam     <- 100
+b_solve <- drop(solve(crossprod(Xs) + lam * diag(k), crossprod(Xs, yc)))
+sv      <- svd(Xs); dj <- sv$d
+b_svd   <- drop(sv$v %*% ((dj / (dj^2 + lam)) * crossprod(sv$u, yc)))
+b_pkg   <- coef(lm.ridge(Salary ~ ., data = d, lambda = lam))[-1] *
+           apply(X, 2, sdn)
+c(solve_vs_svd = max(abs(b_solve - b_svd)),
+  solve_vs_lm.ridge = max(abs(b_solve - b_pkg)),
+  coefficient_scale = max(abs(b_solve)))
+@
+
+Corollary~\ref{cor:ridge-pc} says the ridge fit is the least squares fit on the principal
+component scores with the $j$-th coefficient multiplied by $d_j^2/(d_j^2+\lambda)$.
+
+<<ridge-pc-shrinkage>>=
+Z  <- Xs %*% sv$v                                # score vectors, Unit 5
+th <- drop(crossprod(Z, yc) / colSums(Z^2))      # their OLS coefficients
+c(pc_form_vs_ridge_fit =
+    max(abs(drop(Z %*% (dj^2/(dj^2 + lam) * th)) - drop(Xs %*% b_solve))),
+  pc_form_vs_ols_fit =
+    max(abs(drop(Z %*% th) - fitted(lm(yc ~ Xs - 1)))),
+  shrinkage_largest_d = (dj^2/(dj^2 + lam))[1],
+  shrinkage_smallest_d = (dj^2/(dj^2 + lam))[k])
+@
+
+The direction of least variation is shrunk by a factor of $0.003$ and the direction of most
+variation by a factor of $0.95$. Proposition~\ref{prop:ridge-cond} is the same fact read on
+the spectrum, and Unit 4's variance inflation factor is the same near-degeneracy read one
+predictor at a time.
+
+<<ridge-conditioning>>=
+c(kappa_XtX = max(dj^2)/min(dj^2),
+  kappa_ridge = (max(dj^2) + lam)/(min(dj^2) + lam),
+  largest_VIF = max(car::vif(lm(Salary ~ ., data = d))))
+@
+
+\subsection{Effective degrees of freedom (§\ref{sec:6.1.4})}\label{sec:6.4.2}
+
+$\tr(\bS_\lambda)$ computed from the matrix, from the singular values
+by~\eqref{eq:ridge-df}, and from the covariance identity of
+Proposition~\ref{prop:df-cov} estimated by simulation.
+
+<<ridge-df>>=
+S <- Xs %*% solve(crossprod(Xs) + lam * diag(k)) %*% t(Xs)
+set.seed(1); B <- 4000; sg <- 200; mu <- drop(Xs %*% b_solve)
+Ys <- replicate(B, mu + rnorm(n, sd = sg)); Fs <- S %*% Ys
+cv <- sum(rowMeans((Fs - rowMeans(Fs)) * (Ys - rowMeans(Ys)))) * B/(B - 1)
+c(trace_S = sum(diag(S)), sum_of_shrinkages = sum(dj^2/(dj^2 + lam)),
+  simulated_cov_identity = cv/sg^2, df_at_lambda_zero = sum(dj^2/dj^2),
+  k = k)
+@
+
+Theorem~\ref{thm:mallows-smoother} states that the training error understates in-sample
+prediction error by exactly $2\sigma^2\tr(\bS)$, whether or not $\bS$ is a projection.
+
+<<mallows-smoother-sim>>=
+set.seed(1); B <- 20000; mu <- drop(Xs %*% rep(20, k))
+r <- replicate(B, {
+  yy <- mu + rnorm(n, sd = sg); fit <- drop(S %*% yy)
+  c(sse  = sum((yy - fit)^2),
+    pred = sum((mu + rnorm(n, sd = sg) - fit)^2)) })
+dif <- r["pred", ] - r["sse", ]
+c(E_SSE = mean(r["sse", ]), n_Err_in = mean(r["pred", ]),
+  difference = mean(dif), mc_se = sd(dif)/sqrt(B),
+  two_sigma2_trace_S = 2 * sg^2 * sum(diag(S)))
+@
+
+\subsection{Mean squared error against \texorpdfstring{$\lambda$}{lambda}
+(§\ref{sec:6.1.5})}\label{sec:6.4.3}
+
+Fixing a $\bb$ and a $\sigma^2$ makes $R(\lambda)$ of Theorem~\ref{thm:hoerl-kennard}
+computable in closed form.
+
+<<hoerl-kennard>>=
+gam <- dj^2; A <- crossprod(Xs)
+set.seed(3); bb <- rnorm(k, sd = 20); s2 <- 200^2
+al <- drop(crossprod(sv$v, bb))
+R  <- function(l) sum(s2*gam/(gam + l)^2) + sum(l^2*al^2/(gam + l)^2)
+rbind(lambda = c(0, 10, 50, 100, 250, 500),
+      MSE    = round(sapply(c(0, 10, 50, 100, 250, 500), R)))
+opt <- optimize(R, c(0, 3000))
+c(R_prime_at_0 = sum(2*gam*(0*al^2 - s2)/gam^3),
+  minus_2_sigma2_sum_gamma_sq = -2*s2*sum(gam^-2),
+  argmin = opt$minimum, minimum = opt$objective,
+  guaranteed_decrease_up_to = s2/max(al^2))
+@
+
+Least squares sits at the left end of the table; the best ridge is a factor of $57$ below
+it. Simulation confirms both ends.
+
+<<hoerl-kennard-sim>>=
+set.seed(4); Bs <- 4000; l0 <- 50
+W <- solve(A + l0*diag(k)) %*% t(Xs); mu2 <- drop(Xs %*% bb)
+sim <- replicate(Bs, {
+  yy <- mu2 + rnorm(n, sd = sqrt(s2))
+  c(ridge = sum((drop(W %*% yy) - bb)^2),
+    ols   = sum((drop(solve(A, crossprod(Xs, yy))) - bb)^2)) })
+c(sim_ridge = mean(sim["ridge", ]), formula_ridge = R(l0),
+  mc_se_ridge = sd(sim["ridge", ])/sqrt(Bs),
+  sim_ols = mean(sim["ols", ]), formula_ols = R(0),
+  mc_se_ols = sd(sim["ols", ])/sqrt(Bs))
+@
+
+\subsection{The lasso (§\ref{sec:6.2})}\label{sec:6.4.4}
+
+Under an orthonormal design Theorem~\ref{thm:orthonormal} gives both estimators in closed
+form; a general-purpose minimiser reaches the same value.
+
+<<orthonormal-check>>=
+soft <- function(a, tau) sign(a) * pmax(abs(a) - tau, 0)
+Q  <- qr.Q(qr(Xs)); bo <- drop(crossprod(Q, yc)); lm4 <- 400
+oL <- function(b) sum((yc - Q %*% b)^2) + lm4 * sum(abs(b))
+oR <- function(b) sum((yc - Q %*% b)^2) + lm4 * sum(b^2)
+ct <- list(maxit = 5000, reltol = 1e-14)
+c(lasso_formula = oL(soft(bo, lm4/2)),
+  lasso_numeric = optim(bo, oL, method = "BFGS", control = ct)$value,
+  ridge_formula = oR(bo/(1 + lm4)),
+  ridge_numeric = optim(bo, oR, method = "BFGS", control = ct)$value,
+  zeroed_by_lasso = sum(soft(bo, lm4/2) == 0), of = k)
+@
+
+For a general design, coordinate descent (Proposition~\ref{prop:cd-update}) run to
+convergence, then checked against the stationarity conditions~\eqref{eq:lasso-kkt}.
+
+<<coordinate-descent>>=
+lasso_cd <- function(X, y, lam, tol = 1e-12) {
+  b <- numeric(ncol(X)); ss <- colSums(X^2); r <- y
+  repeat {
+    old <- b
+    for (j in seq_along(b)) {
+      r <- r + X[, j] * b[j]
+      b[j] <- soft(sum(X[, j] * r), lam/2) / ss[j]
+      r <- r - X[, j] * b[j]
+    }
+    if (max(abs(b - old)) < tol) break
+  }
+  b
+}
+lam1 <- 1000; bcd <- lasso_cd(Xs, yc, lam1)
+cj <- drop(crossprod(Xs, yc - Xs %*% bcd)); on <- bcd != 0
+c(active = sum(on), of = k,
+  active_kkt_residual = max(abs(2*cj[on] - lam1*sign(bcd[on]))),
+  inactive_max_2c = max(abs(2*cj[!on])), lambda = lam1,
+  lambda_max = 2*max(abs(crossprod(Xs, yc))))
+@
+
+The active coordinates satisfy the equality in~\eqref{eq:lasso-kkt} to $4\times10^{-10}$
+and the inactive ones satisfy the inequality, the largest reaching $923$ against
+$\lambda=1000$. The threshold $\lambda_{\max}$ of Corollary~\ref{cor:lambda-max} is two
+orders of magnitude above the $\lambda$ used, so the fit is far from the null model.
+
+\texttt{glmnet} minimises $(2n)^{-1}|\bY-\bX\bb|^2$ plus its own penalty, and for the
+gaussian family it also rescales the response internally. The translation is therefore not
+the same for the two ends of the family, and is established here rather than assumed:
+the lasso's $\lambda$ of~\eqref{eq:lasso-obj} is $2n$ times the reported one, while the
+ridge $\lambda$ of~\eqref{eq:ridge-obj} is $n$ times the reported one divided by the
+standard deviation of $\bY$ computed with divisor $n$.
+
+<<glmnet-parametrisation>>=
+gl <- glmnet(Xs, yc, alpha = 1, lambda = lam1/(2*n) * c(4, 2, 1),
+             standardize = FALSE, intercept = FALSE, thresh = 1e-16)
+bg <- as.matrix(coef(gl))[-1, 3]
+lg <- 0.38
+rg <- glmnet(Xs, yc, alpha = 0, lambda = lg * c(4, 2, 1),
+             standardize = FALSE, intercept = FALSE, thresh = 1e-16)
+br  <- as.matrix(coef(rg))[-1, 3]
+imp <- drop(crossprod(Xs, yc - Xs %*% br)) / br    # ridge normal equations
+c(cd_vs_glmnet = max(abs(bcd - bg)), coefficient_scale = max(abs(bcd)),
+  lasso_lambda = lam1, two_n_times_reported = 2*n*(lam1/(2*n)))
+c(ridge_implied_lambda = mean(imp), spread_over_coordinates = sd(imp),
+  n_times_reported = n*lg, over_sd_of_y = n*lg/sdn(y), sd_n_of_y = sdn(y))
+@
+
+Dividing the ridge normal equations coordinate by coordinate must give the same number at
+every $j$, and it does, to within the solver's tolerance: that is
+Theorem~\ref{thm:ridge-closed} read backwards from the package's answer, and it identifies
+the penalty the package actually applied without relying on any documented conversion.
+
+Duplicating a column separates the elastic net from the lasso exactly as
+Theorem~\ref{thm:grouping} says.
+
+<<grouping-check>>=
+Xd <- cbind(Xs, Hits2 = Xs[, "Hits"])
+t(sapply(c(0, 0.5, 1), function(al) {
+  f <- glmnet(Xd, yc, alpha = al, lambda = 2*c(4, 2, 1), standardize = FALSE,
+              intercept = FALSE, thresh = 1e-16)
+  b <- unname(as.matrix(coef(f))[-1, 3])
+  c(alpha = al, Hits = b[2], Hits_copy = b[20],
+    difference = b[2] - b[20], total = b[2] + b[20]) }))
+@
+
+\subsection{Cross-validation for \texorpdfstring{$\lambda$}{lambda}
+(§\ref{sec:6.2.6})}\label{sec:6.4.5}
+
+\texttt{cv.glmnet} refits each fold on \emph{that fold's own} grid of tuning constants and
+then interpolates onto the full-data grid; reproducing it means doing the same.
+
+<<cv-manual>>=
+set.seed(1); fold <- sample(rep(1:10, length.out = n))
+cvg <- cv.glmnet(X, y, alpha = 1, foldid = fold); lgrid <- cvg$lambda
+P <- matrix(NA_real_, n, length(lgrid))
+for (v in 1:10) {
+  f <- glmnet(X[fold != v, ], y[fold != v], alpha = 1)     # its own grid
+  P[fold == v, ] <- predict(f, X[fold == v, , drop = FALSE], s = lgrid)
+}
+cvm <- colMeans((y - P)^2)
+fm  <- t(sapply(1:10, function(v)
+          colMeans((y[fold == v] - P[fold == v, , drop = FALSE])^2)))
+cvsd <- sqrt(apply(scale(fm, cvm, FALSE)^2, 2, weighted.mean,
+                   w = as.vector(table(fold)))/9)
+i <- which.min(cvm)
+c(max_diff_cv_curve = max(abs(cvm - cvg$cvm)),
+  max_diff_cv_se = max(abs(cvsd - cvg$cvsd)),
+  lambda_min = lgrid[i], glmnet_lambda_min = cvg$lambda.min,
+  lambda_1se = max(lgrid[cvm <= cvm[i] + cvsd[i]]),
+  glmnet_lambda_1se = cvg$lambda.1se)
+@
+
+<<cv-compare>>=
+nz <- function(s) sum(coef(glmnet(X, y, alpha = 1, lambda = lgrid),
+                           s = s)[-1] != 0)
+cvr <- cv.glmnet(X, y, alpha = 0, foldid = fold)
+cvo <- mean(sapply(1:10, function(v) {
+  m <- lm(Salary ~ ., data = d[fold != v, ])
+  mean((d$Salary[fold == v] - predict(m, d[fold == v, ]))^2) }))
+c(cv_lasso = min(cvg$cvm), cv_ridge = min(cvr$cvm), cv_least_squares = cvo,
+  nonzero_at_lambda_min = nz(cvg$lambda.min),
+  nonzero_at_lambda_1se = nz(cvg$lambda.1se))
+@
+
+Both penalised fits beat least squares, and the one-standard-error rule buys a model with
+$6$ predictors instead of $15$ at a cross-validation error that is within one standard
+error of the best.
+
+\begin{figure}[H]\centering
+<<paths-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+op <- par(mfrow = c(1, 3), mar = c(4, 4, 3.4, 0.6), cex = 0.8)
+plot(glmnet(Xs, yc, alpha = 0, intercept = FALSE, standardize = FALSE),
+     xvar = "lambda", col = "grey35", ylab = "coefficient")
+mtext("ridge", side = 3, line = 2.3, font = 2, col = "#1E3A8A")
+plot(glmnet(Xs, yc, alpha = 1, intercept = FALSE, standardize = FALSE),
+     xvar = "lambda", col = "grey35", ylab = "")
+mtext("lasso", side = 3, line = 2.3, font = 2, col = "#B45309")
+plot(cvg, ylab = "10-fold CV error")
+mtext("choosing lambda", side = 3, line = 2.3, font = 2, col = "#15803D")
+par(op)
+@
+\caption{Coefficient paths on the standardised \texttt{Hitters} design and the
+cross-validation curve for the lasso. The count along the top of each panel is the number
+of nonzero coefficients: it stays at $19$ for ridge and decreases for the lasso as
+$\lambda$ grows, reaching $0$ at $\lambda_{\max}$. The dashed lines in the third panel are
+$\lambda_{\min}$ and $\lambda_{1\SE}$ of~\eqref{eq:lambda-rules}.}\label{fig:paths}
+\end{figure}
+
+\subsection{High dimensions (§\ref{sec:6.3.1}, §\ref{sec:6.3.2})}\label{sec:6.4.6}
+
+Fifty observations, two hundred predictors, and no relationship whatever between them.
+
+<<highdim>>=
+set.seed(11); nh <- 50; kh <- 200
+Xh <- matrix(rnorm(nh*kh), nh, kh); yh <- rnorm(nh)
+mh <- lm(yh ~ Xh)
+c(rank_of_design = qr(cbind(1, Xh))$rank, n = nh,
+  R2 = summary(mh)$r.squared, SSE = sum(residuals(mh)^2),
+  df_residual = mh$df.residual, NA_coefficients = sum(is.na(coef(mh))))
+@
+
+<<highdim-criteria>>=
+ds  <- c(10, 30, 45, 49)
+sub <- sapply(ds, function(dd) {
+  s <- summary(lm(yh ~ Xh[, 1:dd])); c(s$r.squared, s$adj.r.squared) })
+rbind(predictors = ds, R2 = sub[1, ], adjusted_R2 = sub[2, ])
+@
+
+$R^2$ climbs to $1$ on pure noise, as Corollary~\ref{cor:highdim-criteria} says it must.
+$\bar R^2$, meant to guard against exactly that, is negative at $10$ and $30$ predictors,
+rises to $0.55$ at $45$, and is \texttt{NaN} at $49$, where the residual degrees of freedom
+vanish; it orders these models in no useful way. The lasso remains defined, and its active
+set never exceeds the rank of the centred design, which is
+Theorem~\ref{thm:lasso-sparse}.
+
+<<highdim-lasso>>=
+fh <- glmnet(Xh, yh, alpha = 1, thresh = 1e-14)
+c(max_active_set = max(fh$df), rank_of_centred_design = nh - 1, k = kh,
+  smallest_lasso_SSE = min(colSums((yh - predict(fh, Xh))^2)))
+@
+
+\subsection{Nearest neighbours (§\ref{sec:6.3.3}--§\ref{sec:6.3.5})}\label{sec:6.4.7}
+
+<<knn-manual>>=
+knn_manual <- function(xtr, ytr, xte, K) apply(xte, 1, function(x0)
+  mean(ytr[order(sqrt(colSums((t(xtr) - x0)^2)))[1:K]]))
+set.seed(7); ntr <- 200
+xtr <- matrix(runif(ntr*2), ntr, 2)
+ytr <- sin(3*xtr[, 1]) + rnorm(ntr, sd = 0.2)
+xte <- matrix(runif(50*2), 50, 2)
+sapply(c(1, 5, 20), function(K)
+  max(abs(knn_manual(xtr, ytr, xte, K) - knn.reg(xtr, xte, ytr, k = K)$pred)))
+@
+
+Theorem~\ref{thm:curse}: the median sup-norm distance from the centre of the unit cube to
+the nearest of $n$ uniform points, as a function of $n$ and $k$.
+
+<<curse-table>>=
+med <- function(n, k) 0.5 * (1 - 2^(-1/n))^(1/k)
+tb <- outer(c(100, 500, 5000), c(1, 2, 5, 10, 20), Vectorize(med))
+dimnames(tb) <- list(paste0("n=", c(100, 500, 5000)),
+                     paste0("k=", c(1, 2, 5, 10, 20)))
+round(tb, 4)
+@
+
+<<curse-sim>>=
+set.seed(2); Bm <- 4000
+sim <- replicate(Bm,
+  min(apply(abs(matrix(runif(500*10, -0.5, 0.5), 500, 10)), 1, max)))
+c(simulated_median = median(sim), formula = med(500, 10))
+@
+
+Proposition~\ref{prop:cube-fraction}: the side a centred cube needs in order to hold a
+fraction $p$ of the distribution.
+
+<<cube-fraction>>=
+side <- outer(c(0.01, 0.1, 0.5), c(1, 2, 5, 10, 20), function(p, k) p^(1/k))
+dimnames(side) <- list(paste0("p=", c(0.01, 0.1, 0.5)),
+                       paste0("k=", c(1, 2, 5, 10, 20)))
+round(side, 3)
+@
+
+To capture a tenth of the data in ten dimensions the neighbourhood must span $79\%$ of the
+range of every coordinate, so it is not local in any useful sense.
+
+Least squares against KNN as the dimension grows, with only the first predictor entering
+the truth and $\sigma=0.5$, so the irreducible error is $0.25$.
+
+<<knn-vs-ols>>=
+run <- function(kk, f, ntr = 100, nte = 2000, Ks = c(1, 5, 20), B = 40) {
+  rowMeans(replicate(B, {
+    Xtr <- matrix(runif(ntr*kk, -1, 1), ntr, kk)
+    Xte <- matrix(runif(nte*kk, -1, 1), nte, kk)
+    ytr <- f(Xtr[, 1]) + rnorm(ntr, sd = 0.5)
+    yte <- f(Xte[, 1]) + rnorm(nte, sd = 0.5)
+    o <- lm(ytr ~ Xtr)
+    c(OLS = mean((yte - cbind(1, Xte) %*% coef(o))^2),
+      sapply(Ks, function(K)
+        mean((yte - knn.reg(Xtr, Xte, ytr, k = K)$pred)^2))) }))
+}
+set.seed(5); ks <- c(1, 2, 4, 10, 20)
+lin <- t(sapply(ks, run, f = function(x) 2*x))
+nlin <- t(sapply(ks, run, f = function(x) sin(3*x) + x^2))
+colnames(lin) <- colnames(nlin) <- c("OLS", "K=1", "K=5", "K=20")
+round(cbind(k = ks, lin), 3)
+round(cbind(k = ks, nlin), 3)
+@
+
+When the truth is linear, least squares wins at every dimension. When it is not, KNN at
+$K=5$ wins up to $k=4$ and loses from $k=10$ onward. Between $k=1$ and $k=20$ its error
+rises from $0.305$ to $0.760$ while the least squares error rises only from $0.514$ to
+$0.653$: the deterioration is the bias term of~\eqref{eq:knn-mse} responding to
+Theorem~\ref{thm:curse}, and it is not offset by any change in the variance, which by
+Proposition~\ref{prop:knn-vs-ols-var} does not involve $k$ at all.
+
+%==============================================================================
+\section{Pitfalls}\label{sec:6.5}
+%==============================================================================
+
+\subsection{Penalising unstandardised predictors}\label{sec:6.5.1}
+
+By Proposition~\ref{prop:equivariance} a change of units changes the penalty a predictor
+carries. Below, one column is re-expressed in thousands, which is no change of information
+at all.
+
+<<pitfall-standardise>>=
+Xr <- X; Xr[, "CRuns"] <- Xr[, "CRuns"]/1000
+g <- function(M, st) min(cv.glmnet(M, y, alpha = 1, foldid = fold,
+                                   standardize = st)$cvm)
+c(standardised_original = g(X, TRUE),  standardised_rescaled = g(Xr, TRUE),
+  raw_original = g(X, FALSE),          raw_rescaled = g(Xr, FALSE))
+@
+
+\textbf{Diagnostic.} A penalised fit whose answer moves when a column is rescaled.
+\textbf{Fix.} Standardise by~\eqref{eq:standardise}, inside every cross-validation fold.
+Note that the unstandardised fit is not uniformly worse here; the objection is that it
+depends on a choice carrying no information.
+
+\subsection{Carrying a tuning constant across parametrisations}\label{sec:6.5.2}
+
+$\lambda$ means different things in~\eqref{eq:ridge-obj}, in the $(2n)^{-1}$ scaling of
+\texttt{glmnet}, and in the constrained form of Theorem~\ref{thm:lasso-equivalence}. Below,
+the plausible conversion $\lambda = n\lambda_{\texttt{glmnet}}$ is applied to a ridge fit.
+
+<<pitfall-lambda>>=
+lg <- 0.38
+rg <- glmnet(Xs, yc, alpha = 0, lambda = lg*c(4, 2, 1), standardize = FALSE,
+             intercept = FALSE, thresh = 1e-16)
+b_pkg   <- as.matrix(coef(rg))[-1, 3]
+b_naive <- drop(solve(crossprod(Xs) + n*lg*diag(k), crossprod(Xs, yc)))
+b_right <- drop(solve(crossprod(Xs) + (n*lg/sdn(y))*diag(k), crossprod(Xs, yc)))
+c(naive_conversion = max(abs(b_naive - b_pkg)),
+  correct_conversion = max(abs(b_right - b_pkg)),
+  coefficient_scale = max(abs(b_pkg)))
+@
+
+\textbf{Diagnostic.} Manual and package coefficients disagreeing by an amount comparable to
+the coefficients themselves, while both satisfy their own normal equations.
+\textbf{Fix.} Recover the implied $\lambda$ from the stationarity conditions, as in
+§\ref{sec:6.4.4}, rather than trusting a remembered conversion.
+
+\subsection{Reading the lasso's active set as the set of important predictors}
+\label{sec:6.5.3}
+
+Theorem~\ref{thm:grouping} says the split between correlated predictors is arbitrary. The
+consequence is visible in the bootstrap: how often does each predictor survive at
+$\lambda_{1\SE}$?
+
+<<pitfall-selection, cache=FALSE>>=
+set.seed(8); Bb <- 200
+sel <- replicate(Bb, {
+  ii <- sample(n, replace = TRUE)
+  cc <- cv.glmnet(X[ii, ], y[ii], alpha = 1, nfolds = 10)
+  as.numeric(coef(cc, s = "lambda.1se")[-1] != 0) })
+fr <- rowMeans(sel); names(fr) <- colnames(X)
+round(sort(fr, decreasing = TRUE), 2)
+c(mean_active_set_size = mean(colSums(sel)),
+  sd_active_set_size = sd(colSums(sel)),
+  selected_in_all_200 = sum(fr == 1))
+@
+
+\textbf{Diagnostic.} Selection frequencies spread across the middle of $[0,1]$ and an
+active set whose size varies by several predictors from one resample to the next.
+\textbf{Fix.} Report the selection frequencies rather than one active set, and keep
+prediction claims separate from claims about which variables matter.
+
+\subsection{Quoting the minimum of the cross-validation curve as the test error}
+\label{sec:6.5.4}
+
+$\lambda$ was chosen to minimise $\CV(\lambda)$, so $\min_\lambda\CV(\lambda)$ is the
+minimum of a noisy curve and is biased downward as an estimate of the error at the selected
+$\lambda$. An honest figure puts the whole procedure, the choice of $\lambda$ included,
+inside an outer cross-validation.
+
+<<pitfall-nested>>=
+nested <- mean(sapply(1:10, function(v) {
+  tr <- fold != v
+  cc <- cv.glmnet(X[tr, ], y[tr], alpha = 1, nfolds = 10)
+  mean((y[!tr] - predict(cc, X[!tr, ], s = "lambda.min"))^2) }))
+c(minimum_of_cv_curve = min(cvg$cvm), nested_cv = nested,
+  ratio = nested/min(cvg$cvm))
+@
+
+\textbf{Diagnostic.} A reported error that came from the same curve used to pick the
+tuning constant.
+\textbf{Fix.} Nested cross-validation, or a held-out set never seen by the tuning step.
+This is the pitfall of Unit 1 about cross-validating the whole procedure, with $\lambda$
+in place of the variable selection.
+
+%==============================================================================
+\section{Exercises}\label{sec:6.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:ridge-exists}
+Show that $\bX'\bX+\lambda\bI$ is invertible for every $\lambda>0$ whatever the rank of
+$\bX$, and explain what changes at $\lambda=0$.
+\end{exercise}
+
+\begin{solution}
+For $\bc\neq\bzero$, $\bc'(\bX'\bX+\lambda\bI)\bc=|\bX\bc|^2+\lambda|\bc|^2\geqslant
+\lambda|\bc|^2>0$, so the matrix is positive definite and hence invertible; this is
+Theorem~\ref{thm:ridge-closed}. At $\lambda=0$ the second term disappears and the form
+vanishes on $\calN(\bX)$, which is nontrivial exactly when $\rank(\bX)<k$, for instance
+whenever $k>n$. Least squares then has the whole affine family of solutions of
+Proposition~\ref{prop:highdim-nonunique}, while ridge has one.
+\end{solution}
+
+\begin{exercise}\label{ex:ortho-num}
+An orthonormal design gives least squares coefficients $(2.0,\,-1.5,\,0.8,\,0.1)$. Compute
+the ridge and lasso coefficients at $\lambda=1$, and state the largest $\lambda$ at which
+the lasso fit is still not identically zero.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:orthonormal}, ridge divides by $1+\lambda=2$, giving
+$(1.0,\,-0.75,\,0.4,\,0.05)$, and the lasso subtracts $\lambda/2=0.5$ from each modulus,
+giving $(1.5,\,-1.0,\,0.3,\,0)$.
+
+With $\bX'\bX=\bI$ the quantities $\bx_j'\bY$ are the least squares coefficients, so by
+Corollary~\ref{cor:lambda-max} the fit is zero exactly when
+$\lambda\geqslant2\max_j|\hat\beta_j|=4$. The lasso is therefore not identically zero for
+every $\lambda<4$.
+\end{solution}
+
+\begin{exercise}\label{ex:df-num}
+A standardised design has singular values $d=(4,\,2,\,1,\,0.5)$. Compute $\df(\lambda)$ at
+$\lambda=2$ and compare with the number of coefficients estimated. Which direction is shrunk
+hardest?
+\end{exercise}
+
+\begin{solution}
+By~\eqref{eq:ridge-df},
+\[
+\df(2)=\frac{16}{18}+\frac{4}{6}+\frac{1}{3}+\frac{0.25}{2.25}
+=\frac89+\frac23+\frac13+\frac19 = 2 ,
+\]
+against $k=4$ coefficients estimated, none of them zero. The factors are
+$0.889,\,0.667,\,0.333,\,0.111$, so the direction with $d_4=0.5$, the one along which the
+design varies least, is shrunk to a ninth of its least squares value.
+\end{solution}
+
+\begin{exercise}\label{ex:mallows-smoother}
+Prove that $n\,\mathrm{Err}_{\mathrm{in}}=\expc[\SSE]+2\sigma^2\tr(\bS)$ for any linear
+smoother $\hat\bY=\bS\bY$, and say where the proof of Unit 5 used idempotency that this one
+does not.
+\end{exercise}
+
+\begin{solution}
+The proof is Theorem~\ref{thm:mallows-smoother}. Unit 5 took $\bS=\bH$ and used
+$\bM'\bM=\bM$ and $\tr(\bM)=n-d$, both consequences of $\bH$ being a symmetric idempotent.
+The general argument keeps $\tr(\bM'\bM)$ and $\tr(\bS'\bS)$ separate and finds that they
+cancel, leaving $2\sigma^2\tr(\bS)$; nothing beyond $\bS$ being fixed and
+$\var(\bY)=\sigma^2\bI$ is used. That is what licenses calling $\tr(\bS)$ a number of
+degrees of freedom: it is the quantity that appears in the optimism, whatever the fitting
+rule.
+\end{solution}
+
+\begin{exercise}\label{ex:hk}
+Show that the total mean squared error of the ridge estimator satisfies $R'(0)<0$ whenever
+$\bX$ has full column rank and $\sigma^2>0$, and explain why this does not tell you which
+$\lambda$ to use.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:hoerl-kennard},
+$R'(\lambda)=\sum_j2\gamma_j(\lambda\alpha_j^2-\sigma^2)/(\gamma_j+\lambda)^3$; at
+$\lambda=0$ every bracket is $-\sigma^2$ and
+$R'(0)=-2\sigma^2\sum_j\gamma_j^{-2}<0$. So $R$ strictly decreases at $0$ and some
+$\lambda>0$ has $R(\lambda)<R(0)$.
+
+The set on which the decrease is guaranteed is $[0,\sigma^2/\max_j\alpha_j^2)$, whose right
+endpoint involves $\sigma^2$ and $\balpha=\bV'\bb$, both unknown: knowing them would make
+the estimation problem unnecessary. The theorem is an existence statement, and the choice
+of $\lambda$ is made by cross-validation.
+\end{solution}
+
+\begin{exercise}\label{ex:kkt}
+State and prove the condition for $\hat\bb$ to minimise
+$|\bY-\bX\bb|^2+\lambda\|\bb\|_1$. If $\bx_1'\bY=30$, $\bx_2'\bY=-45$ and $\bx_3'\bY=12$,
+at what $\lambda$ does the fit collapse to zero?
+\end{exercise}
+
+\begin{solution}
+The condition is~\eqref{eq:lasso-kkt} and the proof is Theorem~\ref{thm:lasso-kkt}: convexity
+reduces optimality to the non-negativity of every directional derivative, and taking
+$\bv=\pm\mathbf{e}_j$ decouples the requirement into one condition per coordinate.
+
+By Corollary~\ref{cor:lambda-max} the fit is zero exactly when
+$\lambda\geqslant2\max_j|\bx_j'\bY| = 2\cdot45 = 90$.
+\end{solution}
+
+\begin{exercise}\label{ex:duplicate}
+Two columns of the design are identical. What does ridge do with them, what does the
+elastic net do, and what does the lasso do? Prove each claim.
+\end{exercise}
+
+\begin{solution}
+All three are Theorem~\ref{thm:grouping}, whose engine is that exchanging the two
+coordinates leaves the criterion unchanged. Ridge and the elastic net with $\lambda_2>0$
+have a unique minimiser by Proposition~\ref{prop:enet-unique}, so the minimiser must be its
+own image under the exchange, forcing the two coefficients to be equal.
+
+The lasso has no such uniqueness: with the two coefficients replaced by $(t,\sigma-t)$ for
+any $t$ between $0$ and their sum $\sigma$, the fitted vector is unchanged and the penalty
+is unchanged, so every point of that segment is a minimiser. Which one a solver returns is
+a property of the solver, not of the data.
+\end{solution}
+
+\begin{exercise}\label{ex:equivalence}
+Prove that a solution of $\min|\bY-\bX\bb|^2$ subject to $\|\bb\|_1\leqslant s$ also solves
+the penalised problem for some $\lambda\geqslant0$. Which hypothesis fails if $s=0$?
+\end{exercise}
+
+\begin{solution}
+The proof is Theorem~\ref{thm:lasso-equivalence}(ii): the programme is convex, its value is
+finite, and Slater's condition holds at $\tilde\bb=\bzero$ because
+$\|\bzero\|_1-s=-s<0$. Strong duality then produces a multiplier $\lambda\geqslant0$ at
+which $\hat\bb$ minimises the Lagrangian, which is the penalised criterion up to the
+constant $\lambda s$.
+
+If $s=0$ the Slater point disappears: the only feasible $\bb$ is $\bzero$ and no strictly
+feasible point exists. The conclusion is trivially true in that case anyway, since
+$\bb=\bzero$ minimises the penalised criterion for $\lambda\geqslant\lambda_{\max}$.
+\end{solution}
+
+\begin{exercise}\label{ex:sparse-bound}
+Explain why a lasso fit on a design with $k>n$ can be taken to involve at most $n$
+predictors, and why this does not make the selected set trustworthy.
+\end{exercise}
+
+\begin{solution}
+Theorem~\ref{thm:lasso-sparse}: if the active columns were dependent, one could move along
+a direction in the null space of $\bX$ without changing the fitted vector, and the
+$\ell_1$ penalty is affine along that direction, so it must be constant there; moving to
+the end of the segment zeroes a coefficient without leaving the solution set. Iterating
+gives a minimiser with independent active columns, and at most $\rank(\bX)\leqslant n$
+columns of $\bX$ can be independent.
+
+It does not make the set trustworthy, for the reason in
+Proposition~\ref{prop:highdim-summary}(iii): with $k>n$ the columns are dependent, so a
+predictor in the active set can be exchanged for a combination of others at no cost in fit.
+The bootstrap of §\ref{sec:6.5.3} shows this happening on data with $k<n$ already.
+\end{solution}
+
+\begin{exercise}\label{ex:highdim-criteria}
+With $n=40$ observations and $k=39$ predictors, what are $\SSE$, $R^2$, $\hat\sigma^2$,
+$C_p$ and $\bar R^2$? Which of them can be repaired and how?
+\end{exercise}
+
+\begin{solution}
+$\rank(\bX_+)\leqslant40=n$ and generically equals it, so by
+Theorem~\ref{thm:highdim-perfect} $\SSE=0$ and $R^2=1$ for any response whatever. Then
+$\hat\sigma^2=\SSE/(n-k-1)=0/0$ is undefined, and $C_p$, $\AIC$ and $\BIC$, which all need
+$\hat\sigma^2$, are undefined with it; $\bar R^2=1-\{\SSE/(n-k-1)\}/\{\SST/(n-1)\}$ is
+undefined for the same reason (Corollary~\ref{cor:highdim-criteria}).
+
+None of them can be repaired by an adjustment to the formula, because the failure is not
+arithmetic: a perfect fit is available for any response, so the training data carries no
+information about prediction error. What replaces them is an error estimate computed on
+data not used in the fit, that is cross-validation or a held-out set, together with a fitting
+rule that is defined at $k\geqslant n$, such as ridge or the lasso.
+\end{solution}
+
+\begin{exercise}\label{ex:curse}
+With $n=1000$ points uniform on $[-\tfrac12,\tfrac12]^k$, compute the median sup-norm
+distance from the centre to its nearest neighbour for $k=1$ and $k=10$. What side must a
+centred cube have to contain $5\%$ of the distribution when $k=20$?
+\end{exercise}
+
+\begin{solution}
+By~\eqref{eq:curse-median}, $m(n,k)=\tfrac12(1-2^{-1/n})^{1/k}$. With $n=1000$,
+$1-2^{-1/1000}=6.929\times10^{-4}$, so
+\[
+m(1000,1)=3.46\times10^{-4},
+\qquad
+m(1000,10)=\tfrac12(6.929\times10^{-4})^{1/10}=0.242 .
+\]
+The nearest neighbour is $697$ times further away in ten dimensions than in one, and at
+$0.242$ it is roughly half the way to the boundary.
+
+By Proposition~\ref{prop:cube-fraction} the side is $p^{1/k}=0.05^{1/20}=0.861$: capturing
+a twentieth of the distribution takes $86\%$ of the range of every coordinate.
+\end{solution}
+
+\begin{exercise}\label{ex:knn-vs-ols}
+Compare the average variance of the least squares fit and of the $K$-nearest-neighbour fit
+at the training inputs. At which $K$ are they equal when $n=200$ and $k=9$? Where does the
+dimension enter the KNN error?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:knn-vs-ols-var} the averages are $\sigma^2(k+1)/n$ and
+$\sigma^2/K$, equal when $K=n/(k+1)$, that is $K=200/10=20$.
+
+The dimension does not appear in the KNN variance at all. It enters through the bias term
+of~\eqref{eq:knn-mse}, bounded in Corollary~\ref{cor:knn-bias} by $L$ times the
+neighbourhood radius, and Theorem~\ref{thm:curse} shows that radius growing quickly with
+$k$: the $K$ points being averaged are no longer near $x_0$, so their mean is no longer an
+estimate of $f(x_0)$.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) reproduce a \texttt{glmnet} ridge fit from~\eqref{eq:ridge-closed} by recovering
+the implied $\lambda$ from the normal equations; (b) verify
+Theorem~\ref{thm:mallows-smoother} by simulation for a ridge smoother; (c) show that the
+lasso active set on \texttt{Hitters} varies under resampling.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:6.4.4}, (b) §\ref{sec:6.4.2}, (c) §\ref{sec:6.5.3}. In (a) the point of
+recovering $\lambda$ from $\bx_j'(\bY-\bX\hat\bb)/\hat\beta_j$ is that the ratio must be the
+same at every $j$: that is the normal equation, and it certifies the answer without any
+assumption about how the package parametrises its penalty. In (b) the simulated difference
+should match $2\sigma^2\tr(\bS)$ to within the printed Monte Carlo standard error, and
+$\tr(\bS)$ is not an integer.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,1091 @@
+% Compile:  python build.py 12
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 12\ \ Ensembles}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{12.\arabic{theorem}}
+\renewcommand\thetheorem  {12.\arabic{theorem}}
+\renewcommand\thelemma    {12.\arabic{theorem}}
+\renewcommand\theproposition{12.\arabic{theorem}}
+\renewcommand\thecorollary{12.\arabic{theorem}}
+\renewcommand\theexample  {12.\arabic{example}}
+\renewcommand\theexercise {12.\arabic{exercise}}
+\renewcommand\thefigure   {12.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Ensembles}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit12-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 12.\ Ensembles}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Bagging}\label{sec:12.1}
+%==============================================================================
+
+\begin{reading}
+ISLR §8.2.1.
+\end{reading}
+
+Unit 11 ended with a measurement: two trees grown on disjoint halves of \texttt{Boston}
+agree on the root variable under a fifth of the time and their predictions differ by
+about $45\%$ of the response's own standard deviation. That is variance, and Unit 1's
+decomposition says variance is the part of the error that averaging can remove.
+
+\subsection{Averaging}\label{sec:12.1.1}
+
+\begin{theorem}[Variance of an average of equicorrelated predictors]\label{thm:avg}
+Let $Z_1,\ldots,Z_B$ have common variance $\sigma^2$ and common pairwise correlation
+$\rho$. Then
+\begin{equation}\label{eq:avg}
+\var\Bigl(\frac1B\sum_{b=1}^{B}Z_b\Bigr)
+\;=\;\rho\,\sigma^2\;+\;\frac{1-\rho}{B}\,\sigma^2 ,
+\end{equation}
+and necessarily $\rho\geqslant-1/(B-1)$. For $\rho\geqslant0$ the right side decreases in
+$B$ to the limit $\rho\sigma^2$.
+\end{theorem}
+
+\begin{proof}
+$\var(\sum_bZ_b)=\sum_b\var(Z_b)+\sum_{a\neq b}\cov(Z_a,Z_b)
+=B\sigma^2+B(B-1)\rho\sigma^2$, since each of the $B(B-1)$ ordered pairs has covariance
+$\rho\sigma^2$. Dividing by $B^2$,
+\[
+\var(\bar Z)=\frac{\sigma^2}{B}+\frac{B-1}{B}\rho\sigma^2
+=\rho\sigma^2+\frac{\sigma^2(1-\rho)}{B} ,
+\]
+which is~\eqref{eq:avg}. A variance is non-negative, so
+$B\sigma^2+B(B-1)\rho\sigma^2\geqslant0$ forces $\rho\geqslant-1/(B-1)$. For
+$\rho\geqslant0$ only the second term of~\eqref{eq:avg} depends on $B$ and it decreases.
+\end{proof}
+
+\begin{remark}
+Everything in this unit is a comment on~\eqref{eq:avg}. The second term is what averaging
+removes and it vanishes at rate $1/B$, so the number of members is not a tuning parameter:
+more is never worse. The first term is what averaging cannot touch. Bagging accepts
+$\rho\sigma^2$ and drives $B$ up; a random forest attacks $\rho$ itself
+(§\ref{sec:12.2}); boosting abandons the averaging picture entirely
+(§\ref{sec:12.3}).
+\end{remark}
+
+\begin{corollary}[The same identity for sample moments]\label{cor:avg-sample}
+Let $\bQ$ be an $M\times B$ matrix, $\hat s_b^2$ the sample variance of its $b$th column
+and $\hat c$ the average of the $B(B-1)/2$ distinct sample covariances between columns.
+Then the sample variance of the row means is exactly
+\begin{equation}\label{eq:avg-sample}
+\frac{1}{B}\,\overline{\hat s^2}\;+\;\frac{B-1}{B}\,\hat c ,
+\qquad \overline{\hat s^2}=\frac1B\sum_b\hat s_b^2 .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+The row means are $\bQ\bone/B$, whose sample variance is
+$B^{-2}\bone'\widehat{\bSig}\bone$ with $\widehat{\bSig}$ the sample covariance matrix of
+the columns. Expanding, $\bone'\widehat{\bSig}\bone=\sum_b\hat s_b^2+2\sum_{a<b}\hat
+c_{ab}=B\overline{\hat s^2}+B(B-1)\hat c$.
+\end{proof}
+
+\begin{remark}
+Corollary~\ref{cor:avg-sample} is an algebraic identity, not an approximation, which is
+why §\ref{sec:12.4.1} can check it to machine precision. Theorem~\ref{thm:avg} is the same
+statement about population moments and needs the equicorrelation hypothesis; for an
+ensemble that hypothesis holds by symmetry, the members being built by identical
+independent randomisations of one procedure.
+\end{remark}
+
+\subsection{The bootstrap ensemble}\label{sec:12.1.2}
+
+\begin{definition}[Bagging]\label{def:bagging}
+Let $\calD^{\ast1},\ldots,\calD^{\ast B}$ be independent bootstrap samples of the training
+data (Unit 1) and let $\hat f^{\ast b}$ be the predictor fitted to $\calD^{\ast b}$. The
+\emph{bagged} predictor is
+\begin{equation}\label{eq:bagging}
+\hat f_{\mathrm{bag}}(\bx)=\frac1B\sum_{b=1}^{B}\hat f^{\ast b}(\bx)
+\end{equation}
+for regression, and for classification the class receiving the most votes among
+$\hat f^{\ast1}(\bx),\ldots,\hat f^{\ast B}(\bx)$. The trees are grown large and not
+pruned.
+\end{definition}
+
+\begin{proposition}[Bagging moves variance, not bias]\label{prop:bag-bias}
+The $\hat f^{\ast b}(\bx)$ are identically distributed, so
+$\expc[\hat f_{\mathrm{bag}}(\bx)]=\expc[\hat f^{\ast1}(\bx)]$: the ensemble has exactly
+the bias of one of its members. Its variance is~\eqref{eq:avg} and is strictly smaller
+than a member's whenever $\rho<1$.
+\end{proposition}
+
+\begin{proof}
+Expectation is linear and the terms are identically distributed. For the variance, the
+difference between $\sigma^2$ and~\eqref{eq:avg} is $(1-\rho)\sigma^2(1-1/B)$, positive
+when $\rho<1$ and $B>1$.
+\end{proof}
+
+\begin{remark}
+This is why the trees are left unpruned. Pruning trades variance for bias (Unit 11), and
+the averaging in~\eqref{eq:bagging} already removes variance at no cost in bias, so the
+member to feed it is the one with the least bias available. The two devices would
+otherwise be paying twice for the same thing.
+\end{remark}
+
+\begin{remark}
+The bias is that of a tree fitted to a \emph{bootstrap} sample, not to the original data.
+Proposition~\ref{prop:bag-bias} says the averaging introduces no bias; it does not say the
+bagged predictor has the bias of a tree fitted to $\calD$. Resampling is what makes the
+members differ, and paying a little bias for that is the trade bagging makes.
+\end{remark}
+
+\begin{proposition}[Majority vote under independence]\label{prop:vote}
+Fix $\bx$ and suppose the $B$ classifiers are independent and each correct with probability
+$\pi>\tfrac12$. Then the majority vote is correct with probability at least
+\begin{equation}\label{eq:vote}
+1-\frac{\pi(1-\pi)}{B\,(\pi-\tfrac12)^2}\ \longrightarrow\ 1 .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The number $N$ of correct classifiers is binomial with mean $B\pi$ and variance
+$B\pi(1-\pi)$. The vote is wrong only if $N\leqslant B/2$, that is
+$N-B\pi\leqslant-B(\pi-\tfrac12)$, and Chebyshev's inequality (prerequisites) bounds that
+probability by $B\pi(1-\pi)/\{B(\pi-\tfrac12)\}^2$.
+\end{proof}
+
+\begin{remark}
+The hypothesis is independence, and ensemble members built from one data set are not
+independent: that is what $\rho>0$ means. Proposition~\ref{prop:vote} is therefore an
+account of why voting could help, not a guarantee that it does, and the size of $\rho$
+decides how much of the promised gain survives. The same caution applies
+to~\eqref{eq:avg}, where $\rho\sigma^2$ is the part that no amount of voting removes.
+\end{remark}
+
+\subsection{Out-of-bag estimation}\label{sec:12.1.3}
+
+\begin{definition}[Out-of-bag prediction]\label{def:oob}
+Let $\calO_i=\{b:(\bx_i,y_i)\notin\calD^{\ast b}\}$ and $B_i=|\calO_i|$. The
+\emph{out-of-bag} prediction for observation $i$ is
+$\hat f_{\mathrm{oob}}(\bx_i)=B_i^{-1}\sum_{b\in\calO_i}\hat f^{\ast b}(\bx_i)$, and the
+out-of-bag error is $n^{-1}\sum_i\{y_i-\hat f_{\mathrm{oob}}(\bx_i)\}^2$.
+\end{definition}
+
+\begin{theorem}[What out-of-bag estimates]\label{thm:oob}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{oob:i} $\expc[B_i]=B(1-1/n)^n$, which increases to $B/e\approx0.368B$.
+\item\label{oob:ii} Every tree averaged in $\hat f_{\mathrm{oob}}(\bx_i)$ was fitted
+      without $(\bx_i,y_i)$, so the prediction is out of sample.
+\item\label{oob:iii} Conditionally on $B_i=B'$, the out-of-bag prediction has the same
+      bias as the full ensemble and, under the hypotheses of Theorem~\ref{thm:avg},
+      variance larger by
+      \begin{equation}\label{eq:oob-gap}
+      (1-\rho)\sigma^2\Bigl(\frac1{B'}-\frac1B\Bigr) ,
+      \end{equation}
+      so its mean squared error exceeds the full ensemble's by that amount, of order
+      $(e-1)(1-\rho)\sigma^2/B$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\ref{oob:i} By the out-of-bag fraction proposition of Unit 1 each bootstrap sample misses
+$(\bx_i,y_i)$ with probability $(1-1/n)^n$, and $B_i$ counts $B$ independent such events.
+
+\ref{oob:ii} is Definition~\ref{def:oob}.
+
+\ref{oob:iii} The members are identically distributed, so an average of any $B'$ of them
+has the common mean and, by Theorem~\ref{thm:avg} with $B'$ in place of $B$, variance
+$\rho\sigma^2+(1-\rho)\sigma^2/B'$. Subtracting the same expression with $B$
+gives~\eqref{eq:oob-gap}. Two predictors with the same expectation differ in mean squared
+error by exactly their difference in variance. Substituting $B'=B/e$
+gives $(1-\rho)\sigma^2(e-1)/B$.
+\end{proof}
+
+\begin{remark}
+So the out-of-bag error is honest about being out of sample and is biased \emph{upward} as
+an estimate of the full ensemble's error, by an amount that vanishes like $1/B$. At
+$B=500$ that correction is negligible beside the variability of the estimate itself, which
+is what §\ref{sec:12.4.2} measures: on one split of \texttt{Boston} the out-of-bag and
+test errors differ by a factor of $1.8$, and averaged over twenty-five splits they differ
+by $12\%$.
+\end{remark}
+
+\subsection{Variable importance}\label{sec:12.1.4}
+
+\begin{definition}[Mean decrease in impurity]\label{def:mdi}
+For a tree $T$ let $\Delta(t)=R(t)-R(t_L)-R(t_R)$ be the cost reduction at internal node
+$t$ (Unit 11), non-negative by the refinement property. The \emph{impurity importance} of
+predictor $j$ in $T$ is $\sum\{\Delta(t):t\text{ splits on }j\}$, and in an ensemble it is
+the average of that over the members.
+\end{definition}
+
+\begin{proposition}[The importances of a tree add up to what it explains]\label{prop:mdi}
+\begin{equation}\label{eq:mdi}
+\sum_{t\ \mathrm{internal}}\Delta(t)\;=\;R(r)-R(T) ,
+\end{equation}
+$r$ being the root. So the impurity importances of all predictors sum to the total cost the
+tree removes, and dividing by $R(r)-R(T)$ turns them into shares.
+\end{proposition}
+
+\begin{proof}
+Write $I$ for the internal nodes and $L$ for the leaves. Every node except the root is a
+child of exactly one internal node, so
+$\sum_{t\in I}\{R(t_L)+R(t_R)\}=\sum_{t\neq r}R(t)=\sum_{t\in I}R(t)-R(r)+\sum_{t\in L}R(t)$.
+Subtracting this from $\sum_{t\in I}R(t)$ leaves $R(r)-\sum_{t\in L}R(t)=R(r)-R(T)$.
+\end{proof}
+
+\begin{definition}[Permutation importance]\label{def:perm}
+Let $\calE$ be a set of observations not used in fitting and $L$ the loss. The
+\emph{permutation importance} of predictor $j$ is
+\begin{equation}\label{eq:perm}
+\frac1{|\calE|}\sum_{i\in\calE}L\bigl(y_i,\hat f(\bx_i^{\pi(j)})\bigr)
+-\frac1{|\calE|}\sum_{i\in\calE}L\bigl(y_i,\hat f(\bx_i)\bigr) ,
+\end{equation}
+where $\bx^{\pi(j)}$ is $\bx$ with the $j$th coordinate replaced by that of a randomly
+chosen member of $\calE$. In a bagged ensemble $\calE$ is taken to be the out-of-bag set of
+each tree.
+\end{definition}
+
+\begin{proposition}[A useless predictor has zero permutation importance]\label{prop:perm}
+If $X_j$ is independent of $(Y,X_{-j})$ and the observations are independent and
+identically distributed, then permuting the $j$th column leaves the joint law of $\calE$
+unchanged, so the population version of~\eqref{eq:perm} is $0$.
+\end{proposition}
+
+\begin{proof}
+Under independence the joint law of $\calE$ is the product of the law of $(Y,X_{-j})$ and
+the law of $X_j$, which is exchangeable in the $X_j$ coordinate across observations.
+Permuting that coordinate therefore leaves the joint law unchanged, and the two averages
+in~\eqref{eq:perm} have the same expectation.
+\end{proof}
+
+\begin{remark}
+No such statement holds for Definition~\ref{def:mdi}. A predictor independent of the
+response still offers cutpoints, and the best of many cutpoints reduces the training cost
+by a positive amount; a predictor offering more distinct cutpoints reduces it by more.
+So impurity importance is positive for pure noise and increases with the number of values
+the predictor takes, which §\ref{sec:12.5.2} exhibits with four noise variables whose
+impurity importances differ elevenfold.
+\end{remark}
+
+%==============================================================================
+\section{Random Forests}\label{sec:12.2}
+%==============================================================================
+
+\begin{reading}
+ISLR §8.2.2.
+\end{reading}
+
+\subsection{Decorrelation}\label{sec:12.2.1}
+
+Theorem~\ref{thm:avg} leaves $\rho\sigma^2$ standing however large $B$ is. Bagged trees
+are correlated for a plain reason: each is grown greedily from a resample of the same data,
+so if one predictor dominates the first split it dominates it in nearly every member, and
+the trees agree near the top.
+
+\begin{definition}[Random forest]\label{def:rf}
+A \emph{random forest} is bagging with one change: at every split, a uniformly random
+subset of $m$ of the $p$ predictors is drawn, independently of everything else, and the
+split may use only those $m$. Taking $m=p$ recovers bagging. The default is
+$m=\lfloor p/3\rfloor$ for regression and $m=\lfloor\sqrt p\rfloor$ for classification.
+\end{definition}
+
+\begin{proposition}[Availability]\label{prop:avail}
+At any given split a fixed predictor is among the $m$ candidates with probability $m/p$.
+Along a path of $d$ consecutive splits it is available at none of them with probability
+$(1-m/p)^d$, and at least once with probability $1-(1-m/p)^d$.
+\end{proposition}
+
+\begin{proof}
+A uniformly random $m$-subset of a $p$-set contains a fixed element with probability
+$\binom{p-1}{m-1}/\binom pm=m/p$. The draws at distinct splits are independent.
+\end{proof}
+
+\begin{remark}
+With $p=13$ and $m=4$ a given predictor is available at $30.8\%$ of splits, and the chance
+that the dominant one is shut out of all three splits nearest the root is
+$(9/13)^3=0.332$. A third of the trees are therefore forced to start somewhere else, which
+is the mechanism by which $\rho$ falls.
+\end{remark}
+
+\begin{remark}[The trade-off, read off~\eqref{eq:avg}]
+Both quantities in Theorem~\ref{thm:avg} depend on $m$. Lowering $m$ lowers $\rho$, which
+lowers the floor $\rho\sigma^2$; it also removes candidates from every split, which can
+only raise the training cost of each tree and generally raises $\sigma^2$. The ensemble's
+limiting variance is the product $\rho(m)\sigma^2(m)$ of a term that increases in $m$ and
+one that decreases, and nothing here says which effect wins. Nor is variance the whole
+error: restricting the candidates also changes the bias. §\ref{sec:12.4.3} measures all of
+it and finds the variance smallest at $m=1$, the squared bias smallest at $m=p$, and their
+sum smallest in between. The choice of $m$ is made by the out-of-bag error.
+\end{remark}
+
+\subsection{What decorrelation costs}\label{sec:12.2.2}
+
+\begin{remark}
+Restricting the candidate set is not free, and the case where it hurts is the one Unit 11
+used to show greedy growing fail. For the exclusive-or truth every single split has zero
+population gain, and the structure appears only when a split on $x_1$ is followed by one on
+$x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. The
+measurement in §\ref{sec:12.4.5} is that on a box truth in two of six coordinates, bagging
+reaches a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
+truth the two are indistinguishable. Decorrelation helps when the members are similar for a
+bad reason and hurts when they are similar because the problem requires it.
+\end{remark}
+
+\begin{remark}
+Two properties of a single tree survive the averaging and one does not. Monotone
+invariance of the predictors and the direct handling of categorical variables (Unit 11)
+hold for every member, hence for the ensemble. Interpretability does not: the object is
+now several hundred trees and the only summaries left are the importance measures of
+§\ref{sec:12.1.4}, which is why those measures carry the weight they do and why their
+biases matter.
+\end{remark}
+
+%==============================================================================
+\section{Boosting}\label{sec:12.3}
+%==============================================================================
+
+\begin{reading}
+ISLR §8.2.3.
+\end{reading}
+
+\subsection{Fitting the residuals}\label{sec:12.3.1}
+
+\begin{definition}[Boosting for regression]\label{def:boost}
+Fix a shrinkage parameter $\lambda\in(0,1]$, a number of rounds $B$, and a class $\calG$ of
+base learners, here trees with $d$ splits. Set $\hat f^{(0)}\equiv0$ and $r_i^{(0)}=y_i$.
+For $b=1,\ldots,B$, fit $\hat g^{(b)}\in\calG$ to the data $(\bx_i,r_i^{(b-1)})$ and put
+\begin{equation}\label{eq:boost}
+\hat f^{(b)}=\hat f^{(b-1)}+\lambda\hat g^{(b)} ,
+\qquad
+r_i^{(b)}=r_i^{(b-1)}-\lambda\hat g^{(b)}(\bx_i) .
+\end{equation}
+The output is $\hat f^{(B)}=\lambda\sum_{b\leqslant B}\hat g^{(b)}$. No resampling is
+involved and the members are built in sequence.
+\end{definition}
+
+\begin{proposition}[Why the residuals]\label{prop:stagewise}
+With squared error loss, the stagewise problem
+$\min_{g\in\calG}\sum_i\{y_i-\hat f^{(b-1)}(\bx_i)-g(\bx_i)\}^2$ is exactly the least
+squares fit of $g$ to the current residuals $r_i^{(b-1)}$, and
+$r_i^{(b)}=y_i-\hat f^{(b)}(\bx_i)$ holds at every stage.
+\end{proposition}
+
+\begin{proof}
+The objective is $\sum_i\{r_i^{(b-1)}-g(\bx_i)\}^2$ by the definition of the residual, which
+is the least squares criterion for $g$ against $r^{(b-1)}$. The second claim follows by
+induction: it holds at $b=0$, and subtracting the two lines of~\eqref{eq:boost} preserves
+it.
+\end{proof}
+
+\begin{remark}
+Boosting therefore has nothing to do with the variance argument of §\ref{sec:12.1}. Bagging
+averages members fitted to the same target and lowers the second term of~\eqref{eq:avg};
+boosting adds members fitted to what is left over, and each one lowers the training error.
+It is a device against bias, and the base learner is chosen small for that reason where
+bagging chooses it large.
+\end{remark}
+
+\subsection{Boosting a linear learner}\label{sec:12.3.2}
+
+The base learner in Definition~\ref{def:boost} is a tree, whose splits depend on the
+response, so the map from data to fit is not linear and cannot be written as a matrix. If
+the learner is replaced by a fixed linear smoother the whole procedure collapses to one
+matrix, and everything about $\lambda$ and $B$ can be read off its spectrum.
+
+\begin{theorem}[The boosting operator]\label{thm:boost-op}
+Let $\bS$ be symmetric with eigenvalues $s_1,\ldots,s_n$ in $[0,1]$, and take the base
+learner to be $\br\mapsto\bS\br$. Then for every $B\geqslant0$
+\begin{equation}\label{eq:boost-op}
+\br^{(B)}=(\bI-\lambda\bS)^{B}\by ,
+\qquad
+\hat\bff^{(B)}=\bigl\{\bI-(\bI-\lambda\bS)^{B}\bigr\}\by .
+\end{equation}
+The boosting operator is symmetric with eigenvalues $1-(1-\lambda s_k)^{B}$, which for
+$\lambda\in(0,1]$ increase in $B$ from $0$ to $1$ at every $k$ with $s_k>0$ and stay at $0$
+where $s_k=0$. Hence
+\begin{equation}\label{eq:boost-edf}
+\df(B)=\sum_{k=1}^{n}\bigl\{1-(1-\lambda s_k)^{B}\bigr\}
+\end{equation}
+increases from $0$ to $\rank(\bS)$, and $\hat\bff^{(B)}$ converges to the orthogonal
+projection of $\by$ on the range of $\bS$.
+\end{theorem}
+
+\begin{proof}
+Induction. At $B=0$ both statements read $\br^{(0)}=\by$ and $\hat\bff^{(0)}=\bzero$.
+By~\eqref{eq:boost} the base learner returns $\bS\br^{(b-1)}$, so
+$\br^{(b)}=\br^{(b-1)}-\lambda\bS\br^{(b-1)}=(\bI-\lambda\bS)\br^{(b-1)}$, which gives the
+first identity; and $\hat\bff^{(b)}=\by-\br^{(b)}$ throughout by
+Proposition~\ref{prop:stagewise}, which gives the second.
+
+By the spectral theorem (prerequisites) write $\bS=\bU\diag(s_k)\bU'$ with $\bU$
+orthogonal. Then $(\bI-\lambda\bS)^{B}=\bU\diag\{(1-\lambda s_k)^{B}\}\bU'$ and the
+boosting operator is $\bU\diag\{1-(1-\lambda s_k)^{B}\}\bU'$, symmetric with the stated
+eigenvalues. For $\lambda\in(0,1]$ and $s_k\in[0,1]$ one has $1-\lambda s_k\in[0,1)$
+whenever $s_k>0$, so $(1-\lambda s_k)^{B}$ decreases to $0$ and the eigenvalue increases to
+$1$; where $s_k=0$ it is $0$ for every $B$. Summing the eigenvalues gives~\eqref{eq:boost-edf},
+whose limit is the number of non-zero $s_k$, and the operator converges to
+$\bU\diag(\indc\{s_k>0\})\bU'$, the orthogonal projection on the range of $\bS$.
+\end{proof}
+
+\begin{remark}
+Read as a statement about tuning: boosting starts at the null fit and moves towards the
+base learner's saturated fit, and $B$ is what says how far. Nothing stops it early, so
+unlike bagging the number of rounds is a genuine tuning parameter and too many overfit.
+That is~\eqref{eq:boost-edf}: the effective degrees of freedom grow with $B$ without ever
+being asked to stop.
+\end{remark}
+
+\begin{corollary}[$\lambda$ and $B$ trade off]\label{cor:lambdaB}
+Fix an eigenvalue $s>0$ and a target level $c\in(0,1)$. The number of rounds needed for
+$1-(1-\lambda s)^{B}=c$ is
+\begin{equation}\label{eq:lambdaB}
+B=\frac{\ln(1-c)}{\ln(1-\lambda s)}\ \sim\ \frac{-\ln(1-c)}{\lambda s}
+\qquad\text{as }\lambda\downarrow0 ,
+\end{equation}
+so $\lambda B$ tends to a constant: halving the shrinkage roughly doubles the rounds
+required, and the two parameters are close to a single one.
+\end{corollary}
+
+\begin{proof}
+Solve $(1-\lambda s)^{B}=1-c$ by taking logarithms. As $\lambda\downarrow0$,
+$\ln(1-\lambda s)=-\lambda s+O(\lambda^2)$ by Taylor's theorem (prerequisites).
+\end{proof}
+
+\subsection{Depth and interaction}\label{sec:12.3.3}
+
+\begin{proposition}[A tree with $d$ splits has interaction order at most $d$]
+\label{prop:depth}
+Let $T$ have $d$ splits. Then $\hat f_T$ is a sum of terms each depending on at most $d$
+coordinates of $\bx$. In particular a stump, $d=1$, gives a function of one coordinate, and
+a boosted ensemble of stumps is additive:
+$\hat f^{(B)}(\bx)=\sum_{j=1}^{p}g_j(x_j)$.
+\end{proposition}
+
+\begin{proof}
+A leaf of $T$ is reached by following at most $d$ splits, so its box is an intersection of
+at most $d$ half-lines and its indicator is a function of the at most $d$ coordinates those
+splits used. By Unit 11 the tree is a sum of leaf constants times such indicators, which is
+the first claim. For $d=1$ each of the two leaves involves one coordinate, the same one, so
+a stump is a function of a single $x_j$; a sum of such functions collects into
+$\sum_jg_j(x_j)$, and~\eqref{eq:boost} produces exactly such a sum.
+\end{proof}
+
+\begin{corollary}[An exact test for additivity]\label{cor:additive}
+If $\hat f(\bx)=\sum_jg_j(x_j)$ then for any $a\neq a'$ and $b\neq b'$ in coordinates $1$
+and $2$, the second difference
+\begin{equation}\label{eq:mixed}
+\hat f(a,b,\cdot)-\hat f(a,b',\cdot)-\hat f(a',b,\cdot)+\hat f(a',b',\cdot)
+\end{equation}
+is exactly $0$, the other coordinates being held fixed.
+\end{corollary}
+
+\begin{proof}
+Every term $g_j$ with $j\geqslant3$ is unchanged by all four evaluations and cancels in
+pairs; $g_1(a)$ appears once with each sign, as does $g_1(a')$, $g_2(b)$ and $g_2(b')$.
+\end{proof}
+
+\begin{remark}
+So $d$ is not a smoothness knob but a statement about which interactions the model is
+allowed to represent, and Corollary~\ref{cor:additive} turns it into something checkable:
+§\ref{sec:12.4.6} computes~\eqref{eq:mixed} for depth one and depth two and gets
+$7\times10^{-15}$ and $0.79$.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:12.4}
+%==============================================================================
+
+\begin{reading}
+ISLR §8.3.3--8.3.4.
+\end{reading}
+
+\texttt{Boston} from \texttt{ISLR2} again, and a simulated design in which the truth is
+known: $p=10$ predictors, one with coefficient $4$, four with coefficient $1$, five with
+coefficient $0$. Simulation is what makes $\sigma^2$ and $\rho$ of Theorem~\ref{thm:avg}
+measurable, since both are variances over the draw of the training set and a single data
+set supplies only one draw.
+
+<<setup-data>>=
+suppressMessages({library(ISLR2); library(randomForest); library(gbm)})
+p <- 10; ntr <- 200; beta <- c(4, rep(1, 4), rep(0, p - 5))
+gen <- function(m) { X <- data.frame(matrix(rnorm(m*p), m, p))
+  f <- as.numeric(as.matrix(X) %*% beta)
+  list(X = X, y = f + rnorm(m, 0, 2), f = f) }
+c(p = p, n_train = ntr, strong = beta[1], moderate = beta[2],
+  noise_predictors = sum(beta == 0))
+@
+
+\subsection{The variance identity (§\ref{sec:12.1.1})}\label{sec:12.4.1}
+
+Corollary~\ref{cor:avg-sample} is exact, so it should hold to machine precision. The matrix
+$\bQ$ has one row per simulated training set and one column per tree of a forest fitted to
+it, evaluated at a fixed test point.
+
+<<variance-identity>>=
+set.seed(1); B <- 60; M <- 150; nte <- 25
+te <- gen(nte)
+fitall <- function(mt) {
+  A <- array(0, c(M, B, nte))
+  for (k in 1:M) { d <- gen(ntr)
+    rf <- randomForest(x = d$X, y = d$y, mtry = mt, ntree = B)
+    A[k, , ] <- t(predict(rf, te$X, predict.all = TRUE)$individual) }
+  A }
+A5 <- fitall(5)
+per <- sapply(1:nte, function(j) { Q <- A5[, , j]; S <- cov(Q)
+  s2 <- mean(diag(S)); cb <- mean(S[upper.tri(S)])
+  c(s2/B + (B - 1)/B*cb, var(rowMeans(Q))) })
+c(identity_max_gap = max(abs(per[1, ] - per[2, ])),
+  average_ensemble_variance = mean(per[2, ]))
+@
+
+\subsection{Out-of-bag error (§\ref{sec:12.1.3})}\label{sec:12.4.2}
+
+Theorem~\ref{thm:oob}\ref{oob:i} on \texttt{Boston}, and the out-of-bag error against a
+held-out test error on one split.
+
+<<oob-one>>=
+set.seed(1); n <- nrow(Boston); tr <- sample(n, n/2)
+rf <- randomForest(medv ~ ., Boston[tr, ], mtry = 4, ntree = 500,
+                   xtest = Boston[-tr, -13], ytest = Boston$medv[-tr])
+c(oob_fraction = (1 - 1/length(tr))^length(tr), limit = exp(-1),
+  oob_mse = tail(rf$mse, 1), test_mse = tail(rf$test$mse, 1))
+@
+
+The two differ by a factor of $1.8$ on this split, which is not evidence of anything: a
+test error computed on $253$ observations is itself variable. Averaging over splits is what
+the comparison requires.
+
+<<oob-many>>=
+set.seed(5)
+R <- t(replicate(25, { i <- sample(n, n/2)
+  g <- randomForest(medv ~ ., Boston[i, ], mtry = 4, ntree = 300,
+                    xtest = Boston[-i, -13], ytest = Boston$medv[-i])
+  c(tail(g$mse, 1), tail(g$test$mse, 1)) }))
+c(mean_oob = mean(R[, 1]), mean_test = mean(R[, 2]),
+  ratio = mean(R[, 1])/mean(R[, 2]), sd_of_test_mse = sd(R[, 2]))
+@
+
+Averaged, the out-of-bag error sits $12\%$ above the test error, the direction
+Theorem~\ref{thm:oob}\ref{oob:iii} predicts, and the standard deviation of the test error
+across splits is large enough to explain the single-split discrepancy on its own.
+
+\subsection{Decorrelation (§\ref{sec:12.2.1})}\label{sec:12.4.3}
+
+The two quantities of Theorem~\ref{thm:avg} measured separately as $m$ varies, on the
+simulated design where independent training sets are available.
+
+<<decorrelation>>=
+summ <- function(mt) { A <- fitall(mt)
+  q <- sapply(1:nte, function(j) { Q <- A[, , j]; S <- cov(Q); en <- rowMeans(Q)
+    c(mean(diag(S)), mean(S[upper.tri(S)])/mean(diag(S)),
+      var(en), (mean(en) - te$f[j])^2) })
+  c(mtry = mt, sigma2 = mean(q[1, ]), rho = mean(q[2, ]),
+    variance = mean(q[3, ]), bias_squared = mean(q[4, ]),
+    total = mean(q[3, ]) + mean(q[4, ])) }
+set.seed(1); t(sapply(c(1, 2, 3, 5, 7, 10), summ))
+@
+
+Single trees improve as $m$ grows, $\sigma^2$ falling by more than half from $m=1$ to
+$m=p$; they also become more alike, $\rho$ rising fourfold. The ensemble variance follows
+$\rho$ and is smallest at $m=1$, so on variance alone the most restricted forest wins. It
+does not win on error: the squared bias falls by a factor of seven over the same range,
+because trees denied the strong predictor fit the truth worse, and the sum of the two is
+smallest at $m=7$. That is Unit 1's decomposition applied to the tuning parameter, and
+neither term alone locates the optimum.
+
+\begin{figure}[H]\centering
+<<decorr-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+set.seed(1); tabm <- t(sapply(1:10, summ))
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 3.2), cex = 0.85)
+plot(tabm[, "mtry"], tabm[, "sigma2"], type = "b", pch = 16, lwd = 2,
+     col = "#1E3A8A", xlab = "m", ylab = expression(sigma^2),
+     main = "one tree")
+par(new = TRUE)
+plot(tabm[, "mtry"], tabm[, "rho"], type = "b", pch = 17, lwd = 2, lty = 2,
+     col = "#B45309", axes = FALSE, xlab = "", ylab = "")
+axis(4, col = "#B45309", col.axis = "#B45309")
+mtext(expression(rho), side = 4, line = 2, col = "#B45309", cex = 0.85)
+par(mar = c(4, 4.2, 1.8, 0.8))
+plot(tabm[, "mtry"], tabm[, "total"], type = "b", pch = 16, lwd = 2,
+     col = "#15803D", log = "y", ylim = range(tabm[, 4:6]), xlab = "m",
+     ylab = "squared error of the ensemble", main = "the average")
+lines(tabm[, "mtry"], tabm[, "bias_squared"], lwd = 2, lty = 2,
+      col = "#B45309")
+lines(tabm[, "mtry"], tabm[, "variance"], lwd = 2, lty = 3, col = "#1E3A8A")
+legend("topright", bty = "n", cex = 0.75, lwd = 2, lty = c(1, 2, 3),
+       col = c("#15803D", "#B45309", "#1E3A8A"),
+       legend = c("total", "squared bias", "variance"))
+par(op)
+@
+\caption{Left: as more predictors are made available at each split the individual trees get
+better (solid, left axis) and more alike (dashed, right axis), which is the whole of
+Definition~\ref{def:rf}. Right, on a logarithmic scale: the ensemble's variance rises with
+$m$ and its squared bias falls, so the total turns. Neither term alone locates the best
+$m$.}\label{fig:decorr}
+\end{figure}
+
+\subsection{Variable importance (§\ref{sec:12.1.4})}\label{sec:12.4.4}
+
+Proposition~\ref{prop:mdi}: the impurity gains of one tree add to what the tree explains.
+
+<<mdi-telescope>>=
+suppressMessages(library(tree))
+t1 <- tree(medv ~ ., Boston); fr <- t1$frame
+id <- as.integer(rownames(fr)); lf <- fr$var == "<leaf>"
+gain <- sapply(id[!lf], function(t) fr$dev[match(t, id)] -
+  fr$dev[match(2*t, id)] - fr$dev[match(2*t + 1, id)])
+c(sum_of_gains = sum(gain),
+  root_minus_tree = fr$dev[1] - sum(fr$dev[lf]),
+  gap = sum(gain) - (fr$dev[1] - sum(fr$dev[lf])))
+round(sort(tapply(gain, droplevels(fr$var[!lf]), sum), decreasing = TRUE), 1)
+@
+
+<<rf-importance>>=
+set.seed(3)
+rf2 <- randomForest(medv ~ ., Boston, mtry = 4, ntree = 300, importance = TRUE)
+im <- importance(rf2)
+round(head(im[order(-im[, 2]), ], 5), 1)
+@
+
+\subsection{Bagging, forests and boosting compared (§\ref{sec:12.2.2})}
+\label{sec:12.4.5}
+
+Two truths in six coordinates: one linear, one the exclusive-or of two boxes that Unit 11
+showed greedy splitting cannot see at the first split. The comparison is against the noise
+free truth, so what is measured is approximation error and not the irreducible part.
+
+<<compare>>=
+sim <- function(kind, m) { X <- data.frame(matrix(runif(m*6), m, 6))
+  f <- if (kind == "linear") 3*X[, 1] + 2*X[, 2] - X[, 3]
+       else 4*((X[, 1] > .5) == (X[, 2] > .5))
+  data.frame(X, y = f + rnorm(m, 0, .5), truth = f) }
+set.seed(4)
+t(sapply(c("linear", "boxes"), function(kind) {
+  a <- sim(kind, 400); e <- sim(kind, 2000)
+  mse <- function(v) mean((v - e$truth)^2)
+  c(bagging = mse(predict(randomForest(y ~ . - truth, a, mtry = 6,
+                                       ntree = 400), e)),
+    forest_m2 = mse(predict(randomForest(y ~ . - truth, a, mtry = 2,
+                                         ntree = 400), e)),
+    boosting = mse(predict(gbm(y ~ . - truth, data = a,
+      distribution = "gaussian", n.trees = 2000, shrinkage = 0.02,
+      interaction.depth = 2, bag.fraction = 1, verbose = FALSE),
+      e, n.trees = 2000)),
+    linear = mse(predict(lm(y ~ . - truth, a), e))) }))
+@
+
+On the linear truth the linear model is an order of magnitude better than any ensemble,
+which is Unit 11's staircase theorem: no amount of averaging repairs an approximation
+error. On the box truth the ordering reverses completely, and the forest with $m=2$ is more
+than three times worse than plain bagging, because hiding coordinates makes the pairing of
+a split on $x_1$ with a split on $x_2$ rarer.
+
+\subsection{Boosting (§\ref{sec:12.3})}\label{sec:12.4.6}
+
+Theorem~\ref{thm:boost-op} with $\bS$ the projection on a fixed six-cell partition, which
+is a legitimate linear smoother by Unit 11.
+
+<<boost-operator>>=
+set.seed(3); m <- 120; xb <- runif(m); yb <- sin(6*xb) + rnorm(m, 0, .3)
+grp <- cut(xb, quantile(xb, seq(0, 1, length.out = 7)), include.lowest = TRUE)
+D <- model.matrix(~ grp - 1); S <- D %*% solve(crossprod(D)) %*% t(D)
+mpow <- function(A, k) { R <- diag(nrow(A)); for (i in seq_len(k)) R <- R %*% A; R }
+run <- function(lam, Bn) { f <- rep(0, m); r <- yb
+  for (b in 1:Bn) { g <- S %*% r; f <- f + lam*g; r <- r - lam*g }; f }
+ev <- eigen(S, symmetric = TRUE)$values
+t(sapply(list(c(.1, 5), c(.3, 20), c(.05, 100)), function(z) {
+  f1 <- run(z[1], z[2])
+  f2 <- (diag(m) - mpow(diag(m) - z[1]*S, z[2])) %*% yb
+  c(lambda = z[1], B = z[2], max_gap = max(abs(f1 - f2)),
+    edf = sum(1 - (1 - z[1]*ev)^z[2])) }))
+c(rank_of_S = sum(ev > 0.5), distinct_eigenvalues = length(unique(round(ev, 8))))
+@
+
+The identity holds to machine precision and the effective degrees of
+freedom~\eqref{eq:boost-edf} climb towards the rank of $\bS$: boosting is walking from the
+null fit to the saturated fit of its base learner, and $B$ says how far.
+Corollary~\ref{cor:lambdaB} then says $\lambda$ and $B$ are nearly one parameter.
+
+<<lambda-B>>=
+set.seed(7)
+gs <- function(m) { X <- data.frame(matrix(runif(m*6), m, 6))
+  data.frame(X, y = 2*X[, 1] + sin(6*X[, 2]) + 3*X[, 1]*X[, 2] +
+                   rnorm(m, 0, .4)) }
+gtr <- gs(500); gte <- gs(2000); Bs <- seq(50, 4000, by = 50)
+t(sapply(c(0.01, 0.02, 0.05), function(lam) {
+  g <- gbm(y ~ ., data = gtr, distribution = "gaussian",
+           n.trees = 4000, shrinkage = lam, interaction.depth = 2,
+           bag.fraction = 1, verbose = FALSE)
+  mse <- colMeans((predict(g, gte, n.trees = Bs) - gte$y)^2)
+  c(lambda = lam, best_B = Bs[which.min(mse)],
+    lambda_times_B = lam*Bs[which.min(mse)], min_mse = min(mse)) }))
+@
+
+The products are $17$, $16$ and $15$ and the three minima agree to three decimal places:
+a fivefold change in the shrinkage buys nothing except a fivefold change in the running
+time.
+
+Corollary~\ref{cor:additive} is an exact test, so a depth-one ensemble must return zero.
+
+<<interaction-depth>>=
+fitg <- function(dep) gbm(y ~ ., data = gtr, distribution = "gaussian",
+  n.trees = 800, shrinkage = 0.05, interaction.depth = dep,
+  bag.fraction = 1, verbose = FALSE)
+mixed <- function(g) { nd <- gte[rep(1, 4), ]
+  nd$X1 <- c(.2, .2, .8, .8); nd$X2 <- c(.2, .8, .2, .8)
+  f <- predict(g, nd, n.trees = 800); f[1] - f[2] - f[3] + f[4] }
+signif(c(depth_1 = mixed(fitg(1)), depth_2 = mixed(fitg(2))), 3)
+@
+
+\begin{figure}[H]\centering
+<<boost-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 0.8), cex = 0.85)
+Bg <- 0:120
+plot(Bg, sapply(Bg, function(b) sum(1 - (1 - 0.1*ev)^b)), type = "l", lwd = 2,
+     col = "#1E3A8A", ylim = c(0, 6.4), xlab = "rounds B",
+     ylab = "effective degrees of freedom", main = "boosting a projection")
+lines(Bg, sapply(Bg, function(b) sum(1 - (1 - 0.03*ev)^b)), lwd = 2, lty = 2,
+      col = "#B45309")
+abline(h = sum(ev > 0.5), col = "grey70", lty = 3)
+legend("bottomright", bty = "n", cex = 0.8, lwd = 2, lty = c(1, 2),
+       col = c("#1E3A8A", "#B45309"),
+       legend = c(expression(lambda == 0.1), expression(lambda == 0.03)))
+cl <- c("#1E3A8A", "#B45309", "#15803D")
+plot(range(Bs), c(0.19, 0.45), type = "n", log = "x", xlab = "rounds B",
+     ylab = "test mean squared error", main = "shrinkage against rounds")
+for (i in seq_along(c(0.01, 0.02, 0.05))) {
+  lam <- c(0.01, 0.02, 0.05)[i]
+  g <- gbm(y ~ ., data = gtr, distribution = "gaussian",
+           n.trees = 4000, shrinkage = lam, interaction.depth = 2,
+           bag.fraction = 1, verbose = FALSE)
+  lines(Bs, colMeans((predict(g, gte, n.trees = Bs) - gte$y)^2), lwd = 2,
+        col = cl[i]) }
+legend("topright", bty = "n", cex = 0.8, lwd = 2, col = cl,
+       legend = c("0.01", "0.02", "0.05"))
+par(op)
+@
+\caption{Left: the effective degrees of freedom~\eqref{eq:boost-edf} of boosting a rank-six
+projection, rising to the rank; a third of the shrinkage needs about three times the rounds
+to reach the same place, which is Corollary~\ref{cor:lambdaB}. Right: test error against
+rounds for three shrinkages; the three curves are the same curve shifted
+along a logarithmic axis, and their minima occur at nearly equal
+$\lambda B$.}\label{fig:boost}
+\end{figure}
+
+%==============================================================================
+\section{Pitfalls}\label{sec:12.5}
+%==============================================================================
+
+\subsection{Treating the number of trees as a tuning parameter}\label{sec:12.5.1}
+
+By Theorem~\ref{thm:avg} the ensemble variance decreases in $B$ and nothing in bagging
+increases with it, so $B$ is a computing budget. Boosting is the opposite case, and the two
+are often confused.
+
+<<pitfall-B>>=
+set.seed(8); a <- sim("boxes", 400); e <- sim("boxes", 2000)
+Bv <- c(5, 25, 100, 400, 1600)
+bg <- rowMeans(replicate(10, sapply(Bv, function(b)
+  mean((predict(randomForest(y ~ . - truth, a, mtry = 6, ntree = b),
+                e) - e$truth)^2))))
+gz <- gbm(y ~ . - truth, data = a, distribution = "gaussian",
+          n.trees = 8000, shrinkage = 0.1, interaction.depth = 3,
+          bag.fraction = 1, verbose = FALSE)
+rbind(trees = Bv, bagging = bg, rounds = 5*Bv,
+      boosting = sapply(5*Bv, function(b)
+        mean((predict(gz, e, n.trees = b) - e$truth)^2)))
+@
+
+The bagging row falls and flattens; the boosting row falls, reaches its minimum at $500$
+rounds, and then climbs. Averaging over ten forests is what makes the first row monotone:
+a single forest at $B=5$ is too variable to read.
+
+\textbf{Diagnostic.} A cross-validation loop over the number of trees in a random forest, or
+a boosted model reported at whatever $B$ the software defaulted to.
+\textbf{Fix.} For bagging and forests, raise $B$ until the out-of-bag error stops moving and
+stop thinking about it. For boosting, $B$ must be chosen, because
+Theorem~\ref{thm:boost-op} says the fit keeps moving towards the saturated fit of the base
+learner and~\eqref{eq:boost-edf} keeps growing.
+
+\subsection{Reading impurity importance as evidence}\label{sec:12.5.2}
+
+Proposition~\ref{prop:perm} gives permutation importance a zero for a useless predictor.
+Nothing of the sort holds for the impurity measure of Definition~\ref{def:mdi}. Below, the
+response is independent of all four predictors.
+
+<<pitfall-mdi>>=
+set.seed(2); mm <- 500
+dn <- data.frame(
+  continuous = runif(mm),
+  twenty_levels = factor(sample(1:20, mm, TRUE)),
+  four_levels = factor(sample(1:4, mm, TRUE)),
+  binary = factor(sample(0:1, mm, TRUE)),
+  y = rnorm(mm))
+rfn <- randomForest(y ~ ., dn, ntree = 500, importance = TRUE)
+round(importance(rfn), 2)
+@
+
+\textbf{Diagnostic.} An importance ranking that reproduces the ranking of the predictors by
+number of distinct values.
+\textbf{Fix.} Report permutation importance, and read impurity importance as a description
+of how the trees were built rather than of the population. Here the twenty-level factor
+scores eleven times the binary one on impurity while the response is independent of both;
+the permutation column separates them by less than a factor of two.
+
+\subsection{Comparing out-of-bag with test error on one split}\label{sec:12.5.3}
+
+§\ref{sec:12.4.2} found a factor of $1.8$ on one split of \texttt{Boston} and $1.12$
+averaged over twenty-five. The first number is noise.
+
+\textbf{Diagnostic.} A claim that the out-of-bag error is optimistic or pessimistic, based
+on one split.
+\textbf{Fix.} The standard deviation of the test error across splits is printed in
+§\ref{sec:12.4.2} and is large enough to account for the gap. Theorem~\ref{thm:oob} says
+the direction of the bias is upward and its size is of order $1/B$, which at $B=300$ is
+far below the split-to-split variability, so a single comparison cannot detect it.
+
+\subsection{Bagging a low-variance learner}\label{sec:12.5.4}
+
+<<pitfall-bag-lm>>=
+set.seed(9)
+Rl <- t(replicate(20, { al <- sim("linear", 400); el <- sim("linear", 2000)
+  P <- replicate(60, { i <- sample(nrow(al), replace = TRUE)
+    predict(lm(y ~ . - truth, al[i, ]), el) })
+  c(mean((predict(lm(y ~ . - truth, al), el) - el$truth)^2),
+    mean((rowMeans(P) - el$truth)^2),
+    mean((predict(randomForest(y ~ . - truth, al, mtry = 6, ntree = 60),
+                  el) - el$truth)^2)) }))
+c(single_lm = mean(Rl[, 1]), bagged_lm = mean(Rl[, 2]),
+  bagged_tree = mean(Rl[, 3]), bagging_gain = mean(Rl[, 1])/mean(Rl[, 2]))
+@
+
+\textbf{Diagnostic.} Bagging applied to a method that was not unstable to begin with.
+\textbf{Fix.} By Proposition~\ref{prop:bag-bias} bagging removes $(1-\rho)\sigma^2(1-1/B)$
+and no more. A least squares fit on $400$ observations with six predictors has small
+$\sigma^2$ and its bootstrap replicates are nearly identical, so $\rho$ is close to one and
+there is almost nothing to remove. Averaged over twenty training sets the bagged linear
+model is not better than the single one at all, while both beat the bagged trees by a
+factor of thirteen. Bagging is a variance device and needs a variance to work on.
+
+\subsection{Boosting without holding anything out}\label{sec:12.5.5}
+
+<<pitfall-boost-overfit>>=
+set.seed(10); ab <- sim("boxes", 300); eb <- sim("boxes", 2000)
+gb <- gbm(y ~ . - truth, data = ab, distribution = "gaussian",
+          n.trees = 8000, shrinkage = 0.1, interaction.depth = 4,
+          bag.fraction = 1, verbose = FALSE)
+Bx <- c(50, 200, 800, 3200, 8000)
+rbind(rounds = Bx,
+      training_mse = sapply(Bx, function(b)
+        mean((predict(gb, ab, n.trees = b) - ab$y)^2)),
+      test_mse = sapply(Bx, function(b)
+        mean((predict(gb, eb, n.trees = b) - eb$y)^2)))
+@
+
+\textbf{Diagnostic.} A training error that keeps falling while the model is declared to be
+improving.
+\textbf{Fix.} The training error of a boosted model decreases in $B$ by construction, since
+each round fits the current residuals, so it carries no information about when to stop.
+Choose $B$ by cross-validation or a held-out set. The test column turns while the training
+column does not.
+
+%==============================================================================
+\section{Exercises}\label{sec:12.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:avg}
+An ensemble member has prediction variance $\sigma^2=9$ at a given point and the members
+have pairwise correlation $\rho=0.4$. Find the variance of an average of $10$, of $100$ and
+of infinitely many. What fraction of a single member's variance can averaging remove?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:avg}, $\var=\rho\sigma^2+(1-\rho)\sigma^2/B=3.6+5.4/B$: at $B=10$ it is
+$4.14$, at $B=100$ it is $3.654$, and the limit is $3.6$.
+
+Averaging can remove at most $(1-\rho)\sigma^2=5.4$, which is $60\%$ of the single member's
+$9$; the remaining $40\%$ is the floor $\rho\sigma^2$. Note also that $B=10$ already
+achieves $4.14$ against a limit of $3.6$, so nine tenths of the available reduction is
+bought by the first ten members. That is why $B$ is a computing budget and not a tuning
+parameter.
+\end{solution}
+
+\begin{exercise}\label{ex:rho}
+Why does a random forest with $m<p$ often beat bagging, and why is it not guaranteed to?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:avg} the limiting variance is $\rho\sigma^2$. Restricting each split to
+$m$ of the $p$ predictors makes the trees less alike, so $\rho$ falls; §\ref{sec:12.4.3}
+measures $\rho$ rising from $0.029$ at $m=1$ to $0.127$ at $m=p$ on the simulated design.
+
+It is not guaranteed because the same restriction removes candidates from every split and
+so raises $\sigma^2$, which the same table shows falling from $17.5$ to $7.8$ as $m$ grows,
+and because variance is not the whole error. On that design the ensemble variance is
+smallest at $m=1$ and the squared bias smallest at $m=p$, and the sum is smallest at $m=7$:
+the optimum is a property of the data and no argument here locates it.
+§\ref{sec:12.4.5} exhibits an outright failure: on an exclusive-or truth in two
+coordinates the structure needs a split on $x_1$ followed by one on $x_2$, and hiding
+coordinates makes that pairing rarer, so $m=2$ is three times worse than bagging.
+\end{solution}
+
+\begin{exercise}\label{ex:oob}
+With $n=1000$ and $B=500$, how many trees on average is an out-of-bag prediction an average
+of? Is the out-of-bag error optimistic or pessimistic for the full ensemble, and by roughly
+how much?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:oob}\ref{oob:i} the expected number is $B(1-1/n)^n=500(0.9995)^{1000}$,
+which is $500(0.3677)=183.8$, close to $B/e=183.9$.
+
+It is pessimistic. The out-of-bag prediction has the same bias as the full ensemble and
+larger variance, by $(1-\rho)\sigma^2(1/184-1/500)=(1-\rho)\sigma^2(0.00343)$ from
+part~\ref{oob:iii}. Relative to the ensemble's own variance $\rho\sigma^2+(1-\rho)\sigma^2/500$
+that is a small correction, and it vanishes like $1/B$. §\ref{sec:12.4.2} measures $12\%$ on
+\texttt{Boston} at $B=300$, which also contains whatever the data contribute beyond the
+formula.
+\end{solution}
+
+\begin{exercise}\label{ex:mdi}
+A random forest reports impurity importances $40, 25, 20, 15$ for four predictors, summing
+to $100$. What do these numbers mean, and what would you check before reporting them as
+evidence that the first predictor matters most?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:mdi} the impurity gains of a tree sum to $R(\text{root})-R(T)$, the
+total cost the tree removes, so the four numbers are shares of the fit the ensemble
+achieved, averaged over trees. They describe how the trees were built.
+
+What to check is the number of distinct values each predictor takes. A predictor with many
+cutpoints reduces the training cost by more than one with few, whatever its relation to the
+response, and §\ref{sec:12.5.2} shows four predictors independent of the response scoring
+$65, 49, 16, 6$ purely by cardinality. Permutation importance has no such defect:
+by Proposition~\ref{prop:perm} a predictor independent of $(Y,X_{-j})$ has population
+importance exactly zero. Report that, or at least both.
+\end{solution}
+
+\begin{exercise}\label{ex:vote}
+Twenty-one classifiers each get a given observation right with probability $0.6$. Bound the
+probability the majority vote is right if they are independent. Why is the bound not
+available for a bagged ensemble?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:vote} the failure probability is at most
+$\pi(1-\pi)/\{B(\pi-\tfrac12)^2\}=0.24/\{21(0.01)\}=1.14$, which is vacuous: Chebyshev
+gives nothing at these numbers, and $B>24$ is needed before the bound says anything. The exact
+binomial probability of at least eleven successes is $0.826$, so the vote does help; the
+bound is simply weak.
+
+For a bagged ensemble the hypothesis fails outright. The members are fitted to resamples of
+one data set and are positively correlated, which is what $\rho>0$ in
+Theorem~\ref{thm:avg} records. A correlated vote behaves like a smaller independent vote,
+and in the extreme $\rho=1$ all members agree and the ensemble is one classifier.
+\end{solution}
+
+\begin{exercise}\label{ex:boost-op}
+Boosting is run with a base learner that projects onto a fixed subspace of dimension $r$,
+with shrinkage $\lambda$. What is the fit after $B$ rounds, what does it converge to, and
+what are its effective degrees of freedom?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:boost-op} the fit is $\{\bI-(\bI-\lambda\bS)^B\}\by$. A projection has
+eigenvalues $1$ with multiplicity $r$ and $0$ otherwise, so the boosting operator has
+eigenvalues $1-(1-\lambda)^B$ on the subspace and $0$ off it. The fit is therefore
+$\{1-(1-\lambda)^B\}\bS\by$, a shrunken version of the projection, converging to $\bS\by$
+itself.
+
+The effective degrees of freedom are $r\{1-(1-\lambda)^B\}$, rising from $0$ to $r$. So
+boosting a fixed linear learner adds nothing the learner could not already do; it only
+controls how far along the way the fit is stopped. What makes boosting trees different is
+that the base learner is refitted to the current residuals each round, so the subspace
+itself changes.
+\end{solution}
+
+\begin{exercise}\label{ex:lambdaB}
+A boosted model with $\lambda=0.05$ is best at $B=300$ rounds. Roughly what $B$ would be
+best at $\lambda=0.005$, and why does the answer matter in practice?
+\end{exercise}
+
+\begin{solution}
+By Corollary~\ref{cor:lambdaB} the product $\lambda B$ is nearly constant, so ten times
+smaller shrinkage needs about ten times the rounds: $B\approx3000$.
+§\ref{sec:12.4.6} measures the products $17$, $16$ and $15$ at $\lambda=0.01$, $0.02$ and
+$0.05$, with essentially the same minimum error at all three.
+
+It matters because the two parameters are close to one parameter, so searching both on a
+grid mostly wastes computation, and because the cost of the fit is linear in $B$: the small
+shrinkage that is often recommended buys nothing here except a tenfold longer run. The
+right reading of Corollary~\ref{cor:lambdaB} is that $\lambda$ should be as large as the
+error curve tolerates.
+\end{solution}
+
+\begin{exercise}\label{ex:depth}
+A boosted ensemble is fitted with \texttt{interaction.depth = 1}. What class of functions
+can it represent, and how would you confirm on a fitted object that it is in that class?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:depth} a stump is a function of a single coordinate, so a sum of
+stumps is additive: $\hat f(\bx)=\sum_jg_j(x_j)$, with no interaction terms of any order.
+
+Corollary~\ref{cor:additive} makes it checkable exactly. Evaluate the fitted function at
+the four corners of a rectangle in coordinates $1$ and $2$, holding the rest fixed, and form
+$\hat f(a,b)-\hat f(a,b')-\hat f(a',b)+\hat f(a',b')$. For an additive function every term
+cancels and the answer is exactly zero. §\ref{sec:12.4.6} gets $7\times10^{-15}$ at depth
+one and $0.79$ at depth two.
+\end{solution}
+
+\begin{exercise}\label{ex:when}
+A response is exactly linear in its predictors. Rank a linear model, bagging, a random
+forest and boosting, and say what changes if the truth is a partition into boxes instead.
+\end{exercise}
+
+\begin{solution}
+On the linear truth the linear model wins by a wide margin: §\ref{sec:12.4.5} measures
+$0.006$ against $0.056$ to $0.069$ for the three ensembles, a factor of ten. The reason is
+Unit 11's staircase theorem, that a piecewise-constant fit approximating a linear function
+with $J$ boxes carries an error of order $J^{-2/p}$. That error is bias, and
+Proposition~\ref{prop:bag-bias} says averaging does not touch bias.
+
+On the box truth the ordering reverses: the linear model is worst at $4.08$, bagging best
+at $0.36$, boosting $0.58$, and the forest with $m=2$ at $1.27$ suffers for the reason of
+Exercise~\ref{ex:rho}. The general lesson is that ensembles change the variance term and
+the base learner decides the bias term, so the choice between trees and a linear model is
+made before any ensembling is considered.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) verify the variance identity of Corollary~\ref{cor:avg-sample} on a forest's
+individual tree predictions; (b) measure $\rho$ and $\sigma^2$ as functions of \texttt{mtry};
+(c) verify that boosting a fixed projection gives $\{\bI-(\bI-\lambda\bS)^B\}\by$.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:12.4.1}, where the gap is at machine precision because
+Corollary~\ref{cor:avg-sample} is an algebraic identity about sample moments; (b) is
+§\ref{sec:12.4.3}; (c) is §\ref{sec:12.4.6}, agreeing to $4\times10^{-15}$.
+
+The point to watch in (b) is that $\rho$ and $\sigma^2$ are variances over the draw of the
+\emph{training set}, not over the trees within one forest. Conditionally on the data the
+members of a forest are independent, so estimating $\rho$ requires many training sets, which
+is why that section works on simulated data rather than on \texttt{Boston}.
+\end{solution}
+
+\end{document}

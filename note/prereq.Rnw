@@ -1,0 +1,2869 @@
+% Compile:  python build.py prereq
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Mathematical Prerequisites}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{P.\arabic{theorem}}
+\renewcommand\thetheorem  {P.\arabic{theorem}}
+\renewcommand\thelemma    {P.\arabic{theorem}}
+\renewcommand\theproposition{P.\arabic{theorem}}
+\renewcommand\thecorollary{P.\arabic{theorem}}
+\renewcommand\theexample  {P.\arabic{example}}
+\renewcommand\theexercise {P.\arabic{exercise}}
+\renewcommand\thefigure   {P.\arabic{figure}}
+\renewcommand\theequation {P.\arabic{equation}}
+
+% Part dividers.
+\newcommand{\coursepart}[2]{%
+  \clearpage
+  \begin{center}
+  {\color{hdrBG}\rule{0.5\textwidth}{0.8pt}}\\[0.7em]
+  {\color{hdrBG}\bfseries\Large Part #1}\\[0.35em]
+  {\color{accent}\bfseries\Large #2}\\[0.5em]
+  {\color{hdrBG}\rule{0.5\textwidth}{0.8pt}}
+  \end{center}
+  \vspace{2mm}}
+
+\title{\color{hdrBG}\bfseries\Huge Mathematical Prerequisites}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/prereq-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont Mathematical Prerequisites}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+This is the single source for the analysis, linear algebra and measure-theoretic
+probability the course uses. Every result stated in a unit without proof is proved here.
+
+\textbf{What is assumed.} The completeness of $\Real$, and the Lebesgue integral on a
+measure space together with its four convergence theorems: monotone convergence,
+Fatou's lemma, dominated convergence, and Fubini--Tonelli. These are stated in
+§\ref{sec:P.13} for reference and are the only unproved statements in the course.
+Everything above them is derived.
+
+%##############################################################################
+\coursepart{I}{Analysis}
+%##############################################################################
+
+%==============================================================================
+\section{The Real Line}\label{sec:P.0}
+%==============================================================================
+
+Nothing beyond this section is assumed of analysis.
+
+\begin{definition}[Supremum]\label{def:sup}
+$s$ is the \emph{supremum} of $S\subseteq\Real$ if $s$ is an upper bound and no smaller
+number is; $\inf S=-\sup(-S)$. The \emph{completeness axiom} states that every non-empty
+$S$ bounded above has a supremum in $\Real$.
+\end{definition}
+
+\begin{theorem}[Monotone convergence for sequences]\label{thm:monotone-seq}
+A bounded increasing real sequence converges, to the supremum of its values.
+\end{theorem}
+
+\begin{proof}
+Let $s=\sup_n a_n$, which exists by completeness. For $\varepsilon>0$, $s-\varepsilon$ is
+not an upper bound, so $a_N>s-\varepsilon$ for some $N$; monotonicity gives
+$s-\varepsilon<a_n\leqslant s$ for all $n\geqslant N$.
+\end{proof}
+
+\begin{theorem}[Bolzano--Weierstrass]\label{thm:BW}
+Every bounded sequence in $\Real^d$ has a convergent subsequence.
+\end{theorem}
+
+\begin{proof}
+Take $d=1$ first. Given a bounded $(a_n)$, put $b_m=\sup_{n\geqslant m}a_n$, finite by
+completeness. The sequence $(b_m)$ is decreasing and bounded below, so it converges to
+$b=\limsup_n a_n$ by Theorem~\ref{thm:monotone-seq} applied to $(-b_m)$. Choose indices
+$n_1<n_2<\cdots$ with $|a_{n_k}-b|<1/k$: possible because $b_{n_{k-1}+1}$ is within $1/(2k)$
+of $b$ for large $k$, and being a supremum it is approached by some $a_{n}$ with
+$n>n_{k-1}$. Then $a_{n_k}\to b$.
+
+For $d>1$ extract a subsequence convergent in the first coordinate, a further subsequence
+convergent in the second, and so on through the $d$ coordinates; the last subsequence
+converges in every coordinate, hence in $\Real^d$.
+\end{proof}
+
+\begin{definition}[Compactness]\label{def:compact}
+$K\subseteq\Real^d$ is \emph{compact} if every sequence in $K$ has a subsequence converging
+to a point of $K$.
+\end{definition}
+
+\begin{theorem}[Heine--Borel]\label{thm:HB}
+$K\subseteq\Real^d$ is compact if and only if it is closed and bounded.
+\end{theorem}
+
+\begin{proof}
+($\Leftarrow$) A sequence in a bounded $K$ has a convergent subsequence by
+Theorem~\ref{thm:BW}, and its limit lies in $K$ because $K$ is closed.
+
+($\Rightarrow$) If $K$ were unbounded it would contain $x_n$ with $|x_n|>n$, and no
+subsequence of such a sequence converges. If $K$ were not closed there would be
+$x_n\in K$ with $x_n\to x\notin K$; every subsequence also tends to $x$, so none converges
+in $K$.
+\end{proof}
+
+\begin{theorem}[Rolle]\label{thm:rolle}
+If $f$ is continuous on $[a,b]$, differentiable on $(a,b)$, and $f(a)=f(b)$, then
+$f'(\xi)=0$ for some $\xi\in(a,b)$.
+\end{theorem}
+
+\begin{proof}
+$[a,b]$ is compact by Theorem~\ref{thm:HB}, so $f$ attains a maximum and a minimum on it
+(Theorem~\ref{thm:unif-cont}). If both are attained at endpoints then $f$ is constant,
+being squeezed between two equal values, and any interior $\xi$ works. Otherwise an
+extremum is attained at an interior $\xi$, where the difference quotients
+$\{f(\xi+h)-f(\xi)\}/h$ are $\leqslant0$ for $h>0$ and $\geqslant0$ for $h<0$ (or the
+reverse), so the two-sided limit $f'(\xi)$ is both $\leqslant0$ and $\geqslant0$.
+\end{proof}
+
+\begin{corollary}[Mean value theorem]\label{cor:MVT}
+Under the same hypotheses without $f(a)=f(b)$, there is $\xi\in(a,b)$ with
+$f(b)-f(a)=f'(\xi)(b-a)$.
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:rolle} to $g(x)=f(x)-f(a)-\frac{f(b)-f(a)}{b-a}(x-a)$, which is
+continuous on $[a,b]$, differentiable on $(a,b)$, and has $g(a)=g(b)=0$.
+\end{proof}
+
+\begin{theorem}[Differentiation under the integral sign]\label{thm:diff-int}
+Let $(\calX,\mu)$ be a measure space, $I\subseteq\Real$ an open interval, and
+$f:I\times\calX\to\Real$ such that
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $x\mapsto f(t,x)$ is $\mu$-integrable for each $t\in I$;
+\item $\partial f/\partial t$ exists for every $(t,x)$;
+\item $|\partial f/\partial t(t,x)|\leqslant g(x)$ for all $t\in I$, with
+      $\int g\,\dd\mu<\infty$.
+\end{enumerate}
+Then $F(t)=\int f(t,x)\,\dd\mu(x)$ is differentiable on $I$ with
+$F'(t)=\int\frac{\partial f}{\partial t}(t,x)\,\dd\mu(x)$.
+\end{theorem}
+
+\begin{proof}
+Fix $t\in I$ and any sequence $h_n\to0$ with $t+h_n\in I$, $h_n\neq0$. Put
+$q_n(x)=\{f(t+h_n,x)-f(t,x)\}/h_n$. By (ii) and the mean value theorem
+(Corollary~\ref{cor:MVT}) applied in $t$, for each $x$ there is $\xi$ between $t$ and
+$t+h_n$ with $q_n(x)=\partial f/\partial t(\xi,x)$, so $|q_n(x)|\leqslant g(x)$ by (iii).
+Also $q_n(x)\to\partial f/\partial t(t,x)$ pointwise by (ii). Dominated convergence gives
+$\int q_n\,\dd\mu\to\int\partial f/\partial t\,\dd\mu$, and the left side is
+$\{F(t+h_n)-F(t)\}/h_n$. As the sequence $(h_n)$ was arbitrary, the limit defines $F'(t)$.
+\end{proof}
+
+\begin{remark}
+Theorem~\ref{thm:diff-int} is what licenses the differentiation under the integral in the
+Gaussian characteristic function (Proposition~\ref{prop:cf-gauss}), where
+$f(t,z)=e^{itz}\phi(z)$ has $|\partial f/\partial t|=|z|\phi(z)$, integrable and free of
+$t$.
+\end{remark}
+
+%==============================================================================
+\section{Limits and Semi-continuity}\label{sec:P.1}
+%==============================================================================
+
+\begin{definition}[Upper and lower limits]\label{def:limsup}
+For a real sequence $(a_n)$, $\limsup_n a_n = \inf_m\sup_{n\geqslant m}a_n$ and
+$\liminf_n a_n = \sup_m\inf_{n\geqslant m}a_n$, as elements of $[-\infty,\infty]$.
+\end{definition}
+
+\begin{proposition}\label{prop:limsup}
+$\liminf_n a_n\leqslant\limsup_n a_n$, and $a_n\to a$ if and only if
+$\liminf_n a_n=\limsup_n a_n=a$.
+\end{proposition}
+
+\begin{proof}
+$\inf_{n\geqslant m}a_n\leqslant\sup_{n\geqslant m}a_n$ for each $m$; the left side
+increases in $m$ and the right decreases, so the supremum of the former is at most the
+infimum of the latter. If both equal $a$ then for $\varepsilon>0$ there is $m$ with
+$a-\varepsilon\leqslant\inf_{n\geqslant m}a_n$ and $\sup_{n\geqslant m}a_n\leqslant
+a+\varepsilon$, so $|a_n-a|\leqslant\varepsilon$ for $n\geqslant m$. The converse is
+immediate from the definitions.
+\end{proof}
+
+\begin{definition}[Semi-continuity]\label{def:semicont}
+$f:\Real^d\to\Real$ is \emph{lower semi-continuous} at $x$ if
+$\liminf_{y\to x}f(y)\geqslant f(x)$, and \emph{upper semi-continuous} if
+$\limsup_{y\to x}f(y)\leqslant f(x)$.
+\end{definition}
+
+\begin{lemma}[Semi-continuous envelopes]\label{lem:envelopes}
+For bounded $f:\Real^d\to\Real$ put $f_*(x)=\liminf_{y\to x}f(y)$ and
+$f^*(x)=\limsup_{y\to x}f(y)$. Then $f_*$ is lower semi-continuous, $f^*$ is upper
+semi-continuous, $f_*\leqslant f\leqslant f^*$, and the three agree exactly at the
+continuity points of $f$.
+\end{lemma}
+
+\begin{proof}
+Fix $x$ and $\delta>0$. By definition of $\liminf$ there is a neighbourhood $V$ of $x$ with
+$f(y)\geqslant f_*(x)-\delta$ for all $y\in V$. For $z\in V$ every neighbourhood of $z$
+meets $V$, so $f_*(z)\geqslant f_*(x)-\delta$: that is lower semi-continuity. Applying this
+to $-f$ gives the claim for $f^*$. The inequalities and the agreement at continuity points
+are immediate.
+\end{proof}
+
+\begin{lemma}[Approximation from below]\label{lem:lsc-approx}
+A lower semi-continuous $f$ bounded below is the pointwise increasing limit of the bounded
+continuous functions $f_k(x)=\inf_y\{f(y)\wedge k + k|x-y|\}$.
+\end{lemma}
+
+\begin{proof}
+Each $f_k$ is an infimum of functions that are $k$-Lipschitz in $x$, hence $k$-Lipschitz,
+hence continuous; it is bounded below by $\inf f$ and above by $k$. Taking $y=x$ gives
+$f_k\leqslant f\wedge k$, and $f_k\leqslant f_{k+1}$ since the bracket increases in $k$.
+
+For the limit, fix $x$ and $c<f(x)$. Lower semi-continuity gives $\delta>0$ with
+$f(y)>c$ whenever $|y-x|<\delta$. For $k$ with $k\delta>c-\inf f$ and $k>c$, split the
+infimum: if $|y-x|<\delta$ then $f(y)\wedge k+k|x-y|>c$, and if $|y-x|\geqslant\delta$ then
+$f(y)\wedge k+k|x-y|\geqslant\inf f+k\delta>c$. Hence $f_k(x)\geqslant c$, and $c<f(x)$ was
+arbitrary.
+\end{proof}
+
+%==============================================================================
+\section{Continuity, Compactness, Differentiation}\label{sec:P.2}
+%==============================================================================
+
+\begin{theorem}[Uniform continuity on compacts]\label{thm:unif-cont}
+A continuous $f$ on a compact $K\subseteq\Real^d$ (Definition~\ref{def:compact}) is bounded,
+uniformly continuous, and attains its supremum.
+\end{theorem}
+
+\begin{proof}
+\textbf{Attainment.} Let $M=\sup_K f$, finite or not, and take $x_n\in K$ with
+$f(x_n)\to M$. By compactness a subsequence converges to some $x\in K$, and continuity
+gives $f(x)=M$; in particular $M<\infty$, so $f$ is bounded above, and applying this to
+$-f$ bounds it below.
+
+\textbf{Uniform continuity.} If it failed there would be $\varepsilon>0$ and points
+$x_n,y_n\in K$ with $|x_n-y_n|<1/n$ but $|f(x_n)-f(y_n)|\geqslant\varepsilon$. Passing to a
+convergent subsequence $x_{n_k}\to x$ forces $y_{n_k}\to x$ too, and continuity makes both
+$f(x_{n_k})$ and $f(y_{n_k})$ tend to $f(x)$, contradicting the separation.
+\end{proof}
+
+\begin{theorem}[Taylor with Lagrange remainder]\label{thm:taylor}
+If $f:\Real\to\Real$ is $m+1$ times differentiable on an interval containing $0$ and $t$,
+then for some $\xi$ between $0$ and $t$,
+\begin{equation}\label{eq:taylor}
+f(t) = \sum_{k=0}^{m}\frac{f^{(k)}(0)}{k!}t^k + \frac{f^{(m+1)}(\xi)}{(m+1)!}t^{m+1} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Fix $t\neq0$ and choose $R$ so that
+$g(s) = f(t)-\sum_{k\leqslant m}\frac{f^{(k)}(s)}{k!}(t-s)^k - R\,(t-s)^{m+1}$
+vanishes at $s=0$; it also vanishes at $s=t$. By Rolle's theorem $g'(\xi)=0$ for some
+$\xi$ between. The sum telescopes on differentiation,
+\[
+\frac{\dd}{\dd s}\sum_{k\leqslant m}\frac{f^{(k)}(s)}{k!}(t-s)^k
+= \frac{f^{(m+1)}(s)}{m!}(t-s)^{m} ,
+\]
+so $g'(\xi)=0$ reads $-\frac{f^{(m+1)}(\xi)}{m!}(t-\xi)^m + R(m+1)(t-\xi)^m = 0$, giving
+$R = f^{(m+1)}(\xi)/(m+1)!$. Substituting $s=0$ into $g(0)=0$ is~\eqref{eq:taylor}.
+\end{proof}
+
+\begin{lemma}[Taylor bound for the complex exponential]\label{lem:taylor-exp}
+For every $t\in\Real$ and integer $m\geqslant0$,
+\begin{equation}\label{eq:taylor-exp}
+\Bigl|e^{it} - \sum_{k=0}^{m}\frac{(it)^k}{k!}\Bigr|
+\;\leqslant\; \min\Bigl\{\frac{2|t|^m}{m!},\ \frac{|t|^{m+1}}{(m+1)!}\Bigr\}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Let $h_m(t)$ be the difference without the modulus. Differentiating the series termwise,
+$h_m(t) = i\int_0^t h_{m-1}(s)\,\dd s$ for $m\geqslant0$, with $|h_{-1}|\equiv1$ and
+$|h_0(t)|=|e^{it}-1|\leqslant2$. If $|h_{m-1}(t)|\leqslant|t|^m/m!$ then
+$|h_m(t)|\leqslant\int_0^{|t|}s^m/m!\,\dd s = |t|^{m+1}/(m+1)!$; if
+$|h_{m-1}(t)|\leqslant2|t|^{m-1}/(m-1)!$ then $|h_m(t)|\leqslant2|t|^m/m!$. Both inductions
+start from the two displayed facts.
+\end{proof}
+
+\begin{lemma}[Product comparison]\label{lem:prodcomp}
+For complex $z_1,\ldots,z_m$ and $z_1',\ldots,z_m'$ of modulus at most $1$,
+$\bigl|\prod_k z_k-\prod_k z_k'\bigr|\leqslant\sum_k|z_k-z_k'|$.
+\end{lemma}
+
+\begin{proof}
+For $m=2$, inserting $z_1'z_2$,
+$|z_1z_2-z_1'z_2'|\leqslant|z_2||z_1-z_1'|+|z_1'||z_2-z_2'|\leqslant|z_1-z_1'|+|z_2-z_2'|$.
+Induct with $z_1\rightsquigarrow\prod_{k<m}z_k$ and $z_2\rightsquigarrow z_m$, both of
+modulus at most $1$.
+\end{proof}
+
+%==============================================================================
+\section{Convexity and Separation}\label{sec:P.3}
+%==============================================================================
+
+Unit 14 derives the support vector machine from Lagrangian duality; the geometry it needs
+is here.
+
+\begin{definition}[Convex set, convex function]\label{def:convex}
+$C\subseteq\Real^d$ is \emph{convex} if $\lambda x+(1-\lambda)y\in C$ whenever
+$x,y\in C$ and $\lambda\in[0,1]$. A function $f:C\to\Real$ on a convex $C$ is
+\emph{convex} if $f(\lambda x+(1-\lambda)y)\leqslant\lambda f(x)+(1-\lambda)f(y)$.
+\end{definition}
+
+\begin{theorem}[Nearest point in a closed convex set]\label{thm:nearest}
+Let $C\subseteq\Real^d$ be non-empty, closed and convex, and $z\notin C$. Then there is a
+unique $p\in C$ minimising $|z-x|$ over $x\in C$, and it is characterised by
+\begin{equation}\label{eq:variational}
+\langle z-p,\ x-p\rangle \leqslant 0 \qquad\text{for every } x\in C .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{Existence.} Let $\delta=\inf_{x\in C}|z-x|$ and take $x_n\in C$ with
+$|z-x_n|\to\delta$. The parallelogram law gives
+\[
+|x_n-x_m|^2 = 2|z-x_n|^2+2|z-x_m|^2-4\bigl|z-\tfrac{x_n+x_m}{2}\bigr|^2
+\leqslant 2|z-x_n|^2+2|z-x_m|^2-4\delta^2 ,
+\]
+using $\tfrac12(x_n+x_m)\in C$ by convexity. The right side tends to $0$, so $(x_n)$ is
+Cauchy and converges to some $p$, which lies in $C$ because $C$ is closed, with
+$|z-p|=\delta$.
+
+\textbf{Characterisation and uniqueness.} For $x\in C$ and $\lambda\in(0,1]$, the point
+$p+\lambda(x-p)$ lies in $C$, so
+\[
+\delta^2 \leqslant |z-p-\lambda(x-p)|^2
+= \delta^2 - 2\lambda\langle z-p,x-p\rangle + \lambda^2|x-p|^2 .
+\]
+Dividing by $\lambda$ and letting $\lambda\to0^+$ gives~\eqref{eq:variational}. Conversely
+if $p$ satisfies~\eqref{eq:variational} then for any $x\in C$,
+$|z-x|^2 = |z-p|^2 - 2\langle z-p,x-p\rangle + |x-p|^2 \geqslant |z-p|^2$, so $p$ is
+minimising; and if $p'$ also minimises, taking $x=p'$ in~\eqref{eq:variational} for $p$ and
+symmetrically gives $|p-p'|^2\leqslant0$.
+\end{proof}
+
+\begin{theorem}[Separating hyperplane]\label{thm:separating}
+Let $C\subseteq\Real^d$ be non-empty, closed and convex, and $z\notin C$. Then there exist
+$\bw\neq\bzero$ and $\alpha\in\Real$ with
+$\langle\bw,z\rangle > \alpha \geqslant \langle\bw,x\rangle$ for every $x\in C$.
+\end{theorem}
+
+\begin{proof}
+Let $p$ be the nearest point of Theorem~\ref{thm:nearest} and put $\bw=z-p\neq\bzero$. By
+\eqref{eq:variational}, $\langle\bw,x\rangle\leqslant\langle\bw,p\rangle$ for every
+$x\in C$; take $\alpha=\langle\bw,p\rangle$. Then
+$\langle\bw,z\rangle-\alpha = \langle\bw,z-p\rangle = |\bw|^2>0$.
+\end{proof}
+
+\begin{proposition}[First-order condition]\label{prop:convex-fo}
+A differentiable $f$ on an open convex $C$ is convex if and only if
+$f(y)\geqslant f(x)+\langle\nabla f(x),y-x\rangle$ for all $x,y\in C$. A convex
+differentiable $f$ attains a global minimum at $x$ if and only if $\nabla f(x)=\bzero$.
+\end{proposition}
+
+\begin{proof}
+If $f$ is convex then for $\lambda\in(0,1]$,
+$f(x+\lambda(y-x))\leqslant f(x)+\lambda\{f(y)-f(x)\}$, so
+\[
+\frac{f(x+\lambda(y-x))-f(x)}{\lambda}\leqslant f(y)-f(x) ;
+\]
+letting $\lambda\to0^+$ the left side tends to $\langle\nabla f(x),y-x\rangle$.
+Conversely, given the gradient inequality, put $u=\lambda x+(1-\lambda)y$ and apply it at
+$u$ to both $x$ and $y$; the combination $\lambda\{\cdot\}+(1-\lambda)\{\cdot\}$ gives
+$\lambda f(x)+(1-\lambda)f(y)\geqslant f(u)$, since the gradient terms cancel.
+
+The minimum statement follows: $\nabla f(x)=\bzero$ makes the gradient inequality read
+$f(y)\geqslant f(x)$ for all $y$, and the converse is the usual first-order necessary
+condition on an open set.
+\end{proof}
+
+\begin{lemma}[Coercive minimisation]\label{lem:coercive}
+Let $f:\Real^d\to\Real$ be continuous and \emph{coercive}, meaning $f(x)\to\infty$ as
+$|x|\to\infty$. Then $f$ attains its infimum. If $f$ is in addition \emph{strictly convex},
+that is $f(\lambda x+(1-\lambda)y)<\lambda f(x)+(1-\lambda)f(y)$ for $x\neq y$ and
+$\lambda\in(0,1)$, the minimiser is unique.
+\end{lemma}
+
+\begin{proof}
+Fix $x_0$ and put $S=\{x: f(x)\leqslant f(x_0)\}$, which contains $x_0$ and is closed by
+continuity. Coercivity gives $R$ with $f(x)>f(x_0)$ whenever $|x|>R$, so $S$ is bounded,
+hence compact by Theorem~\ref{thm:HB}. By Theorem~\ref{thm:unif-cont} $f$ attains a minimum
+on $S$ at some $x^\star$, and for $x\notin S$ one has $f(x)>f(x_0)\geqslant f(x^\star)$, so
+$x^\star$ minimises $f$ on $\Real^d$.
+
+If $x^\star\neq y^\star$ both minimise, with common value $m$, strict convexity gives
+$f\bigl(\tfrac12(x^\star+y^\star)\bigr)<m$, contradicting minimality.
+\end{proof}
+
+\begin{lemma}[Directional characterisation of a convex minimum]\label{lem:dirderiv}
+Let $f:\Real^d\to\Real$ be convex. For each $x$ and $v$ the difference quotient
+$t\mapsto\{f(x+tv)-f(x)\}/t$ is non-decreasing on $t>0$, so
+\begin{equation}\label{eq:dirderiv}
+f'(x;v) = \lim_{t\downarrow0}\frac{f(x+tv)-f(x)}{t}
+\end{equation}
+exists in $[-\infty,\infty)$. Moreover $x$ minimises $f$ over $\Real^d$ if and only if
+$f'(x;v)\geqslant0$ for every $v$.
+\end{lemma}
+
+\begin{proof}
+For $0<s<t$ write $x+sv = (1-s/t)x+(s/t)(x+tv)$; convexity gives
+$f(x+sv)\leqslant(1-s/t)f(x)+(s/t)f(x+tv)$, and subtracting $f(x)$ and dividing by $s$ is
+the monotonicity. A non-decreasing function has a limit from the right, finite or $-\infty$,
+and the limit is bounded above by the quotient at any $t>0$, whence
+\begin{equation}\label{eq:dd-lower}
+f(x+tv)\geqslant f(x)+t\,f'(x;v) \qquad (t>0) .
+\end{equation}
+
+If $f'(x;v)\geqslant0$ for every $v$, then~\eqref{eq:dd-lower} with $t=1$ and $v=y-x$ gives
+$f(y)\geqslant f(x)$ for every $y$. Conversely, if $x$ is a minimiser, every difference
+quotient in~\eqref{eq:dirderiv} is non-negative, hence so is the limit.
+\end{proof}
+
+
+\begin{theorem}[Separation of two convex sets]\label{thm:sep2}
+Let $C,D\subseteq\Real^d$ be non-empty disjoint convex sets. Then there are $\bw\neq\bzero$
+and $\alpha$ with $\langle\bw,x\rangle\leqslant\alpha\leqslant\langle\bw,y\rangle$ for all
+$x\in C$, $y\in D$.
+\end{theorem}
+
+\begin{proof}
+$E=C-D=\{x-y: x\in C,\ y\in D\}$ is convex, being a sum of convex sets, and
+$\bzero\notin E$ because $C$ and $D$ are disjoint.
+
+If $\bzero\notin\overline{E}$, Theorem~\ref{thm:separating} applied to the closed convex
+$\overline{E}$ and the point $\bzero$ gives $\bw$ with $\langle\bw,z\rangle\leqslant
+\langle\bw,\bzero\rangle=0$ for all $z\in\overline E$, after replacing $\bw$ by $-\bw$.
+
+If $\bzero\in\overline E\setminus E$, choose $z_k\to\bzero$ with $z_k\notin\overline E$,
+possible since $\bzero$ is not interior to $E$: were every neighbourhood of $\bzero$ inside
+$\overline E$, convexity would place $\bzero$ in $E$. For each $k$,
+Theorem~\ref{thm:separating} gives a unit vector $\bw_k$ with
+$\langle\bw_k,z\rangle\leqslant\langle\bw_k,z_k\rangle$ for all $z\in\overline E$. The
+$\bw_k$ lie on the compact unit sphere, so by Theorem~\ref{thm:BW} a subsequence converges
+to a unit $\bw$, and passing to the limit gives $\langle\bw,z\rangle\leqslant0$ for all
+$z\in E$.
+
+Either way $\langle\bw,x-y\rangle\leqslant0$ for $x\in C$, $y\in D$, so
+$\sup_{x\in C}\langle\bw,x\rangle\leqslant\inf_{y\in D}\langle\bw,y\rangle$; take $\alpha$
+between them.
+\end{proof}
+
+%==============================================================================
+\section{Convex Programming and Duality}\label{sec:P.3b}
+%==============================================================================
+
+Unit 14 derives the support vector machine as a convex program. Consider
+\begin{equation}\label{eq:primal}
+p^\star = \inf\ f_0(x) \quad\text{subject to}\quad f_i(x)\leqslant0,\ i=1,\ldots,m,
+\qquad x\in\calD\subseteq\Real^d ,
+\end{equation}
+with $\calD$ convex and $f_0,\ldots,f_m$ convex on $\calD$.
+
+\begin{definition}[Lagrangian and dual function]\label{def:lagrangian}
+For $\blam\in\Real^m$,
+\begin{equation}\label{eq:lagrangian}
+L(x,\blam) = f_0(x)+\sum_{i=1}^m\lambda_i f_i(x),
+\qquad
+g(\blam) = \inf_{x\in\calD} L(x,\blam) ,
+\end{equation}
+and the \emph{dual problem} is $d^\star=\sup_{\blam\geqslant\bzero} g(\blam)$.
+\end{definition}
+
+\begin{proposition}[Concavity of the dual]\label{prop:dual-concave}
+$g$ is concave on $\Real^m$, whatever the $f_i$.
+\end{proposition}
+
+\begin{proof}
+For each fixed $x$, $\blam\mapsto L(x,\blam)$ is affine. An infimum of affine functions is
+concave: if $g(\blam)=\inf_x L(x,\blam)$ then for $\theta\in[0,1]$,
+\[
+L(x,\theta\blam+(1-\theta)\bmu) = \theta L(x,\blam)+(1-\theta)L(x,\bmu)
+\geqslant \theta g(\blam)+(1-\theta)g(\bmu) ,
+\]
+and taking the infimum over $x$ on the left preserves the bound.
+\end{proof}
+
+\begin{theorem}[Weak duality]\label{thm:weak-duality}
+$d^\star\leqslant p^\star$.
+\end{theorem}
+
+\begin{proof}
+Let $x$ be feasible and $\blam\geqslant\bzero$. Then $\lambda_if_i(x)\leqslant0$ for every
+$i$, so $L(x,\blam)\leqslant f_0(x)$ and hence
+$g(\blam)\leqslant L(x,\blam)\leqslant f_0(x)$. Taking the infimum over feasible $x$ gives
+$g(\blam)\leqslant p^\star$, and then the supremum over $\blam\geqslant\bzero$.
+\end{proof}
+
+\begin{theorem}[Slater implies strong duality]\label{thm:slater}
+Suppose $p^\star$ is finite and \emph{Slater's condition} holds: there is
+$\tilde x\in\calD$ with $f_i(\tilde x)<0$ for every $i$. Then $d^\star=p^\star$, and the
+dual optimum is attained.
+\end{theorem}
+
+\begin{proof}
+Put
+\[
+\calA = \bigl\{(\bu,t)\in\Real^m\times\Real:\ \exists x\in\calD \text{ with }
+f_i(x)\leqslant u_i\ \forall i,\ f_0(x)\leqslant t\bigr\} .
+\]
+$\calA$ is convex: given $(\bu,t)$ from $x$ and $(\bu',t')$ from $x'$, convexity of $\calD$
+and of each $f_i$ makes $\theta x+(1-\theta)x'$ witness
+$\theta(\bu,t)+(1-\theta)(\bu',t')$. Also
+$\calB=\{(\bzero,s): s<p^\star\}$ is convex, and $\calA\cap\calB=\emptyset$, since a point of
+the intersection would be a feasible $x$ with $f_0(x)\leqslant s<p^\star$.
+
+By Theorem~\ref{thm:sep2} there are $(\blam,\mu)\neq\bzero$ and $\alpha$ with
+\begin{equation}\label{eq:sep-A-B}
+\langle\blam,\bu\rangle+\mu t\geqslant\alpha \ \ \text{on }\calA,
+\qquad
+\mu s\leqslant\alpha \ \ \text{for all } s<p^\star .
+\end{equation}
+Increasing any $u_i$ or $t$ keeps a point in $\calA$, so $\blam\geqslant\bzero$ and
+$\mu\geqslant0$; and letting $s\uparrow p^\star$ gives $\mu p^\star\leqslant\alpha$.
+
+\textbf{Case $\mu>0$.} Dividing~\eqref{eq:sep-A-B} by $\mu$ and taking
+$(\bu,t)=(f_1(x),\ldots,f_m(x),f_0(x))\in\calA$ for arbitrary $x\in\calD$,
+\[
+f_0(x)+\sum_i\frac{\lambda_i}{\mu}f_i(x) \geqslant \frac{\alpha}{\mu}\geqslant p^\star ,
+\]
+so $g(\blam/\mu)\geqslant p^\star$. With Theorem~\ref{thm:weak-duality} this forces
+$d^\star=p^\star$, attained at $\blam/\mu$.
+
+\textbf{Case $\mu=0$.} Then $\langle\blam,\bu\rangle\geqslant\alpha\geqslant\mu p^\star=0$
+on $\calA$, so $\sum_i\lambda_if_i(x)\geqslant0$ for every $x\in\calD$. Taking
+$x=\tilde x$ makes every $f_i(\tilde x)<0$, which with $\blam\geqslant\bzero$ forces
+$\blam=\bzero$, contradicting $(\blam,\mu)\neq\bzero$. So this case cannot occur.
+\end{proof}
+
+\begin{theorem}[Karush--Kuhn--Tucker]\label{thm:kkt}
+Assume $f_0,\ldots,f_m$ differentiable and strong duality, with $x^\star$ primal and
+$\blam^\star$ dual optimal. Then
+\begin{align}
+f_i(x^\star)&\leqslant0, & \lambda_i^\star&\geqslant0, \label{eq:kkt-feas}\\
+\lambda_i^\star f_i(x^\star)&=0 \ \ (i=1,\ldots,m), &
+\nabla f_0(x^\star)+\sum_i\lambda_i^\star\nabla f_i(x^\star)&=\bzero .\label{eq:kkt-stat}
+\end{align}
+Conversely, if the problem is convex and $(x^\star,\blam^\star)$
+satisfies~\eqref{eq:kkt-feas}--\eqref{eq:kkt-stat}, then they are primal and dual optimal
+with zero gap.
+\end{theorem}
+
+\begin{proof}
+\textbf{Necessity.} Strong duality gives
+\[
+f_0(x^\star) = g(\blam^\star) = \inf_{x\in\calD}\Bigl\{f_0(x)+\sum_i\lambda_i^\star f_i(x)\Bigr\}
+\leqslant f_0(x^\star)+\sum_i\lambda_i^\star f_i(x^\star) \leqslant f_0(x^\star) ,
+\]
+the last step because each $\lambda_i^\star f_i(x^\star)\leqslant0$. So both inequalities
+are equalities. Equality on the right forces
+$\sum_i\lambda_i^\star f_i(x^\star)=0$, a sum of non-positive terms, hence each term is
+zero: that is \emph{complementary slackness}. Equality on the left says $x^\star$
+minimises $x\mapsto L(x,\blam^\star)$ over $\calD$, so its gradient vanishes there.
+
+\textbf{Sufficiency.} Complementary slackness gives
+$L(x^\star,\blam^\star)=f_0(x^\star)$. Under convexity, $L(\cdot,\blam^\star)$ is convex
+with vanishing gradient at $x^\star$, so by Proposition~\ref{prop:convex-fo} $x^\star$
+minimises it, i.e.\ $g(\blam^\star)=L(x^\star,\blam^\star)=f_0(x^\star)$. Since $x^\star$
+is feasible and $\blam^\star\geqslant\bzero$, weak duality closes the gap.
+\end{proof}
+
+\begin{remark}
+Complementary slackness is what makes support vectors: $\lambda_i^\star>0$ forces
+$f_i(x^\star)=0$, so only the observations whose margin constraint is active carry a
+nonzero multiplier, and the solution depends on those alone.
+\end{remark}
+
+%##############################################################################
+\coursepart{II}{Linear Algebra}
+%##############################################################################
+
+%==============================================================================
+\section{Rank, Column Space, Rank--Nullity}\label{sec:P.4}
+%==============================================================================
+
+For $\bA\in\Real^{n\times p}$ write $\calC(\bA)=\{\bA\bv:\bv\in\Real^p\}$ for the column
+space and $\calN(\bA)=\{\bv:\bA\bv=\bzero\}$ for the null space, and
+$\rank(\bA)=\dim\calC(\bA)$.
+
+\begin{theorem}[Rank--nullity]\label{thm:rank-nullity}
+$\rank(\bA)+\dim\calN(\bA)=p$.
+\end{theorem}
+
+\begin{proof}
+Take a basis $\bv_1,\ldots,\bv_q$ of $\calN(\bA)$ and extend it to a basis
+$\bv_1,\ldots,\bv_p$ of $\Real^p$. The vectors $\bA\bv_{q+1},\ldots,\bA\bv_p$ span
+$\calC(\bA)$, since $\bA\bv_j=\bzero$ for $j\leqslant q$. They are independent: if
+$\sum_{j>q}c_j\bA\bv_j=\bzero$ then $\sum_{j>q}c_j\bv_j\in\calN(\bA)$, so it is a
+combination of $\bv_1,\ldots,\bv_q$, and independence of the full basis forces every
+$c_j=0$. Hence $\rank(\bA)=p-q$.
+\end{proof}
+
+\begin{proposition}[Gram matrices]\label{prop:gram}
+$\calN(\bA'\bA)=\calN(\bA)$ and $\rank(\bA'\bA)=\rank(\bA)$. In particular $\bA'\bA$ is
+invertible if and only if $\bA$ has full column rank.
+\end{proposition}
+
+\begin{proof}
+If $\bA\bv=\bzero$ then $\bA'\bA\bv=\bzero$. Conversely $\bA'\bA\bv=\bzero$ gives
+$\bv'\bA'\bA\bv=|\bA\bv|^2=0$, so $\bA\bv=\bzero$. The null spaces coincide, and both
+matrices have $p$ columns, so Theorem~\ref{thm:rank-nullity} equates the ranks. $\bA'\bA$
+is $p\times p$, so it is invertible exactly when its rank is $p$.
+\end{proof}
+
+
+%==============================================================================
+\section{The Trace}\label{sec:P.trace}
+%==============================================================================
+
+\begin{definition}[Trace]\label{def:trace}
+$\tr(\bA)=\sum_{i}a_{ii}$ for square $\bA$.
+\end{definition}
+
+\begin{proposition}[Properties]\label{prop:trace}
+\leavevmode
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{tr:i}   $\tr$ is linear: $\tr(\alpha\bA+\beta\bB)=\alpha\tr(\bA)+\beta\tr(\bB)$.
+\item\label{tr:ii}  $\tr(\bA\bB)=\tr(\bB\bA)$ whenever both products are defined, even when
+      $\bA\bB$ and $\bB\bA$ have different sizes.
+\item\label{tr:iii} $\tr(\bP\bA\bP^{-1})=\tr(\bA)$ for invertible $\bP$: the trace is a
+      similarity invariant.
+\item\label{tr:iv}  $\tr(\bA'\bA)=\sum_{i,j}a_{ij}^2$, so $\tr(\bA'\bA)=0$ forces
+      $\bA=\bzero$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\ref{tr:i} is immediate. For~\ref{tr:ii}, with $\bA$ of size $m\times n$ and $\bB$ of size
+$n\times m$,
+\[
+\tr(\bA\bB)=\sum_{i=1}^m\sum_{j=1}^n a_{ij}b_{ji}
+          =\sum_{j=1}^n\sum_{i=1}^m b_{ji}a_{ij}=\tr(\bB\bA) ,
+\]
+the two double sums differing only in the order of summation, which is finite.
+\ref{tr:iii} follows by applying~\ref{tr:ii} with the pair $\bP\bA$ and $\bP^{-1}$:
+$\tr\bigl((\bP\bA)\bP^{-1}\bigr)=\tr\bigl(\bP^{-1}(\bP\bA)\bigr)=\tr(\bA)$.
+For~\ref{tr:iv}, the $(i,i)$ entry of $\bA'\bA$ is $\sum_j a_{ji}^2$.
+\end{proof}
+
+\begin{remark}
+Property~\ref{tr:iii} is what makes $\tr(\bA)$ well defined on a linear map rather than on
+a matrix, and it is the step used in Lemma~\ref{lem:idempotent} to pass from
+$\bP\bLam\bP^{-1}$ to $\bLam$. Property~\ref{tr:ii} is used in
+Lemma~\ref{lem:quadratic-form}.
+\end{remark}
+
+%==============================================================================
+\section{Inner Products, Orthogonality, Projection}\label{sec:P.5}
+%==============================================================================
+
+\begin{theorem}[Cauchy--Schwarz]\label{thm:CS}
+$|\langle\bu,\bv\rangle|\leqslant|\bu|\,|\bv|$, with equality iff $\bu$ and $\bv$ are
+proportional.
+\end{theorem}
+
+\begin{proof}
+For $\bv\neq\bzero$ and $t\in\Real$,
+$0\leqslant|\bu-t\bv|^2 = |\bu|^2-2t\langle\bu,\bv\rangle+t^2|\bv|^2$. The right side is a
+quadratic in $t$ with non-negative values, so its discriminant
+$4\langle\bu,\bv\rangle^2-4|\bu|^2|\bv|^2$ is at most $0$. Equality forces a double root
+$t_0$, at which $|\bu-t_0\bv|=0$.
+\end{proof}
+
+\begin{theorem}[Orthogonal projection]\label{thm:projection}
+Let $S\subseteq\Real^n$ be a subspace and $\by\in\Real^n$. There is a unique
+$\hat\by\in S$ minimising $|\by-\bu|$ over $\bu\in S$, characterised by
+$\by-\hat\by\perp S$. If $S=\calC(\bX)$ with $\bX$ of full column rank, then
+$\hat\by=\bH\by$ with $\bH=\bX(\bX'\bX)^{-1}\bX'$.
+\end{theorem}
+
+\begin{proof}
+A subspace is closed and convex, so Theorem~\ref{thm:nearest} gives existence and
+uniqueness; and for a subspace the variational
+inequality~\eqref{eq:variational} holds for $\bu$ and for $2\hat\by-\bu$, forcing equality,
+i.e.\ $\langle\by-\hat\by,\bu-\hat\by\rangle=0$ for every $\bu\in S$, which is
+$\by-\hat\by\perp S$.
+
+For the formula, $\by-\hat\by\perp\calC(\bX)$ means $\bX'(\by-\hat\by)=\bzero$; writing
+$\hat\by=\bX\bc$ gives $\bX'\bX\bc=\bX'\by$, and $\bX'\bX$ is invertible by
+Proposition~\ref{prop:gram}.
+\end{proof}
+
+\begin{theorem}[Pythagoras]\label{thm:pythagoras}
+If $\bu\perp\bv$ then $|\bu+\bv|^2=|\bu|^2+|\bv|^2$.
+\end{theorem}
+
+\begin{proof}
+$|\bu+\bv|^2 = |\bu|^2+2\langle\bu,\bv\rangle+|\bv|^2$.
+\end{proof}
+
+%==============================================================================
+\section{The Spectral Theorem}\label{sec:P.6}
+%==============================================================================
+
+\begin{theorem}[Spectral theorem]\label{thm:spectral}
+A symmetric $\bA\in\Real^{n\times n}$ has an orthonormal basis of eigenvectors: there are
+an orthogonal $\bP$ and a diagonal $\bLam$ with $\bA=\bP\bLam\bP'$, the diagonal entries of
+$\bLam$ being the eigenvalues of $\bA$, all real.
+\end{theorem}
+
+\begin{proof}
+Induct on $n$. The Rayleigh quotient $\bv\mapsto\bv'\bA\bv$ is continuous on the unit
+sphere, which is compact, so by Theorem~\ref{thm:unif-cont} it attains its maximum
+$\lambda_1$ at some $\bv_1$ with $|\bv_1|=1$. For any $\bu\perp\bv_1$ and $t\in\Real$, put
+$\bw(t)=(\bv_1+t\bu)/|\bv_1+t\bu|$; then $t\mapsto\bw(t)'\bA\bw(t)$ is differentiable with
+a maximum at $t=0$, and
+\[
+\frac{\dd}{\dd t}\Bigl.\frac{(\bv_1+t\bu)'\bA(\bv_1+t\bu)}{1+t^2|\bu|^2}\Bigr|_{t=0}
+= 2\bu'\bA\bv_1 = 0 ,
+\]
+using symmetry and $\bv_1'\bu=0$. So $\bA\bv_1$ is orthogonal to every $\bu\perp\bv_1$,
+which forces $\bA\bv_1=\lambda_1\bv_1$; and $\lambda_1=\bv_1'\bA\bv_1$ is real.
+
+The subspace $\bv_1^\perp$ is $\bA$-invariant: for $\bu\perp\bv_1$,
+$\langle\bA\bu,\bv_1\rangle=\langle\bu,\bA\bv_1\rangle=\lambda_1\langle\bu,\bv_1\rangle=0$.
+Applying the inductive hypothesis to the restriction of $\bA$ to $\bv_1^\perp$, a space of
+dimension $n-1$, yields an orthonormal eigenbasis there; adjoining $\bv_1$ completes it.
+\end{proof}
+
+\begin{corollary}[Rayleigh]\label{cor:rayleigh}
+For symmetric $\bA$ with eigenvalues $\lambda_1\geqslant\cdots\geqslant\lambda_n$,
+$\max_{|\bv|=1}\bv'\bA\bv=\lambda_1$ and $\min_{|\bv|=1}\bv'\bA\bv=\lambda_n$.
+\end{corollary}
+
+\begin{proof}
+Writing $\bv=\bP\bw$ with $|\bw|=|\bv|=1$, $\bv'\bA\bv=\sum_j\lambda_jw_j^2$, a convex
+combination of the eigenvalues, so it lies between $\lambda_n$ and $\lambda_1$; the bounds
+are attained at the corresponding eigenvectors.
+\end{proof}
+
+%==============================================================================
+\section{Positive Definiteness and Square Roots}\label{sec:P.7}
+%==============================================================================
+
+\begin{definition}\label{def:pd}
+Symmetric $\bA$ is \emph{positive semi-definite} if $\bv'\bA\bv\geqslant0$ for all $\bv$,
+and \emph{positive definite} if $\bv'\bA\bv>0$ for $\bv\neq\bzero$.
+\end{definition}
+
+\begin{proposition}\label{prop:pd-eigen}
+A symmetric $\bA$ is positive semi-definite iff all its eigenvalues are non-negative, and
+positive definite iff all are strictly positive; in the latter case $\bA$ is invertible.
+\end{proposition}
+
+\begin{proof}
+By Corollary~\ref{cor:rayleigh} the extreme values of $\bv'\bA\bv$ on the unit sphere are
+$\lambda_n$ and $\lambda_1$, so non-negativity of the quadratic form is exactly
+$\lambda_n\geqslant0$ and positivity exactly $\lambda_n>0$. If every eigenvalue is nonzero
+then $\bLam$, hence $\bA=\bP\bLam\bP'$, is invertible.
+\end{proof}
+
+\begin{theorem}[Symmetric square root]\label{thm:sqrt}
+A positive semi-definite $\bA$ has a unique positive semi-definite $\bA^{1/2}$ with
+$(\bA^{1/2})^2=\bA$. If $\bA$ is positive definite so is $\bA^{1/2}$, and
+$\bA^{-1/2}:=(\bA^{1/2})^{-1}$ satisfies $\bA^{-1/2}\bA\bA^{-1/2}=\bI$.
+\end{theorem}
+
+\begin{proof}
+Write $\bA=\bP\bLam\bP'$ and set $\bA^{1/2}=\bP\bLam^{1/2}\bP'$ with $\bLam^{1/2}$ the
+diagonal matrix of non-negative square roots, legitimate by
+Proposition~\ref{prop:pd-eigen}. It is symmetric, positive semi-definite, and squares to
+$\bA$. For uniqueness, let $\bB$ be positive semi-definite with $\bB^2=\bA$. Any
+eigenvector $\bu$ of $\bB$ with eigenvalue $\mu\geqslant0$ satisfies
+$\bA\bu=\mu^2\bu$, so $\bB$ and $\bA$ share an eigenbasis, and on it $\bB$ acts by
+$\mu=\sqrt{\mu^2}$, the non-negative root, which is how $\bA^{1/2}$ acts.
+\end{proof}
+
+%==============================================================================
+\section{Idempotent Matrices}\label{sec:P.8}
+%==============================================================================
+
+\begin{definition}\label{def:idempotent}
+$\bA$ is \emph{idempotent} if $\bA^2=\bA$.
+\end{definition}
+
+\begin{lemma}[Trace equals rank]\label{lem:idempotent}
+An idempotent $\bA\in\Real^{n\times n}$ has $\tr(\bA)=\rank(\bA)$, and its eigenvalues lie
+in $\{0,1\}$.
+\end{lemma}
+
+\begin{proof}
+If $\bA\bv=\lambda\bv$ with $\bv\neq\bzero$ then
+$\lambda\bv=\bA^2\bv=\lambda^2\bv$, so $\lambda\in\{0,1\}$. Next,
+$\Real^n=\calN(\bA)\oplus\calC(\bA)$: any $\bv$ splits as $(\bv-\bA\bv)+\bA\bv$ with
+$\bA(\bv-\bA\bv)=\bzero$, and if $\bv=\bA\bw$ lies in both then
+$\bv=\bA^2\bw=\bA\bv=\bzero$. Every $\bu\in\calC(\bA)$ has $\bA\bu=\bu$, so a basis of
+$\calN(\bA)$ together with one of $\calC(\bA)$ is an eigenbasis and
+$\bA=\bP\bLam\bP^{-1}$ with $r=\rank(\bA)$ ones and $n-r$ zeros on the diagonal. The trace
+is invariant under similarity, so $\tr(\bA)=\tr(\bLam)=r$.
+\end{proof}
+
+\begin{proposition}[Projections are the symmetric idempotents]\label{prop:proj-char}
+$\bH$ is the matrix of the orthogonal projection onto a subspace $S$ if and only if $\bH$
+is symmetric, idempotent, and $\calC(\bH)=S$.
+\end{proposition}
+
+\begin{proof}
+For $\bH=\bX(\bX'\bX)^{-1}\bX'$ symmetry and $\bH^2=\bH$ are direct computations, and
+$\bH\bX=\bX$ gives $\calC(\bH)=\calC(\bX)$. Conversely let $\bH$ be symmetric idempotent
+with column space $S$. For $\by\in\Real^n$, $\bH\by\in S$ and
+$\by-\bH\by\perp S$, because for $\bu=\bH\bw\in S$,
+$\langle\by-\bH\by,\bH\bw\rangle = \bw'\bH'(\bI-\bH)\by = \bw'(\bH-\bH^2)\by = 0$. By the
+characterisation in Theorem~\ref{thm:projection}, $\bH\by$ is the projection.
+\end{proof}
+
+%==============================================================================
+\section{Block Matrices}\label{sec:P.9}
+%==============================================================================
+
+\begin{theorem}[Schur complement]\label{thm:schur}
+Let $\bM=\bigl(\begin{smallmatrix}\bA&\bB\\\bC&\bD\end{smallmatrix}\bigr)$ with $\bA$
+invertible, and put $\bS=\bD-\bC\bA^{-1}\bB$. If $\bS$ is invertible then $\bM$ is, with
+\begin{equation}\label{eq:schur}
+\bM^{-1} = \begin{pmatrix}
+\bA^{-1}+\bA^{-1}\bB\bS^{-1}\bC\bA^{-1} & -\bA^{-1}\bB\bS^{-1}\\
+-\bS^{-1}\bC\bA^{-1} & \bS^{-1}\end{pmatrix} ,
+\end{equation}
+so the lower-right block of $\bM^{-1}$ is $\bS^{-1}$.
+\end{theorem}
+
+\begin{proof}
+Verify $\bM\bM^{-1}=\bI$ blockwise. The $(1,1)$ block is
+$\bA(\bA^{-1}+\bA^{-1}\bB\bS^{-1}\bC\bA^{-1})-\bB\bS^{-1}\bC\bA^{-1}
+= \bI+\bB\bS^{-1}\bC\bA^{-1}-\bB\bS^{-1}\bC\bA^{-1}=\bI$; the $(1,2)$ block is
+$-\bA\bA^{-1}\bB\bS^{-1}+\bB\bS^{-1}=\bzero$; the $(2,1)$ block is
+$\bC\bA^{-1}+\bC\bA^{-1}\bB\bS^{-1}\bC\bA^{-1}-\bD\bS^{-1}\bC\bA^{-1}
+= \bC\bA^{-1}-\bS\bS^{-1}\bC\bA^{-1}=\bzero$; and the $(2,2)$ block is
+$-\bC\bA^{-1}\bB\bS^{-1}+\bD\bS^{-1}=\bS\bS^{-1}=\bI$.
+\end{proof}
+
+\begin{corollary}\label{cor:schur-gram}
+For $\bW=[\bone\ \bZ]$ with $n$ rows, the lower-right $p\times p$ block of
+$(\bW'\bW)^{-1}$ is $(\bZ'\bM_0\bZ)^{-1}$, where $\bM_0=\bI_n-n^{-1}\bone\bone'$.
+\end{corollary}
+
+\begin{proof}
+$\bW'\bW=\bigl(\begin{smallmatrix}n&\bone'\bZ\\\bZ'\bone&\bZ'\bZ\end{smallmatrix}\bigr)$,
+whose Schur complement of the $(1,1)$ entry is
+$\bZ'\bZ-\bZ'\bone\,n^{-1}\bone'\bZ=\bZ'\bM_0\bZ$. Apply Theorem~\ref{thm:schur}.
+\end{proof}
+
+\begin{lemma}[Sherman--Morrison]\label{lem:sherman}
+Let $\bA$ be invertible and $\bu,\bv$ vectors with $1-\bv'\bA^{-1}\bu\neq0$. Then
+\begin{equation}\label{eq:sherman}
+(\bA-\bu\bv')^{-1} = \bA^{-1}+\frac{\bA^{-1}\bu\,\bv'\bA^{-1}}{1-\bv'\bA^{-1}\bu} .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Write $c=1-\bv'\bA^{-1}\bu$ and multiply the right side by $\bA-\bu\bv'$:
+\[
+\bI-\bA^{-1}\bu\bv'+\frac{\bA^{-1}\bu\bv'-\bA^{-1}\bu(\bv'\bA^{-1}\bu)\bv'}{c}
+= \bI-\bA^{-1}\bu\bv'+\frac{\bA^{-1}\bu\bv'\,c}{c} = \bI ,
+\]
+using that $\bv'\bA^{-1}\bu$ is a scalar.
+\end{proof}
+
+%==============================================================================
+\section{The Singular Value Decomposition}\label{sec:P.10}
+%==============================================================================
+
+\begin{theorem}[SVD]\label{thm:svd}
+Every $\bA\in\Real^{n\times p}$ factors as $\bA=\bU\bD\bV'$ with $\bU\in\Real^{n\times r}$
+and $\bV\in\Real^{p\times r}$ having orthonormal columns, $r=\rank(\bA)$, and
+$\bD=\diag(d_1,\ldots,d_r)$ with $d_1\geqslant\cdots\geqslant d_r>0$. The $d_j^2$ are the
+nonzero eigenvalues of $\bA'\bA$.
+\end{theorem}
+
+\begin{proof}
+$\bA'\bA$ is symmetric positive semi-definite, so by Theorem~\ref{thm:spectral} and
+Proposition~\ref{prop:pd-eigen} it has an orthonormal eigenbasis $\bv_1,\ldots,\bv_p$ with
+eigenvalues $\lambda_1\geqslant\cdots\geqslant\lambda_p\geqslant0$. Since
+$|\bA\bv_j|^2=\lambda_j$, exactly $r=\rank(\bA'\bA)=\rank(\bA)$ of them are positive by
+Proposition~\ref{prop:gram}. Put $d_j=\sqrt{\lambda_j}$ and $\bu_j=\bA\bv_j/d_j$ for
+$j\leqslant r$; these are orthonormal, since
+$\bu_j'\bu_k = \bv_j'\bA'\bA\bv_k/(d_jd_k)=\lambda_k\delta_{jk}/(d_jd_k)$.
+
+For any $\bx$, expand $\bx=\sum_{j\leqslant p}\langle\bv_j,\bx\rangle\bv_j$. The terms with
+$j>r$ have $\bA\bv_j=\bzero$, so
+$\bA\bx=\sum_{j\leqslant r}\langle\bv_j,\bx\rangle d_j\bu_j = \bU\bD\bV'\bx$.
+\end{proof}
+
+
+%==============================================================================
+\section{Norms and Conditioning}\label{sec:P.cond}
+%==============================================================================
+
+\begin{definition}[Operator norm, condition number]\label{def:opnorm}
+$\|\bA\|=\sup_{|\bx|=1}|\bA\bx|$. For invertible $\bA$ the \emph{condition number} is
+$\kappa(\bA)=\|\bA\|\,\|\bA^{-1}\|$.
+\end{definition}
+
+\begin{proposition}\label{prop:opnorm}
+$\|\bA\|=d_1$, the largest singular value of $\bA$. For symmetric positive definite $\bA$
+with eigenvalues $\lambda_1\geqslant\cdots\geqslant\lambda_n>0$,
+$\|\bA\|=\lambda_1$, $\|\bA^{-1}\|=\lambda_n^{-1}$ and
+$\kappa(\bA)=\lambda_1/\lambda_n$.
+\end{proposition}
+
+\begin{proof}
+$|\bA\bx|^2=\bx'\bA'\bA\bx$, and by Corollary~\ref{cor:rayleigh} its maximum over
+$|\bx|=1$ is the largest eigenvalue of $\bA'\bA$, which is $d_1^2$ by
+Theorem~\ref{thm:svd}. For symmetric positive definite $\bA$ the singular values are the
+eigenvalues, since $\bA'\bA=\bA^2$ has eigenvalues $\lambda_i^2$; and $\bA^{-1}$ has
+eigenvalues $\lambda_i^{-1}$, the largest being $\lambda_n^{-1}$.
+\end{proof}
+
+\begin{theorem}[Conditioning of a linear system]\label{thm:conditioning}
+Let $\bA$ be invertible, $\bA\bx=\mathbf{b}\neq\bzero$, and
+$\bA(\bx+\delta\bx)=\mathbf{b}+\delta\mathbf{b}$. Then
+\begin{equation}\label{eq:conditioning}
+\frac{|\delta\bx|}{|\bx|} \;\leqslant\; \kappa(\bA)\,\frac{|\delta\mathbf{b}|}{|\mathbf{b}|} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Subtracting the two systems gives $\bA\,\delta\bx=\delta\mathbf{b}$, so
+$|\delta\bx|=|\bA^{-1}\delta\mathbf{b}|\leqslant\|\bA^{-1}\|\,|\delta\mathbf{b}|$. Also
+$|\mathbf{b}|=|\bA\bx|\leqslant\|\bA\|\,|\bx|$, i.e.\
+$1/|\bx|\leqslant\|\bA\|/|\mathbf{b}|$. Multiplying the two bounds
+gives~\eqref{eq:conditioning}.
+\end{proof}
+
+\begin{corollary}[Why the normal equations square the difficulty]\label{cor:kappa-square}
+For $\bX$ of full column rank, $\kappa(\bX'\bX)=\kappa(\bX)^2$, where $\kappa(\bX)$ is the
+ratio of the largest to the smallest singular value of $\bX$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:svd}, $\bX'\bX=\bV\bD^2\bV'$ has eigenvalues $d_j^2$, so by
+Proposition~\ref{prop:opnorm} its condition number is $d_1^2/d_r^2=(d_1/d_r)^2$.
+\end{proof}
+
+\begin{remark}
+Corollary~\ref{cor:kappa-square} is the reason least squares is computed from a $\bQ\bR$
+factorisation of $\bX$ rather than by forming $\bX'\bX$: the latter squares the condition
+number, so a design that is merely ill-conditioned becomes numerically singular. It is also
+the quantitative form of the collinearity diagnostics of Unit 4: a large
+$\kappa(\bX'\bX)$ and a large variance inflation factor detect the same
+near-degeneracy, the first through the spectrum of $\bX'\bX$ and the second one predictor
+at a time.
+\end{remark}
+
+%==============================================================================
+\section{Matrix Differentiation}\label{sec:P.11}
+%==============================================================================
+
+\begin{definition}[Differential and derivative]\label{def:differential}
+For $f:\Real^p\to\Real$ differentiable at $\bb$, the \emph{differential} is the linear form
+$\dd f = \sum_j(\partial f/\partial b_j)\,\dd b_j$, and $Df(\bb):=\partial f/\partial\bb'$
+is the row vector of partial derivatives.
+\end{definition}
+
+\begin{proposition}[First identification theorem]\label{prop:identification}
+If $\dd f(\bb)=\bc(\bb)'\dd\bb$ for a vector $\bc(\bb)$, then $Df(\bb)=\bc(\bb)'$.
+\end{proposition}
+
+\begin{proof}
+Both sides are the coefficient vector of the same linear form in $\dd\bb$, and a linear
+form determines its coefficients: apply it to the standard basis vectors.
+\end{proof}
+
+\begin{lemma}[The two rules used in the course]\label{lem:matrix-diff}
+For constant $\ba\in\Real^p$ and constant $\bA\in\Real^{p\times p}$,
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $D(\ba'\bb)=D(\bb'\ba)=\ba'$;
+\item $D(\bb'\bA\bb)=\bb'(\bA+\bA')$, which is $2\bb'\bA$ when $\bA$ is symmetric.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+\textbf{(i)} $\dd(\ba'\bb)=\ba'\dd\bb$ since $\dd\ba=0$; apply
+Proposition~\ref{prop:identification}, and note $\bb'\ba=\ba'\bb$.
+
+\textbf{(ii)} With $\dd\bA=0$, the product rule and the scalar identity
+$(\dd\bb)'\bA\bb=\bb'\bA'\dd\bb$ give
+$\dd(\bb'\bA\bb)=(\dd\bb)'\bA\bb+\bb'\bA\,\dd\bb=\bb'(\bA+\bA')\,\dd\bb$.
+\end{proof}
+
+
+\begin{proposition}[Chain rule for differentials]\label{prop:chain}
+Let $\bu=g(\bx)$ be differentiable at $\bx$ and $f$ differentiable at $\bu$. Then the
+differential of the composition is obtained by substitution:
+$\dd f = (Df)(\bu)\,\dd\bu$ with $\dd\bu=(Dg)(\bx)\,\dd\bx$, hence
+$D(f\circ g)(\bx)=(Df)(g(\bx))\,(Dg)(\bx)$.
+\end{proposition}
+
+\begin{proof}
+Differentiability of $f$ at $\bu$ gives
+$f(\bu+\bh)-f(\bu)=(Df)(\bu)\bh+o(|\bh|)$, and of $g$ at $\bx$ gives
+$g(\bx+\bk)-g(\bx)=(Dg)(\bx)\bk+o(|\bk|)$. Substituting the second into the first with
+$\bh=g(\bx+\bk)-g(\bx)$, and using $|\bh|=O(|\bk|)$,
+\[
+f(g(\bx+\bk))-f(g(\bx)) = (Df)(\bu)(Dg)(\bx)\bk + o(|\bk|) ,
+\]
+which by Proposition~\ref{prop:identification} identifies the derivative.
+\end{proof}
+
+\begin{example}[The form used for likelihoods]\label{ex:chain-glm}
+For a scalar $h$ and the linear index $\eta=\bx'\bb$,
+\[
+\frac{\partial}{\partial\bb'}\,h(\bx'\bb) = h'(\bx'\bb)\,\bx' ,
+\]
+since $\dd\eta=\bx'\dd\bb$ by Lemma~\ref{lem:matrix-diff}\textup{(i)} and
+$\dd h = h'(\eta)\,\dd\eta$. Summing over observations gives the score vector of a
+generalised linear model, and differentiating once more with
+Proposition~\ref{prop:chain} gives the information matrix.
+\end{example}
+
+%##############################################################################
+\coursepart{III}{Measure-Theoretic Probability}
+%##############################################################################
+
+%==============================================================================
+\section{The Integral and Its Convergence Theorems}\label{sec:P.13}
+%==============================================================================
+
+A \emph{measure space} is a triple $(\Omega,\calF,\mu)$ with $\calF$ a $\sigma$-field and
+$\mu$ a countably additive non-negative set function with $\mu(\emptyset)=0$; it is a
+\emph{probability space}, written $(\Omega,\calF,\prb)$, when $\prb(\Omega)=1$. A
+\emph{random vector} is a measurable $X:\Omega\to\Real^d$, its \emph{law} is the induced
+measure $\mu_X(B)=\prb\{X\in B\}$, and $\expc[g(X)]=\int g\,\dd\mu_X$ when the integral
+exists.
+
+\begin{remark}[The four assumed theorems]\label{rem:assumed}
+The following are the only statements in the course used without proof.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item \emph{Monotone convergence.} If $0\leqslant f_n\uparrow f$ then
+      $\int f_n\uparrow\int f$.
+\item \emph{Fatou.} If $f_n\geqslant0$ then $\int\liminf_n f_n\leqslant\liminf_n\int f_n$.
+\item \emph{Dominated convergence.} If $f_n\to f$ pointwise and $|f_n|\leqslant g$ with
+      $\int g<\infty$, then $\int f_n\to\int f$.
+\item \emph{Fubini--Tonelli.} For $\sigma$-finite measures, a non-negative or
+      absolutely integrable function of two variables may be integrated in either order.
+\end{enumerate}
+Everything else in this document is derived from them.
+\end{remark}
+
+%==============================================================================
+\section{Expectation and Inequalities}\label{sec:P.14}
+%==============================================================================
+
+\begin{theorem}[Markov, Chebyshev]\label{thm:markov}
+For a random variable $X\geqslant0$ and $a>0$, $\prb\{X\geqslant a\}\leqslant\expc[X]/a$.
+Consequently $\prb\{|Y-\expc Y|\geqslant a\}\leqslant\var(Y)/a^2$.
+\end{theorem}
+
+\begin{proof}
+$a\,\indc\{X\geqslant a\}\leqslant X$ pointwise; take expectations. For the second, apply
+the first to $X=(Y-\expc Y)^2$ and the level $a^2$.
+\end{proof}
+
+\begin{theorem}[Jensen]\label{thm:jensen}
+If $\phi$ is convex on an open interval containing the range of an integrable $X$, then
+$\phi(\expc X)\leqslant\expc[\phi(X)]$.
+\end{theorem}
+
+\begin{proof}
+Convexity gives a supporting line at $m=\expc X$: by
+Proposition~\ref{prop:convex-fo} in the differentiable case, and in general by taking
+$c$ between the one-sided derivatives, $\phi(x)\geqslant\phi(m)+c(x-m)$ for all $x$.
+Substituting $X$ and taking expectations kills the linear term.
+\end{proof}
+
+\begin{proposition}[Variance under a linear map]\label{prop:var-linear}
+If $\bz$ has covariance $\var(\bz)$, and $\bA$, $\mathbf{b}$ are constant, then
+$\var(\bA\bz+\mathbf{b})=\bA\var(\bz)\bA'$.
+\end{proposition}
+
+\begin{proof}
+With $\bmu=\expc[\bz]$, $\expc[\bA\bz+\mathbf{b}]=\bA\bmu+\mathbf{b}$, so
+\[
+\var(\bA\bz+\mathbf{b})
+= \expc\bigl[\bA(\bz-\bmu)(\bz-\bmu)'\bA'\bigr]
+= \bA\,\expc[(\bz-\bmu)(\bz-\bmu)']\,\bA' . \qedhere
+\]
+\end{proof}
+
+\begin{lemma}[Expectation of a quadratic form]\label{lem:quadratic-form}
+If $\expc[\bz]=\bmu$ and $\var(\bz)=\bSig$, and $\bA$ is a constant square matrix, then
+$\expc[\bz'\bA\bz]=\tr(\bA\bSig)+\bmu'\bA\bmu$.
+\end{lemma}
+
+\begin{proof}
+$\expc[\bz'\bA\bz]=\sum_{i,j}a_{ij}\expc[z_iz_j]$ and
+$\expc[z_iz_j]=\Sigma_{ij}+\mu_i\mu_j$. The first part is
+$\sum_{i,j}a_{ij}\Sigma_{ij}=\tr(\bA\bSig)$ by symmetry of $\bSig$, and the second is
+$\bmu'\bA\bmu$.
+\end{proof}
+
+%==============================================================================
+\section{Independence and Borel--Cantelli}\label{sec:P.15}
+%==============================================================================
+
+\begin{lemma}[Borel--Cantelli]\label{lem:BC}
+If $\sum_k\prb(A_k)<\infty$ then $\prb\{A_k\text{ infinitely often}\}=0$.
+\end{lemma}
+
+\begin{proof}
+Let $N=\sum_k\indc_{A_k}$. By monotone convergence $\expc[N]=\sum_k\prb(A_k)<\infty$, so
+$N<\infty$ almost surely.
+\end{proof}
+
+%==============================================================================
+\section{Conditional Expectation}\label{sec:P.16}
+%==============================================================================
+
+Unit 1 defines the regression function as $f^\ast(x)=\expc[Y\mid X=x]$ and proves it is the
+best squared-error predictor. That statement rests on the following construction, which is
+itself an orthogonal projection, the same one as Theorem~\ref{thm:projection}, in
+$L^2$ rather than $\Real^n$.
+
+\begin{definition}[$L^2$ and its inner product]\label{def:L2}
+$L^2(\Omega,\calF,\prb)$ is the space of random variables with $\expc[X^2]<\infty$,
+with $\langle X,Y\rangle=\expc[XY]$, variables equal almost surely being identified.
+\end{definition}
+
+\begin{theorem}[Conditional expectation in $L^2$]\label{thm:condexp}
+Let $\calG\subseteq\calF$ be a sub-$\sigma$-field and $X\in L^2(\calF)$. There is a
+$\calG$-measurable $\expc[X\mid\calG]\in L^2(\calG)$, unique up to null sets, with
+\begin{equation}\label{eq:condexp}
+\expc\bigl[(X-\expc[X\mid\calG])\,W\bigr]=0 \qquad\text{for every }W\in L^2(\calG) ,
+\end{equation}
+and it minimises $\expc[(X-W)^2]$ over $W\in L^2(\calG)$.
+\end{theorem}
+
+\begin{proof}
+$L^2(\calG)$ is a closed convex subset of the complete space $L^2(\calF)$: closed because
+an $L^2$-convergent sequence has an almost surely convergent subsequence, whose limit is
+$\calG$-measurable. Theorem~\ref{thm:nearest}, whose proof used only the parallelogram law
+and completeness and so applies verbatim in $L^2$, gives a unique nearest point $\hat X$
+and the variational inequality $\langle X-\hat X,W-\hat X\rangle\leqslant0$ for all
+$W\in L^2(\calG)$. Since $L^2(\calG)$ is a subspace the inequality holds for $W$ and for
+$2\hat X-W$, forcing equality, which is~\eqref{eq:condexp}. Minimality is
+Theorem~\ref{thm:projection}'s characterisation transported to $L^2$.
+\end{proof}
+
+\begin{remark}
+Taking $W=\indc_G$ for $G\in\calG$ turns~\eqref{eq:condexp} into the familiar
+$\expc[X\indc_G]=\expc[\expc[X\mid\calG]\indc_G]$. For $X\in L^1\setminus L^2$ the same
+object is obtained by approximating with truncations $X\wedge m\vee(-m)$ and passing to the
+limit by dominated convergence; the course needs only the $L^2$ case, where the projection
+interpretation is exactly what Unit 1 uses.
+\end{remark}
+
+\begin{proposition}[Tower property]\label{prop:tower}
+$\expc\bigl[\expc[X\mid\calG]\bigr]=\expc[X]$.
+\end{proposition}
+
+\begin{proof}
+Take $W\equiv1$ in~\eqref{eq:condexp}.
+\end{proof}
+
+\begin{proposition}[Conditional variance decomposition]\label{prop:condvar}
+For $X\in L^2$, writing $\var(X\mid\calG)=\expc[X^2\mid\calG]-(\expc[X\mid\calG])^2$,
+\begin{equation}\label{eq:condvar}
+\var(X) = \expc\bigl[\var(X\mid\calG)\bigr] + \var\bigl(\expc[X\mid\calG]\bigr) .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By Proposition~\ref{prop:tower} applied to $X^2$ and to $X$,
+\[
+\var(X)=\expc[X^2]-(\expc X)^2
+=\expc\bigl[\expc[X^2\mid\calG]\bigr]-\bigl(\expc\bigl[\expc[X\mid\calG]\bigr]\bigr)^2 .
+\]
+Substituting $\expc[X^2\mid\calG]=\var(X\mid\calG)+(\expc[X\mid\calG])^2$ and recognising
+$\expc[(\expc[X\mid\calG])^2]-(\expc[\expc[X\mid\calG]])^2$ as
+$\var(\expc[X\mid\calG])$ gives~\eqref{eq:condvar}.
+\end{proof}
+
+\begin{corollary}[Random sums]\label{cor:random-sum}
+Let $N$ be a non-negative integer random variable and $Y_1,Y_2,\ldots$ independent copies of
+a square-integrable $Y$, independent of $N$, and $S=\sum_{j\leqslant N}Y_j$. Then
+\[
+\expc[S]=\expc[N]\,\expc[Y] ,
+\qquad
+\var(S)=\expc[N]\var(Y)+\var(N)(\expc Y)^2 .
+\]
+\end{corollary}
+
+\begin{proof}
+Conditionally on $N=m$ the sum is of $m$ independent copies, so $\expc[S\mid N]=N\expc[Y]$
+and $\var(S\mid N)=N\var(Y)$. Proposition~\ref{prop:tower} gives the mean and
+Proposition~\ref{prop:condvar} gives
+$\var(S)=\expc[N\var(Y)]+\var(N\expc[Y])$, which is the stated expression.
+\end{proof}
+
+%==============================================================================
+\section{The Multivariate Normal Distribution}\label{sec:P.17}
+%==============================================================================
+
+\begin{definition}[Multivariate normal]\label{def:mvn}
+$X$ in $\Real^d$ is $N(\bmu,\bSig)$ if $X=\bmu+\bA Z$ where $Z$ has independent standard
+normal coordinates and $\bA\bA'=\bSig$.
+\end{definition}
+
+\begin{theorem}[Closure under affine maps]\label{thm:mvn-linear}
+If $X\sim N(\bmu,\bSig)$, $\bB$ is a constant matrix and $\mathbf{b}$ a constant vector,
+then $\bB X+\mathbf{b}\sim N(\bB\bmu+\mathbf{b},\ \bB\bSig\bB')$.
+\end{theorem}
+
+\begin{proof}
+$\bB X+\mathbf{b} = (\bB\bmu+\mathbf{b})+(\bB\bA)Z$ and
+$(\bB\bA)(\bB\bA)'=\bB\bSig\bB'$, which is Definition~\ref{def:mvn}.
+\end{proof}
+
+\begin{theorem}[Uncorrelated blocks are independent]\label{thm:mvn-uncorr-indep}
+Let $(\bU',\bV')'$ be jointly normal with cross-covariance $\bSig_{UV}$. Then
+$\bSig_{UV}=\bzero$ if and only if $\bU$ and $\bV$ are independent.
+\end{theorem}
+
+\begin{proof}
+Independence always gives zero covariance. Conversely, with $\bSig_{UV}=\bzero$ the
+covariance is block diagonal, so by Proposition~\ref{prop:cf-gauss} below the joint
+characteristic function factors,
+\[
+\exp\bigl(i\langle\bs,\bmu_U\rangle+i\langle\bt,\bmu_V\rangle
+-\tfrac12\bs'\bSig_{UU}\bs-\tfrac12\bt'\bSig_{VV}\bt\bigr)
+= \varphi_{\bU}(\bs)\,\varphi_{\bV}(\bt) ,
+\]
+and a joint characteristic function that factors identifies the joint law as the product of
+the marginals, by the uniqueness Corollary~\ref{cor:uniqueness}.
+\end{proof}
+
+%==============================================================================
+\section{The \texorpdfstring{$\chi^2$}{chi-square}, \texorpdfstring{$t$}{t} and \texorpdfstring{$F$}{F} Distributions}\label{sec:P.18}
+%==============================================================================
+
+\begin{definition}\label{def:chisq-t-F}
+For independent $Z_1,\ldots,Z_r$ standard normal, $\sum_{j\leqslant r}Z_j^2$ has the
+\emph{chi-square} law with $r$ degrees of freedom, $\chi^2_r$. If $Z\sim N(0,1)$ and
+$V\sim\chi^2_\nu$ are independent then $Z/\sqrt{V/\nu}$ has \emph{Student's $t$} law
+$t_\nu$. If $V_1\sim\chi^2_{r_1}$ and $V_2\sim\chi^2_{r_2}$ are independent then
+$(V_1/r_1)/(V_2/r_2)$ has the \emph{$F$} law $F_{r_1,r_2}$.
+\end{definition}
+
+\begin{corollary}[The square of a $t$ is an $F$]\label{cor:t2-F1}
+If $T\sim t_\nu$ then $T^2\sim F_{1,\nu}$.
+\end{corollary}
+
+\begin{proof}
+By Definition~\ref{def:chisq-t-F}, $T=Z/\sqrt{V/\nu}$ with $Z\sim N(0,1)$ and
+$V\sim\chi^2_\nu$ independent. Squaring, $T^2=(Z^2/1)/(V/\nu)$. Now $Z^2\sim\chi^2_1$ by
+the same definition with $r=1$, and it is independent of $V$ because $Z$ is, so the ratio
+is $F_{1,\nu}$.
+\end{proof}
+
+\begin{proposition}[Moments of $\chi^2$]\label{prop:chisq-moments}
+If $V\sim\chi^2_r$ then $\expc[V]=r$ and $\var(V)=2r$.
+\end{proposition}
+
+\begin{proof}
+$\expc[Z^2]=1$ and, by Lemma~\ref{lem:fourth} below, $\expc[Z^4]=3$, so
+$\var(Z^2)=3-1=2$. Sum over $r$ independent terms.
+\end{proof}
+
+\begin{lemma}[Fourth moment of the normal]\label{lem:fourth}
+If $Z\sim N(0,1)$ then $\expc[Z^4]=3$, so $\var(Z^2)=2$; for
+$\varepsilon\sim N(0,\sigma^2)$, $\var(\varepsilon^2/\sigma^2)=2$.
+\end{lemma}
+
+\begin{proof}
+With $\varphi'(z)=-z\varphi(z)$ for the standard normal density, integration by parts gives
+\[
+\expc[Z^4]=\int z^3\cdot z\varphi(z)\,\dd z = -\int z^3\varphi'(z)\,\dd z
+= \bigl[-z^3\varphi(z)\bigr]_{-\infty}^{\infty}+3\int z^2\varphi(z)\,\dd z = 3 ,
+\]
+the boundary term vanishing because $\varphi$ decays faster than any polynomial grows.
+\end{proof}
+
+\begin{theorem}[Chi-square quadratic forms]\label{thm:quadratic-chisq}
+If $\bz\sim N(\bzero,\bI_n)$ and $\bA$ is symmetric idempotent, then
+$\bz'\bA\bz\sim\chi^2_r$ with $r=\rank(\bA)=\tr(\bA)$.
+\end{theorem}
+
+\begin{proof}
+By Theorem~\ref{thm:spectral} write $\bA=\bP\bLam\bP'$ with $\bP$ orthogonal; by
+Lemma~\ref{lem:idempotent} the diagonal of $\bLam$ carries $r$ ones and $n-r$ zeros. Put
+$\bw=\bP'\bz$, which is $N(\bzero,\bP'\bI\bP)=N(\bzero,\bI_n)$ by
+Theorem~\ref{thm:mvn-linear}, so its coordinates are independent standard normals. Then
+$\bz'\bA\bz=\bw'\bLam\bw=\sum_{j\leqslant r}w_j^2$, which is $\chi^2_r$ by
+Definition~\ref{def:chisq-t-F}.
+\end{proof}
+
+\begin{theorem}[Cochran]\label{thm:cochran}
+If $\bz\sim N(\bzero,\bI_n)$ and $\bA_1,\bA_2$ are symmetric idempotent with
+$\bA_1\bA_2=\bzero$, then $\bz'\bA_1\bz$ and $\bz'\bA_2\bz$ are independent.
+\end{theorem}
+
+\begin{proof}
+Stack $\bU=\bA_1\bz$ and $\bV=\bA_2\bz$ as $(\bU',\bV')'=(\bA_1',\bA_2')'\bz$, one linear
+map of one normal vector, hence jointly normal by Theorem~\ref{thm:mvn-linear};
+individual normality would not suffice. The cross-covariance is
+$\bA_1\bI\bA_2'=\bA_1\bA_2=\bzero$, so Theorem~\ref{thm:mvn-uncorr-indep} makes $\bU$ and
+$\bV$ independent, and $\bz'\bA_i\bz=|\bA_i\bz|^2$ is a function of one of them alone.
+\end{proof}
+
+%==============================================================================
+\section{Modes of Convergence}\label{sec:P.19}
+%==============================================================================
+
+$C_b(\Real^d)$ denotes the bounded continuous real functions on $\Real^d$ and
+$C_K(\Real^d)$ those continuous with compact support.
+
+\begin{definition}[Modes of convergence]\label{def:modes}
+Let $X, X_1, X_2,\ldots$ be random vectors in $\Real^d$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $X_n \to X$ \emph{almost surely}, written $X_n\to X$ a.s., if
+      $\prb\{\lim_n X_n = X\} = 1$.
+\item $X_n \convp X$ \emph{in probability} if $\prb\{|X_n-X|>\varepsilon\}\to0$ for every
+      $\varepsilon>0$.
+\item $X_n \convd X$ \emph{in distribution} if $\expc[f(X_n)] \to \expc[f(X)]$ for every
+      $f\in C_b(\Real^d)$.
+\end{enumerate}
+Convergence in distribution depends on the $X_n$ only through their laws, so we also write
+$\mu_n\to\mu$ \emph{weakly} for probability measures.
+\end{definition}
+
+\begin{lemma}[Almost sure subsequence]\label{lem:as-subseq}
+If $X_n\convp X$ then some subsequence converges to $X$ almost surely.
+\end{lemma}
+
+\begin{proof}
+Choose $n_1<n_2<\cdots$ with $\prb\{|X_{n_k}-X|>2^{-k}\}\leqslant 2^{-k}$, possible because
+each probability tends to $0$. These probabilities are summable, so by
+Lemma~\ref{lem:BC} the events $\{|X_{n_k}-X|>2^{-k}\}$ occur finitely often almost surely;
+on that event $|X_{n_k}-X|\leqslant 2^{-k}$ for all large $k$, hence $X_{n_k}\to X$.
+\end{proof}
+
+\begin{proposition}[The hierarchy]\label{prop:hierarchy}
+Almost sure convergence implies convergence in probability, which implies convergence in
+distribution.
+\end{proposition}
+
+\begin{proof}
+\textbf{a.s.\ $\Rightarrow$ probability.} Fix $\varepsilon>0$ and put
+$B_n = \{|X_n-X|>\varepsilon\}$. On the event $\{X_n\to X\}$ only finitely many $B_n$ occur,
+so $\indc_{B_n}\to0$ almost surely; dominated convergence gives
+$\prb(B_n) = \expc[\indc_{B_n}]\to0$.
+
+\textbf{probability $\Rightarrow$ distribution.} Let $f\in C_b(\Real^d)$ and suppose
+$\expc[f(X_n)]\not\to\expc[f(X)]$. Then some subsequence satisfies
+$|\expc[f(X_{n_j})]-\expc[f(X)]|\geqslant\delta$ for a $\delta>0$. That subsequence still
+converges in probability, so by Lemma~\ref{lem:as-subseq} it has a further subsequence
+converging almost surely; along it $f(X_{n_{j_l}})\to f(X)$ almost surely by continuity,
+and dominated convergence (with dominating constant $\sup|f|$) gives
+$\expc[f(X_{n_{j_l}})]\to\expc[f(X)]$, contradicting the choice of $\delta$.
+\end{proof}
+
+\begin{proposition}[Convergence to a constant]\label{prop:const}
+If $c\in\Real^d$ is constant then $X_n\convd c$ if and only if $X_n\convp c$.
+\end{proposition}
+
+\begin{proof}
+One direction is Proposition~\ref{prop:hierarchy}. Conversely suppose $X_n\convd c$ and fix
+$\varepsilon>0$. The function $f(x) = \min\{1,\ |x-c|/\varepsilon\}$ is bounded and
+continuous with $f(c)=0$, and $\indc\{|x-c|>\varepsilon\}\leqslant f(x)$ for every $x$.
+Hence
+\[
+\prb\{|X_n-c|>\varepsilon\} \leqslant \expc[f(X_n)] \to \expc[f(c)] = 0 . \qedhere
+\]
+\end{proof}
+
+%==============================================================================
+\section{Characteristic Functions}\label{sec:P.20}
+%==============================================================================
+
+\begin{definition}[Characteristic function]\label{def:cf}
+The \emph{characteristic function} of a random vector $X$ in $\Real^d$, equivalently of its
+law $\mu$, is
+\begin{equation}\label{eq:cf}
+\varphi_X(\theta) = \expc\bigl[e^{i\langle\theta,X\rangle}\bigr]
+= \int_{\Real^d} e^{i\langle\theta,x\rangle}\,\dd\mu(x),
+\qquad \theta\in\Real^d .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Elementary properties]\label{prop:cf-props}
+\leavevmode
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{cf:i}   $\varphi_X(0)=1$ and $|\varphi_X(\theta)|\leqslant1$ for all $\theta$.
+\item\label{cf:ii}  $\varphi_X$ is uniformly continuous.
+\item\label{cf:iii} If $X$ and $Y$ are independent then
+      $\varphi_{X+Y} = \varphi_X\varphi_Y$.
+\item\label{cf:iv}  For a constant matrix $\bA$ and vector $\mathbf{b}$,
+      $\varphi_{\bA X+\mathbf{b}}(\theta)
+       = e^{i\langle\theta,\mathbf{b}\rangle}\varphi_X(\bA'\theta)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\ref{cf:i} is immediate from $|e^{i\langle\theta,x\rangle}|=1$. For~\ref{cf:ii},
+\[
+|\varphi_X(\theta+\eta)-\varphi_X(\theta)|
+= \bigl|\expc\bigl[e^{i\langle\theta,X\rangle}(e^{i\langle\eta,X\rangle}-1)\bigr]\bigr|
+\leqslant \expc\bigl|e^{i\langle\eta,X\rangle}-1\bigr| ,
+\]
+a bound free of $\theta$; the integrand is at most $2$ and tends to $0$ pointwise as
+$\eta\to0$, so dominated convergence makes it vanish. \ref{cf:iii} is
+$\expc[e^{i\langle\theta,X\rangle}e^{i\langle\theta,Y\rangle}]
+=\expc[e^{i\langle\theta,X\rangle}]\expc[e^{i\langle\theta,Y\rangle}]$ by independence, and
+\ref{cf:iv} follows from
+$\langle\theta,\bA X+\mathbf{b}\rangle = \langle\bA'\theta,X\rangle+\langle\theta,\mathbf{b}\rangle$.
+\end{proof}
+
+\begin{proposition}[The Gaussian characteristic function]\label{prop:cf-gauss}
+If $X\sim N(\bmu,\bSig)$ in $\Real^d$ then
+$\varphi_X(\theta) = \exp\bigl(i\langle\theta,\bmu\rangle - \tfrac12\theta'\bSig\theta\bigr)$.
+\end{proposition}
+
+\begin{proof}
+Take first $d=1$, $Z\sim N(0,1)$, and set $\varphi(t)=\expc[e^{itZ}]$. Differentiating under
+the integral sign, justified because $|\partial_t e^{itz}|=|z|$ is integrable against the
+standard normal density $\phi$,
+\[
+\varphi'(t) = \expc\bigl[iZe^{itZ}\bigr] = i\int z e^{itz}\phi(z)\,\dd z
+= -i\int e^{itz}\phi'(z)\,\dd z = i^2 t\int e^{itz}\phi(z)\,\dd z = -t\varphi(t),
+\]
+using $\phi'(z)=-z\phi(z)$ and then integration by parts. With $\varphi(0)=1$ the unique
+solution of $\varphi'=-t\varphi$ is $\varphi(t)=e^{-t^2/2}$.
+
+In general $X = \bmu + \bA Z$ with $Z$ a vector of independent standard normals and
+$\bA\bA'=\bSig$. By Proposition~\ref{prop:cf-props}\ref{cf:iii} applied coordinatewise,
+$\varphi_Z(\eta)=\prod_j e^{-\eta_j^2/2}=e^{-|\eta|^2/2}$, and
+by~\ref{cf:iv},
+$\varphi_X(\theta) = e^{i\langle\theta,\bmu\rangle}\varphi_Z(\bA'\theta)
+= e^{i\langle\theta,\bmu\rangle}e^{-|\bA'\theta|^2/2}$, with
+$|\bA'\theta|^2 = \theta'\bA\bA'\theta = \theta'\bSig\theta$.
+\end{proof}
+
+%==============================================================================
+\section{L\'evy's Continuity Theorem}\label{sec:P.21}
+%==============================================================================
+
+The Gaussian density on $\Real^d$ with variance $\sigma^2$ per coordinate is
+$f_\sigma(x) = (2\pi\sigma^2)^{-d/2}e^{-|x|^2/(2\sigma^2)}$. For $\psi\in C_K(\Real^d)$ put
+\begin{equation}\label{eq:mollify}
+\psi_\sigma(x) = \int_{\Real^d} f_\sigma(x-y)\,\psi(y)\,\dd y .
+\end{equation}
+
+\begin{lemma}[Gaussian Fourier inversion]\label{lem:gauss-inv}
+$\ds f_\sigma(z) = (2\pi)^{-d}\int_{\Real^d} e^{i\langle\theta,z\rangle}
+ e^{-\sigma^2|\theta|^2/2}\,\dd\theta$ for every $z\in\Real^d$.
+\end{lemma}
+
+\begin{proof}
+The integrand factors over coordinates, so it suffices to take $d=1$. By
+Proposition~\ref{prop:cf-gauss} applied to $N(0,\sigma^{-2})$, whose density is
+$(\sigma/\sqrt{2\pi})e^{-\sigma^2t^2/2}$,
+\[
+\int_\Real e^{itz}\,\frac{\sigma}{\sqrt{2\pi}}e^{-\sigma^2t^2/2}\,\dd t = e^{-z^2/(2\sigma^2)} ,
+\]
+so $\int_\Real e^{itz}e^{-\sigma^2t^2/2}\,\dd t
+= \sqrt{2\pi}\,\sigma^{-1}e^{-z^2/(2\sigma^2)} = 2\pi f_\sigma(z)$.
+\end{proof}
+
+\begin{lemma}[Mollification]\label{lem:mollify}
+For $\psi\in C_K(\Real^d)$, $\psi_\sigma\to\psi$ uniformly as $\sigma\to0^+$.
+\end{lemma}
+
+\begin{proof}
+Since $\int f_\sigma = 1$,
+\[
+|\psi(x)-\psi_\sigma(x)| \leqslant \int f_\sigma(x-y)\,|\psi(x)-\psi(y)|\,\dd y = I_1+I_2 ,
+\]
+splitting the integral at $|y-x|\leqslant\delta$ and $|y-x|>\delta$. Given $\varepsilon>0$
+choose $\delta$ with $|\psi(x)-\psi(y)|\leqslant\varepsilon$ whenever
+$|x-y|\leqslant\delta$, possible because $\psi$ is uniformly continuous, being continuous
+with compact support; then $I_1\leqslant\varepsilon$. For the second, if $W$ has density
+$f_\sigma$ then by Markov's inequality
+\[
+I_2 \leqslant 2\|\psi\|_\infty\,\prb\{|W|>\delta\}
+\leqslant 2\|\psi\|_\infty\,\frac{\expc|W|^2}{\delta^2}
+= 2\|\psi\|_\infty\,\frac{d\sigma^2}{\delta^2} ,
+\]
+which tends to $0$ as $\sigma\to0$. Both bounds are free of $x$.
+\end{proof}
+
+\begin{lemma}[Smoothing identity]\label{lem:smoothing}
+Let $\mu$ be a probability on $\Real^d$ with characteristic function $\varphi_\mu$, and let
+$\psi\in C_K(\Real^d)$. Then
+\begin{equation}\label{eq:smoothing}
+\int_{\Real^d}\psi_\sigma\,\dd\mu = \int_{\Real^d}\varphi_\mu(\theta)\,H(\theta)\,\dd\theta,
+\qquad
+H(\theta) = (2\pi)^{-d}e^{-\sigma^2|\theta|^2/2}\int_{\Real^d}\psi(y)e^{-i\langle\theta,y\rangle}\,\dd y .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Substitute Lemma~\ref{lem:gauss-inv} into~\eqref{eq:mollify}:
+\[
+\int\psi_\sigma\,\dd\mu
+= \int\!\!\int\!\!\int (2\pi)^{-d}e^{-\sigma^2|\theta|^2/2}
+   e^{i\langle\theta,x-y\rangle}\psi(y)\,\dd\theta\,\dd y\,\dd\mu(x) .
+\]
+The modulus of the integrand is
+$(2\pi)^{-d}e^{-\sigma^2|\theta|^2/2}|\psi(y)|$, whose integral over
+$\theta$, $y$ and $x$ is finite because $\psi$ has compact support and $\mu$ is a
+probability. Fubini's theorem therefore permits integrating in $x$ first, which produces
+$\varphi_\mu(\theta)$, and collecting the $y$-integral into $H$ gives~\eqref{eq:smoothing}.
+\end{proof}
+
+\begin{lemma}[Compactly supported test functions suffice]\label{lem:CK-suffices}
+Let $\mu,\mu_1,\mu_2,\ldots$ be probability measures on $\Real^d$ with
+$\int\psi\,\dd\mu_n\to\int\psi\,\dd\mu$ for every $\psi\in C_K(\Real^d)$. Then
+$\mu_n\to\mu$ weakly.
+\end{lemma}
+
+\begin{proof}
+Fix $g\in C_b(\Real^d)$ and $\varepsilon>0$. Because $\mu$ is a probability there is $R$
+with $\mu\{|x|>R\}<\varepsilon$. Choose $\chi\in C_K(\Real^d)$ with
+$\indc\{|x|\leqslant R\}\leqslant\chi\leqslant1$. Then $\int\chi\,\dd\mu\geqslant1-\varepsilon$,
+and by hypothesis $\int\chi\,\dd\mu_n\to\int\chi\,\dd\mu$, so
+$\limsup_n\int(1-\chi)\,\dd\mu_n\leqslant\varepsilon$.
+
+Now $g\chi\in C_K(\Real^d)$, so $\int g\chi\,\dd\mu_n\to\int g\chi\,\dd\mu$, while
+\[
+\Bigl|\int g(1-\chi)\,\dd\mu_n\Bigr| \leqslant \|g\|_\infty\int(1-\chi)\,\dd\mu_n ,
+\qquad
+\Bigl|\int g(1-\chi)\,\dd\mu\Bigr| \leqslant \|g\|_\infty\,\varepsilon .
+\]
+Combining the three displays,
+$\limsup_n|\int g\,\dd\mu_n-\int g\,\dd\mu| \leqslant 2\|g\|_\infty\varepsilon$, and
+$\varepsilon$ was arbitrary.
+\end{proof}
+
+\begin{theorem}[L\'evy's continuity theorem]\label{thm:levy}
+Let $\mu,\mu_1,\mu_2,\ldots$ be probabilities on $\Real^d$. Then $\mu_n\to\mu$ weakly if and
+only if $\varphi_{\mu_n}(\theta)\to\varphi_\mu(\theta)$ for every $\theta\in\Real^d$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Necessity.} $x\mapsto e^{i\langle\theta,x\rangle}$ has bounded continuous real and
+imaginary parts, so weak convergence applies to each.
+
+\textbf{Sufficiency.} Assume pointwise convergence of the characteristic functions and fix
+$\psi\in C_K(\Real^d)$; by Lemma~\ref{lem:CK-suffices} it suffices to show
+$\int\psi\,\dd\mu_n\to\int\psi\,\dd\mu$. Let $\varepsilon>0$. By
+Lemma~\ref{lem:mollify} choose $\sigma$ with $\|\psi_\sigma-\psi\|_\infty\leqslant\varepsilon$;
+since every $\mu_n$ and $\mu$ is a probability,
+\[
+\Bigl|\int\psi\,\dd\mu_n-\int\psi\,\dd\mu\Bigr|
+\leqslant 2\varepsilon + \Bigl|\int\psi_\sigma\,\dd\mu_n-\int\psi_\sigma\,\dd\mu\Bigr| .
+\]
+For the remaining term use the smoothing identity~\eqref{eq:smoothing} with the same
+$\sigma$ for every $n$. The integrands $\varphi_{\mu_n}H$ converge pointwise to
+$\varphi_\mu H$ and are dominated in modulus by
+$(2\pi)^{-d}e^{-\sigma^2|\theta|^2/2}\int|\psi|$, which is integrable in $\theta$. Dominated
+convergence gives
+$\int\psi_\sigma\,\dd\mu_n\to\int\psi_\sigma\,\dd\mu$, so the $\limsup$ of the left side is
+at most $2\varepsilon$.
+\end{proof}
+
+\begin{corollary}[Uniqueness]\label{cor:uniqueness}
+Two probabilities on $\Real^d$ with the same characteristic function are equal.
+\end{corollary}
+
+\begin{proof}
+Apply Theorem~\ref{thm:levy} to the constant sequence $\mu_n=\nu$: if
+$\varphi_\nu=\varphi_\mu$ then $\nu\to\mu$ weakly, so $\int g\,\dd\nu = \int g\,\dd\mu$ for
+every $g\in C_b(\Real^d)$. Taking $g$ to approximate the indicator of a closed set from
+above identifies the two measures on closed sets, hence on the Borel $\sigma$-field.
+\end{proof}
+
+\begin{corollary}[Cram\'er--Wold]\label{cor:cramer-wold}
+$X_n\convd X$ in $\Real^d$ if and only if $\langle\theta,X_n\rangle\convd\langle\theta,X\rangle$
+in $\Real$ for every $\theta\in\Real^d$.
+\end{corollary}
+
+\begin{proof}
+By Theorem~\ref{thm:levy} the left side is equivalent to
+$\expc[e^{i\langle\theta,X_n\rangle}]\to\expc[e^{i\langle\theta,X\rangle}]$ for all $\theta$,
+and the right side, applied to the scalar variables $\langle\theta,X_n\rangle$ at the
+argument $t=1$, says the same thing.
+\end{proof}
+
+%==============================================================================
+\section{Portmanteau and the Continuous Mapping Theorem}\label{sec:P.22}
+%==============================================================================
+
+\begin{theorem}[Portmanteau]\label{thm:portmanteau}
+For probabilities $\mu,\mu_n$ on $\Real^d$ the following are equivalent.
+\begin{enumerate}[label=\textup{(\alph*)}]
+\item\label{pm:a} $\mu_n\to\mu$ weakly.
+\item\label{pm:b} $\liminf_n\int f\,\dd\mu_n \geqslant \int f\,\dd\mu$ for every lower
+      semi-continuous $f$ bounded below.
+\item\label{pm:c} $\int f\,\dd\mu_n \to \int f\,\dd\mu$ for every bounded $f$ whose set of
+      discontinuity points is $\mu$-null.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\ref{pm:c}$\Rightarrow$\ref{pm:a} is trivial, a continuous function having no
+discontinuities.
+
+\ref{pm:a}$\Rightarrow$\ref{pm:b}. A lower semi-continuous $f$ bounded below is the
+increasing limit of the bounded continuous functions
+$f_k(x)=\inf_y\{f(y)\wedge k + k|x-y|\}$. For each $k$,
+\[
+\int f_k\,\dd\mu = \lim_n\int f_k\,\dd\mu_n \leqslant \liminf_n\int f\,\dd\mu_n
+\]
+since $f_k\leqslant f$; letting $k\to\infty$ and using monotone convergence on the left
+gives~\ref{pm:b}.
+
+\ref{pm:b}$\Rightarrow$\ref{pm:c}. Applying~\ref{pm:b} to $-f$ gives the upper form
+$\limsup_n\int f\,\dd\mu_n\leqslant\int f\,\dd\mu$ for upper semi-continuous $f$ bounded
+above. Let $f$ be bounded with $\mu$-null discontinuity set, and take $f_*,f^*$ from
+Lemma~\ref{lem:envelopes}; they agree with $f$ off a $\mu$-null set, so all three have the
+same $\mu$-integral. Then
+\[
+\int f\,\dd\mu = \int f_*\,\dd\mu \leqslant \liminf_n\int f_*\,\dd\mu_n
+\leqslant \liminf_n\int f\,\dd\mu_n ,
+\]
+\[
+\int f\,\dd\mu = \int f^*\,\dd\mu \geqslant \limsup_n\int f^*\,\dd\mu_n
+\geqslant \limsup_n\int f\,\dd\mu_n ,
+\]
+and the two together force convergence.
+\end{proof}
+
+\begin{theorem}[Continuous mapping]\label{thm:cmt}
+Let $X_n\convd X$ in $\Real^d$ and let $g:\Real^d\to\Real^m$ be measurable with
+$\prb\{X\in D_g\}=0$, where $D_g$ is the set of discontinuity points of $g$. Then
+$g(X_n)\convd g(X)$. The same implication holds with $\convd$ replaced throughout by
+$\convp$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Continuous $g$.} If $g$ is continuous everywhere the proof is one line: for
+$f\in C_b(\Real^m)$ the composition $f\circ g$ lies in $C_b(\Real^d)$, so
+\[
+\expc[f(g(X_n))] = \expc[(f\circ g)(X_n)] \to \expc[(f\circ g)(X)] = \expc[f(g(X))] .
+\]
+
+\textbf{General $g$.} Let $f\in C_b(\Real^m)$. The discontinuity set of $f\circ g$ is
+contained in $D_g$, which is $\mu$-null for $\mu$ the law of $X$, and $f\circ g$ is
+bounded. Theorem~\ref{thm:portmanteau}\ref{pm:c} applies directly and gives
+$\expc[(f\circ g)(X_n)]\to\expc[(f\circ g)(X)]$.
+
+\textbf{In probability.} Suppose $X_n\convp X$. By Lemma~\ref{lem:as-subseq} every
+subsequence has a further subsequence with $X_{n_k}\to X$ almost surely; on the event
+$\{X\notin D_g\}$, of probability one, $g(X_{n_k})\to g(X)$. Hence
+$g(X_{n_k})\convp g(X)$ along that sub-subsequence, and since every subsequence admits one,
+the whole sequence converges in probability.
+\end{proof}
+
+\begin{remark}
+The three uses in this course are all of the everywhere-continuous kind: $\bv\mapsto\bv'\bA\bv$
+for a fixed matrix, $\bA\mapsto\bA^{-1}$ on the open set of invertible matrices, and
+$x\mapsto\sqrt{x}$ on $(0,\infty)$. The measurable version is stated because the natural
+statement of Slutsky's theorem needs a map that is continuous only at the relevant limit.
+\end{remark}
+
+%==============================================================================
+\section{Slutsky's Theorem}\label{sec:P.23}
+%==============================================================================
+
+\begin{theorem}[Slutsky]\label{thm:slutsky}
+Let $X_n\convd X$ in $\Real^d$ and $Y_n\convp c$ in $\Real^m$ with $c$ constant. Then
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{sl:i}   $(X_n,Y_n)\convd(X,c)$ in $\Real^{d+m}$;
+\item\label{sl:ii}  $\Phi(X_n,Y_n)\convd\Phi(X,c)$ for every continuous
+      $\Phi:\Real^{d}\times\Real^m\to\Real^l$;
+\item\label{sl:iii} in particular, with $m=d$, $X_n+Y_n\convd X+c$; with $m=1$,
+      $Y_nX_n\convd cX$; and if $c\neq0$, $X_n/Y_n\convd X/c$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{\ref{sl:i}} By Theorem~\ref{thm:levy} it suffices to show the characteristic
+functions converge. For $\xi\in\Real^d$ and $\eta\in\Real^m$, split
+\[
+\expc\bigl[e^{i\langle\xi,X_n\rangle}e^{i\langle\eta,Y_n\rangle}\bigr]
+= \expc\bigl[e^{i\langle\xi,X_n\rangle}\bigr]e^{i\langle\eta,c\rangle}
++ \expc\bigl[e^{i\langle\xi,X_n\rangle}\bigl(e^{i\langle\eta,Y_n\rangle}-e^{i\langle\eta,c\rangle}\bigr)\bigr] .
+\]
+The first term tends to $\varphi_X(\xi)e^{i\langle\eta,c\rangle}$, which is the
+characteristic function of $(X,c)$ at $(\xi,\eta)$, because $X_n\convd X$. The second is
+bounded in modulus by
+$\expc\bigl|e^{i\langle\eta,Y_n\rangle}-e^{i\langle\eta,c\rangle}\bigr|$, and the function
+$y\mapsto|e^{i\langle\eta,y\rangle}-e^{i\langle\eta,c\rangle}|$ is bounded by $2$ and
+continuous, vanishing at $y=c$; since $Y_n\convp c$, Theorem~\ref{thm:cmt} makes that
+quantity converge in probability to $0$, and being bounded it converges in mean, by
+Proposition~\ref{prop:hierarchy} and dominated convergence along almost surely convergent
+subsequences.
+
+\textbf{\ref{sl:ii}} is Theorem~\ref{thm:cmt} applied to $\Phi$ and the pair
+from~\ref{sl:i}, and \textbf{\ref{sl:iii}} consists of three instances: $\Phi(x,y)=x+y$,
+$\Phi(x,y)=yx$, and $\Phi(x,y)=x/y$, the last continuous at every $(x,y)$ with $y\neq0$ and
+so covered by the measurable version of Theorem~\ref{thm:cmt}, the limit $(X,c)$ having
+$c\neq0$ with probability one.
+\end{proof}
+
+\begin{remark}
+No independence between $X_n$ and $Y_n$ is assumed, which is what makes the theorem usable:
+in applications $Y_n$ is typically an estimator computed from the same data as $X_n$, such
+as $s^2$ or $\hat\tau^2$.
+\end{remark}
+
+%==============================================================================
+\section{The Lindeberg--Feller Central Limit Theorem}\label{sec:P.24}
+%==============================================================================
+
+A \emph{triangular array} is a doubly indexed collection $\{\xi_{nj} : 1\leqslant j\leqslant
+k_n\}$ of random variables, independent within each row $n$. Nothing is assumed across
+rows, and the row entries need not be identically distributed, which is what the
+regression applications require, since there the summands carry non-identical weights
+$\bz_i$.
+
+\begin{theorem}[Lindeberg--Feller]\label{thm:LF}
+Let $\{\xi_{nj}\}$ be a triangular array with $\expc[\xi_{nj}]=0$ and
+$\sum_j\var(\xi_{nj})\to1$. If the \emph{Lindeberg condition}
+\begin{equation}\label{eq:lindeberg}
+\sum_{j}\expc\bigl[\xi_{nj}^2\,;\ |\xi_{nj}|>\varepsilon\bigr]\ \longrightarrow\ 0
+\qquad\text{for every }\varepsilon>0
+\end{equation}
+holds, then $\sum_j \xi_{nj}\convd N(0,1)$ and $\sup_j\var(\xi_{nj})\to0$.
+\end{theorem}
+
+\begin{proof}
+Write $c_{nj}=\expc[\xi_{nj}^2]$ and $c_n=\sum_j c_{nj}\to1$.
+
+\textbf{Step 1: the variances are uniformly negligible.} For any $\varepsilon>0$, splitting
+at $|\xi_{nj}|\leqslant\varepsilon$,
+\[
+\sup_j c_{nj} \leqslant \varepsilon^2
+ + \sup_j\expc\bigl[\xi_{nj}^2;|\xi_{nj}|>\varepsilon\bigr]
+\leqslant \varepsilon^2 + \sum_j\expc\bigl[\xi_{nj}^2;|\xi_{nj}|>\varepsilon\bigr] .
+\]
+Letting $n\to\infty$ and then $\varepsilon\to0$ gives $\sup_j c_{nj}\to0$.
+
+\textbf{Step 2: a Gaussian comparison array.} Let $\zeta_{nj}$ be independent
+$N(0,c_{nj})$, so that $\zeta_n=\sum_j\zeta_{nj}$ is $N(0,c_n)$ by
+Proposition~\ref{prop:cf-props}\ref{cf:iii} and Proposition~\ref{prop:cf-gauss}. Since
+$c_n\to1$, $\varphi_{\zeta_n}(t)=e^{-c_nt^2/2}\to e^{-t^2/2}$, so $\zeta_n\convd N(0,1)$ by
+Theorem~\ref{thm:levy}. By the same theorem it now suffices to prove, for each fixed $t$,
+\begin{equation}\label{eq:LF-goal}
+\Bigl|\prod_j\phi_{nj}(t)-\prod_j\psi_{nj}(t)\Bigr|\ \longrightarrow\ 0 ,
+\end{equation}
+$\phi_{nj}$ and $\psi_{nj}$ denoting the characteristic functions of $\xi_{nj}$ and
+$\zeta_{nj}$.
+
+\textbf{Step 3: reduce to individual terms.} Characteristic functions have modulus at most
+$1$, so Lemma~\ref{lem:prodcomp} bounds the left side of~\eqref{eq:LF-goal} by
+$\sum_j|\phi_{nj}(t)-\psi_{nj}(t)|$, and inserting $1-\tfrac12t^2c_{nj}$,
+\begin{equation}\label{eq:LF-split}
+\Bigl|\prod_j\phi_{nj}-\prod_j\psi_{nj}\Bigr|
+\leqslant \sum_j\bigl|\phi_{nj}(t)-1+\tfrac12t^2c_{nj}\bigr|
+        + \sum_j\bigl|\psi_{nj}(t)-1+\tfrac12t^2c_{nj}\bigr| .
+\end{equation}
+
+\textbf{Step 4: bound each term.} Both $\xi_{nj}$ and $\zeta_{nj}$ have mean zero and
+variance $c_{nj}$, so for a generic such variable $\xi$, taking $m=2$ in
+Lemma~\ref{lem:taylor-exp} and using $\expc[\xi]=0$,
+\[
+\bigl|\expc[e^{it\xi}]-1+\tfrac12t^2\expc[\xi^2]\bigr|
+= \bigl|\expc\bigl[e^{it\xi}-1-it\xi+\tfrac12t^2\xi^2\bigr]\bigr|
+\leqslant \expc\Bigl[\min\Bigl\{t^2\xi^2,\ \tfrac{|t|^3|\xi|^3}{6}\Bigr\}\Bigr]
+\lesssim_t \expc\bigl[\xi^2(1\wedge|\xi|)\bigr] ,
+\]
+the implied constant depending on $t$ alone. Applying this to each $\xi_{nj}$ and each
+$\zeta_{nj}$ turns~\eqref{eq:LF-split} into
+\[
+\Bigl|\prod_j\phi_{nj}-\prod_j\psi_{nj}\Bigr|
+\ \lesssim_t\ \sum_j\expc\bigl[\xi_{nj}^2(1\wedge|\xi_{nj}|)\bigr]
+       + \sum_j\expc\bigl[\zeta_{nj}^2(1\wedge|\zeta_{nj}|)\bigr] .
+\]
+
+\textbf{Step 5: both sums vanish.} For the first, split at $\varepsilon$:
+\[
+\sum_j\expc\bigl[\xi_{nj}^2(1\wedge|\xi_{nj}|)\bigr]
+\leqslant \varepsilon\sum_j c_{nj} + \sum_j\expc\bigl[\xi_{nj}^2;|\xi_{nj}|>\varepsilon\bigr] ,
+\]
+which tends to $\varepsilon\cdot1$ by~\eqref{eq:lindeberg} and then to $0$ as
+$\varepsilon\to0$. For the second, bound $1\wedge|\zeta|\leqslant|\zeta|$ and use the third
+absolute moment of a centred Gaussian, $\expc|\zeta_{nj}|^3 = c_{nj}^{3/2}\expc|Z|^3$ with
+$Z$ standard normal:
+\[
+\sum_j\expc\bigl[\zeta_{nj}^2(1\wedge|\zeta_{nj}|)\bigr]
+\leqslant \expc|Z|^3\sum_j c_{nj}^{3/2}
+\leqslant \expc|Z|^3\ c_n\,\sup_j c_{nj}^{1/2}\ \longrightarrow\ 0
+\]
+by Step 1 and $c_n\to1$. Hence~\eqref{eq:LF-goal} holds, and the theorem follows.
+\end{proof}
+
+\begin{corollary}[Lindeberg--L\'evy]\label{cor:iid-clt}
+If $X_1,X_2,\ldots$ are independent and identically distributed with mean $\mu$ and finite
+variance $\sigma^2>0$, then
+$n^{-1/2}\sum_{i\leqslant n}(X_i-\mu)/\sigma \convd N(0,1)$.
+\end{corollary}
+
+\begin{proof}
+Put $\xi_{nj}=(X_j-\mu)/(\sigma\sqrt n)$ for $j\leqslant n$. These are independent within a
+row with mean $0$ and $\sum_j\var(\xi_{nj}) = 1$ exactly. Writing $Y=(X_1-\mu)/\sigma$, the
+Lindeberg sum is
+\[
+\sum_{j=1}^n\expc\bigl[\xi_{nj}^2;|\xi_{nj}|>\varepsilon\bigr]
+= n\cdot\frac1n\expc\bigl[Y^2;|Y|>\varepsilon\sqrt n\bigr]
+= \expc\bigl[Y^2;|Y|>\varepsilon\sqrt n\bigr] ,
+\]
+which tends to $0$ by dominated convergence, $\expc[Y^2]=1$ being finite.
+\end{proof}
+
+\begin{corollary}[Weighted sums]\label{cor:weighted}
+Let $\varepsilon_1,\varepsilon_2,\ldots$ be independent with mean $0$, common variance
+$\tau^2>0$ and $\sup_i\expc[\varepsilon_i^2;|\varepsilon_i|>a]\to0$ as $a\to\infty$; let
+$\bz_i\in\Real^p$ be non-random with
+\[
+n^{-1}\sum_{i\leqslant n}\bz_i\bz_i'\to\bQ \ \text{positive definite},
+\qquad n^{-1}\max_{i\leqslant n}|\bz_i|^2\to0 .
+\]
+Then $\ds n^{-1/2}\sum_{i\leqslant n}\bz_i\varepsilon_i \convd N(\bzero,\ \tau^2\bQ)$.
+\end{corollary}
+
+\begin{proof}
+By Cram\'er--Wold (Corollary~\ref{cor:cramer-wold}) it suffices to treat
+$S_n(\theta)=n^{-1/2}\sum_i\langle\theta,\bz_i\rangle\varepsilon_i$ for fixed
+$\theta\neq\bzero$. Put $a_{ni}=\langle\theta,\bz_i\rangle/\sqrt n$ and
+$\xi_{ni}=a_{ni}\varepsilon_i/v_n$ with
+$v_n^2=\tau^2 n^{-1}\sum_i\langle\theta,\bz_i\rangle^2\to\tau^2\theta'\bQ\theta>0$. Then
+$\expc[\xi_{ni}]=0$ and $\sum_i\var(\xi_{ni})=1$. Since
+$|a_{ni}|\leqslant|\theta|\,n^{-1/2}\max_i|\bz_i| =: |\theta|\,\delta_n$ with
+$\delta_n\to0$,
+\[
+\sum_i\expc\bigl[\xi_{ni}^2;|\xi_{ni}|>\varepsilon\bigr]
+\leqslant \frac{1}{v_n^2}\sum_i a_{ni}^2\,
+  \expc\bigl[\varepsilon_i^2;\ |\varepsilon_i|>\varepsilon v_n/(|\theta|\delta_n)\bigr]
+\leqslant \frac{\sum_i a_{ni}^2}{v_n^2}\,
+  \sup_i\expc\bigl[\varepsilon_i^2;|\varepsilon_i|>b_n\bigr]
+\]
+with $b_n=\varepsilon v_n/(|\theta|\delta_n)\to\infty$. The prefactor tends to
+$1/\tau^2$ and the supremum to $0$, so the Lindeberg condition holds and
+Theorem~\ref{thm:LF} gives $S_n(\theta)/v_n\convd N(0,1)$, i.e.\
+$S_n(\theta)\convd N(0,\tau^2\theta'\bQ\theta)$, which is the law of
+$\langle\theta,V\rangle$ for $V\sim N(\bzero,\tau^2\bQ)$.
+\end{proof}
+
+\begin{remark}
+The condition $n^{-1}\max_i|\bz_i|^2\to0$ says no single observation dominates the design.
+In regression terms it is implied by $\max_i h_{ii}\to0$, the same condition that appears
+in Unit 4; without it one observation can carry a non-vanishing share of the sum and no
+central limit theorem holds.
+\end{remark}
+
+\begin{corollary}[Bounded summands with unequal variances]\label{cor:bounded-clt}
+Let $\bW_1,\bW_2,\ldots$ be independent random vectors in $\Real^p$ with
+$\expc[\bW_i]=\bzero$ and $|\bW_i|\leqslant M$ almost surely for a constant $M$ free of
+$i$, and suppose
+\[
+\bF_n = \frac1n\sum_{i\leqslant n}\var(\bW_i)\ \longrightarrow\ \bF
+\quad\text{positive definite.}
+\]
+Then $\ds n^{-1/2}\sum_{i\leqslant n}\bW_i\convd N(\bzero,\bF)$.
+\end{corollary}
+
+\begin{proof}
+By Cram\'er--Wold (Corollary~\ref{cor:cramer-wold}) fix $\theta\neq\bzero$ and put
+$\xi_{ni}=\langle\theta,\bW_i\rangle/(\sqrt n\,v_n)$ with
+$v_n^2=\theta'\bF_n\theta\to\theta'\bF\theta>0$. Then $\expc[\xi_{ni}]=0$ and
+$\sum_i\var(\xi_{ni})=\theta'\bF_n\theta/v_n^2=1$.
+
+By Cauchy--Schwarz (Theorem~\ref{thm:CS}), $|\xi_{ni}|\leqslant|\theta|M/(\sqrt n\,v_n)$,
+which tends to $0$ uniformly in $i$. So for each $\varepsilon>0$ the event
+$\{|\xi_{ni}|>\varepsilon\}$ is empty for all large $n$ and every $i$, and the Lindeberg
+sum~\eqref{eq:lindeberg} is exactly $0$. Theorem~\ref{thm:LF} gives
+$\sum_i\xi_{ni}\convd N(0,1)$, that is
+$n^{-1/2}\sum_i\langle\theta,\bW_i\rangle\convd N(0,\theta'\bF\theta)$.
+\end{proof}
+
+\begin{remark}
+Corollary~\ref{cor:weighted} keeps the variance common and lets the weights vary;
+Corollary~\ref{cor:bounded-clt} lets the variance vary and pays for it with a uniform
+bound on the summands. The score of a binary regression, $\sum_i\bx_i(y_i-\pi_i)$, has
+both features and is bounded whenever the design is, so it is the second form that Unit 7
+uses.
+\end{remark}
+
+\begin{corollary}[Lyapunov]\label{cor:lyapunov}
+Let $\bW_1,\bW_2,\ldots$ be independent random vectors in $\Real^p$ with
+$\expc[\bW_i]=\bzero$ and $\sup_i\expc|\bW_i|^{2+\delta}\leqslant C<\infty$ for some
+$\delta>0$, and suppose $\bF_n=n^{-1}\sum_{i\leqslant n}\var(\bW_i)\to\bF$ positive
+definite. Then $\ds n^{-1/2}\sum_{i\leqslant n}\bW_i\convd N(\bzero,\bF)$.
+\end{corollary}
+
+\begin{proof}
+As before, fix $\theta\neq\bzero$ and put $\xi_{ni}=\langle\theta,\bW_i\rangle/(\sqrt n\,v_n)$
+with $v_n^2=\theta'\bF_n\theta\to\theta'\bF\theta>0$, so that $\expc[\xi_{ni}]=0$ and
+$\sum_i\var(\xi_{ni})=1$. On $\{|\xi_{ni}|>\varepsilon\}$ one has
+$1\leqslant(|\xi_{ni}|/\varepsilon)^{\delta}$, so
+\[
+\sum_{i\leqslant n}\expc\bigl[\xi_{ni}^2;|\xi_{ni}|>\varepsilon\bigr]
+\leqslant \frac{1}{\varepsilon^{\delta}}\sum_{i\leqslant n}\expc|\xi_{ni}|^{2+\delta}
+\leqslant \frac{|\theta|^{2+\delta}C}{\varepsilon^{\delta}v_n^{2+\delta}}\,
+          \frac{n}{n^{1+\delta/2}} ,
+\]
+using Cauchy--Schwarz (Theorem~\ref{thm:CS}) on $|\langle\theta,\bW_i\rangle|$. The right
+side is $O(n^{-\delta/2})\to0$, so the Lindeberg condition holds and
+Theorem~\ref{thm:LF} applies. Cram\'er--Wold (Corollary~\ref{cor:cramer-wold}) completes
+the proof.
+\end{proof}
+
+\begin{remark}
+A Poisson score $\sum_i\bx_i(y_i-\mu_i)$ is not bounded, so Unit 8 uses
+Corollary~\ref{cor:lyapunov} where Unit 7 used Corollary~\ref{cor:bounded-clt}; any
+$\delta>0$ will do, and $\delta=2$ needs only bounded fourth moments.
+\end{remark}
+
+%==============================================================================
+\section{Dependent Summands}\label{sec:P.24d}
+%==============================================================================
+
+Every central limit theorem above assumes the summands independent. A regression of a
+series on its own past breaks that at the first step: the least squares estimator of an
+autoregression carries $\sum_t y_{t-1}\varepsilon_t$ in its numerator, and $y_{t-1}$ is
+built from $\varepsilon_{t-1},\varepsilon_{t-2},\ldots$, so the summands are uncorrelated
+but not independent and Theorem~\ref{thm:LF} does not reach them. Three results close the
+gap: a law of large numbers for correlated sequences, a central limit theorem for sequences
+whose dependence has finite range, and a device that passes from the second to sequences
+whose dependence has infinite range.
+
+\begin{definition}[Weak stationarity]\label{def:wstat}
+A sequence $\{X_t\}_{t\in\mathbb{Z}}$ with $\expc[X_t^2]<\infty$ is \emph{weakly
+stationary} if $\expc[X_t]=\mu$ and $\cov(X_t,X_{t+k})=\gamma(k)$ are free of $t$;
+$\gamma$ is its \emph{autocovariance function}. It is \emph{strictly stationary} if the law
+of $(X_{t_1},\ldots,X_{t_r})$ is unchanged when every index is shifted by the same $h$.
+\end{definition}
+
+\begin{lemma}[Variance of a stationary average]\label{lem:stat-mean}
+For a weakly stationary sequence,
+\begin{equation}\label{eq:stat-mean}
+\var\Bigl(\frac1n\sum_{t=1}^{n}X_t\Bigr)
+=\frac1n\sum_{|k|<n}\Bigl(1-\frac{|k|}{n}\Bigr)\gamma(k) .
+\end{equation}
+If $\gamma(k)\to0$ as $k\to\infty$, the right side tends to $0$ and
+$n^{-1}\sum_{t\leqslant n}X_t\convp\mu$.
+\end{lemma}
+
+\begin{proof}
+$\var\bigl(\sum_{t\leqslant n}X_t\bigr)=\sum_{s,t\leqslant n}\gamma(t-s)$, and for each $k$
+with $|k|<n$ there are exactly $n-|k|$ pairs $(s,t)$ in $\{1,\ldots,n\}^2$ with $t-s=k$;
+dividing by $n^2$ gives~\eqref{eq:stat-mean}.
+
+Assume $\gamma(k)\to0$ and fix $\varepsilon>0$. Choose $K$ with $|\gamma(k)|\leqslant
+\varepsilon$ for $|k|>K$. Since $|\gamma(k)|\leqslant\gamma(0)$ by Cauchy--Schwarz
+(Theorem~\ref{thm:CS}) and $0\leqslant1-|k|/n\leqslant1$, the modulus of the right side
+of~\eqref{eq:stat-mean} is at most $n^{-1}(2K+1)\gamma(0)+\varepsilon$. Letting
+$n\to\infty$ and then $\varepsilon\to0$ makes it vanish, and Chebyshev's inequality
+(Theorem~\ref{thm:markov}) converts that into convergence in probability.
+\end{proof}
+
+\begin{remark}
+Independence is not needed, only that the correlation between distant terms dies out.
+Without that the conclusion fails: a random walk has $\gamma_t(k)$ growing with $t$ and its
+average does not converge at all.
+\end{remark}
+
+\begin{lemma}[Approximation]\label{lem:approx-clt}
+Let $S_n$ and $S_n^{(p)}$, $n,p\geqslant1$, be real random variables such that
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{ap:i} for each fixed $p$, $S_n^{(p)}\convd Z_p$ as $n\to\infty$;
+\item\label{ap:ii} $Z_p\convd Z$ as $p\to\infty$;
+\item\label{ap:iii} $\ds\lim_{p\to\infty}\ \limsup_{n\to\infty}\
+      \prb\bigl\{|S_n-S_n^{(p)}|>\varepsilon\bigr\}=0$ for every $\varepsilon>0$.
+\end{enumerate}
+Then $S_n\convd Z$.
+\end{lemma}
+
+\begin{proof}
+By Theorem~\ref{thm:levy} it is enough that $\expc[e^{itS_n}]\to\expc[e^{itZ}]$ for each
+fixed $t$. Write, for any $p$,
+\[
+\bigl|\expc[e^{itS_n}]-\expc[e^{itZ}]\bigr|
+\leqslant \expc\bigl|e^{itS_n}-e^{itS_n^{(p)}}\bigr|
+ + \bigl|\expc[e^{itS_n^{(p)}}]-\expc[e^{itZ_p}]\bigr|
+ + \bigl|\expc[e^{itZ_p}]-\expc[e^{itZ}]\bigr| .
+\]
+For the first term, $|e^{ia}-e^{ib}|=|e^{i(a-b)}-1|\leqslant\min\{2,|a-b|\}$ by
+Lemma~\ref{lem:taylor-exp} with $m=0$, so for every $\varepsilon>0$
+\[
+\expc\bigl|e^{itS_n}-e^{itS_n^{(p)}}\bigr|
+\leqslant \expc\bigl[\min\{2,\ |t|\,|S_n-S_n^{(p)}|\}\bigr]
+\leqslant |t|\varepsilon + 2\,\prb\bigl\{|S_n-S_n^{(p)}|>\varepsilon\bigr\} .
+\]
+The second term vanishes as $n\to\infty$ by~\ref{ap:i} and Theorem~\ref{thm:levy}. Taking
+$\limsup_n$ therefore leaves
+\[
+\limsup_{n}\bigl|\expc[e^{itS_n}]-\expc[e^{itZ}]\bigr|
+\leqslant |t|\varepsilon + 2\limsup_n\prb\bigl\{|S_n-S_n^{(p)}|>\varepsilon\bigr\}
+ + \bigl|\expc[e^{itZ_p}]-\expc[e^{itZ}]\bigr| .
+\]
+Now let $p\to\infty$: the second term vanishes by~\ref{ap:iii} and the third
+by~\ref{ap:ii} with Theorem~\ref{thm:levy}. Finally let $\varepsilon\to0$.
+\end{proof}
+
+\begin{definition}[$m$-dependence]\label{def:mdep}
+$\{X_t\}$ is \emph{$m$-dependent} if for every $t$ and all finite index sets
+$I\subseteq\{s:s\leqslant t\}$ and $J\subseteq\{s:s\geqslant t+m+1\}$ the random vectors
+$(X_s)_{s\in I}$ and $(X_s)_{s\in J}$ are independent. A $0$-dependent sequence is an
+independent one.
+\end{definition}
+
+\begin{lemma}[Disjoint functions of independent variables]\label{lem:disjoint-fn}
+Let $\varepsilon_1,\ldots,\varepsilon_N$ be independent, let $U,V$ be disjoint subsets of
+$\{1,\ldots,N\}$ and let $f,g$ be measurable functions of $(\varepsilon_u)_{u\in U}$ and
+$(\varepsilon_v)_{v\in V}$ respectively. Then $f$ and $g$ are independent, and if both are
+integrable then so is $fg$, with $\expc[fg]=\expc[f]\expc[g]$.
+\end{lemma}
+
+\begin{proof}
+The law of $(\varepsilon_u)_{u\in U\cup V}$ is the product $\mu_U\otimes\mu_V$ of the laws
+of its two disjoint blocks. For Borel sets $A,B$, Fubini--Tonelli
+(Remark~\ref{rem:assumed}) gives
+\[
+\prb\{f\in A,\ g\in B\}
+=\iint \indc\{f(x)\in A\}\,\indc\{g(y)\in B\}\,\dd\mu_U(x)\,\dd\mu_V(y)
+=\prb\{f\in A\}\,\prb\{g\in B\} .
+\]
+The same factorisation applied to $|f(x)g(y)|$ and then to $f(x)g(y)$ gives the moment
+statement.
+\end{proof}
+
+\begin{lemma}[Shift functions of an independent sequence]\label{lem:mdep-fn}
+Let $\{\varepsilon_t\}_{t\in\mathbb{Z}}$ be independent and identically distributed and put
+$X_t=g(\varepsilon_{t-m},\ldots,\varepsilon_t)$ for one measurable
+$g:\Real^{m+1}\to\Real$. Then $\{X_t\}$ is strictly stationary and $m$-dependent.
+\end{lemma}
+
+\begin{proof}
+Fix indices $t_1,\ldots,t_r$ and $h$, and let $A=\bigcup_i\{t_i-m,\ldots,t_i\}$. The
+families $(\varepsilon_u)_{u\in A}$ and $(\varepsilon_{u+h})_{u\in A}$ have the same law,
+being independent with a common marginal and indexed in the same order, and
+$(X_{t_1},\ldots,X_{t_r})$ and $(X_{t_1+h},\ldots,X_{t_r+h})$ are the image of the two
+families under the same map. That is strict stationarity. For $m$-dependence, $(X_s)_{s\in
+I}$ with $I\subseteq\{s\leqslant t\}$ finite is a function of $(\varepsilon_u)_{u\in U}$
+with $U\subseteq\{u\leqslant t\}$ finite, while $(X_s)_{s\in J}$ with
+$J\subseteq\{s\geqslant t+m+1\}$ finite is a function of $(\varepsilon_u)_{u\in V}$ with
+$V\subseteq\{u\geqslant t+1\}$; the two index sets are disjoint, so
+Lemma~\ref{lem:disjoint-fn} applies.
+\end{proof}
+
+\begin{theorem}[Central limit theorem for $m$-dependent sequences]\label{thm:mdep-clt}
+Let $\{X_t\}$ be strictly stationary and $m$-dependent with $\expc[X_t]=0$ and
+$\expc[X_t^2]<\infty$, and write $\gamma(k)=\expc[X_tX_{t+k}]$. Then $\gamma(k)=0$ for
+$|k|>m$,
+\begin{equation}\label{eq:mdep-var}
+\sigma^2 \;=\; \gamma(0)+2\sum_{k=1}^{m}\gamma(k) \;\geqslant\; 0 ,
+\end{equation}
+and $\ds n^{-1/2}\sum_{t=1}^{n}X_t\convd N(0,\sigma^2)$, where $N(0,0)$ is read as the point
+mass at $0$.
+\end{theorem}
+
+\begin{proof}
+That $\gamma(k)=0$ for $|k|>m$ is Definition~\ref{def:mdep} with $I=\{t\}$ and
+$J=\{t+k\}$. Hence, by Lemma~\ref{lem:stat-mean} applied to a block of $l$ consecutive
+terms,
+\begin{equation}\label{eq:block-var}
+\var\Bigl(\sum_{t=1}^{l}X_t\Bigr)=\sum_{|k|<l}(l-|k|)\gamma(k)
+=\sum_{|k|\leqslant m\wedge(l-1)}(l-|k|)\gamma(k) .
+\end{equation}
+Taking $l\to\infty$ after dividing by $l$ shows $\sigma^2$ is a limit of variances, so
+$\sigma^2\geqslant0$. Put $C=\sum_{|k|\leqslant m}|\gamma(k)|$, so
+$\var(\sum_{t\leqslant l}X_t)\leqslant lC$ for every $l$.
+
+\textbf{Blocks.} Fix an integer $p>m$ and let $r=\lfloor n/(p+m)\rfloor$. Cut
+$\{1,\ldots,n\}$ into $r$ consecutive stretches of length $p+m$ followed by a remainder,
+and inside the $i$th stretch let $U_i$ be the sum of the first $p$ terms and $V_i$ the sum
+of the last $m$; let $R_n$ be the sum over the remainder, which has fewer than $p+m$ terms.
+Then
+\[
+\sum_{t=1}^{n}X_t=\sum_{i=1}^{r}U_i+\sum_{i=1}^{r}V_i+R_n .
+\]
+
+\textbf{The big blocks are independent and identically distributed.} The index set of $U_i$
+ends at $(i-1)(p+m)+p$ and that of $U_{i+1}$ begins $m+1$ places later, so
+Definition~\ref{def:mdep} makes $(U_1,\ldots,U_i)$ independent of $(U_{i+1},\ldots,U_r)$
+for each $i$, and iterating gives full independence; strict stationarity makes them
+identically distributed. The same argument, with the gap now the big block of length
+$p>m$, applies to $V_1,\ldots,V_r$.
+
+\textbf{Limit of the big-block sum.} By~\eqref{eq:block-var} with $l=p>m$,
+\[
+\var(U_1)=\sum_{|k|\leqslant m}(p-|k|)\gamma(k)=p\,\sigma^2-c ,
+\qquad c=\sum_{|k|\leqslant m}|k|\gamma(k) ,
+\]
+which is free of $n$. If $\var(U_1)=0$ then each $U_i$ vanishes almost surely and
+$S_n^{(p)}:=n^{-1/2}\sum_iU_i$ is identically $0$; otherwise
+Corollary~\ref{cor:iid-clt} gives $r^{-1/2}\sum_iU_i\convd N(0,\var(U_1))$. Since
+$r/n\to(p+m)^{-1}$, Theorem~\ref{thm:slutsky} yields in both cases
+\[
+S_n^{(p)}=\sqrt{r/n}\;\Bigl(r^{-1/2}\sum_{i\leqslant r}U_i\Bigr)
+\ \convd\ Z_p\sim N(0,\sigma_p^2) ,
+\qquad \sigma_p^2=\frac{p\,\sigma^2-c}{p+m} .
+\]
+As $p\to\infty$, $\sigma_p^2\to\sigma^2$, so $\expc[e^{itZ_p}]=e^{-\sigma_p^2t^2/2}\to
+e^{-\sigma^2t^2/2}$ and $Z_p\convd N(0,\sigma^2)$ by Theorem~\ref{thm:levy}.
+
+\textbf{The small blocks and the remainder are negligible.} The $V_i$ are independent with
+mean $0$ and, by~\eqref{eq:block-var} with $l=m$, $\var(V_1)\leqslant mC$; and
+$\var(R_n)\leqslant(p+m)C$. Hence
+\[
+\expc\bigl[(S_n-S_n^{(p)})^2\bigr]
+=\frac1n\expc\Bigl[\Bigl(\sum_iV_i+R_n\Bigr)^2\Bigr]
+\leqslant \frac2n\bigl\{r\,\var(V_1)+\var(R_n)\bigr\}
+\leqslant \frac{2mC}{p+m}+\frac{2(p+m)C}{n} ,
+\]
+using $(a+b)^2\leqslant2a^2+2b^2$ and $r\leqslant n/(p+m)$. By Chebyshev's inequality
+(Theorem~\ref{thm:markov}),
+$\limsup_n\prb\{|S_n-S_n^{(p)}|>\varepsilon\}\leqslant 2mC/\{(p+m)\varepsilon^2\}$, which
+tends to $0$ as $p\to\infty$. Lemma~\ref{lem:approx-clt} completes the proof.
+\end{proof}
+
+The last step of the section removes the restriction to finite-range dependence in the one
+case the course needs, a product of a present innovation with a linear function of the past.
+Everything is phrased inside $L^2$, so no conditioning on infinite families is required.
+
+\begin{definition}[The past space]\label{def:past}
+Let $\{\varepsilon_t\}_{t\in\mathbb{Z}}$ be independent and identically distributed with
+mean $0$ and variance $\tau^2\in(0,\infty)$. Let $\calL_t$ be the closure in
+$L^2$ (Definition~\ref{def:L2}) of the set of square-integrable measurable functions of
+finitely many $\varepsilon_u$ with $u\leqslant t$.
+\end{definition}
+
+Each $\calL_t$ is a closed subspace of $L^2$ and $\calL_s\subseteq\calL_t$ for $s\leqslant
+t$. If $(c_j)_{j\geqslant0}$ is square summable then the partial sums of
+$\sum_{j\geqslant0}c_j\varepsilon_{t-j}$ are Cauchy in $L^2$. Indeed, the increments are
+orthogonal and
+\[
+\expc\Bigl[\Bigl(\sum_{M<j\leqslant N}c_j\varepsilon_{t-j}\Bigr)^2\Bigr]
+=\tau^2\sum_{M<j\leqslant N}c_j^2 .
+\]
+Thus the series has an $L^2$ limit and that limit lies in $\calL_t$.
+
+\begin{lemma}[Innovation orthogonality]\label{lem:innovation}
+Let $v\in\calL_{t-1}$ and put $X=v\,\varepsilon_t$. Then $X\in\calL_t$ and
+\[
+\expc[X]=0 ,\qquad \expc[X^2]=\tau^2\,\expc[v^2] ,\qquad
+\expc[ZX]=0 \ \text{ for every } Z\in\calL_{t-1} .
+\]
+\end{lemma}
+
+\begin{proof}
+Choose $v^{(M)}\to v$ in $L^2$, each a square-integrable measurable function of finitely
+many $\varepsilon_u$ with $u\leqslant t-1$. For fixed $M$, Lemma~\ref{lem:disjoint-fn}
+makes $v^{(M)}$ and $\varepsilon_t$ independent, so $v^{(M)}\varepsilon_t$ is square
+integrable with
+\[
+\expc\bigl[v^{(M)}\varepsilon_t\bigr]=0 ,
+\qquad
+\expc\bigl[(v^{(M)}\varepsilon_t)^2\bigr]=\tau^2\,\expc\bigl[(v^{(M)})^2\bigr] .
+\]
+Applying the second identity to $v^{(M)}-v^{(M')}$ shows $\{v^{(M)}\varepsilon_t\}_M$ is
+Cauchy in $L^2$, hence convergent there; its limit is $v\varepsilon_t$, because $L^2$
+convergence implies convergence in probability by Chebyshev's inequality
+(Theorem~\ref{thm:markov}) and therefore almost sure convergence along a subsequence
+(Lemma~\ref{lem:as-subseq}), along which $v^{(M)}\varepsilon_t\to v\varepsilon_t$. So
+$X\in\calL_t$ and the two displayed identities pass to the limit.
+
+For the third claim take $Z^{(M')}\to Z$ in $L^2$ of the same kind. Then
+$Z^{(M')}v^{(M)}$ is a measurable function of finitely many $\varepsilon_u$ with
+$u\leqslant t-1$, and it is integrable by Cauchy--Schwarz (Theorem~\ref{thm:CS}), so
+Lemma~\ref{lem:disjoint-fn} gives
+$\expc[Z^{(M')}v^{(M)}\varepsilon_t]=\expc[Z^{(M')}v^{(M)}]\,\expc[\varepsilon_t]=0$.
+Letting $M,M'\to\infty$ and using Cauchy--Schwarz once more on
+$\expc|Z^{(M')}v^{(M)}\varepsilon_t-ZX|$ gives $\expc[ZX]=0$.
+\end{proof}
+
+\begin{corollary}[Orthogonality across time]\label{cor:mds}
+If $v_{t-1}\in\calL_{t-1}$ for every $t$ and $X_t=v_{t-1}\varepsilon_t$, then
+$\expc[X_t]=0$, $\expc[X_sX_t]=0$ for $s\neq t$, and
+\begin{equation}\label{eq:mds-var}
+\expc\Bigl[\Bigl(\sum_{t=1}^{n}X_t\Bigr)^{2}\Bigr]
+=\tau^2\sum_{t=1}^{n}\expc[v_{t-1}^2] .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+For $s<t$, $X_s\in\calL_s\subseteq\calL_{t-1}$ by Lemma~\ref{lem:innovation}, so the third
+statement of that lemma gives $\expc[X_sX_t]=0$. Expanding the square and using
+$\expc[X_t^2]=\tau^2\expc[v_{t-1}^2]$ gives~\eqref{eq:mds-var}.
+\end{proof}
+
+\begin{theorem}[Central limit theorem for autoregressive scores]\label{thm:ar-score-clt}
+Let $\{\varepsilon_t\}_{t\in\mathbb{Z}}$ be independent and identically distributed with
+mean $0$ and variance $\tau^2\in(0,\infty)$, let $\ba_0,\ba_1,\ldots$ lie in $\Real^d$ with
+$\sum_{j\geqslant0}|\ba_j|^2<\infty$, and let
+\[
+\bu_t=\sum_{j\geqslant0}\ba_j\,\varepsilon_{t-j}
+\]
+be the $L^2$ limit of its partial sums. Then $\bGam:=\expc[\bu_t\bu_t']
+=\tau^2\sum_{j\geqslant0}\ba_j\ba_j'$ is free of $t$ and
+\begin{equation}\label{eq:ar-score-clt}
+\frac1{\sqrt n}\sum_{t=1}^{n}\bu_{t-1}\,\varepsilon_t \ \convd\ N(\bzero,\ \tau^2\bGam) .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{The limit variance.} Writing $\bu_t^{(m)}=\sum_{j<m}\ba_j\varepsilon_{t-j}$, the
+$\varepsilon$ being uncorrelated with mean $0$ gives $\expc[\bu_t^{(m)}\bu_t^{(m)\prime}]
+=\tau^2\sum_{j<m}\ba_j\ba_j'$, and $\bu_t^{(m)}\to\bu_t$ in $L^2$, so Cauchy--Schwarz
+(Theorem~\ref{thm:CS}) passes the identity to the limit.
+
+\textbf{Reduction to one dimension.} By Cram\'er--Wold
+(Corollary~\ref{cor:cramer-wold}) it suffices to show, for each fixed
+$\theta\in\Real^d$, that $n^{-1/2}\sum_t\langle\theta,\bu_{t-1}\rangle\varepsilon_t\convd
+N(0,\tau^2\theta'\bGam\theta)$. Put $a_j=\langle\theta,\ba_j\rangle$ and
+$u_t=\langle\theta,\bu_t\rangle=\sum_ja_j\varepsilon_{t-j}$, a square-summable
+combination with $\expc[u_t^2]=\tau^2\sum_ja_j^2=\theta'\bGam\theta$. So it is enough to
+prove the scalar statement
+\[
+S_n=\frac1{\sqrt n}\sum_{t=1}^{n}u_{t-1}\varepsilon_t \convd N\Bigl(0,\ \tau^4\sum_{j\geqslant0}a_j^2\Bigr) .
+\]
+
+\textbf{Truncation.} Put $u_{t-1}^{(m)}=\sum_{j<m}a_j\varepsilon_{t-1-j}$,
+$X_t^{(m)}=u_{t-1}^{(m)}\varepsilon_t$ and $S_n^{(m)}=n^{-1/2}\sum_{t\leqslant n}
+X_t^{(m)}$. Since $X_t^{(m)}=g(\varepsilon_{t-m},\ldots,\varepsilon_t)$ with
+$g(x_0,\ldots,x_m)=x_m\sum_{j<m}a_jx_{m-1-j}$, Lemma~\ref{lem:mdep-fn} makes
+$\{X_t^{(m)}\}$ strictly stationary and $m$-dependent. Corollary~\ref{cor:mds} gives
+$\expc[X_t^{(m)}]=0$, $\gamma^{(m)}(k)=0$ for $k\neq0$ and
+$\gamma^{(m)}(0)=\tau^2\expc[(u^{(m)})^2]=\tau^4\sum_{j<m}a_j^2$. So
+Theorem~\ref{thm:mdep-clt} applies with $\sigma^2=\gamma^{(m)}(0)$:
+\[
+S_n^{(m)}\ \convd\ Z_m\sim N\Bigl(0,\ \tau^4\sum_{j<m}a_j^2\Bigr) \quad (n\to\infty) ,
+\qquad
+Z_m\ \convd\ N\Bigl(0,\ \tau^4\sum_{j\geqslant0}a_j^2\Bigr)\quad (m\to\infty) ,
+\]
+the second by Theorem~\ref{thm:levy} as in the previous proof.
+
+\textbf{Negligibility.} The difference is $X_t-X_t^{(m)}=w_{t-1}^{(m)}\varepsilon_t$ with
+$w_{t-1}^{(m)}=\sum_{j\geqslant m}a_j\varepsilon_{t-1-j}\in\calL_{t-1}$ and
+$\expc[(w_{t-1}^{(m)})^2]=\tau^2\sum_{j\geqslant m}a_j^2$, free of $t$. By
+Corollary~\ref{cor:mds},
+\[
+\expc\bigl[(S_n-S_n^{(m)})^2\bigr]
+=\frac1n\cdot n\,\tau^2\,\expc\bigl[(w^{(m)})^2\bigr]
+=\tau^4\sum_{j\geqslant m}a_j^2 ,
+\]
+free of $n$ and tending to $0$ as $m\to\infty$. Chebyshev's inequality
+(Theorem~\ref{thm:markov}) turns this into hypothesis~\ref{ap:iii} of
+Lemma~\ref{lem:approx-clt}, which now gives the scalar statement.
+\end{proof}
+
+\begin{remark}
+The summands $u_{t-1}\varepsilon_t$ are uncorrelated by Corollary~\ref{cor:mds} but far
+from independent, and $\var(S_n)=\tau^2\expc[u^2]$ exactly, for every $n$. What the theorem
+adds is that the limit law is the normal one with that variance. Two of the course's
+statistics are of this form: with $a_j=\phi^j$ it is the score of an $AR(1)$ least squares
+fit, and with $a_j=\indc\{j=k-1\}$ it is the numerator of the lag $k$ sample
+autocorrelation of white noise.
+\end{remark}
+
+%==============================================================================
+\section{The Delta Method}\label{sec:P.25}
+%==============================================================================
+
+\begin{theorem}[Delta method]\label{thm:delta}
+Let $r_n\to\infty$ and $r_n(T_n-\vartheta)\convd T$ in $\Real^d$, and let
+$g:\Real^d\to\Real^m$ be differentiable at $\vartheta$ with Jacobian $\bD_g(\vartheta)$.
+Then
+\[
+r_n\bigl(g(T_n)-g(\vartheta)\bigr) \convd \bD_g(\vartheta)\,T .
+\]
+In particular, if $\sqrt n(T_n-\vartheta)\convd N(\bzero,\bSig)$ then
+$\sqrt n\{g(T_n)-g(\vartheta)\}\convd N\bigl(\bzero,\ \bD_g\bSig\bD_g'\bigr)$.
+\end{theorem}
+
+\begin{proof}
+Differentiability at $\vartheta$ means
+$g(\vartheta+h) - g(\vartheta) = \bD_g(\vartheta)h + R(h)$ with $|R(h)|/|h|\to0$ as
+$h\to0$. Since $r_n(T_n-\vartheta)$ converges in distribution and $r_n\to\infty$,
+Proposition~\ref{prop:const} and Theorem~\ref{thm:slutsky}\ref{sl:iii} give
+$T_n-\vartheta = r_n^{-1}\cdot r_n(T_n-\vartheta)\convp\bzero$. Writing
+$H_n = T_n-\vartheta$,
+\[
+r_n\bigl(g(T_n)-g(\vartheta)\bigr) = \bD_g(\vartheta)\,r_nH_n + r_nR(H_n) .
+\]
+The first term converges in distribution to $\bD_g(\vartheta)T$ by
+Theorem~\ref{thm:cmt}. For the second, define $\rho(h)=|R(h)|/|h|$ for $h\neq\bzero$ and
+$\rho(\bzero)=0$, so $\rho$ is continuous at $\bzero$ and
+$|r_nR(H_n)| = \rho(H_n)\,|r_nH_n|$. Here $\rho(H_n)\convp0$ by Theorem~\ref{thm:cmt} and
+$|r_nH_n|\convd|T|$, so the product converges in probability to $0$ by
+Theorem~\ref{thm:slutsky}\ref{sl:iii}. One more application of Slutsky adds the two terms.
+\end{proof}
+
+%##############################################################################
+\coursepart{IV}{Results Used in the Course}
+%##############################################################################
+
+%==============================================================================
+\section{Maximum Likelihood}\label{sec:P.ML}
+%==============================================================================
+
+Units 7 and 8 fit their models by maximum likelihood and test with the Wald and likelihood
+ratio statistics. The results are collected here for independent but not identically
+distributed observations, which is what a regression design produces, and under a
+concavity hypothesis, which every model in those units satisfies.
+
+\subsection{Score and information}\label{sec:P.ML.1}
+
+\begin{definition}[Log-likelihood, score, information]\label{def:score}
+Let $\{f(\cdot;\btheta):\btheta\in\Theta\}$ be a family of densities with respect to a measure
+$\mu$ on $\calX$, with $\Theta\subseteq\Real^p$ open. For an observation $Y$ the
+\emph{log-likelihood} is $\ell(\btheta)=\ln f(Y;\btheta)$, the \emph{score} is
+$\bU(\btheta)=\nabla\ell(\btheta)$, and the \emph{information} at $\btheta$ is
+$\calI(\btheta)=\var_{\btheta}\bigl(\bU(\btheta)\bigr)$.
+\end{definition}
+
+\begin{lemma}[Score identities]\label{lem:score}
+Suppose $f(y;\btheta)>0$ for all $y,\btheta$, that $\btheta\mapsto f(y;\btheta)$ is twice continuously
+differentiable on $\Theta$, and that there are $\mu$-integrable $g_1,g_2$ with
+\[
+\Bigl|\frac{\partial f}{\partial\theta_j}(y;\btheta)\Bigr|\leqslant g_1(y),
+\qquad
+\Bigl|\frac{\partial^2 f}{\partial\theta_j\partial\theta_k}(y;\btheta)\Bigr|\leqslant g_2(y)
+\]
+for every $j,k$, every $y$ and every $\btheta\in\Theta$. Then, with $Y$ distributed according
+to $f(\cdot;\btheta)$,
+\begin{equation}\label{eq:score-identities}
+\expc_{\btheta}\bigl[\bU(\btheta)\bigr]=\bzero ,
+\qquad
+\calI(\btheta)=\expc_{\btheta}\bigl[\bU(\btheta)\bU(\btheta)'\bigr]
+       =-\expc_{\btheta}\bigl[\nabla^2\ell(\btheta)\bigr] .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Apply Theorem~\ref{thm:diff-int} to $\int f(y;\btheta)\,\dd\mu(y)=1$, one coordinate of $\btheta$ at
+a time with the others fixed, the hypothesis on $g_1$ supplying the domination:
+\[
+\bzero=\nabla\!\int f(y;\btheta)\,\dd\mu(y)=\int\nabla f(y;\btheta)\,\dd\mu(y)
+=\int\frac{\nabla f(y;\btheta)}{f(y;\btheta)}f(y;\btheta)\,\dd\mu(y)=\expc_{\btheta}[\bU(\btheta)] ,
+\]
+since $\bU=\nabla\ln f=\nabla f/f$. Differentiating once more, with $g_2$ supplying the
+domination,
+\[
+\bzero=\int\nabla^2 f(y;\btheta)\,\dd\mu(y) .
+\]
+The quotient rule gives
+$\nabla^2\ln f = \nabla^2 f/f - (\nabla f/f)(\nabla f/f)' = \nabla^2f/f - \bU\bU'$, so
+taking expectations,
+\[
+\expc_{\btheta}\bigl[\nabla^2\ell(\btheta)\bigr]
+= \int\nabla^2f(y;\btheta)\,\dd\mu(y) - \expc_{\btheta}[\bU\bU']
+= -\expc_{\btheta}[\bU\bU'] .
+\]
+Finally $\var(\bU)=\expc[\bU\bU']$ because $\expc[\bU]=\bzero$.
+\end{proof}
+
+\begin{remark}
+When $\mu$ is counting measure on a finite set, as for the Bernoulli and multinomial
+families of Unit 7, the integrals are finite sums and the domination hypothesis is
+automatic. The equality of the two expressions for $\calI$ in~\eqref{eq:score-identities} is
+the \emph{information equality}; it is a property of the model at the true parameter, not
+an identity in $\btheta$ for a misspecified one.
+\end{remark}
+
+\subsection{The maximum likelihood estimator}\label{sec:P.ML.2}
+
+\begin{theorem}[Concave maximum likelihood]\label{thm:mle}
+Let $Y_1,Y_2,\ldots$ be independent, let $\Theta\subseteq\Real^p$ be open and convex, let
+$\btheta_0\in\Theta$, and let
+\[
+\ell_n(\btheta)=\sum_{i=1}^n\ell_i(\btheta),
+\qquad
+\bU_n=\nabla\ell_n(\btheta_0),
+\qquad
+\bH_n(\btheta)=-\nabla^2\ell_n(\btheta) .
+\]
+Assume:
+\begin{enumerate}[label=\textup{(L\arabic*)}]
+\item\label{L1} each $\ell_i$ is concave and twice continuously differentiable on $\Theta$,
+      whatever the value of $Y_i$, and $B(\btheta_0,\delta_0)\subseteq\Theta$ for some
+      $\delta_0>0$;
+\item\label{L2} $\expc[\nabla\ell_i(\btheta_0)]=\bzero$,
+      $\bF_n=n^{-1}\sum_{i\leqslant n}\var(\nabla\ell_i(\btheta_0))\to\bF$ positive definite,
+      and $n^{-1/2}\bU_n\convd N(\bzero,\bF)$;
+\item\label{L3} $n^{-1}\bH_n(\btheta_0)\convp\bG$ positive definite, and there is a
+      constant $L$ with
+      $\|\bH_n(\btheta)-\bH_n(\btheta_0)\|\leqslant nL|\btheta-\btheta_0|$ almost surely for every
+      $|\btheta-\btheta_0|\leqslant\delta_0$.
+\end{enumerate}
+Then, writing $\lambda=\lambda_{\min}(\bG)>0$:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{mle:i} with probability tending to one $\ell_n$ has a maximiser $\hat\btheta_n$
+      over $\Theta$, and it is unique whenever some $\ell_i$ is strictly concave;
+\item\label{mle:ii} $\hat\btheta_n\convp\btheta_0$;
+\item\label{mle:iii} $\sqrt n(\hat\btheta_n-\btheta_0)\convd
+      N(\bzero,\ \bG^{-1}\bF\bG^{-1})$;
+\item\label{mle:iv} if moreover $\bF=\bG$, then
+      $\sqrt n(\hat\btheta_n-\btheta_0)\convd N(\bzero,\bF^{-1})$ and
+      $2\{\ell_n(\hat\btheta_n)-\ell_n(\btheta_0)\}\convd\chi^2_p$;
+\item\label{mle:v} $n^{-1}\bH_n(\hat\btheta_n)\convp\bG$.
+\end{enumerate}
+\end{theorem}
+
+\begin{remark}
+$\bG$ is the limiting curvature of the criterion and $\bF$ the limiting variance of its
+gradient. When $\ell_n$ is the log-likelihood of a correctly specified model the two agree,
+by the information equality of Lemma~\ref{lem:score}, and~\ref{mle:iv} applies. When only
+the mean is correctly specified they need not, and~\ref{mle:iii} leaves the
+\emph{sandwich} $\bG^{-1}\bF\bG^{-1}$, which is what Unit 8 needs for overdispersed counts.
+\end{remark}
+
+\begin{proof}
+\textbf{Step 1: a curvature floor near $\btheta_0$.} Put
+$\delta_1=\min\{\delta_0,\ \lambda/(4L)\}$ and
+$A_n=\{\lambda_{\min}(n^{-1}\bH_n(\btheta_0))>\tfrac34\lambda\}$. The smallest eigenvalue of a
+symmetric matrix is $\min_{|\bu|=1}\bu'\bA\bu$ by Corollary~\ref{cor:rayleigh}, hence
+$1$-Lipschitz in the operator norm, so $\prb(A_n)\to1$ by~\ref{L3}. On $A_n$, for
+$|\btheta-\btheta_0|\leqslant\delta_1$ and $|\bu|=1$,
+\begin{equation}\label{eq:curv-floor}
+\bu'\tfrac1n\bH_n(\btheta)\bu
+\geqslant \bu'\tfrac1n\bH_n(\btheta_0)\bu - \bigl\|\tfrac1n\bH_n(\btheta)-\tfrac1n\bH_n(\btheta_0)\bigr\|
+\geqslant \tfrac34\lambda - L\delta_1 \geqslant \tfrac12\lambda .
+\end{equation}
+
+\textbf{Step 2: the score is of order $\sqrt n$.} The summands of $\bU_n$ are independent
+with mean zero by~\ref{L2}, so
+$\expc|\bU_n|^2=\sum_i\tr\var(\nabla\ell_i(\btheta_0))=n\tr\bF_n$, and Chebyshev's inequality
+(Theorem~\ref{thm:markov}) gives
+\begin{equation}\label{eq:score-order}
+\prb\bigl\{|\bU_n|>K\sqrt n\bigr\}\leqslant \tr\bF_n/K^2 .
+\end{equation}
+
+\textbf{Step 3: consistency.} Fix $\eta>0$ and $0<\delta\leqslant\delta_1$, and choose $K$
+with $\sup_n\tr\bF_n/K^2<\eta$, possible since $\tr\bF_n\to\tr\bF$. Let
+$C_n=A_n\cap\{|\bU_n|\leqslant K\sqrt n\}$, so $\liminf\prb(C_n)\geqslant1-\eta$. For a unit
+vector $\bu$ apply Taylor's theorem (Theorem~\ref{thm:taylor}, $m=1$) to
+$g(t)=\ell_n(\btheta_0+t\delta\bu)$: for some $s\in(0,1)$,
+\[
+\ell_n(\btheta_0+\delta\bu)-\ell_n(\btheta_0)
+= \delta\,\bu'\bU_n - \tfrac12\delta^2\,\bu'\bH_n(\btheta_0+s\delta\bu)\bu
+\leqslant \delta K\sqrt n - \tfrac14 n\lambda\delta^2
+\]
+on $C_n$, using Cauchy--Schwarz and~\eqref{eq:curv-floor}. The right side is negative once
+$n>(4K/(\lambda\delta))^2$, and the bound does not depend on $\bu$.
+
+Concavity extends this beyond the sphere: if $\btheta\in\Theta$ has $|\btheta-\btheta_0|=r>\delta$ then
+$\btheta_\delta=(1-\delta/r)\btheta_0+(\delta/r)\btheta$ lies on the sphere, and concavity gives
+$\ell_n(\btheta_\delta)\geqslant(1-\delta/r)\ell_n(\btheta_0)+(\delta/r)\ell_n(\btheta)$; since
+$\ell_n(\btheta_\delta)<\ell_n(\btheta_0)$ this forces $\ell_n(\btheta)<\ell_n(\btheta_0)$. So on $C_n$ and
+for $n$ large, $\ell_n$ is strictly below $\ell_n(\btheta_0)$ outside the open ball of radius
+$\delta$.
+
+The closed ball is compact and $\ell_n$ continuous, so a maximum over it is attained
+(Theorem~\ref{thm:unif-cont}), and by the previous paragraph it is a maximum over all of
+$\Theta$ and lies in the open ball. This proves~\ref{mle:i}, and
+$\liminf\prb\{|\hat\btheta_n-\btheta_0|<\delta\}\geqslant1-\eta$ with $\eta$ and $\delta$
+arbitrary proves~\ref{mle:ii}. If some $\ell_i$ is strictly concave then so is $\ell_n$,
+and a strictly concave function has at most one maximiser.
+
+\textbf{Step 4: the linearisation.} On $C_n$ and for large $n$ the maximiser is interior,
+so $\nabla\ell_n(\hat\btheta_n)=\bzero$. Write $\bh=\hat\btheta_n-\btheta_0$. Applying the mean value
+theorem (Corollary~\ref{cor:MVT}) to $t\mapsto\partial_j\ell_n(\btheta_0+t\bh)$ gives, for each
+$j$, an $s_j\in(0,1)$ with
+\[
+0-\bigl(\bU_n\bigr)_j
+= \bigl(\nabla\ell_n(\hat\btheta_n)-\nabla\ell_n(\btheta_0)\bigr)_j
+= -\bigl(\bH_n(\btheta_0+s_j\bh)\,\bh\bigr)_j ,
+\]
+that is $\bU_n=\tilde\bH_n\bh$, where row $j$ of $\tilde\bH_n$ is row $j$ of
+$\bH_n(\btheta_0+s_j\bh)$. Each row of $\tilde\bH_n-\bH_n(\btheta_0)$ is a row of a matrix of
+operator norm at most $nL|\bh|$ by~\ref{L3}, so
+$\|n^{-1}\tilde\bH_n-n^{-1}\bH_n(\btheta_0)\|\leqslant\sqrt p\,L|\bh|$, which tends to $0$ in
+probability by~\ref{mle:ii}. With~\ref{L3} again,
+\begin{equation}\label{eq:Hbar}
+\bG_n := n^{-1}\tilde\bH_n \convp \bG .
+\end{equation}
+The same argument with $\bH_n(\hat\btheta_n)$ in place of $\tilde\bH_n$ gives~\ref{mle:v}.
+
+\textbf{Step 5: asymptotic normality.} Write $\bZ_n=n^{-1/2}\bU_n$, which converges in
+distribution to $N(\bzero,\bF)$ by~\ref{L2}. On $C_n$, $\bG_n$ is invertible
+by~\eqref{eq:curv-floor} and $\sqrt n\,\bh=\bG_n^{-1}\bZ_n$. Matrix inversion is continuous
+at $\bG$, so $\bG_n^{-1}\convp\bG^{-1}$ by Theorem~\ref{thm:cmt}, and Slutsky
+(Theorem~\ref{thm:slutsky}) with the continuous mapping theorem gives
+$\sqrt n\,\bh\convd\bG^{-1}Z$ with $Z\sim N(\bzero,\bF)$. By
+Theorem~\ref{thm:mvn-linear} that law is $N(\bzero,\bG^{-1}\bF\bG^{-1})$, which
+is~\ref{mle:iii}; since $\prb(C_n)$ can be made arbitrarily close to $1$, the conclusion
+holds unconditionally. If $\bF=\bG$ the variance collapses to $\bF^{-1}$.
+
+\textbf{Step 6: the likelihood ratio at $\btheta_0$.} Taylor's theorem applied to
+$t\mapsto\ell_n(\btheta_0+t\bh)$ gives an $s\in(0,1)$ with
+\[
+2\{\ell_n(\hat\btheta_n)-\ell_n(\btheta_0)\}
+= 2\bU_n'\bh - \bh'\bH_n(\btheta_0+s\bh)\bh
+= 2\bZ_n'\bG_n^{-1}\bZ_n - (\bG_n^{-1}\bZ_n)'\bK_n(\bG_n^{-1}\bZ_n) ,
+\]
+where $\bK_n=n^{-1}\bH_n(\btheta_0+s\bh)\convp\bG$ by the argument of Step 4. Slutsky and
+the continuous mapping theorem give the limit
+$2Z'\bG^{-1}Z-Z'\bG^{-1}\bG\bG^{-1}Z=Z'\bG^{-1}Z$. Under $\bF=\bG$ this is $Z'\bF^{-1}Z$
+with $Z\sim N(\bzero,\bF)$, which is $\chi^2_p$ by Theorem~\ref{thm:quadform}, completing
+\ref{mle:iv}.
+\end{proof}
+
+\begin{corollary}[Wald]\label{cor:wald}
+Under Theorem~\ref{thm:mle} with $\bF=\bG$, let $\bR$ be a fixed $q\times p$ matrix of rank
+$q$ and $\hat\bG_n=n^{-1}\bH_n(\hat\btheta_n)$. If $\bR\btheta_0=\br$ then
+\[
+W_n = (\bR\hat\btheta_n-\br)'\bigl\{\tfrac1n\bR\hat\bG_n^{-1}\bR'\bigr\}^{-1}
+      (\bR\hat\btheta_n-\br) \convd \chi^2_q .
+\]
+The same holds without $\bF=\bG$ if $\hat\bG_n^{-1}$ is replaced by
+$\hat\bG_n^{-1}\hat\bF_n\hat\bG_n^{-1}$ for any $\hat\bF_n\convp\bF$.
+\end{corollary}
+
+\begin{proof}
+By~\ref{mle:iv} and Theorem~\ref{thm:mvn-linear},
+$\sqrt n(\bR\hat\btheta_n-\br)=\bR\sqrt n(\hat\btheta_n-\btheta_0)\convd N(\bzero,\bR\bF^{-1}\bR')$,
+and $\bR\bF^{-1}\bR'$ is positive definite because $\bR$ has full row rank. By~\ref{mle:v}
+and continuity of inversion, $\bR\hat\bG_n^{-1}\bR'\convp\bR\bF^{-1}\bR'$. Now apply
+Theorem~\ref{thm:quadform}. In the general case the same argument runs with the limiting
+variance $\bG^{-1}\bF\bG^{-1}$ of~\ref{mle:iii} and its consistent estimate.
+\end{proof}
+
+\begin{theorem}[Likelihood ratio]\label{thm:lrt}
+Under Theorem~\ref{thm:mle} with $\bF=\bG$, partition $\btheta=(\btheta_1,\btheta_2)$ with
+$\btheta_2$ of dimension $q$, and let $\hat\btheta^R_n$ maximise $\ell_n$ over
+$\Theta\cap\{\btheta_2=\btheta_{2,0}\}$, where $\btheta_{2,0}$ is the true value. Suppose the
+hypotheses of Theorem~\ref{thm:mle} also hold for the restricted problem, again with
+$\bF=\bG$ and with limiting information $\bF_{11}$, the leading $(p-q)$ block of $\bF$.
+Then
+\[
+\mathit{LR}_n = 2\bigl\{\ell_n(\hat\btheta_n)-\ell_n(\hat\btheta^R_n)\bigr\}\convd\chi^2_q .
+\]
+\end{theorem}
+
+\begin{proof}
+Applying Theorem~\ref{thm:mle}\ref{mle:iv} to the full problem and, in the subspace
+$\{\btheta_2=\btheta_{2,0}\}$, to the restricted one,
+\[
+2\{\ell_n(\hat\btheta_n)-\ell_n(\btheta_0)\}=\bZ_n'\bF^{-1}\bZ_n+o_p(1),
+\qquad
+2\{\ell_n(\hat\btheta^R_n)-\ell_n(\btheta_0)\}=\bZ_{n,1}'\bF_{11}^{-1}\bZ_{n,1}+o_p(1) ,
+\]
+where $\bZ_n=n^{-1/2}\bU_n\convd Z\sim N(\bzero,\bF)$ and $\bZ_{n,1}$ is its first $p-q$
+coordinates, the score of the restricted model. Subtracting,
+\[
+\mathit{LR}_n = \bZ_n'\bF^{-1}\bZ_n - \bZ_{n,1}'\bF_{11}^{-1}\bZ_{n,1}+o_p(1)
+\convd Z'\bF^{-1}Z - Z_1'\bF_{11}^{-1}Z_1
+\]
+by the continuous mapping theorem and Slutsky.
+
+Write $\bA=[\bI_{p-q}\ \ \bzero]$, so $Z_1=\bA Z$ and $\bF_{11}=\bA\bF\bA'$, and put
+$W=\bF^{-1/2}Z$, which is $N(\bzero,\bI_p)$ by Theorem~\ref{thm:mvn-linear} and the
+symmetric square root of Theorem~\ref{thm:sqrt}. Then $Z'\bF^{-1}Z=|W|^2$ and
+$Z_1'\bF_{11}^{-1}Z_1=W'\bP W$ with
+\[
+\bP = \bF^{1/2}\bA'(\bA\bF\bA')^{-1}\bA\bF^{1/2} ,
+\]
+which is symmetric and, by the cyclic property of the trace,
+\[
+\bP^2=\bP, \qquad
+\tr\bP=\tr\{(\bA\bF\bA')^{-1}\bA\bF\bA'\}=p-q .
+\]
+Hence $\bI-\bP$ is symmetric idempotent of rank $q$ and the limit is
+$W'(\bI-\bP)W\sim\chi^2_q$ by
+Theorem~\ref{thm:quadratic-chisq}.
+\end{proof}
+
+\begin{remark}
+The three statistics use different parts of the same expansion: Wald uses $\hat\btheta_n$ and
+the curvature at it, the likelihood ratio uses the heights of the two fitted
+log-likelihoods, and both are $\chi^2_q$ in the limit. They are not equal in finite
+samples, and Unit 7 exhibits a data set on which they disagree.
+\end{remark}
+
+%==============================================================================
+\section{The Statistics of This Course}\label{sec:P.26}
+%==============================================================================
+
+\begin{theorem}[Quadratic forms of asymptotically normal vectors]\label{thm:quadform}
+Let $V_n\convd N(\bzero,\bSig)$ in $\Real^p$ with $\bSig$ positive definite, and let
+$\hat\bSig_n\convp\bSig$. Then
+\[
+V_n'\hat\bSig_n^{-1}V_n \convd \chi^2_p .
+\]
+\end{theorem}
+
+\begin{proof}
+Matrix inversion is continuous on the open set of invertible matrices, and $\bSig$ lies in
+it, so $\hat\bSig_n^{-1}\convp\bSig^{-1}$ by Theorem~\ref{thm:cmt}. By
+Theorem~\ref{thm:slutsky}\ref{sl:i}, $(V_n,\hat\bSig_n^{-1})\convd(V,\bSig^{-1})$ with
+$V\sim N(\bzero,\bSig)$, and $(\bv,\bA)\mapsto\bv'\bA\bv$ is continuous, so
+Theorem~\ref{thm:cmt} gives $V_n'\hat\bSig_n^{-1}V_n\convd V'\bSig^{-1}V$.
+
+It remains to identify the limit law. Let $\bSig^{1/2}$ be the symmetric positive definite
+square root and $W = \bSig^{-1/2}V$. By Proposition~\ref{prop:cf-gauss} and
+Proposition~\ref{prop:cf-props}\ref{cf:iv}, $W\sim N(\bzero,\bI_p)$, so its coordinates are
+independent standard normals, and $V'\bSig^{-1}V = |W|^2 = \sum_{j\leqslant p}W_j^2$, which
+is $\chi^2_p$ by definition.
+\end{proof}
+
+\begin{remark}[The Breusch--Pagan statistic]
+Unit 4 needs exactly this. There $V_n = n^{-1/2}\bZ'\bg$ is shown to satisfy
+$V_n\convd N(\bzero,\ \kappa\bQ)$ by Corollary~\ref{cor:weighted}: the summands
+$\bz_i(\varepsilon_i^2/\sigma^2-1)$ are independent, mean zero, and carry non-identical
+weights, which is why the Lindeberg--Feller form is required and the
+identically-distributed Corollary~\ref{cor:iid-clt} is not enough. The constant is
+$\kappa=2$ under normality and $\kappa=\tau^2/\sigma^4$ in general. The empirical
+$n^{-1}\bZ'\bM_0\bZ$ converges to $\bQ$, so Theorem~\ref{thm:quadform} delivers the
+$\chi^2_p$ limit, and Slutsky is what allows the unknown $\sigma^2$ and $\kappa$ to be
+replaced by consistent estimates without changing the limit.
+\end{remark}
+
+\begin{remark}[Where else]
+Units 7--8 use Theorem~\ref{thm:delta} for the asymptotic distribution of functions of the
+maximum likelihood estimator, Theorem~\ref{thm:quadform} for the Wald statistic, and
+Theorem~\ref{thm:slutsky} to substitute the observed information for its expectation.
+Unit 10 uses Theorem~\ref{thm:LF} for the least squares estimator of an autoregression,
+where the summands $y_{t-1}\varepsilon_t$ are again not identically distributed.
+\end{remark}
+
+%==============================================================================
+\section{Numerical Illustration}\label{sec:P.27}
+%==============================================================================
+
+The Lindeberg condition is not a technicality: when it fails, the conclusion fails. The
+array below has $\sum_j\var(\xi_{nj})=1$ for every $n$ and mean zero, but one summand
+carries a fixed share of the variance, violating Step 1 of the proof of
+Theorem~\ref{thm:LF}.
+
+<<lindeberg-fail>>=
+set.seed(1)
+one_row <- function(n, share) {
+  # summand 1 carries `share` of the total variance; the rest split the remainder
+  v1 <- share; vr <- (1 - share) / (n - 1)
+  c(rnorm(1, sd = sqrt(v1)), rnorm(n - 1, sd = sqrt(vr)))
+}
+lindeberg_sum <- function(n, share, eps = 0.3, B = 4000) {
+  v1 <- share; vr <- (1 - share)/(n - 1)
+  sds <- c(sqrt(v1), rep(sqrt(vr), n - 1))
+  # E[xi^2 ; |xi|>eps] for a centred normal with sd s
+  contrib <- sapply(sds, function(s)
+    2 * integrate(function(x) x^2 * dnorm(x, sd = s), eps, Inf)$value)
+  sum(contrib)
+}
+c(share_0    = lindeberg_sum(400, 1/400),   # equal weights: condition holds
+  share_half = lindeberg_sum(400, 0.5))     # one dominant term: condition fails
+@
+
+With equal weights the Lindeberg sum is numerically zero and the row sums are close to
+normal; with one dominant summand it is bounded away from zero and the row sums retain that
+summand's shape.
+
+<<lindeberg-effect, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+set.seed(2); B <- 4000; n <- 400
+S_ok  <- replicate(B, sum(one_row(n, 1/n)))
+S_bad <- replicate(B, sum(one_row(n, 0.5)))
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 2, 1))
+for (nm in c("ok", "bad")) {
+  S <- if (nm == "ok") S_ok else S_bad
+  hist(S, breaks = 40, freq = FALSE, col = "grey88", border = "white",
+       main = if (nm == "ok") "equal weights" else "one dominant term",
+       xlab = expression(sum(xi[nj])), xlim = c(-4, 4))
+  curve(dnorm(x), add = TRUE, lwd = 2, col = "#B45309")
+}
+par(op)
+@
+
+\begin{figure}[!ht]\centering
+\caption{Row sums of a triangular array against the $N(0,1)$ density. Both rows have total
+variance $1$; only the left satisfies~\eqref{eq:lindeberg}. In the right panel the sum is a
+sum of two normals and so is itself exactly normal. The illustration is that the limit is
+not reached \emph{by accumulation}, the dominant term never becoming negligible.}
+\end{figure}
+
+Corollary~\ref{cor:weighted} is what the regression applications use. Its two design
+conditions are limits and so cannot be verified on a single sample; what a sample does show
+is the finite-$n$ quantity behind the second of them, the largest share of
+$\sum_i|\bz_i|^2$ carried by one observation. If that share is small the design is far from
+the degenerate case, and if it is close to $1$ no central limit theorem applies however
+large $n$ is.
+
+<<design-conditions>>=
+suppressMessages(library(ISLR2))
+z  <- Boston$lstat; nn <- length(z)
+Zc <- z - mean(z)                                   # centred, as Z'M0Z requires
+c(Q_n            = sum(Zc^2)/nn,                    # estimates Q; must be positive
+  max_share      = max(Zc^2)/sum(Zc^2),             # largest single share
+  share_if_equal = 1/nn,                            # the value under equal weights
+  ratio          = max(Zc^2)/sum(Zc^2)*nn)          # how many times the equal share
+@
+
+The largest observation carries about $2.5\%$ of the total, roughly twelve times an equal
+share: unequal, but nowhere near domination by one point.
+
+<<clt-quadform>>=
+set.seed(3)
+B <- 4000
+Tn <- replicate(B, {
+  eps <- rnorm(nn)                                  # H0: homoscedastic normal
+  g   <- eps^2 - 1
+  Vn  <- sum(Zc * g)/sqrt(nn)
+  Vn^2 / (2 * sum(Zc^2)/nn)                         # Theorem A.30 with p = 1
+})
+c(mean_stat = mean(Tn), chisq1_mean = 1,
+  var_stat  = var(Tn),  chisq1_var  = 2,
+  rejection_rate_5pct = mean(Tn > qchisq(0.95, 1)))
+@
+
+The simulated statistic has the mean, variance and upper tail of a $\chi^2_1$, which is
+Theorem~\ref{thm:quadform} with the covariance $\kappa\bQ$ and $\kappa=2$ supplied by
+Corollary~\ref{cor:weighted} under normality.
+
+Theorem~\ref{thm:ar-score-clt} makes two claims that can be separated. The variance of
+$n^{-1/2}\sum_tu_{t-1}\varepsilon_t$ is $\tau^4\sum_j a_j^2$ \emph{exactly}, for every $n$,
+by Corollary~\ref{cor:mds}; what the theorem adds is that the law is asymptotically normal.
+Both are checked below for $a_j=\phi^j$ with $\phi=0.8$, the score of a first-order
+autoregression, together with the truncation bound
+$\expc[(S_n-S_n^{(m)})^2]=\tau^4\sum_{j\geqslant m}a_j^2$ that drives the proof.
+
+<<ar-score-check>>=
+set.seed(5); phi <- 0.8; B <- 4000; ms <- c(1, 4, 16)
+sim <- function(n) t(replicate(B, {
+  e <- rnorm(n + 80); k <- 81:(n + 80)
+  u <- as.numeric(stats::filter(e, phi, "recursive"))
+  S <- sum(u[k - 1]*e[k])/sqrt(n)
+  c(S, sapply(ms, function(m) {
+      um <- as.numeric(stats::filter(e, phi^(0:(m - 1)), sides = 1))
+      S - sum(um[k - 1]*e[k])/sqrt(n) })) }))
+R <- sim(400)
+t(sapply(seq_along(ms), function(i)
+  c(m = ms[i], mean_squared_difference = mean(R[, i + 1]^2),
+    theory_tail_sum = phi^(2*ms[i])/(1 - phi^2))))
+@
+
+The truncation error is what the approximation lemma needs to be small uniformly in $n$,
+and it is: at $m=16$ the $m$-dependent array of the proof reproduces the score to within
+$0.0023$ in mean square, against a variance of $2.78$.
+
+<<ar-score-normal>>=
+t(sapply(c(50, 200, 800), function(n) {
+  S <- sim(n)[, 1]
+  c(n = n, variance = var(S), theory = 1/(1 - phi^2),
+    skewness = mean((S - mean(S))^3)/sd(S)^3,
+    kurtosis = mean((S - mean(S))^4)/var(S)^2) }))
+@
+
+The variance matches at every $n$, as it must. The skewness and kurtosis fall towards
+their normal values $0$ and $3$, roughly halving the gap each time $n$ is quadrupled, which
+is the $n^{-1/2}$ rate. The approach is not fast: at $n=50$ the kurtosis is still $4.76$, so
+normality here is an asymptotic statement and not a small-sample one.
+
+%==============================================================================
+\section{Exercises}\label{sec:P.28}
+%==============================================================================
+
+\begin{exercise}\label{ex:modes}
+Give a sequence converging in distribution but not in probability, and one converging in
+probability but not almost surely.
+\end{exercise}
+
+\begin{solution}
+For the first, let $X\sim N(0,1)$ and $X_n=(-1)^nX$. Each $X_n$ has the $N(0,1)$ law, so
+$X_n\convd X$; but $|X_n-X|=2|X|$ for odd $n$, which does not tend to $0$ in probability.
+This also shows convergence in distribution says nothing about the joint behaviour of
+$X_n$ and $X$, only about laws.
+
+For the second, take the sliding indicators on $[0,1]$ with Lebesgue measure: for
+$n = 2^k+r$ with $0\leqslant r<2^k$, let $X_n = \indc_{[r2^{-k},(r+1)2^{-k}]}$. Then
+$\prb\{X_n\neq0\}=2^{-k}\to0$, so $X_n\convp0$; but every $\omega$ lies in infinitely many
+of the intervals, so $X_n(\omega)$ does not converge for any $\omega$.
+\end{solution}
+
+\begin{exercise}\label{ex:cmt-need}
+Show by example that $X_n\convd X$ and $Y_n\convd Y$ do not imply $X_n+Y_n\convd X+Y$, and
+identify which hypothesis of Theorem~\ref{thm:slutsky} rules the example out.
+\end{exercise}
+
+\begin{solution}
+Let $X\sim N(0,1)$, $X_n=X$ and $Y_n=(-1)^nX$. Then $X_n\convd N(0,1)$ and
+$Y_n\convd N(0,1)$, yet $X_n+Y_n$ equals $2X$ for even $n$ and $0$ for odd $n$, so its law
+alternates between $N(0,4)$ and $\delta_0$ and does not converge.
+
+Slutsky requires the second sequence to converge to a \emph{constant}. That is exactly what
+fails: convergence in distribution constrains only marginal laws, and the sum depends on
+the joint law, which is unconstrained. Convergence to a constant pins the joint law down,
+which is the content of part~\ref{sl:i} of the theorem.
+\end{solution}
+
+\begin{exercise}\label{ex:lindeberg-check}
+Verify the Lindeberg condition for $\xi_{ni}=a_{ni}\varepsilon_i$ with $\varepsilon_i$
+i.i.d.\ mean zero, variance $1$, where $\sum_i a_{ni}^2=1$ and $\max_i|a_{ni}|\to0$.
+\end{exercise}
+
+\begin{solution}
+$\expc[\xi_{ni}]=0$ and $\sum_i\var(\xi_{ni})=\sum_i a_{ni}^2=1$. Writing
+$\delta_n=\max_i|a_{ni}|$, the event $\{|\xi_{ni}|>\varepsilon\}$ is contained in
+$\{|\varepsilon_i|>\varepsilon/\delta_n\}$, so
+\[
+\sum_i\expc\bigl[\xi_{ni}^2;|\xi_{ni}|>\varepsilon\bigr]
+\leqslant \sum_i a_{ni}^2\,\expc\bigl[\varepsilon_1^2;|\varepsilon_1|>\varepsilon/\delta_n\bigr]
+= \expc\bigl[\varepsilon_1^2;|\varepsilon_1|>\varepsilon/\delta_n\bigr] ,
+\]
+using that the $\varepsilon_i$ are identically distributed. Since
+$\varepsilon/\delta_n\to\infty$ and $\expc[\varepsilon_1^2]=1<\infty$, dominated convergence
+sends this to $0$. The condition $\max_i|a_{ni}|\to0$ is essential: with
+$a_{n1}=1$ and the rest zero the sum is $\expc[\varepsilon_1^2;|\varepsilon_1|>\varepsilon]$,
+which does not vanish.
+\end{solution}
+
+\begin{exercise}\label{ex:delta-log}
+Let $\sqrt n(\hat\theta-\theta)\convd N(0,\sigma^2)$ with $\theta>0$. Find the limit law of
+$\sqrt n(\log\hat\theta-\log\theta)$ and of $\sqrt n(\hat\theta^2-\theta^2)$.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:delta} with $g(x)=\log x$, $g'(\theta)=1/\theta$, so
+$\sqrt n(\log\hat\theta-\log\theta)\convd N(0,\sigma^2/\theta^2)$: the asymptotic variance
+of a log-transformed estimator is the squared coefficient of variation.
+
+With $g(x)=x^2$, $g'(\theta)=2\theta$, giving $N(0,4\theta^2\sigma^2)$. Note the method
+fails where $g'(\theta)=0$: at $\theta=0$ the second display would give a degenerate limit,
+and the correct normalisation is then $n$ rather than $\sqrt n$, with a $\chi^2_1$ limit.
+\end{solution}
+
+\begin{exercise}\label{ex:wald}
+Let $\sqrt n(\hat\bb-\bb)\convd N(\bzero,\bSig)$ with $\bSig$ positive definite and let
+$\hat\bSig\convp\bSig$. Show that under $H_0\colon\bR\bb=\br$ with $\bR$ of full row rank
+$q$,
+\[
+n(\bR\hat\bb-\br)'\bigl(\bR\hat\bSig\bR'\bigr)^{-1}(\bR\hat\bb-\br)\convd\chi^2_q .
+\]
+\end{exercise}
+
+\begin{solution}
+Under $H_0$, $\sqrt n(\bR\hat\bb-\br) = \bR\sqrt n(\hat\bb-\bb)\convd N(\bzero,\bR\bSig\bR')$
+by Theorem~\ref{thm:cmt} applied to the linear map $\bv\mapsto\bR\bv$. The limiting
+covariance is positive definite: for $\bv\neq\bzero$, $\bR'\bv\neq\bzero$ because $\bR$ has
+full row rank, so $\bv'\bR\bSig\bR'\bv>0$. Also $\bR\hat\bSig\bR'\convp\bR\bSig\bR'$ by
+Theorem~\ref{thm:cmt}. Theorem~\ref{thm:quadform} with $p=q$ then gives the $\chi^2_q$
+limit. This is the Wald statistic of Units 7--8.
+\end{solution}
+
+\begin{exercise}\label{ex:normality-role}
+In Theorem~\ref{thm:LF} normality is nowhere assumed of the $\xi_{nj}$, yet the proof
+introduces Gaussian variables $\zeta_{nj}$. Explain their role, and say where in the
+Breusch--Pagan derivation of Unit 4 normality of the \emph{errors} does real work.
+\end{exercise}
+
+\begin{solution}
+The $\zeta_{nj}$ are a comparison array, not an assumption: they are constructed to have
+the same variances $c_{nj}$ as the $\xi_{nj}$, so that their sum is exactly $N(0,c_n)$ and
+the problem reduces to showing the two products of characteristic functions are close.
+Normality enters only as a device for producing a reference sum with a known law.
+
+In Unit 4 normality of the errors is used in exactly one place: to evaluate
+$\var(\varepsilon_i^2/\sigma^2)=2$, which fixes the divisor $2$ in $LM=\SSR_z/2$. Without
+it that variance is $\tau^2/\sigma^4$ and the correctly scaled statistic is Koenker's
+$nR_z^2$. The central limit theorem behind both is the same, and needs no normality at all.
+\end{solution}
+
+\end{document}

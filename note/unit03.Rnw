@@ -1,0 +1,1532 @@
+% Compile:  python build.py 03
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 3\ \ Multiple Regression II: Inference and Interpretation}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{3.\arabic{theorem}}
+\renewcommand\thetheorem  {3.\arabic{theorem}}
+\renewcommand\thelemma    {3.\arabic{theorem}}
+\renewcommand\theproposition{3.\arabic{theorem}}
+\renewcommand\thecorollary{3.\arabic{theorem}}
+\renewcommand\theexample  {3.\arabic{example}}
+\renewcommand\theexercise {3.\arabic{exercise}}
+\renewcommand\thefigure   {3.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Multiple Regression II}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit03-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 3.\ Multiple Regression II: Inference and Interpretation}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+Throughout, $\bY = \bX\bb+\be$ under the assumptions \Aref{1}--\Aref{5} of Unit 2, with
+$\hat\bb = (\bX'\bX)^{-1}\bX'\bY$, $s^2 = \SSE/(n-k-1)$, and $\bH$, $\bM$ as defined there.
+
+%==============================================================================
+\section{Inference for a Single Coefficient}\label{sec:3.1}
+%==============================================================================
+
+\begin{reading}
+FREES §3.4 · ISLR §3.2.2 · CLM §7.1, §7.4.
+\end{reading}
+
+\begin{theorem}[$t$ test for one coefficient]\label{thm:t-test}
+Under \Aref{1}--\Aref{5}, for $H_0\colon \beta_j = \beta_j^0$,
+\begin{equation}\label{eq:t-test}
+t = \frac{\hat\beta_j - \beta_j^0}{\SE(\hat\beta_j)} \sim t_{n-k-1}
+\quad\text{under } H_0, \qquad
+\SE(\hat\beta_j) = s\sqrt{[(\bX'\bX)^{-1}]_{jj}} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} By the sampling distribution of $\hat\bb$ established in Unit 2,
+$\hat\bb\sim N(\bb,\sigma^2(\bX'\bX)^{-1})$;
+the $j$-th coordinate of a multivariate normal is normal with the $(j,j)$ variance, so
+\[
+Z = \frac{\hat\beta_j-\beta_j}{\sigma\sqrt{[(\bX'\bX)^{-1}]_{jj}}} \sim N(0,1) .
+\]
+
+\textbf{Step 2.} $V = \SSE/\sigma^2\sim\chi^2_{n-k-1}$ independently of $\hat\bb$, hence of
+$Z$.
+
+\textbf{Step 3.} $Z/\sqrt{V/(n-k-1)}$ is $t_{n-k-1}$ by definition, and
+\[
+\frac{Z}{\sqrt{V/(n-k-1)}}
+= \frac{\hat\beta_j-\beta_j}{\sqrt{\MSE}\sqrt{[(\bX'\bX)^{-1}]_{jj}}}
+= \frac{\hat\beta_j-\beta_j}{\SE(\hat\beta_j)} . \qedhere
+\]
+\end{proof}
+
+\begin{theorem}[Confidence interval for $\bc'\bb$]\label{thm:ci}
+Under \Aref{1}--\Aref{5}, a $(1-\alpha)$ confidence interval for $\bc'\bb$ is
+\begin{equation}\label{eq:ci}
+\bc'\hat\bb \pm t_{\alpha/2,\,n-k-1}\; s\sqrt{\bc'(\bX'\bX)^{-1}\bc} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+$\bc'\hat\bb \sim N(\bc'\bb,\ \sigma^2\bc'(\bX'\bX)^{-1}\bc)$ by closure of the normal
+under linear maps. Standardising and dividing by $\sqrt{V/(n-k-1)}$ as in
+Theorem~\ref{thm:t-test} gives
+\[
+\frac{\bc'\hat\bb-\bc'\bb}{s\sqrt{\bc'(\bX'\bX)^{-1}\bc}} \sim t_{n-k-1} ,
+\]
+and inverting the pivot yields~\eqref{eq:ci}.
+\end{proof}
+
+\begin{remark}
+$\hat\beta_j$ is the case $\bc = \mathbf{e}_j$. The interpretation of $\beta_j$ is the
+change in $\expc[Y]$ per unit change in $x_j$ \emph{with the other explanatory variables
+held fixed}.
+\end{remark}
+
+%==============================================================================
+\section{Inference for Several Coefficients}\label{sec:3.2}
+%==============================================================================
+
+\begin{reading}
+FREES §3.4 · ISLR §3.2.2 · CLM §7.3.
+\end{reading}
+
+\begin{theorem}[General linear hypothesis]\label{thm:general-F}
+Let $\bR$ be $q\times(k+1)$ of rank $q$ and $\br\in\Real^q$. Under \Aref{1}--\Aref{5}, for
+$H_0\colon \bR\bb = \br$,
+\begin{equation}\label{eq:general-F}
+\boxed{\;F = \frac{(\bR\hat\bb-\br)'\bigl[\bR(\bX'\bX)^{-1}\bR'\bigr]^{-1}(\bR\hat\bb-\br)}
+                  {q\,s^2}
+\;\sim\; F_{q,\,n-k-1} \quad\text{under } H_0 . \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} $\bR\hat\bb\sim N(\bR\bb,\ \sigma^2\bSig_R)$ with
+$\bSig_R = \bR(\bX'\bX)^{-1}\bR'$, so under $H_0$,
+$\bR\hat\bb-\br\sim N(\bzero,\sigma^2\bSig_R)$.
+
+\textbf{Step 2.} $\bSig_R$ is positive definite: for $\bv\neq\bzero$,
+$\bv'\bSig_R\bv = (\bR'\bv)'(\bX'\bX)^{-1}(\bR'\bv) > 0$, since $\rank(\bR)=q$ makes
+$\bR'\bv\neq\bzero$. With $\bSig_R^{1/2}$ its symmetric positive definite square root and
+$\bw = \sigma^{-1}\bSig_R^{-1/2}(\bR\hat\bb-\br)\sim N(\bzero,\bI_q)$,
+\[
+W = \bw'\bw = \frac{(\bR\hat\bb-\br)'\bSig_R^{-1}(\bR\hat\bb-\br)}{\sigma^2}
+\sim \chi^2_q .
+\]
+
+\textbf{Step 3.} $W$ is a function of $\hat\bb$, hence independent of
+$V = \SSE/\sigma^2\sim\chi^2_{n-k-1}$. Then
+$F = \{W/q\}/\{V/(n-k-1)\}$ is $F_{q,n-k-1}$, and substituting
+$s^2 = \SSE/(n-k-1)$ gives~\eqref{eq:general-F}.
+\end{proof}
+
+\begin{proposition}[Restricted least squares]\label{prop:restricted}
+Under \Aref{4}, with $\bR$ of rank $q$, the minimiser of $\|\bY-\bX\bb\|^2$ subject to
+$\bR\bb=\br$ is
+\begin{equation}\label{eq:restricted}
+\tilde\bb = \hat\bb - (\bX'\bX)^{-1}\bR'\bigl[\bR(\bX'\bX)^{-1}\bR'\bigr]^{-1}
+            (\bR\hat\bb-\br) ,
+\end{equation}
+and the residual sums of squares satisfy
+\begin{equation}\label{eq:sse-gap}
+\SSE_R - \SSE_U
+= (\bR\hat\bb-\br)'\bigl[\bR(\bX'\bX)^{-1}\bR'\bigr]^{-1}(\bR\hat\bb-\br) .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Write $\bA=\bX'\bX$, which is positive definite by \Aref{4}, and $\bb = \hat\bb+\bd$. Since
+$\bX'(\bY-\bX\hat\bb)=\bzero$, the cross term vanishes and
+\[
+\|\bY-\bX\bb\|^2 = \|\bY-\bX\hat\bb\|^2 - 2\bd'\bX'(\bY-\bX\hat\bb) + \bd'\bA\bd
+= \SSE_U + \bd'\bA\bd .
+\]
+The constraint $\bR\bb=\br$ becomes $\bR\bd = \bc$ with $\bc = \br-\bR\hat\bb$, so the
+problem is to minimise $\bd'\bA\bd$ over that affine set. Put
+$\bd^\ast = \bA^{-1}\bR'\bmu$ with $\bmu = (\bR\bA^{-1}\bR')^{-1}\bc$, which is defined
+because $\bR\bA^{-1}\bR'$ is positive definite (Step 2 of Theorem~\ref{thm:general-F}) and
+which satisfies $\bR\bd^\ast=\bc$. Any competitor is $\bd^\ast+\bv$ with $\bR\bv=\bzero$,
+and
+\[
+(\bd^\ast+\bv)'\bA(\bd^\ast+\bv) = \bd^{\ast\prime}\bA\bd^\ast + 2\bmu'\bR\bv
++ \bv'\bA\bv = \bd^{\ast\prime}\bA\bd^\ast + \bv'\bA\bv ,
+\]
+using $\bd^{\ast\prime}\bA\bv = \bmu'\bR\bA^{-1}\bA\bv = \bmu'\bR\bv = 0$. The last term is
+non-negative and vanishes only at $\bv=\bzero$, so $\bd^\ast$ is the unique minimiser,
+which is~\eqref{eq:restricted}. Its value is
+\[
+\bd^{\ast\prime}\bA\bd^\ast = \bmu'\bR\bA^{-1}\bR'\bmu
+= \bc'(\bR\bA^{-1}\bR')^{-1}\bc ,
+\]
+and $\SSE_R = \SSE_U + \bd^{\ast\prime}\bA\bd^\ast$ gives~\eqref{eq:sse-gap}, the sign of
+$\bc$ being immaterial in a quadratic form.
+\end{proof}
+
+\begin{corollary}[Extra sum of squares]\label{cor:nested-F}
+Let $\SSE_U$ be the residual sum of squares of the full model and $\SSE_R$ that of the
+model fitted under the $q$ constraints $\bR\bb=\br$. Then
+\begin{equation}\label{eq:nested-F}
+F = \frac{(\SSE_R-\SSE_U)/q}{\SSE_U/(n-k-1)} .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+By~\eqref{eq:sse-gap}, $\SSE_R-\SSE_U$ is exactly the numerator quadratic form
+of~\eqref{eq:general-F}. Dividing by $q\,s^2$ turns~\eqref{eq:nested-F}
+into~\eqref{eq:general-F} term by term, so the two are the same number for every data set,
+not merely two statistics with the same law, and Theorem~\ref{thm:general-F} gives the
+$F_{q,n-k-1}$ distribution under $H_0$.
+\end{proof}
+
+\begin{corollary}[$t^2 = F$ for one constraint]\label{cor:t2F}
+For $H_0\colon \bc'\bb = r_0$ ($q=1$), the statistic~\eqref{eq:general-F} is the square of
+\[
+t = \frac{\bc'\hat\bb-r_0}{s\sqrt{\bc'(\bX'\bX)^{-1}\bc}} .
+\]
+\end{corollary}
+
+\begin{proof}
+With $\bR=\bc'$, $\br=r_0$, $\bSig_R = \bc'(\bX'\bX)^{-1}\bc$ is a scalar, so
+\[
+F = \frac{(\bc'\hat\bb-r_0)^2}{s^2\,\bc'(\bX'\bX)^{-1}\bc} = t^2 . \qedhere
+\]
+\end{proof}
+
+\begin{remark}[Which $\bR$ gives which test]
+The overall $F$ of Unit 2 is $\bR = [\bzero\mid\bI_k]$, $\br=\bzero$, so $q=k$. Dropping a
+subset of $q$ predictors is $\bR$ selecting those rows, and~\eqref{eq:nested-F} is then
+the \emph{partial} $F$ test: fit with and without them and compare residual sums of
+squares. Testing $\beta_1 = \beta_2$ is $\bR = (0,1,-1,0,\ldots)$ with $\br=0$, a
+constraint that is not a variable exclusion, and for which~\eqref{eq:general-F} is the
+only convenient route.
+\end{remark}
+
+%==============================================================================
+\section{Prediction}\label{sec:3.3}
+%==============================================================================
+
+\begin{reading}
+FREES §3.4 · CLM §9.
+\end{reading}
+
+\begin{theorem}[Confidence interval for the mean; prediction interval]\label{thm:pred}
+Let $\bx_0\in\Real^{k+1}$ and $\hat Y_0 = \bx_0'\hat\bb$. Under \Aref{1}--\Aref{5}, a
+$(1-\alpha)$ confidence interval for $\expc[Y_0\mid\bx_0] = \bx_0'\bb$ is
+\begin{equation}\label{eq:ci-mean}
+\bx_0'\hat\bb \pm t_{\alpha/2,\,n-k-1}\; s\sqrt{\bx_0'(\bX'\bX)^{-1}\bx_0} ,
+\end{equation}
+and a $(1-\alpha)$ prediction interval for a new $Y_0 = \bx_0'\bb+\varepsilon_0$ is
+\begin{equation}\label{eq:pi}
+\bx_0'\hat\bb \pm t_{\alpha/2,\,n-k-1}\; s\sqrt{1+\bx_0'(\bX'\bX)^{-1}\bx_0} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\eqref{eq:ci-mean} is Theorem~\ref{thm:ci} with $\bc=\bx_0$. For~\eqref{eq:pi}, the
+prediction error is $\hat Y_0 - Y_0 = \bx_0'(\hat\bb-\bb) - \varepsilon_0$. The new error
+$\varepsilon_0$ is independent of the sample errors $\be$, and $\hat\bb-\bb$ is a function
+of $\be$, so the two pieces are independent and
+\[
+\var(\hat Y_0-Y_0) = \bx_0'\var(\hat\bb)\bx_0 + \sigma^2
+= \sigma^2\bigl(1+\bx_0'(\bX'\bX)^{-1}\bx_0\bigr) .
+\]
+The error is normal as a linear combination of normals, and independent of $\SSE$, so
+replacing $\sigma$ by $s$ gives a $t_{n-k-1}$ pivot.
+\end{proof}
+
+\begin{corollary}[The case $k=1$]\label{cor:slr-intervals}
+With a single explanatory variable, $\bx_0 = (1,x_0)'$ and
+$\bx_0'(\bX'\bX)^{-1}\bx_0 = \dfrac1n + \dfrac{(x_0-\bar x)^2}{(n-1)s_x^2}$, so the two
+intervals are
+\[
+\hat y_0 \pm t_{\alpha/2,n-2}\,s\sqrt{\frac1n + \frac{(x_0-\bar x)^2}{(n-1)s_x^2}},
+\qquad
+\hat y_0 \pm t_{\alpha/2,n-2}\,s\sqrt{1+\frac1n + \frac{(x_0-\bar x)^2}{(n-1)s_x^2}} .
+\]
+\end{corollary}
+
+\begin{proof}
+Using the explicit inverse of $\bX'\bX$ computed in Unit 2 for $\bX = [\bone\ \bx]$,
+\[
+\bx_0'(\bX'\bX)^{-1}\bx_0
+= \frac{\sum_i x_i^2 - 2n\bar xx_0 + nx_0^2}{n\sum_i(x_i-\bar x)^2}
+= \frac{\sum_i(x_i-\bar x)^2 + n(x_0-\bar x)^2}{n\sum_i(x_i-\bar x)^2} ,
+\]
+the numerator following from $\sum_i x_i^2 = \sum_i(x_i-\bar x)^2+n\bar x^2$ and
+$n\bar x^2 - 2n\bar xx_0 + nx_0^2 = n(x_0-\bar x)^2$. Splitting the fraction gives
+$1/n + (x_0-\bar x)^2/\{(n-1)s_x^2\}$.
+\end{proof}
+
+\begin{remark}
+Both widths grow quadratically as $x_0$ leaves $\bar x$, since
+$\bx_0'(\bX'\bX)^{-1}\bx_0$ is the leverage the new point would have: extrapolation is
+where the model is least supported and the interval widest. The two differ only by the
+$1+$, which does not vanish as $n\to\infty$: the mean response becomes known exactly, a
+single future observation never does.
+\end{remark}
+
+%==============================================================================
+\section{Special Explanatory Variables}\label{sec:3.4}
+%==============================================================================
+
+\begin{reading}
+FREES §3.5 · ISLR §3.3.1--3.3.2.
+\end{reading}
+
+\subsection{Binary variables}\label{sec:3.4.1}
+
+\begin{definition}[Indicator variable]\label{def:indicator}
+A \emph{binary} or \emph{indicator} variable takes the values $0$ and $1$, coding the
+absence or presence of an attribute.
+\end{definition}
+
+\begin{remark}
+In $\expc[y] = \beta_0+\beta_1x+\beta_2 z$ with $z$ binary, the fitted relation is two
+parallel lines: intercept $\beta_0$ when $z=0$ and $\beta_0+\beta_2$ when $z=1$, common
+slope $\beta_1$. So $\beta_2$ is the vertical distance between the two groups at every $x$,
+and testing $H_0\colon\beta_2=0$ tests whether the groups differ once $x$ is accounted for.
+\end{remark}
+
+\subsection{Categorical variables with several levels}\label{sec:3.4.2}
+
+\begin{definition}[Reference coding]\label{def:reference}
+A categorical variable with $c$ levels is represented by $c-1$ indicators, one level being
+omitted as the \emph{reference}. Each coefficient is the difference between its level and
+the reference, at fixed values of the other explanatory variables.
+\end{definition}
+
+\begin{proposition}[Why $c-1$ and not $c$]\label{prop:dummy-trap}
+If all $c$ indicators are included alongside an intercept, $\bX$ has rank at most $k$, so
+\Aref{4} fails and $\hat\bb$ is not unique.
+\end{proposition}
+
+\begin{proof}
+The $c$ indicator columns sum to $\bone$ at every observation, since each observation
+belongs to exactly one level. That is a linear dependence among the columns of $\bX$
+including the intercept column, so $\rank(\bX)<k+1$ and $\bX'\bX$ is singular by Step 3 of
+the rank argument in the OLS theorem of Unit 2.
+\end{proof}
+
+\begin{remark}
+Software resolves the singularity silently: R drops the redundant column and reports
+\texttt{NA} for its coefficient. Changing the reference level changes every reported
+coefficient and every individual $t$ statistic, but not the fitted values, $\SSE$, $R^2$,
+or the $F$ test for the factor as a whole. This is why a categorical variable should be
+assessed by the partial $F$ of Corollary~\ref{cor:nested-F} on all $c-1$ indicators
+jointly, not by individual $t$ statistics.
+\end{remark}
+
+\subsection{Interactions}\label{sec:3.4.3}
+
+\begin{definition}[Interaction]\label{def:interaction}
+An \emph{interaction} term is a product of two explanatory variables entered as a further
+column of $\bX$.
+\end{definition}
+
+\begin{remark}
+In $\expc[y] = \beta_0+\beta_1x+\beta_2z+\beta_3xz$ with $z$ binary, the slope in $x$ is
+$\beta_1$ when $z=0$ and $\beta_1+\beta_3$ when $z=1$: the two lines are no longer
+parallel, and $\beta_3$ is the difference in slopes. When $x$ and $z$ are both continuous,
+$\partial\expc[y]/\partial x = \beta_1+\beta_3z$ depends on $z$, so no single number
+describes the effect of $x$. A main effect is then not interpretable in isolation, which is
+the reason for the \emph{hierarchy principle}: if $xz$ is in the model, keep $x$ and $z$
+too, whatever their individual $t$ statistics.
+\end{remark}
+
+\subsection{Transformed variables}\label{sec:3.4.4}
+
+\begin{remark}[Reading transformed coefficients]
+The model stays linear in the parameters, so all of §§\ref{sec:3.1}--\ref{sec:3.3}
+applies unchanged; only interpretation changes.
+\begin{itemize}
+\item $\expc[y] = \beta_0+\beta_1\ln x$: replacing $x$ by $1.01x$ adds
+      $\beta_1\ln(1.01) = 0.00995\beta_1$, so a $1\%$ increase in $x$ changes $\expc[y]$ by
+      about $\beta_1/100$ units.
+\item $\expc[\ln y] = \beta_0+\beta_1x$: a one-unit increase in $x$ adds $\beta_1$ to
+      $\expc[\ln y]$, multiplying the fitted value of $y$ by $e^{\beta_1}$, a change of
+      $100(e^{\beta_1}-1)\%$, which is about $100\beta_1\%$ for small $\beta_1$.
+\item $\expc[\ln y] = \beta_0+\beta_1\ln x$: $\dd\expc[\ln y]/\dd\ln x = \beta_1$, so
+      $\beta_1$ is an elasticity, the percentage change in $y$ per percentage change in
+      $x$.
+\item $\expc[y] = \beta_0+\beta_1x+\beta_2x^2$: differentiating, the effect of $x$ is
+      $\beta_1+2\beta_2x$, and the model is still linear in $(\beta_0,\beta_1,\beta_2)$.
+\end{itemize}
+The first two are first-order approximations whose error grows with $|\beta_1|$; the third
+and fourth are exact.
+\end{remark}
+
+%==============================================================================
+\section{Interpretation}\label{sec:3.5}
+%==============================================================================
+
+\begin{reading}
+FREES §6.1 · CLM §8.
+\end{reading}
+
+\subsection{The Frisch--Waugh--Lovell theorem}\label{sec:3.5.1}
+
+\begin{theorem}[Frisch--Waugh--Lovell]\label{thm:fwl}
+Partition $\bX = [\bX_1\ \bX_2]$ and $\bb = (\bb_1',\bb_2')'$, and let
+$\bM_2 = \bI-\bX_2(\bX_2'\bX_2)^{-1}\bX_2'$. Then
+\begin{equation}\label{eq:fwl}
+\hat\bb_1 = (\bX_1'\bM_2\bX_1)^{-1}\bX_1'\bM_2\bY ,
+\end{equation}
+and the residuals of the full regression equal those of regressing $\bM_2\bY$ on
+$\bM_2\bX_1$.
+\end{theorem}
+
+\begin{proof}
+The normal equations for the partitioned model are
+\[
+\bX_1'\bX_1\hat\bb_1 + \bX_1'\bX_2\hat\bb_2 = \bX_1'\bY,
+\qquad
+\bX_2'\bX_1\hat\bb_1 + \bX_2'\bX_2\hat\bb_2 = \bX_2'\bY .
+\]
+Solving the second for $\hat\bb_2 = (\bX_2'\bX_2)^{-1}\bX_2'(\bY-\bX_1\hat\bb_1)$ and
+substituting into the first,
+\[
+\bX_1'\bX_1\hat\bb_1 + \bX_1'\bX_2(\bX_2'\bX_2)^{-1}\bX_2'(\bY-\bX_1\hat\bb_1)
+= \bX_1'\bY .
+\]
+Writing $\bH_2 = \bI-\bM_2$ and collecting terms in $\hat\bb_1$,
+\[
+\bX_1'(\bI-\bH_2)\bX_1\hat\bb_1 = \bX_1'(\bI-\bH_2)\bY ,
+\]
+which is $\bX_1'\bM_2\bX_1\hat\bb_1 = \bX_1'\bM_2\bY$, giving~\eqref{eq:fwl}. Since $\bM_2$
+is symmetric idempotent, $\bX_1'\bM_2\bY = (\bM_2\bX_1)'(\bM_2\bY)$ and
+$\bX_1'\bM_2\bX_1 = (\bM_2\bX_1)'(\bM_2\bX_1)$, so~\eqref{eq:fwl} is exactly the least
+squares coefficient from regressing $\bM_2\bY$ on $\bM_2\bX_1$; the residual claim follows
+because both regressions produce $\bM\bY$.
+\end{proof}
+
+\begin{remark}
+This is what ``holding the other variables fixed'' means operationally: $\hat\beta_j$ is
+the slope from regressing the part of $\bY$ unexplained by the other predictors on the
+part of $\bx_j$ unexplained by them. No observation need have the other variables actually
+held fixed; the adjustment is arithmetic, and it is only as good as the variables
+available to adjust for.
+\end{remark}
+
+\subsection{Omitted-variable bias}\label{sec:3.5.2}
+
+\begin{theorem}[Omitted-variable bias]\label{thm:ovb}
+Suppose $\bY = \bX_1\bb_1+\bX_2\bb_2+\be$ but only $\bX_1$ is fitted, giving
+$\tilde\bb_1 = (\bX_1'\bX_1)^{-1}\bX_1'\bY$. Then
+\begin{equation}\label{eq:ovb}
+\expc[\tilde\bb_1] = \bb_1 + (\bX_1'\bX_1)^{-1}\bX_1'\bX_2\,\bb_2 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Substituting the true $\bY$,
+\[
+\tilde\bb_1 = \bb_1 + (\bX_1'\bX_1)^{-1}\bX_1'\bX_2\bb_2
+            + (\bX_1'\bX_1)^{-1}\bX_1'\be ,
+\]
+and the last term has expectation $\bzero$ by \Aref{2}.
+\end{proof}
+
+\begin{remark}
+The bias is the coefficient matrix from regressing the omitted $\bX_2$ on the included
+$\bX_1$, multiplied by the omitted effect $\bb_2$. It vanishes iff $\bb_2=\bzero$ or
+$\bX_1'\bX_2=\bzero$. With one included and one omitted variable the sign of the bias is
+the product of the sign of $\bb_2$ and the sign of the sample correlation between the two
+variables, which is enough to reason about the direction of the error without knowing its
+size.
+\end{remark}
+
+\begin{remark}[Significance, size and causation]
+Significance is not importance: $\SE(\hat\beta_j)\propto n^{-1/2}$, so at fixed effect size
+$|t|$ grows without bound in $n$, and with small $n$ a large effect can fail to reach
+significance. Nor does significance establish causation from observational data, since
+Theorem~\ref{thm:ovb} shows that any unmeasured variable related to both response and
+predictor displaces the coefficient. A coefficient is a comparison, adjusted for what was
+measured.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:3.6}
+%==============================================================================
+
+\begin{reading}
+ISLR §3.6.3, §3.6.6.
+\end{reading}
+
+<<data-setup>>=
+library(ISLR2)
+fit  <- lm(medv ~ lstat + age + rm, data = Boston)
+X <- model.matrix(fit); y <- Boston$medv
+n <- nrow(X); k <- ncol(X) - 1L
+b <- coef(fit); XtXi <- solve(t(X) %*% X)
+s2 <- sum(residuals(fit)^2) / (n - k - 1)
+c(n = n, k = k, df = n - k - 1)
+@
+
+\subsection{One coefficient (§\ref{sec:3.1})}\label{sec:3.6.1}
+
+<<t-and-ci>>=
+se  <- sqrt(s2 * diag(XtXi))                  # s sqrt([(X'X)^{-1}]_jj)
+t_m <- b / se
+ci  <- cbind(b - qt(0.975, n-k-1) * se, b + qt(0.975, n-k-1) * se)
+tab <- coef(summary(fit))
+round(cbind(se, se_lm = tab[, 2], t_m, t_lm = tab[, 3],
+            ci, confint(fit)), 6)
+@
+
+A linear combination: the fitted difference in \texttt{medv} between two properties
+differing by $+1$ in \texttt{rm} and $-2$ in \texttt{lstat}, i.e.\ $\bc'\bb$ with
+$\bc = (0,-2,0,1)'$.
+
+<<linear-combination>>=
+cc <- c(0, -2, 0, 1)
+est <- sum(cc * b); se_c <- sqrt(s2 * as.numeric(t(cc) %*% XtXi %*% cc))
+c(estimate = est, se = se_c,
+  lower = est - qt(0.975, n-k-1)*se_c, upper = est + qt(0.975, n-k-1)*se_c,
+  t = est / se_c)
+@
+
+\subsection{Several coefficients (§\ref{sec:3.2})}\label{sec:3.6.2}
+
+$H_0\colon \beta_{\mathrm{age}} = \beta_{\mathrm{rm}} = 0$, by four routes: the quadratic
+form~\eqref{eq:general-F}, the extra sum of squares~\eqref{eq:nested-F},
+\texttt{anova} on the nested pair, and \texttt{car::linearHypothesis}.
+
+<<general-F>>=
+R <- rbind(c(0, 0, 1, 0), c(0, 0, 0, 1)); r0 <- c(0, 0); q <- nrow(R)
+d <- R %*% b - r0
+F_quad <- as.numeric(t(d) %*% solve(R %*% XtXi %*% t(R)) %*% d / (q * s2))
+
+red     <- lm(medv ~ lstat, data = Boston)
+F_extra <- ((sum(residuals(red)^2) - sum(residuals(fit)^2)) / q) / s2
+
+suppressMessages(library(car))
+c(quadratic_form = F_quad, extra_SS = F_extra,
+  anova          = anova(red, fit)$F[2],
+  linearHyp      = linearHypothesis(fit, c("age = 0", "rm = 0"))$F[2],
+  p_value        = pf(F_quad, q, n-k-1, lower.tail = FALSE))
+@
+
+A constraint that is not a variable exclusion, $H_0\colon\beta_{\mathrm{lstat}} =
+\beta_{\mathrm{age}}$, for which only the quadratic form is convenient:
+
+<<constraint-not-exclusion>>=
+R2m <- matrix(c(0, 1, -1, 0), nrow = 1)
+d2  <- R2m %*% b
+F2  <- as.numeric(t(d2) %*% solve(R2m %*% XtXi %*% t(R2m)) %*% d2 / (1 * s2))
+c(F_quad = F2, linearHyp = linearHypothesis(fit, "lstat = age")$F[2],
+  t_squared = (as.numeric(d2) / sqrt(s2 * as.numeric(R2m %*% XtXi %*% t(R2m))))^2)
+@
+
+The last two columns agree, which is Corollary~\ref{cor:t2F} with $q=1$.
+
+\subsection{Prediction (§\ref{sec:3.3})}\label{sec:3.6.3}
+
+<<intervals>>=
+x0 <- c(1, 10, 60, 6.5)
+nd <- data.frame(lstat = 10, age = 60, rm = 6.5)
+lev <- as.numeric(t(x0) %*% XtXi %*% x0)      # leverage the new point would have
+tq  <- qt(0.975, n - k - 1); yh <- sum(x0 * b)
+rbind(manual  = c(yh, yh + c(-1, 1) * tq * sqrt(s2 * lev)),
+      predict = predict(fit, nd, interval = "confidence"))
+rbind(manual  = c(yh, yh + c(-1, 1) * tq * sqrt(s2 * (1 + lev))),
+      predict = predict(fit, nd, interval = "prediction"))
+@
+
+\subsection{Categorical variables and interactions (§\ref{sec:3.4})}\label{sec:3.6.4}
+
+\texttt{chas} is binary and \texttt{rad} is coded as an integer but is really an index of
+accessibility; treating it as a factor gives $c-1$ indicators.
+
+<<factor-coding>>=
+Boston$rad_f  <- factor(Boston$rad)
+m_fac <- lm(medv ~ lstat + rad_f, data = Boston)
+c(levels = nlevels(Boston$rad_f),
+  columns_of_X = ncol(model.matrix(m_fac)),
+  coefficients = length(coef(m_fac)))
+@
+
+Adding all $c$ indicators alongside the intercept makes $\bX$ singular
+(Proposition~\ref{prop:dummy-trap}); R drops the redundant column and reports
+\texttt{NA}.
+
+<<dummy-trap>>=
+D <- model.matrix(~ rad_f - 1, data = Boston)  # all c indicators
+c(rank_with_intercept = qr(cbind(1, D))$rank,
+  columns             = ncol(cbind(1, D)),
+  row_sums_all_one    = all(rowSums(D) == 1))
+trap <- lm(Boston$medv ~ D)
+sum(is.na(coef(trap)))                         # one coefficient is inestimable
+@
+
+The factor is assessed by the partial $F$ on all its indicators jointly, not by individual
+$t$ statistics:
+
+<<factor-F>>=
+m_small <- lm(medv ~ lstat, data = Boston)
+a <- anova(m_small, m_fac)
+c(F = a$F[2], df1 = a$Df[2], df2 = a$Res.Df[2],
+  p = a$`Pr(>F)`[2])
+@
+
+Changing the reference level moves every coefficient but no fitted value:
+
+<<relevel>>=
+m_alt <- lm(medv ~ lstat + relevel(rad_f, ref = "24"), data = Boston)
+c(max_coef_change = max(abs(coef(m_fac)[-(1:2)] - coef(m_alt)[-(1:2)])),
+  max_fitted_diff = max(abs(fitted(m_fac) - fitted(m_alt))),
+  SSE_same        = sum(residuals(m_fac)^2) - sum(residuals(m_alt)^2))
+@
+
+An interaction makes the slope depend on the other variable:
+
+<<interaction>>=
+m_int <- lm(medv ~ lstat * chas, data = Boston)
+cf <- coef(m_int)
+c(slope_chas0 = cf[["lstat"]],                       # beta_1
+  slope_chas1 = cf[["lstat"]] + cf[["lstat:chas"]],  # beta_1 + beta_3
+  difference  = cf[["lstat:chas"]],
+  p_interact  = coef(summary(m_int))["lstat:chas", 4])
+@
+
+\subsection{FWL and omitted-variable bias (§\ref{sec:3.5})}\label{sec:3.6.5}
+
+Regressing out \texttt{age} and \texttt{rm} from both \texttt{medv} and \texttt{lstat}
+reproduces the full-model coefficient on \texttt{lstat}, which is Theorem~\ref{thm:fwl}.
+
+<<fwl-check>>=
+X2 <- X[, c(1, 3, 4)]                          # intercept, age, rm
+M2 <- diag(n) - X2 %*% solve(t(X2) %*% X2) %*% t(X2)
+y_res <- drop(M2 %*% y); x_res <- drop(M2 %*% X[, "lstat"])
+c(fwl_lm        = coef(lm(y_res ~ x_res - 1))[["x_res"]],
+  fwl_formula   = sum(x_res * y_res) / sum(x_res^2),
+  full_model    = b[["lstat"]],
+  resid_matches = max(abs(residuals(lm(y_res ~ x_res - 1)) - residuals(fit))))
+@
+
+Theorem~\ref{thm:ovb} predicts the bias from omitting \texttt{rm}: the coefficient from
+regressing \texttt{rm} on the retained variables, times $\beta_{\mathrm{rm}}$.
+
+<<ovb-check>>=
+X1 <- X[, c(1, 2, 3)]                          # intercept, lstat, age
+short  <- lm(medv ~ lstat + age, data = Boston)
+delta  <- solve(t(X1) %*% X1, t(X1) %*% X[, "rm"])   # rm regressed on X1
+predicted_short <- coef(fit)[c(1, 2, 3)] + drop(delta) * b[["rm"]]
+round(cbind(short_fit = coef(short), predicted = predicted_short,
+            diff = coef(short) - predicted_short), 10)
+@
+
+The identity is algebraic and holds in the realised sample, not merely in expectation.
+A simulation with a known truth separates bias from sampling noise:
+
+<<ovb-sim>>=
+set.seed(1)
+B <- 3000; ns <- 120
+Z  <- X[1:ns, c(1, 2, 3)]; rm_col <- X[1:ns, "rm"]
+beta1_true <- c(20, -0.6, 0.03); beta_rm_true <- 4
+delta_s <- solve(t(Z) %*% Z, t(Z) %*% rm_col)
+est <- t(replicate(B, {
+  ysim <- drop(Z %*% beta1_true) + rm_col * beta_rm_true + rnorm(ns, sd = 4)
+  drop(solve(t(Z) %*% Z, t(Z) %*% ysim))
+}))
+round(rbind(truth        = beta1_true,
+            mean_short   = colMeans(est),
+            predicted    = beta1_true + drop(delta_s) * beta_rm_true), 4)
+@
+
+%==============================================================================
+\section{Pitfalls}\label{sec:3.7}
+%==============================================================================
+
+\subsection{Reading a coefficient as a causal effect}\label{sec:3.7.1}
+
+By Theorem~\ref{thm:ovb}, a coefficient absorbs the effect of any omitted variable
+correlated with its predictor. Below, \texttt{x} has no effect on \texttt{y}, but both
+depend on an unmeasured \texttt{u}.
+
+<<pitfall-confound>>=
+set.seed(4)
+u <- rnorm(400); xx <- u + rnorm(400, sd = 0.4); yy <- 2 * u + rnorm(400, sd = 0.4)
+c(coef_without_u = coef(lm(yy ~ xx))[["xx"]],   # large and significant
+  t_without_u    = coef(summary(lm(yy ~ xx)))["xx", "t value"],
+  coef_with_u    = coef(lm(yy ~ xx + u))[["xx"]])
+@
+
+\textbf{Diagnostic.} None available from the fit alone: the omitted variable is by
+definition not in the data.
+\textbf{Fix.} Subject-matter reasoning about what was not measured; a designed study where
+one is possible.
+
+\subsection{Dropping a main effect while keeping the interaction}\label{sec:3.7.2}
+
+If $xz$ is in the model, $\beta_1$ is the slope of $x$ \emph{at $z=0$}, not an average
+effect, so its $t$ statistic answers a question about one point of the $z$ range.
+
+<<pitfall-hierarchy>>=
+set.seed(5)
+z  <- rbinom(300, 1, 0.5); x2 <- rnorm(300, mean = 5)
+y2 <- 1 + 0.5*x2 + 2*z - 0.5*x2*z + rnorm(300, sd = 0.5)
+full <- lm(y2 ~ x2 * z); drop_main <- lm(y2 ~ x2:z + z)
+c(full_slope_z0 = coef(full)[["x2"]],
+  full_slope_z1 = coef(full)[["x2"]] + coef(full)[["x2:z"]],
+  dropped_R2    = summary(drop_main)$r.squared,
+  full_R2       = summary(full)$r.squared)
+@
+
+\textbf{Diagnostic.} A non-significant main effect alongside a significant interaction.
+\textbf{Fix.} Keep the hierarchy; centre the predictors if the value $z=0$ is not
+meaningful, which makes the main effect the slope at the mean.
+
+\subsection{Assessing a factor by individual $t$ statistics}\label{sec:3.7.3}
+
+Each $t$ compares one level with the reference; none tests the factor.
+
+<<pitfall-factor>>=
+tt <- coef(summary(m_fac))[-(1:2), 4]          # p-values of the rad indicators
+c(n_indicators = length(tt), n_p_below_05 = sum(tt < 0.05),
+  min_p = min(tt), joint_F_p = anova(m_small, m_fac)$`Pr(>F)`[2])
+@
+
+\textbf{Diagnostic.} Individually weak indicators with a strong joint $F$, or the reverse.
+\textbf{Fix.} The partial $F$ of Corollary~\ref{cor:nested-F} on all $c-1$ indicators.
+
+%==============================================================================
+\section{Exercises}\label{sec:3.8}
+%==============================================================================
+
+\begin{exercise}\label{ex:t-vs-F}
+Show that for a single linear constraint the $F$ statistic~\eqref{eq:general-F} equals
+$t^2$, and explain why the overall $F$ of Unit 2 is not the square of any individual $t$
+when $k>1$.
+\end{exercise}
+
+\begin{solution}
+The first part is Corollary~\ref{cor:t2F}: with $q=1$ the matrix $\bR(\bX'\bX)^{-1}\bR'$
+is a scalar and the quadratic form collapses to a square.
+
+The overall $F$ tests $q=k$ constraints at once. Its numerator is a $\chi^2_k$ quadratic
+form in all $k$ slope estimates jointly, which is not the square of any single normal
+unless $k=1$. Two predictors can each have $|t|<2$ while their joint $F$ is large, when
+their estimates are strongly negatively correlated: each individual $t$ moves one
+coefficient with the other free, along a direction the data cannot resolve, while the $F$
+asks about both at once.
+\end{solution}
+
+\begin{exercise}\label{ex:restricted}
+Using Proposition~\ref{prop:restricted}, show that
+(a) $\tilde\bb$ satisfies $\bR\tilde\bb=\br$;
+(b) $\tilde\bb$ is unbiased when the constraint is true and biased by
+$-(\bX'\bX)^{-1}\bR'[\bR(\bX'\bX)^{-1}\bR']^{-1}(\bR\bb-\br)$ when it is not;
+(c) $\var(\hat\bb)-\var(\tilde\bb)$ is positive semi-definite.
+Verify (a) and (c) numerically, and say what (b) and (c) together mean for
+constraint-then-estimate.
+\end{exercise}
+
+\begin{solution}
+Write $\bA=\bX'\bX$, $\bG=\bA^{-1}\bR'(\bR\bA^{-1}\bR')^{-1}$ and $\bP=\bG\bR$, so that
+$\tilde\bb=(\bI-\bP)\hat\bb+\bG\br$.
+
+(a) $\bR\bG=\bR\bA^{-1}\bR'(\bR\bA^{-1}\bR')^{-1}=\bI_q$, so
+$\bR\tilde\bb=\bR\hat\bb-(\bR\hat\bb-\br)=\br$.
+
+(b) $\expc[\tilde\bb]=\bb-\bG(\bR\bb-\br)$, which is $\bb$ iff $\bR\bb=\br$. Note $\bP$ is
+idempotent, $\bP^2=\bG\bR\bG\bR=\bP$, though not symmetric.
+
+(c) $\tilde\bb-\expc[\tilde\bb]=(\bI-\bP)(\hat\bb-\bb)$, so by the
+variance-under-a-linear-map lemma of Unit 2,
+$\var(\tilde\bb)=\sigma^2(\bI-\bP)\bA^{-1}(\bI-\bP)'$. Since
+$\bP\bA^{-1}\bP'=\bG(\bR\bA^{-1}\bR')\bG'=\bP\bA^{-1}=\bA^{-1}\bP'$,
+\[
+\var(\hat\bb)-\var(\tilde\bb)
+= \sigma^2\bigl(\bP\bA^{-1}+\bA^{-1}\bP'-\bP\bA^{-1}\bP'\bigr)
+= \sigma^2\bP\bA^{-1}\bP' = \sigma^2\bG(\bR\bA^{-1}\bR')\bG' ,
+\]
+positive semi-definite.
+<<s3-restricted>>=
+Rc <- rbind(c(0,0,1,0), c(0,0,0,1)); rc <- c(0, 0)
+Gm <- XtXi %*% t(Rc) %*% solve(Rc %*% XtXi %*% t(Rc))
+btil <- drop(b - Gm %*% (Rc %*% b - rc))
+Vres <- s2 * (diag(4) - Gm %*% Rc) %*% XtXi %*% t(diag(4) - Gm %*% Rc)
+rbind(restricted = round(btil, 6),
+      lm_on_lstat = round(c(coef(red), 0, 0), 6))
+rbind(se_unrestricted = round(sqrt(diag(s2*XtXi)), 5),
+      se_restricted   = round(sqrt(diag(Vres)), 5))
+c(constraint_holds = max(abs(Rc %*% btil - rc)),
+  se_from_reduced_fit = coef(summary(red))[, 2])
+@
+Imposing $\beta_{\mathrm{age}}=\beta_{\mathrm{rm}}=0$ reproduces
+\texttt{lm(medv $\sim$ lstat)} exactly and cuts the intercept's standard error by a factor
+of six.
+
+A false constraint buys a variance reduction and pays a bias; the bias does not shrink with
+$n$ while the variance does, so at large $n$ a wrongly imposed restriction dominates the
+error. And a constraint retained because its test did not reject is not a constraint known
+to be true.
+\end{solution}
+
+\begin{exercise}\label{ex:extra-ss}
+A full model with $k=6$ predictors on $n=60$ observations has $\SSE_U=420$; dropping three
+gives $\SSE_R=610$. Test the three jointly, and find the $\SSE_R$ that would leave them at
+the $5\%$ boundary.
+\end{exercise}
+
+\begin{solution}
+By~\eqref{eq:nested-F} with $q=3$ and $n-k-1=53$,
+\[
+F = \frac{(610-420)/3}{420/53} = \frac{63.33}{7.925} = 7.99
+\]
+on $F_{3,53}$, against a $5\%$ critical value of $2.78$: the three are jointly significant.
+
+At the boundary, $\SSE_R-\SSE_U=3(2.78)(7.925)=66.1$, so $\SSE_R=486.1$. Anything the three
+explain beyond $66$ of the reduced model's $610$, about $11\%$, clears the threshold; the
+observed $190$ is nearly three times that.
+\end{solution}
+
+\begin{exercise}\label{ex:R-matrix}
+Write $\bR$ and $\br$ for each hypothesis in a model with intercept and predictors
+$x_1,x_2,x_3$: (a) $\beta_2=0$; (b) $\beta_1=\beta_2=\beta_3=0$; (c) $\beta_1=\beta_2$;
+(d) $\beta_1+\beta_2=1$ and $\beta_3=0$. For (c) and (d) give the reduced model explicitly
+and check its parameter count.
+\end{exercise}
+
+\begin{solution}
+With $\bb=(\beta_0,\beta_1,\beta_2,\beta_3)'$:
+
+(a) $\bR=(0,0,1,0)$, $\br=0$, $q=1$.
+
+(b) $\bR=[\bzero_{3\times1}\mid\bI_3]$, $\br=\bzero_3$, $q=3$: the overall $F$.
+
+(c) $\bR=(0,1,-1,0)$, $\br=0$, $q=1$. Not a variable exclusion. Under
+$\beta_1=\beta_2=\gamma$ the mean is $\beta_0+\gamma(x_1+x_2)+\beta_3x_3$, so the reduced
+model regresses $y$ on the constructed variable $x_1+x_2$ and on $x_3$: three parameters
+against four, which is $k+1-q$.
+
+(d) $\bR=\bigl(\begin{smallmatrix}0&1&1&0\\0&0&0&1\end{smallmatrix}\bigr)$, $\br=(1,0)'$,
+$q=2$. Substituting $\beta_2=1-\beta_1$ and $\beta_3=0$ gives mean
+$\beta_0+\beta_1(x_1-x_2)+x_2$, so the reduced model regresses $y-x_2$ on $x_1-x_2$: two
+parameters, again $k+1-q$. A non-zero $\br$ always appears as an offset on the response.
+\end{solution}
+
+\begin{exercise}\label{ex:joint-vs-single}
+Simulate $n=60$ observations with two predictors of sample correlation about $0.996$ and
+$y=1+v_1+v_2+\varepsilon$, $\varepsilon\sim N(0,2^2)$. Report the two $t$ statistics and
+the joint $F$, and explain from $\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$.
+\end{exercise}
+
+\begin{solution}
+<<s3-collinear>>=
+set.seed(31)
+v1 <- rnorm(60); v2 <- 0.995*v1 + sqrt(1 - 0.995^2)*rnorm(60)
+yv <- 1 + v1 + v2 + rnorm(60, sd = 2)
+mc <- lm(yv ~ v1 + v2)
+round(coef(summary(mc)), 4)
+c(cor_predictors = cor(v1, v2), joint_F = summary(mc)$fstatistic[["value"]],
+  p_value = pf(summary(mc)$fstatistic[["value"]], 2, 57, lower.tail = FALSE),
+  cor_of_estimates = cov2cor(vcov(mc))[2, 3])
+@
+Neither coefficient is significant at $5\%$ and one has the wrong sign, yet the joint $F$
+is $37.0$ with $p=5\times10^{-11}$.
+
+The correlation between $\hat\beta_1$ and $\hat\beta_2$ is exactly minus the correlation
+between the predictors, which is what $(\bX'\bX)^{-1}$ does to a two-column design after
+the intercept is removed. The data determine $\beta_1+\beta_2$ sharply, since $v_1+v_2$ is
+essentially $2v_1$, and $\beta_1-\beta_2$ hardly at all. Each individual $t$ asks about one
+coefficient with the other free, along the direction the data cannot resolve; the joint $F$
+asks about both and sees the sharp direction. A set of individually insignificant
+predictors with a significant joint $F$ is not a set of useless predictors.
+\end{solution}
+
+\begin{exercise}\label{ex:simultaneous}
+Two individual $95\%$ intervals are not a $95\%$ region for the pair.
+(a) Give the exact $95\%$ region implied by Theorem~\ref{thm:general-F}.
+(b) State the Bonferroni rectangle and its guarantee.
+(c) By simulation at $n=60$, measure the coverage of the rectangle of individual intervals
+and of the $F$ region at predictor correlations $\rho=0,\,0.9,\,0.99$, and explain why the
+rectangle's coverage \emph{rises} with $\rho$.
+\end{exercise}
+
+\begin{solution}
+(a) Taking $\bR$ to select the two coefficients and inverting the acceptance region
+of~\eqref{eq:general-F}, the set of $\br$ not rejected at level $\alpha$ is
+\[
+\bigl\{\br:\ (\bR\hat\bb-\br)'[\bR(\bX'\bX)^{-1}\bR']^{-1}(\bR\hat\bb-\br)
+\leqslant 2s^2F_{1-\alpha;\,2,\,n-k-1}\bigr\} ,
+\]
+an ellipse centred at $\bR\hat\bb$ with axes along the eigenvectors of
+$\bR(\bX'\bX)^{-1}\bR'$. Its coverage is exactly $1-\alpha$ by construction.
+
+(b) Bonferroni takes each interval at level $1-\alpha/2$, so
+$\prb\{\text{either misses}\}\leqslant\alpha/2+\alpha/2=\alpha$. The guarantee is one
+sided: coverage is \emph{at least} $1-\alpha$, usually more.
+<<s3-simultaneous>>=
+covr <- function(rho, Rr = 20000, nn = 60) {
+  set.seed(32)
+  z1 <- rnorm(nn); z2 <- rho*z1 + sqrt(1 - rho^2)*rnorm(nn)
+  Xd <- cbind(1, z1, z2); Ad <- solve(crossprod(Xd)); bt <- c(0, 1, 1)
+  tq2 <- qt(0.975, nn - 3); fq <- qf(0.95, 2, nn - 3)
+  rect <- ell <- logical(Rr)
+  for (rr in seq_len(Rr)) {
+    m <- lm.fit(Xd, drop(Xd %*% bt) + rnorm(nn))
+    s2d <- sum(m$residuals^2)/(nn - 3); dh <- m$coefficients[2:3] - bt[2:3]
+    rect[rr] <- all(abs(dh) <= tq2*sqrt(s2d*diag(Ad)[2:3]))
+    ell[rr]  <- drop(t(dh) %*% solve(Ad[2:3, 2:3]) %*% dh)/(2*s2d) <= fq
+  }
+  c(rho = rho, rectangle = mean(rect), F_region = mean(ell))
+}
+t(sapply(c(0, 0.9, 0.99), covr))
+@
+(c) The $F$ region is at nominal coverage throughout. The rectangle is not: at $\rho=0$ the
+two events are nearly independent, so joint coverage is about $0.95^2=0.9025$.
+
+The $F$ column is bit-identical across the three rows, and not by accident. Since
+$z_2=\rho z_1+\sqrt{1-\rho^2}\,w$ with the same $z_1$ and $w$, the three designs have the
+\emph{same column space}, so by the invariance of a projection to the basis chosen for it
+the numerator $\|(\bH-\bH_0)\bY\|^2$ and the denominator $\|\bM\bY\|^2$ are unchanged and
+$F$ is literally the same number in every replicate. Only the individual coefficients,
+which are coordinates in a basis, move.
+
+Coverage rises with $\rho$ because the two events become positively dependent as the
+estimates become correlated: when the design nearly cannot separate $\beta_1$ from
+$\beta_2$ the two estimates err together, so they tend to miss together and the probability
+that at least one misses falls. The rectangle is therefore anti-conservative by up to five
+points, worst when the predictors are well separated.
+\end{solution}
+
+\begin{exercise}\label{ex:pred-vs-ci}
+At $\bx_0$ the leverage is $\bx_0'(\bX'\bX)^{-1}\bx_0=0.04$, with $s=5$, $n=120$, $k=3$.
+Give the half-widths of the $95\%$ confidence and prediction intervals, and the leverage at
+which the prediction interval is twice the confidence interval.
+\end{exercise}
+
+\begin{solution}
+$\df=116$ and $t_{0.975,116}=1.981$. By~\eqref{eq:ci-mean},
+$1.981(5)\sqrt{0.04}=1.98$; by~\eqref{eq:pi}, $1.981(5)\sqrt{1.04}=10.10$, about five times
+wider: at this leverage the new observation's own noise dominates.
+
+The ratio is $\sqrt{(1+h)/h}$, equal to $2$ when $h=1/3$. Since the mean leverage of an
+observed point is $(k+1)/n$, a ratio as small as $2$ needs $h$ eighty times the average at
+$n=120$. For any point resembling the data the prediction interval is many times the
+confidence interval.
+\end{solution}
+
+\begin{exercise}\label{ex:pred-extrap}
+For \texttt{medv} on \texttt{lstat} in \texttt{Boston}, compute the $95\%$ confidence and
+prediction half-widths at $x_0=\bar x$, $\bar x+2s_x$ and $\bar x+10s_x$. Which interval is
+misleading at the last point, and why is that not visible from the arithmetic?
+\end{exercise}
+
+\begin{solution}
+<<s3-extrap>>=
+slr <- lm(medv ~ lstat, data = Boston)
+xb <- mean(Boston$lstat); sx <- sd(Boston$lstat)
+Sxx <- sum((Boston$lstat - xb)^2); ss <- summary(slr)$sigma
+tq3 <- qt(0.975, n - 2)
+t(sapply(c(0, 2, 10), function(mm) {
+  x0v <- xb + mm*sx; lv <- 1/n + (x0v - xb)^2/Sxx
+  c(sd_from_mean = mm, x0 = x0v, leverage = lv,
+    CI_half = tq3*ss*sqrt(lv), PI_half = tq3*ss*sqrt(1 + lv),
+    ratio = sqrt((1 + lv)/lv))
+}))
+c(max_lstat_observed = max(Boston$lstat))
+@
+The confidence half-width grows tenfold across the table while the prediction half-width
+grows by under $10\%$: away from the data the estimation error grows, but $\sigma^2$
+dominates the prediction interval throughout, so it looks reassuringly stable.
+
+That is what makes it misleading. At $\bar x+10s_x$ we have $x_0=84.1$, while
+\texttt{lstat} is a percentage whose observed maximum is $37.97$: the point is outside the
+data and outside the variable's range. Both formulas assume the linear model holds at
+$x_0$, and no quantity computed from the sample can test that, because there are no
+observations there. Extrapolation is a modelling failure, not a variance problem.
+\end{solution}
+
+\begin{exercise}\label{ex:ci-pi-limits}
+Let $(t,u)$ be the $95\%$ confidence interval and $(v,w)$ the $95\%$ prediction interval at
+the same $\bx_0$.
+(a) Show $u-t\to0$ as $n\to\infty$ with the predictors sampled from a fixed distribution,
+and give the exact rate.
+(b) Show $w-v$ does \emph{not} tend to $0$, and give its limit.
+(c) Show $w-v>u-t$ always, and give the condition under which the two coincide.
+\end{exercise}
+
+\begin{solution}
+(a) The half-width is $t_{\alpha/2,n-k-1}\,s\sqrt{\bx_0'(\bX'\bX)^{-1}\bx_0}$. With the
+rows of $\bX$ sampled from a fixed law, $n^{-1}\bX'\bX\to\bSig$ positive definite, so
+$\bx_0'(\bX'\bX)^{-1}\bx_0 = n^{-1}\bx_0'\bSig^{-1}\bx_0\{1+o(1)\} = O(1/n)$. Also
+$s\to\sigma$ and $t_{\alpha/2,n-k-1}\to z_{\alpha/2}$, so
+\[
+u-t = \frac{2z_{\alpha/2}\,\sigma\sqrt{\bx_0'\bSig^{-1}\bx_0}}{\sqrt n}\{1+o(1)\}
+\;\longrightarrow\; 0 ,
+\]
+at rate $n^{-1/2}$.
+
+(b) The prediction half-width is $t_{\alpha/2,n-k-1}\,s\sqrt{1+\bx_0'(\bX'\bX)^{-1}\bx_0}$
+and the $1$ does not shrink, so
+\[
+w-v \;\longrightarrow\; 2z_{\alpha/2}\,\sigma ,
+\]
+which is $3.92\sigma$ at $\alpha=0.05$: the interval one would use knowing $\bb$ and
+$\sigma^2$ exactly. Perfect knowledge of the model leaves the new observation's own noise.
+
+(c) Comparing~\eqref{eq:ci-mean} and~\eqref{eq:pi}, the two share the factor
+$t_{\alpha/2,n-k-1}\,s$ and differ only in $\sqrt h$ against $\sqrt{1+h}$, and
+$\sqrt{1+h}>\sqrt h$ for every $h>0$. So $w-v>u-t$ strictly whenever $s>0$. The two
+coincide only in the degenerate case $s=0$, that is $\SSE=0$: with no residual variation
+both intervals collapse to the point $\hat Y_0$, which is then exact. Unit 2's
+perfectly collinear three-point regression is such a case.
+
+The confidence interval is for the fixed number $\bx_0'\bb$; the prediction interval is for
+the random $Y_0$. Quoting the first when the second is wanted understates the uncertainty
+by the factor $\sqrt{(1+h)/h}$, which Exercise~\ref{ex:pred-extrap} shows can exceed $20$.
+\end{solution}
+
+\begin{exercise}[SOA sample question 62]\label{ex:soa-slope-ci}
+A simple linear regression on more than $100$ observations reports slope $-1.03$ with
+standard error $0.06$. Calculate the $95\%$ confidence interval for the slope. Then give
+the $t$ statistic and its $p$-value, the sample size at which the normal and $t$
+multipliers differ by less than $1\%$, and the $n$ needed to halve the interval.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:t-test} the interval is
+$b_1\pm t_{0.975,n-2}\SE(b_1)$. With $n>100$, $t_{0.975,n-2}$ is between $1.96$ and $1.99$,
+so the interval is $-1.03\pm 2(0.06)$ to two decimals, that is $(-1.15,\,-0.91)$; the
+choice between $1.96$ and $2$ does not change the printed answer.
+<<s3-soa62>>=
+b1 <- -1.03; se1 <- 0.06
+c(t_stat = b1/se1, p_value = 2*pt(-abs(b1/se1), df = 100),
+  lower_t = b1 - qt(0.975, 100)*se1, upper_t = b1 + qt(0.975, 100)*se1,
+  lower_z = b1 - qnorm(0.975)*se1,  upper_z = b1 + qnorm(0.975)*se1,
+  n_for_1pct_gap = which(qt(0.975, (3:400) - 2) /
+                         qnorm(0.975) < 1.01)[1] + 2)
+@
+The $t$ statistic is $-17.2$, so the slope is overwhelmingly significant; the interval
+excludes zero by a wide margin, which is the same statement.
+
+By the simple-regression variance corollary of Unit 2, $\SE(b_1)=s/(s_x\sqrt{n-1})$, so
+the width scales as $n^{-1/2}$ at fixed $s$ and $s_x$: halving it needs four times the
+data. Widening the range
+of $x$ is the cheaper route, since $\SE(b_1)$ falls like $s_x^{-1}$.
+\end{solution}
+
+\begin{exercise}\label{ex:dummy}
+A categorical variable has $5$ levels. How many indicators enter the model? What does each
+coefficient mean, and what changes if the reference level changes?
+\end{exercise}
+
+\begin{solution}
+Four indicators, one level being the reference (Definition~\ref{def:reference}); including
+all five with an intercept makes $\bX$ singular (Proposition~\ref{prop:dummy-trap}).
+
+Each coefficient is the difference in $\expc[y]$ between its level and the reference, at
+fixed values of the other explanatory variables. Changing the reference changes all four
+coefficients, their standard errors and their $t$ statistics, each being a comparison with
+a different baseline. Fitted values, residuals, $\SSE$, $R^2$ and the partial $F$ for the
+factor are unchanged, the column space of $\bX$ being the same.
+\end{solution}
+
+\begin{exercise}\label{ex:effect-coding}
+An alternative to reference coding constrains the $c$ level effects to sum to zero, fitting
+$c-1$ columns whose $j$-th is $1$ at level $j$, $-1$ at level $c$ and $0$ elsewhere. Show
+this spans the same column space, so every fitted value is unchanged, and say what the
+coefficients then mean. Verify on the \texttt{rad} factor of §\ref{sec:3.6.4}.
+\end{exercise}
+
+\begin{solution}
+Let $\bD_1,\ldots,\bD_c$ be the level indicators, so $\sum_j\bD_j=\bone$. Reference coding
+uses $\{\bone,\bD_1,\ldots,\bD_{c-1}\}$; effect coding uses
+$\{\bone,\bD_1-\bD_c,\ldots,\bD_{c-1}-\bD_c\}$. Each effect column is a combination of
+$\bD_j$ and $\bD_c=\bone-\sum_{i<c}\bD_i$, hence of the reference basis, and conversely.
+The two span the same space, so by the projection characterisation of least squares in Unit
+2 the fitted values, residuals, $\SSE$, $R^2$ and every $F$ statistic are identical; only
+the coefficients differ, being coordinates in a different basis.
+
+Under effect coding the mean at level $j<c$ is $\alpha+\gamma_j$ and at level $c$ is
+$\alpha-\sum_{i<c}\gamma_i$, so the $c$ implied effects sum to zero and $\alpha$ is the
+unweighted average of the $c$ level means at fixed other predictors. Each $\gamma_j$ is a
+deviation from that average.
+<<s3-effect-coding>>=
+m_eff <- lm(medv ~ lstat + C(rad_f, contr.sum), data = Boston)
+c(max_fitted_diff = max(abs(fitted(m_fac) - fitted(m_eff))),
+  SSE_difference  = sum(residuals(m_fac)^2) - sum(residuals(m_eff)^2),
+  sum_of_printed_effects = sum(coef(m_eff)[-(1:2)]),
+  implied_last_level     = -sum(coef(m_eff)[-(1:2)]))
+@
+The ninth level's effect is not reported and must be recovered by subtraction, which is the
+practical drawback.
+\end{solution}
+
+\begin{exercise}\label{ex:factor-numeric}
+\texttt{rad} is an integer index of highway accessibility. Fitting it as a number rather
+than a factor is a restriction; write it as $\bR\bb=\br$, count the constraints, and test
+it.
+\end{exercise}
+
+\begin{solution}
+With $c=9$ observed levels $r_1<\cdots<r_9$, the factor model has a free shift $\gamma_j$
+for each level, $8$ free parameters after the reference. The numeric model imposes
+$\gamma_j=\beta(r_j-r_1)$ for a single $\beta$, forcing the $8$ shifts onto a line:
+$8-1=7$ constraints, each of the form
+$\gamma_j/(r_j-r_1)=\gamma_2/(r_2-r_1)$, linear in $\bb$ and so expressible as $7$ rows of
+$\bR$ with $\br=\bzero$.
+<<s3-factor-numeric>>=
+m_num <- lm(medv ~ lstat + rad, data = Boston)
+anova(m_num, m_fac)
+@
+The residual degrees of freedom confirm the count, $503$ against $496$. The linearity
+restriction is decisively rejected: the effect of \texttt{rad} on \texttt{medv} is not
+proportional to the index, which is unsurprising for an ordering rather than a measurement.
+Coding an ordinal variable as a number is a testable assumption, and this is the test.
+\end{solution}
+
+\begin{exercise}\label{ex:interaction-read}
+In $\expc[y]=3+0.8x+2z-0.5xz$ with $z$ binary, give the slope in $x$ for each group and the
+difference in $\expc[y]$ between groups at $x=0$ and $x=6$. At which $x$ do the two groups
+have the same mean?
+\end{exercise}
+
+\begin{solution}
+Slope $0.8$ when $z=0$ and $0.8-0.5=0.3$ when $z=1$.
+
+The group difference is $\expc[y\mid z=1]-\expc[y\mid z=0]=2-0.5x$: it is $2$ at $x=0$ and
+$-1$ at $x=6$. With an interaction present the group difference is not a single number, and
+reporting the coefficient $2$ as ``the effect of $z$'' is correct only at $x=0$.
+
+The lines cross where $2-0.5x=0$, at $x=4$. Which group is ahead depends on where in the
+$x$ range one looks. If $x=0$ lies outside the observed range, the coefficient $2$
+describes a comparison that never occurs in the data.
+\end{solution}
+
+\begin{exercise}\label{ex:interaction-centre}
+Fit \texttt{medv $\sim$ lstat * chas}, then refit with \texttt{lstat} centred. Predict which
+coefficients move, check, and say which \texttt{chas} coefficient to report.
+\end{exercise}
+
+\begin{solution}
+Centring replaces $x$ by $x-\bar x$, so
+$\beta_0+\beta_1x+\beta_2z+\beta_3xz$ becomes
+$(\beta_0+\beta_1\bar x)+\beta_1(x-\bar x)+(\beta_2+\beta_3\bar x)z+\beta_3(x-\bar x)z$:
+the slope $\beta_1$ and the interaction $\beta_3$ are unchanged, while the intercept and
+the $z$ coefficient each shift by $\bar x$ times the coefficient they pair with. The column
+space is unchanged, so every fitted value is identical.
+<<s3-interaction-centre>>=
+Bc3 <- transform(Boston, lstat_c = lstat - mean(lstat))
+mic <- lm(medv ~ lstat_c*chas, data = Bc3)
+rbind(raw = coef(m_int), centred = coef(mic))
+c(max_fitted_diff = max(abs(fitted(m_int) - fitted(mic))),
+  chas_at_mean_lstat = coef(m_int)[["chas"]] +
+    coef(m_int)[["lstat:chas"]]*mean(Boston$lstat),
+  t_chas_raw = coef(summary(m_int))["chas", 3],
+  t_chas_centred = coef(summary(mic))["chas", 3])
+@
+Report the centred one. The raw $9.83$ is the fitted river premium at $\texttt{lstat}=0$,
+a value the data do not contain (the minimum is $1.73$), and its $t$ statistic tests a
+hypothesis about that non-existent point. Neither number is wrong; they answer different
+questions, and only one is about the data.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 3]\label{ex:islr-salary}
+A model for starting salary in thousands has $X_1=$ GPA, $X_2=$ IQ, $X_3=$ Level ($1$ for
+College, $0$ for High School), $X_4=X_1X_2$ and $X_5=X_1X_3$, with fitted coefficients
+$\hat\beta_0=50$, $\hat\beta_1=20$, $\hat\beta_2=0.07$, $\hat\beta_3=35$,
+$\hat\beta_4=0.01$, $\hat\beta_5=-10$.
+(a) At fixed IQ and GPA, who earns more, and under what condition?
+(b) Predict the salary of a college graduate with IQ $110$ and GPA $4.0$.
+(c) True or false: since $\hat\beta_4$ is very small there is little evidence of a
+GPA/IQ interaction.
+\end{exercise}
+
+\begin{solution}
+(a) The college premium at fixed GPA and IQ is
+$\hat\beta_3+\hat\beta_5\,\mathrm{GPA} = 35-10\,\mathrm{GPA}$, which is positive for
+$\mathrm{GPA}<3.5$ and negative above. So college graduates earn more at low GPA and high
+school graduates earn more once GPA exceeds $3.5$. This is
+Exercise~\ref{ex:interaction-read} again: with an interaction the group difference is a
+function, not a number, and neither ``college earns more'' nor ``high school earns more''
+is a complete answer.
+
+(b) $50+20(4.0)+0.07(110)+35(1)+0.01(4.0)(110)-10(4.0)(1)
+= 50+80+7.7+35+4.4-40 = 137.1$ thousand.
+
+(c) False, for two reasons. First, evidence about a coefficient is $|t|=|\hat\beta_4|/
+\SE(\hat\beta_4)$, and no standard error is given: a small coefficient with a very small
+standard error is strong evidence. Second, a coefficient's size depends on the units of its
+regressor. Here $X_4=\mathrm{GPA}\times\mathrm{IQ}$ ranges to about $4\times130=520$, so
+the term $\hat\beta_4X_4$ contributes about $5.2$, comparable with the $7.7$ contributed by
+IQ itself. By the invariance argument of Unit 2, rescaling $X_4$ divides $\hat\beta_4$ and
+its standard error by the same factor and leaves $t$ alone, which is why $t$ and not
+$\hat\beta$ is what one reads.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 10]\label{ex:islr-carseats}
+Using \texttt{ISLR2::Carseats}, fit \texttt{Sales} on \texttt{Price}, \texttt{Urban} and
+\texttt{US}. (a) Interpret each coefficient, being careful with the qualitative ones, and
+write the fitted model as an equation. (b) For which predictors is $H_0\colon\beta_j=0$
+rejected? (c) Fit the smaller model those predictors suggest, compare the fits, and give
+$95\%$ confidence intervals. (d) Is there evidence of high-leverage or outlying
+observations?
+\end{exercise}
+
+\begin{solution}
+<<s3-carseats>>=
+CS <- ISLR2::Carseats
+mfull <- lm(Sales ~ Price + Urban + US, data = CS)
+round(coef(summary(mfull)), 4)
+msmall <- lm(Sales ~ Price + US, data = CS)
+c(R2_full = summary(mfull)$r.squared, R2_small = summary(msmall)$r.squared,
+  adj_full = summary(mfull)$adj.r.squared,
+  adj_small = summary(msmall)$adj.r.squared)
+round(confint(msmall), 4)
+c(max_leverage = max(hatvalues(msmall)), threshold = 2*3/nrow(CS),
+  n_above = sum(hatvalues(msmall) > 2*3/nrow(CS)),
+  max_abs_studentised = max(abs(rstudent(msmall))))
+@
+(a) \texttt{Urban} and \texttt{US} are two-level factors, so R codes each as one indicator
+(Definition~\ref{def:reference}) with reference levels \texttt{No}. The fitted model is
+\[
+\widehat{\texttt{Sales}} = 13.043 - 0.0545\,\texttt{Price}
+- 0.0219\,\indc_{\{\text{Urban}\}} + 1.201\,\indc_{\{\text{US}\}} .
+\]
+A one-dollar rise in price is associated with $0.0545$ thousand fewer unit sales at fixed
+location; a store in the US sells $1.201$ thousand more than one outside it at the same
+price and urban status; the urban effect is $-0.022$ thousand, essentially nothing.
+
+(b) \texttt{Price} and \texttt{US}, both with $p<10^{-5}$. \texttt{UrbanYes} has $t=-0.08$
+and $p=0.94$.
+
+(c) Dropping \texttt{Urban} changes $R^2$ in the fifth decimal and \emph{raises}
+$\bar R^2$, exactly as Unit 2's $|t|>1$ criterion predicts for a variable with $|t|=0.08$.
+The intervals are $(-0.065,\,-0.044)$ for \texttt{Price} and $(0.692,\,1.708)$ for
+\texttt{USYes}, neither containing zero.
+
+(d) The maximum leverage is $0.0433$ against a conventional threshold of $2(k+1)/n=0.015$,
+so some points are flagged as high leverage, but none is near $1$ and the design has no
+singleton (Unit 2's $h_{ii}=1$ case). The largest studentised residual in absolute value is
+$2.89$, which for $n=400$ is unremarkable: the expected maximum of $400$ independent
+$|N(0,1)|$ variables is $\Phi^{-1}(1-1/802)=3.02$. There is no outlier here in any useful
+sense.
+\end{solution}
+
+\begin{exercise}\label{ex:log-coef}
+For $\expc[\ln y]=\beta_0+\beta_1x$:
+(a) give the exact percentage change in the fitted $y$ per unit of $x$ and its error against
+$100\beta_1$ at $\beta_1=0.05,\,0.2,\,0.5$;
+(b) show that if $\ln y=\beta_0+\beta_1x+\varepsilon$ with $\varepsilon\sim N(0,\sigma^2)$
+then $\expc[y\mid x]=e^{\beta_0+\beta_1x}e^{\sigma^2/2}$, so exponentiating a fitted
+log-mean estimates a median;
+(c) check (b) against a known truth.
+\end{exercise}
+
+\begin{solution}
+(a) A one-unit increase multiplies the fitted $y$ by $e^{\beta_1}$, a change of
+$100(e^{\beta_1}-1)\%$. The approximation $100\beta_1$ is the first term of
+$e^u=1+u+u^2/2+\cdots$, so its relative error is about $\beta_1/2$.
+<<s3-logpct>>=
+bt <- c(0.05, 0.2, 0.5)
+rbind(beta = bt, exact_pct = 100*(exp(bt) - 1), approx = 100*bt,
+      error = 100*(exp(bt) - 1) - 100*bt)
+@
+(b) $y=e^{\beta_0+\beta_1x}e^{\varepsilon}$ and, for $\varepsilon\sim N(0,\sigma^2)$, the
+moment generating function gives $\expc[e^{\varepsilon}]=e^{\sigma^2/2}$, so
+$\expc[y\mid x]=e^{\beta_0+\beta_1x}e^{\sigma^2/2}$. The median of $e^\varepsilon$ is $1$ by
+symmetry, so the median of $y$ is $e^{\beta_0+\beta_1x}$ exactly. Exponentiating the fitted
+log-mean therefore estimates the conditional median; the mean needs the factor
+$e^{\hat\sigma^2/2}$, or, without assuming normality, Duan's factor
+$n^{-1}\sum_ie^{e_i}$.
+<<s3-retransform>>=
+set.seed(41)
+N <- 400000; xl <- runif(N, 0, 10); sg <- 0.6
+lg <- 1 + 0.2*xl + rnorm(N, sd = sg); yl <- exp(lg)
+ml <- lm(lg ~ xl); s2l <- summary(ml)$sigma^2
+p0 <- predict(ml, data.frame(xl = 5))
+sel <- abs(xl - 5) < 0.02
+c(true_mean = exp(1 + 0.2*5 + sg^2/2), true_median = exp(1 + 0.2*5),
+  sample_mean = mean(yl[sel]), sample_median = median(yl[sel]),
+  exp_fitted = exp(p0), times_smear = exp(p0)*exp(s2l/2),
+  duan = exp(p0)*mean(exp(residuals(ml))))
+@
+(c) The uncorrected value tracks the median and both corrections track the mean, agreeing
+with each other to $0.02\%$. The gap is $20\%$, which is the error made by anyone who fits
+in logs and reports $e^{\hat y}$ as an expected claim amount.
+\end{solution}
+
+\begin{exercise}\label{ex:fwl}
+State the Frisch--Waugh--Lovell theorem and use it to explain what ``holding the other
+variables constant'' means when no two observations share the same values of those
+variables. What does the theorem say when $\bX_1$ is orthogonal to $\bX_2$?
+\end{exercise}
+
+\begin{solution}
+The statement and proof are Theorem~\ref{thm:fwl}: $\hat\bb_1$ from the full regression
+equals the coefficient from regressing $\bM_2\bY$ on $\bM_2\bX_1$, the residuals after
+projecting out $\bX_2$.
+
+So no observations need share values of $\bX_2$. The procedure removes from both $\bY$ and
+$\bX_1$ the part linearly predictable from $\bX_2$ and relates what is left. ``Holding
+constant'' is an arithmetic adjustment for the \emph{linear} influence of the measured
+variables, not a physical control.
+
+If $\bX_1'\bX_2=\bzero$ then
+$\bM_2\bX_1=\bX_1-\bX_2(\bX_2'\bX_2)^{-1}\bX_2'\bX_1=\bX_1$, so~\eqref{eq:fwl} reduces to
+$\hat\bb_1=(\bX_1'\bX_1)^{-1}\bX_1'\bY$: the coefficient is what it would have been had
+$\bX_2$ never entered. Orthogonal predictors can be fitted one at a time with no change to
+any estimate, which is the point of an orthogonal experimental design and why sequential
+and marginal sums of squares coincide there and nowhere else.
+\end{solution}
+
+\begin{exercise}\label{ex:fwl-t}
+Continue Theorem~\ref{thm:fwl} with $\bX_1$ a single column.
+(a) The auxiliary regression reproduces $\hat\beta_1$ but not its reported $t$: explain and
+give the exact correction.
+(b) Show the auxiliary $R^2$ is the partial $R^2$ $(\SSE_{-1}-\SSE)/\SSE_{-1}$.
+(c) Check both on \texttt{lstat}.
+\end{exercise}
+
+\begin{solution}
+(a) The two fits have the same coefficient and the same residual vector, hence the same
+$\SSE$; what differs is the divisor. The auxiliary regression has one regressor and no
+intercept, so its reported $s^2$ is $\SSE/(n-1)$, while the full model's is $\SSE/(n-k-1)$.
+Every standard error, and so every $t$, is out by $\sqrt{(n-1)/(n-k-1)}$: multiply the
+auxiliary $t$ by $\sqrt{(n-k-1)/(n-1)}$. The auxiliary fit has already spent $k-1$ degrees
+of freedom projecting out $\bX_2$, and its degree-of-freedom count does not know it.
+
+(b) Both regressions have residual sum of squares $\SSE$, and the auxiliary total sum of
+squares is $\|\bM_2\bY\|^2$, the residual sum of squares of $\bY$ on $\bX_2$ alone, that is
+$\SSE_{-1}$. So its $R^2$ is $1-\SSE/\SSE_{-1}$. No centering correction is needed:
+$\bM_2\bY$ has mean zero when $\bX_2$ contains the intercept.
+<<s3-fwl-t>>=
+maux <- lm(y_res ~ x_res - 1)
+short2 <- lm(medv ~ age + rm, data = Boston)
+c(coef_aux = coef(maux)[["x_res"]], coef_full = b[["lstat"]],
+  t_aux = coef(summary(maux))["x_res", 3],
+  t_corrected = coef(summary(maux))["x_res", 3]*sqrt((n-k-1)/(n-1)),
+  t_full = coef(summary(fit))["lstat", 3],
+  R2_aux = summary(maux)$r.squared,
+  partial_R2 = (sum(residuals(short2)^2) - sum(residuals(fit)^2)) /
+                sum(residuals(short2)^2))
+@
+The partial $R^2$ is the right measure of what one predictor adds, and it is not the drop
+in the model's $R^2$: the two differ by the factor $\SSE_{-1}/\SST$.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 15]\label{ex:islr-crim}
+For \texttt{Boston}, regress \texttt{crim} on each other variable one at a time, then on all
+of them together. Plot or tabulate the marginal coefficient against the partial one for each
+predictor, and explain the pattern using Theorems~\ref{thm:fwl} and~\ref{thm:ovb}.
+\end{exercise}
+
+\begin{solution}
+<<s3-crim>>=
+prd  <- setdiff(names(Boston), c("crim", "rad_f"))
+marg <- sapply(prd, function(v)
+  coef(lm(reformulate(v, "crim"), data = Boston))[[2]])
+part <- coef(lm(crim ~ ., data = Boston[, c("crim", prd)]))[-1]
+round(cbind(marginal = marg, partial = part[prd],
+            ratio = part[prd]/marg), 4)
+c(sign_flips = sum(sign(marg) != sign(part[prd])), predictors = length(prd),
+  correlation = cor(marg, part[prd]))
+@
+Every marginal coefficient is the omitted-variable expression of Theorem~\ref{thm:ovb} with
+all eleven other predictors omitted: it carries the variable's own partial effect plus the
+part of every other variable's effect that travels with it. Every partial coefficient is
+the Frisch--Waugh--Lovell slope of Theorem~\ref{thm:fwl}, computed on what is left of both
+\texttt{crim} and the predictor after the other ten are projected out.
+
+Seven of the twelve change sign, and \texttt{nox} is the extreme case: marginally $31.2$,
+partially $-10.0$. Nitrogen oxide concentration tracks the industrial, low-status, high-tax
+tracts where crime is high, and once those are in the model it carries no crime signal of
+its own and is negative. The two columns answer different questions, and neither is wrong:
+the marginal coefficient is the right answer to ``what do high-\texttt{nox} tracts look
+like'', the partial one to ``what happens if \texttt{nox} moves and nothing else does''.
+Only the second is what a regression coefficient is usually taken to mean, and it is the
+one that depends on which other variables were measured.
+\end{solution}
+
+\begin{exercise}\label{ex:ovb-sign}
+A regression of medical cost on age omits a health-status variable that raises cost and is
+positively correlated with age. What is the sign of the bias in the age coefficient?
+\end{exercise}
+
+\begin{solution}
+By~\eqref{eq:ovb} with one included and one omitted variable the bias is $\delta\beta_2$,
+where $\delta$ is the slope from regressing health status on age and $\beta_2$ its effect
+on cost. Both are positive, so the bias is positive: the age coefficient overstates the
+association of age with cost, absorbing the part due to poorer health among older
+policyholders.
+\end{solution}
+
+\begin{exercise}\label{ex:ovb-orthogonal}
+Suppose the omitted $\bX_2$ satisfies $\bX_1'\bX_2=\bzero$ in the sample.
+(a) Show $\tilde\bb_1$ is not merely unbiased but numerically identical to the full-model
+$\hat\bb_1$, in every sample.
+(b) Show $\expc[s^2_{\text{short}}]$ exceeds $\sigma^2$ and give the inflation.
+(c) Deduce what happens to standard errors and prediction intervals, and check by
+simulation with $\beta_2=3$, $\sigma=1$.
+(d) Which of the following, from a standard list of consequences of omitting an important
+variable, remain true here: underfitting; wider prediction intervals; unbiased coefficients;
+inflated $s^2$; unchanged $\SST$?
+\end{exercise}
+
+\begin{solution}
+(a) By Exercise~\ref{ex:fwl}, orthogonality makes $\bM_2\bX_1=\bX_1$, so the full-model
+coefficient is $(\bX_1'\bX_1)^{-1}\bX_1'\bY$, which is the short regression's estimator
+verbatim. This is stronger than unbiasedness: the two are the same function of the data.
+
+(b) The short model's residual vector is $\bM_1(\bX_2\bb_2+\be)$ with
+$\bM_1=\bI-\bX_1(\bX_1'\bX_1)^{-1}\bX_1'$, and orthogonality gives $\bM_1\bX_2=\bX_2$, so
+by the quadratic-form lemma of Unit 2
+\[
+\expc[\SSE_{\text{short}}] = \|\bX_2\bb_2\|^2+\sigma^2(n-k_1-1) ,
+\qquad
+\expc[s^2_{\text{short}}] = \sigma^2+\frac{\|\bX_2\bb_2\|^2}{n-k_1-1} :
+\]
+the omitted systematic variation is counted as noise.
+
+(c) Standard errors are $s\sqrt{[(\bX_1'\bX_1)^{-1}]_{jj}}$, so they inflate by
+$\sqrt{\expc[s^2_{\text{short}}]/\sigma^2}$, and prediction intervals inflate at least as
+much. The coefficient is right and its uncertainty is overstated.
+<<s3-ovb-orth>>=
+nn <- 200
+z1 <- rep(c(-1, 1), length.out = nn)            # orthogonal by construction
+z2 <- rep(c(-1, -1, 1, 1), length.out = nn)
+c(sum_z1 = sum(z1), sum_z2 = sum(z2), inner = sum(z1*z2))
+set.seed(42)
+est3 <- t(replicate(4000, {
+  yo <- 1 + 2*z1 + 3*z2 + rnorm(nn)
+  c(full = coef(lm(yo ~ z1 + z2))[["z1"]],
+    short = coef(lm(yo ~ z1))[["z1"]])
+}))
+yo <- 1 + 2*z1 + 3*z2 + rnorm(nn)
+mfl <- lm(yo ~ z1 + z2); msh <- lm(yo ~ z1)
+c(mean_full = mean(est3[, 1]), mean_short = mean(est3[, 2]),
+  sd_full = sd(est3[, 1]), sd_short = sd(est3[, 2]),
+  s_full = summary(mfl)$sigma, s_short = summary(msh)$sigma,
+  se_ratio = coef(summary(msh))["z1", 2]/coef(summary(mfl))["z1", 2],
+  predicted_ratio = sqrt(1 + 9*mean(z2^2)))
+@
+The two estimators agree to the last digit in mean and standard deviation, confirming (a)
+rather than merely (b). On one sample $s$ rises from $0.98$ to $3.07$ and the standard error
+by a factor of $3.14$ against the predicted $\sqrt{10}=3.16$.
+
+(d) Underfitting, wider prediction intervals, inflated $s^2$ and unchanged $\SST$ all hold:
+$\SST=\sum_i(Y_i-\bar Y)^2$ involves the response alone, so no change to $\bX$ can move it.
+The one that fails in general is unbiasedness, by Theorem~\ref{thm:ovb}, and orthogonality
+is precisely the exception in which it survives. So omitting a relevant orthogonal variable
+costs precision without costing correctness; omitting a correlated one costs both.
+\end{solution}
+
+\begin{exercise}[SOA sample question 27]\label{ex:soa-drop}
+Monthly dental claims are modelled on $48$ observations with three predictors, giving
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+ & coefficient & standard error & $t$ & $p$\\
+\midrule
+Intercept & $-45{,}765{,}767.76$ & $20{,}441{,}816.55$ & $-2.24$ & $0.0303$\\
+Weekdays  & $513{,}280.76$ & $233{,}143.23$ & $2.20$ & $0.0330$\\
+Weekend days & $280{,}148.46$ & $483{,}001.55$ & $0.58$ & $0.5649$\\
+Average members & $38.64$ & $6.42$ & $6.01$ & $0.0000$\\
+\bottomrule
+\end{tabular}
+\end{center}
+Determine which predictor should be dropped at the $5\%$ level. Reproduce the $t$ column
+and the $p$ column from the first two, and say why the three tests should not be read as a
+single $5\%$ decision.
+\end{exercise}
+
+\begin{solution}
+Only Weekend days has $p>0.05$, so it is the one to drop; the other two and the intercept
+are significant. Each $t$ is the coefficient over its standard error
+(Theorem~\ref{thm:t-test}) and each $p$ is $2\prb\{t_{n-k-1}>|t|\}$ with
+$n-k-1=48-3-1=44$.
+<<s3-soa27>>=
+cf27 <- c(-45765767.76, 513280.76, 280148.46, 38.64)
+se27 <- c(20441816.55, 233143.23, 483001.55, 6.42)
+tv27 <- cf27/se27
+rbind(t = round(tv27, 2), p = round(2*pt(-abs(tv27), df = 44), 4),
+      drop_at_5pct = as.numeric(2*pt(-abs(tv27), df = 44) > 0.05))
+c(familywise_3_tests = 1 - 0.95^3, bonferroni_level = 0.05/3,
+  weekend_sig_at_bonferroni =
+    as.numeric(2*pt(-abs(tv27[3]), df = 44) < 0.05/3))
+@
+Three tests at $5\%$ have a family-wise error rate of $1-0.95^3=0.143$ under the null, so
+the probability of dropping at least one useful predictor by chance is nearly three times
+the nominal level. Exercise~\ref{ex:simultaneous} shows the same effect for confidence
+regions. Two further cautions: the predictors are dropped \emph{one at a time}, since
+removing Weekend days changes every remaining coefficient and standard error unless the
+design is orthogonal (Exercise~\ref{ex:ovb-orthogonal}); and a joint test of the two
+weekday variables by Corollary~\ref{cor:nested-F} answers a different and often more
+relevant question than two separate $t$ tests, as Exercise~\ref{ex:joint-vs-single} shows.
+\end{solution}
+
+\begin{exercise}\label{ex:significance}
+A coefficient is significant at the $0.1\%$ level with $n=2{,}000{,}000$. What follows about
+its practical importance? What would you ask to see instead?
+\end{exercise}
+
+\begin{solution}
+Nothing. $t=\hat\beta_j/\SE(\hat\beta_j)$ and $\SE(\hat\beta_j)\propto n^{-1/2}$, so at
+fixed effect size $|t|$ grows without bound in $n$: at two million observations an
+economically negligible coefficient is overwhelmingly significant.
+
+Ask for the coefficient in the units of the response, multiplied by a change in the
+predictor that is meaningful in the application, for instance an interquartile shift, so
+the answer reads as an amount and not as a slope; the confidence interval for that amount;
+and, if the model is for prediction, the prediction interval, which at this $n$ is
+essentially $\pm2\sigma$ however precise the coefficients are
+(Exercise~\ref{ex:ci-pi-limits}).
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+On the fit of §\ref{sec:3.6}: (a) confirm that \texttt{anova} and
+\texttt{linearHypothesis} agree for a variable-exclusion hypothesis, and construct the
+reduced model that lets \texttt{anova} test
+$\beta_{\mathrm{lstat}}=\beta_{\mathrm{age}}$ too; (b) verify~\eqref{eq:restricted} against
+the reduced fit; (c) explain why the reduced fit's standard errors are not the restricted
+standard errors of Exercise~\ref{ex:restricted}.
+\end{exercise}
+
+\begin{solution}
+<<s3-anova-pooled>>=
+pooled <- lm(medv ~ I(lstat + age) + rm, data = Boston)
+c(anova_F = anova(pooled, fit)$F[2],
+  linearHyp_F = linearHypothesis(fit, "lstat = age")$F[2],
+  npar_pooled = length(coef(pooled)), npar_full = length(coef(fit)),
+  s2_full = s2, s2_reduced = sum(residuals(red)^2)/(n - 2))
+@
+(a) §\ref{sec:3.6.2} runs the first comparison, with all four routes agreeing.
+\texttt{anova} needs the reduced model as a fitted object, which for
+$\beta_{\mathrm{lstat}}=\beta_{\mathrm{age}}$ means building the pooled regressor
+\texttt{I(lstat + age)}; it then reports the same $F$ as \texttt{linearHypothesis}. The
+obstacle was never the hypothesis but that \texttt{anova} compares fitted objects.
+
+(b) Exercise~\ref{ex:restricted} does this: \eqref{eq:restricted} returns
+\texttt{lm(medv $\sim$ lstat)}'s coefficients with two exact zeros.
+
+(c) The two use different estimates of $\sigma^2$. The restricted standard errors evaluate
+$\sigma^2\bP\bA^{-1}\bP'$ at the \emph{full} model's $s^2=30.72$; the reduced fit estimates
+$\sigma^2$ from its own residuals, $\SSE_R/(n-2)=38.64$. Neither is wrong. Under $H_0$ both
+are consistent and the full model's has more degrees of freedom; if $H_0$ is false the
+reduced model's $s^2$ is inflated by the constraint, exactly as in
+Exercise~\ref{ex:ovb-orthogonal}(b), and its standard errors are too large. Which to report
+depends on whether the constraint is assumed or tested.
+\end{solution}
+
+\end{document}

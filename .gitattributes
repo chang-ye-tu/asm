@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.pdf -text
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.Rnw text eol=lf
+*.R text eol=lf
+*.py text eol=lf
+*.tex text eol=lf
+*.sty text eol=lf

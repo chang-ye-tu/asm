@@ -1,0 +1,2025 @@
+% Compile:  python build.py 10
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 10\ \ Autoregression}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{10.\arabic{theorem}}
+\renewcommand\thetheorem  {10.\arabic{theorem}}
+\renewcommand\thelemma    {10.\arabic{theorem}}
+\renewcommand\theproposition{10.\arabic{theorem}}
+\renewcommand\thecorollary{10.\arabic{theorem}}
+\renewcommand\theexample  {10.\arabic{example}}
+\renewcommand\theexercise {10.\arabic{exercise}}
+\renewcommand\thefigure   {10.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Autoregression and Forecasting}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit10-")
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 10.\ Autoregression and Forecasting}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Autoregressive Models}\label{sec:10.1}
+%==============================================================================
+
+\begin{reading}
+FREES §8.2, §8.5.1.
+\end{reading}
+
+Unit 9 left the dependence between $y_t$ and its past as a diagnostic finding: the
+correlogram of a regression's residuals was read for departures from white noise, and the
+remedy offered was differencing. Modelling that dependence directly means putting the past
+of the series on the right of the equation.
+
+\subsection{The first-order process}\label{sec:10.1.1}
+
+\begin{definition}[White noise and the innovations]\label{def:innov}
+Throughout, $\{\varepsilon_t\}_{t\in\mathbb Z}$ is independent and identically distributed
+with mean $0$ and variance $\sigma^2\in(0,\infty)$, and $\calL_t$ denotes the past space of
+the prerequisites: the closure in $L^2$ of the square-integrable functions of finitely many
+$\varepsilon_u$ with $u\leqslant t$.
+\end{definition}
+
+\begin{definition}[Autoregressive model of order one]\label{def:ar1}
+The $AR(1)$ model is
+\begin{equation}\label{eq:ar1}
+y_t=\beta_0+\beta_1y_{t-1}+\varepsilon_t ,
+\end{equation}
+with $|\beta_1|<1$ and $\varepsilon_t$ independent of $\calL_{t-1}$.
+\end{definition}
+
+\begin{theorem}[Existence, uniqueness, moments]\label{thm:ar1}
+Let $|\beta_1|<1$ and $\mu=\beta_0/(1-\beta_1)$. Then
+\begin{equation}\label{eq:ar1-ma}
+y_t=\mu+\sum_{k=0}^{\infty}\beta_1^{k}\,\varepsilon_{t-k}
+\end{equation}
+converges in $L^2$, satisfies~\eqref{eq:ar1}, and is the only weakly stationary solution
+of~\eqref{eq:ar1}. It is weakly stationary with
+\begin{equation}\label{eq:ar1-moments}
+\expc[y_t]=\mu ,\qquad
+\gamma(0)=\var(y_t)=\frac{\sigma^2}{1-\beta_1^2} ,\qquad
+\gamma(k)=\beta_1^{k}\gamma(0) ,\qquad
+\rho_k=\beta_1^{k} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The coefficients $\beta_1^k$ are square summable, so~\eqref{eq:ar1-ma} converges in $L^2$
+and lies in $\calL_t$ by the prerequisites' construction of the past space. Splitting off
+the first term,
+\[
+y_t=\mu+\varepsilon_t+\beta_1\sum_{k=0}^{\infty}\beta_1^{k}\varepsilon_{t-1-k}
+=\mu+\varepsilon_t+\beta_1(y_{t-1}-\mu) ,
+\]
+and $\mu-\beta_1\mu=\beta_0$, so~\eqref{eq:ar1} holds.
+
+For the moments, $\expc[y_t]=\mu$ because each $\varepsilon$ has mean zero and $L^2$
+convergence preserves the mean. The innovations are uncorrelated with common variance
+$\sigma^2$, so for $k\geqslant0$
+\[
+\gamma(k)=\cov\Bigl(\sum_{j\geqslant0}\beta_1^{j}\varepsilon_{t-j},\
+                    \sum_{l\geqslant0}\beta_1^{l}\varepsilon_{t+k-l}\Bigr)
+=\sigma^2\sum_{j\geqslant0}\beta_1^{j}\beta_1^{j+k}
+=\sigma^2\beta_1^{k}\sum_{j\geqslant0}\beta_1^{2j}
+=\frac{\sigma^2\beta_1^{k}}{1-\beta_1^{2}} ,
+\]
+the pairing $j=l-k$ being the only one that survives. Both moments are free of $t$.
+
+For uniqueness, let $\{\tilde y_t\}$ be another weakly stationary solution and put
+$d_t=y_t-\tilde y_t$. Subtracting the two copies of~\eqref{eq:ar1} gives
+$d_t=\beta_1d_{t-1}=\beta_1^{m}d_{t-m}$ for every $m$. Weak stationarity bounds
+$\expc[d_{t-m}^2]$ by a constant $C$ free of $m$, so
+$\expc[d_t^2]\leqslant\beta_1^{2m}C\to0$, forcing $d_t=0$ almost surely.
+\end{proof}
+
+\begin{remark}
+The autocorrelation function decays geometrically and never reaches zero. That is the
+identifying signature of an $AR(1)$: a correlogram falling off at a constant ratio, against
+the near-constant correlogram of a random walk (Unit 9) and the immediate collapse to zero
+of white noise.
+\end{remark}
+
+\begin{proposition}[The two boundary cases]\label{prop:ar1-boundary}
+Setting $\beta_1=0$ in~\eqref{eq:ar1} gives white noise about $\beta_0$. Setting
+$\beta_1=1$ gives $\Delta y_t=\beta_0+\varepsilon_t$, a random walk with drift $\beta_0$,
+for which no weakly stationary solution exists.
+\end{proposition}
+
+\begin{proof}
+The first is immediate. For the second, $\beta_1=1$ turns~\eqref{eq:ar1} into
+$y_t-y_{t-1}=\beta_0+\varepsilon_t$, which is Unit 9's random walk. If a weakly stationary
+solution existed, taking variances in $y_t=y_{t-1}+\beta_0+\varepsilon_t$ would give
+$\gamma(0)=\gamma(0)+\sigma^2$, since $\varepsilon_t$ is uncorrelated with $y_{t-1}$,
+and $\sigma^2>0$.
+\end{proof}
+
+\begin{remark}
+The variance identity $\gamma(0)(1-\beta_1^2)=\sigma^2$ of~\eqref{eq:ar1-moments} says the
+series is more variable than its innovations, and increasingly so as $\beta_1$ approaches
+$1$. In cross-sectional regression the regressors are fixed and the response inherits the
+error variance exactly; here the regressor is the response one step earlier and the
+variance accumulates.
+\end{remark}
+
+\begin{proposition}[Fourth moment]\label{prop:ar1-fourth}
+If in addition $\mu_4=\expc[\varepsilon_t^4]<\infty$, then $x_t=y_t-\mu$ satisfies
+\begin{equation}\label{eq:ar1-fourth}
+\expc[x_t^4]=\frac{\mu_4+6\beta_1^{2}\sigma^2\gamma(0)}{1-\beta_1^{4}}<\infty ,
+\end{equation}
+and $\{x_t^2\}$ is weakly stationary with autocovariance
+$\cov(x_t^2,x_{t+k}^2)=\beta_1^{2k}\var(x_t^2)\to0$. Consequently
+$n^{-1}\sum_{t\leqslant n}x_t^2\convp\gamma(0)$.
+\end{proposition}
+
+\begin{proof}
+\textbf{Finiteness.} For the partial sum $S_m=\sum_{j<m}\beta_1^{j}\varepsilon_{t-j}$,
+expanding the fourth power and using independence with $\expc[\varepsilon]=0$ leaves only
+the terms in which every index occurs at least twice: the diagonal, and the three ways of
+splitting four factors into two distinct pairs. Hence
+\[
+\expc[S_m^4]=\mu_4\sum_{j<m}\beta_1^{4j}
+ +3\sigma^4\Bigl\{\Bigl(\sum_{j<m}\beta_1^{2j}\Bigr)^{2}-\sum_{j<m}\beta_1^{4j}\Bigr\}
+\ \leqslant\ \frac{\mu_4}{1-\beta_1^{4}}+\frac{3\sigma^4}{(1-\beta_1^{2})^{2}} ,
+\]
+a bound free of $m$. Now $S_m\to x_t$ in $L^2$, hence in probability and so almost surely
+along a subsequence, and Fatou's lemma gives $\expc[x_t^4]<\infty$. The law of $x_t$ is free
+of $t$, being the weak limit of the laws of the $S_m$, which are.
+
+\textbf{Value.} Write $m_4=\expc[x_t^4]$ and use $x_t=\beta_1x_{t-1}+\varepsilon_t$ with
+$\varepsilon_t$ independent of $x_{t-1}$. All four cross terms in the expansion carry a
+factor $\expc[\varepsilon_t]=0$ or $\expc[\varepsilon_t^3]\expc[x_{t-1}]=0$, so
+$m_4=\beta_1^{4}m_4+6\beta_1^{2}\sigma^2\expc[x_{t-1}^2]+\mu_4$, which
+is~\eqref{eq:ar1-fourth}.
+
+\textbf{Autocovariance.} Iterate~\eqref{eq:ar1} $k$ times to get
+$x_{t+k}=\beta_1^{k}x_t+v$ with $v=\sum_{j<k}\beta_1^{j}\varepsilon_{t+k-j}$ independent of
+$x_t$ and of mean zero. Then $x_{t+k}^2=\beta_1^{2k}x_t^2+2\beta_1^{k}x_tv+v^2$, and
+$\cov(x_t^2,x_tv)=\expc[x_t^3]\expc[v]-\expc[x_t^2]\expc[x_t]\expc[v]=0$ while
+$\cov(x_t^2,v^2)=0$, both by independence. So
+$\cov(x_t^2,x_{t+k}^2)=\beta_1^{2k}\var(x_t^2)$, which tends to $0$, and the stationary law
+of large numbers of the prerequisites applies.
+\end{proof}
+
+\subsection{Higher orders and moving averages}\label{sec:10.1.2}
+
+\begin{definition}[Backshift]\label{def:backshift}
+$\mathrm{B}y_t=y_{t-1}$ and $\mathrm{B}^ky_t=y_{t-k}$. For a polynomial
+$\Phi(x)=1-\beta_1x-\cdots-\beta_px^p$, $\Phi(\mathrm{B})y_t
+=y_t-\beta_1y_{t-1}-\cdots-\beta_py_{t-p}$.
+\end{definition}
+
+\begin{definition}[$AR(p)$, $MA(q)$, $ARMA$, $ARIMA$]\label{def:arima}
+With $\Phi(x)=1-\beta_1x-\cdots-\beta_px^p$ and
+$\Theta(x)=1-\theta_1x-\cdots-\theta_qx^q$,
+\begin{align}
+AR(p):&\quad \Phi(\mathrm{B})y_t=\beta_0+\varepsilon_t , \label{eq:arp}\\
+MA(q):&\quad y_t=\beta_0+\Theta(\mathrm{B})\varepsilon_t , \label{eq:maq}\\
+ARMA(p,q):&\quad \Phi(\mathrm{B})y_t=\beta_0+\Theta(\mathrm{B})\varepsilon_t ,
+\label{eq:arma}
+\end{align}
+and $ARIMA(p,d,q)$ is $ARMA(p,q)$ applied to $w_t=(1-\mathrm{B})^dy_t$.
+\end{definition}
+
+\begin{proposition}[$MA(q)$ is always stationary and its correlogram cuts off]
+\label{prop:maq}
+The $MA(q)$ process~\eqref{eq:maq} is weakly stationary for every
+$\theta_1,\ldots,\theta_q$, with $\theta_0=-1$ and
+\begin{equation}\label{eq:maq-acf}
+\gamma(k)=\sigma^2\sum_{j=0}^{q-k}\theta_j\theta_{j+k}\ \ (0\leqslant k\leqslant q) ,
+\qquad \gamma(k)=0 \ \ (k>q) .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+$y_t-\beta_0$ is a finite linear combination of $\varepsilon_t,\ldots,\varepsilon_{t-q}$
+with coefficients $-\theta_j$ and $\theta_0=-1$, so the mean is $\beta_0$ and the
+covariance is $\sigma^2\sum_j\theta_j\theta_{j+k}$ over those $j$ with both indices in
+$\{0,\ldots,q\}$, all free of $t$. For $k>q$ the two windows
+$\{t-q,\ldots,t\}$ and $\{t+k-q,\ldots,t+k\}$ are disjoint and the innovations independent.
+\end{proof}
+
+\begin{theorem}[Stationarity of $AR(p)$]\label{thm:arp-stat}
+Suppose $\Phi$ has $p$ distinct roots $g_1,\ldots,g_p$, all with $|g_i|>1$. Then
+$1/\Phi(x)=\sum_{k\geqslant0}\psi_kx^k$ for $|x|<\min_i|g_i|$, with
+\begin{equation}\label{eq:psi}
+\psi_k=\sum_{i=1}^{p}c_ig_i^{-k} ,
+\qquad c_i=\prod_{l\neq i}\bigl(1-g_i/g_l\bigr)^{-1} ,
+\end{equation}
+and $|\psi_k|\leqslant\bigl(\sum_i|c_i|\bigr)\varrho^{k}$ with
+$\varrho=\max_i|g_i|^{-1}<1$. Consequently
+$y_t=\mu+\sum_{k\geqslant0}\psi_k\varepsilon_{t-k}$, with $\mu=\beta_0/\Phi(1)$, converges
+in $L^2$ and is the unique weakly stationary solution of~\eqref{eq:arp}.
+\end{theorem}
+
+\begin{proof}
+Since the roots are distinct, $\Phi(x)=\prod_i(1-x/g_i)$ and the partial fraction
+expansion $1/\Phi(x)=\sum_ic_i/(1-x/g_i)$ holds with $c_i$ obtained by multiplying through
+by $(1-x/g_i)$ and setting $x=g_i$, which gives $c_i=\prod_{l\neq i}(1-g_i/g_l)^{-1}$.
+Expanding each factor as a geometric series, valid for $|x|<|g_i|$, and collecting powers
+gives~\eqref{eq:psi} and the bound.
+
+Absolute summability of $\{\psi_k\}$ makes the series square summable, so it converges in
+$L^2$. Applying $\Phi(\mathrm{B})$ term by term, the coefficient of $\varepsilon_{t-k}$ in
+$\Phi(\mathrm{B})\sum_j\psi_j\varepsilon_{t-j}$ is the $k$th coefficient of
+$\Phi(x)\sum_j\psi_jx^j=1$, hence $1$ for $k=0$ and $0$ otherwise; the interchange is
+legitimate because $\Phi(\mathrm{B})$ is a finite linear combination and $L^2$ limits are
+preserved by such. So $\Phi(\mathrm{B})(y_t-\mu)=\varepsilon_t$, and
+$\Phi(\mathrm{B})\mu=\mu\Phi(1)=\beta_0$.
+
+For uniqueness, let $d_t$ be the difference of two weakly stationary solutions, so
+$\Phi(\mathrm{B})d_t=0$ and $\expc[d_t^2]\leqslant C$ free of $t$. Multiplying the truncated
+series $\sum_{k\leqslant K}\psi_kx^k$ by $\Phi(x)$ leaves $1$ plus terms in
+$x^{K+1},\ldots,x^{K+p}$ whose coefficients are sums of at most $p$ products
+$\psi_k\beta_j$ with $k>K$, hence bounded by $p\max_j|\beta_j|\sum_i|c_i|\varrho^{K}$.
+Applying the same identity with $\mathrm{B}$ in place of $x$ to $d_t$,
+\[
+0=\sum_{k\leqslant K}\psi_k\,\Phi(\mathrm{B})d_{t-k}
+ =d_t+\sum_{j=K+1}^{K+p}e_{K,j}\,d_{t-j} ,
+\qquad |e_{K,j}|\leqslant C'\varrho^{K} ,
+\]
+so $\expc[d_t^2]^{1/2}\leqslant pC'\varrho^{K}C^{1/2}\to0$ as $K\to\infty$ by the triangle
+inequality in $L^2$, forcing $d_t=0$ almost surely.
+\end{proof}
+
+\begin{remark}
+For $p=1$ the condition is $|g_1|=|\beta_1|^{-1}>1$, that is $|\beta_1|<1$. The requirement
+is on the roots, not on the coefficients: an $AR(2)$ with $\beta_1=1.02$ and
+$\beta_2=-0.24$ is stationary, because $\Phi(x)=1-1.02x+0.24x^2$ has both roots outside
+the unit circle, while its first coefficient exceeds one.
+\end{remark}
+
+\begin{definition}[$\psi$-coefficients]\label{def:psi}
+The representation $y_t=\mu+\sum_{k\geqslant0}\psi_k\varepsilon_{t-k}$ with $\psi_0=1$ is
+the \emph{$\psi$-coefficient representation}. For $AR(1)$, $\psi_k=\beta_1^{k}$; for
+$MA(q)$, $\psi_k=-\theta_k$ for $1\leqslant k\leqslant q$ and $0$ beyond.
+\end{definition}
+
+\subsection{Partial autocorrelation}\label{sec:10.1.3}
+
+\begin{definition}[Partial autocorrelation]\label{def:pacf}
+For a weakly stationary series, let $(\alpha_{1,k},\ldots,\alpha_{k,k})$ be the
+coefficients of the projection of $y_t-\mu$ on $\{y_{t-1}-\mu,\ldots,y_{t-k}-\mu\}$, that
+is the minimiser of
+$\expc[\{y_t-\mu-\sum_{j\leqslant k}a_j(y_{t-j}-\mu)\}^2]$. The \emph{partial
+autocorrelation} at lag $k$ is $\alpha_{k,k}$.
+\end{definition}
+
+\begin{theorem}[The partial correlogram of an $AR(p)$ cuts off]\label{thm:pacf}
+Let $\{y_t\}$ be the stationary $AR(p)$ of Theorem~\ref{thm:arp-stat}. Then
+$(\alpha_{1,k},\ldots,\alpha_{k,k})=(\beta_1,\ldots,\beta_p,0,\ldots,0)$ for every
+$k\geqslant p$. In particular $\alpha_{p,p}=\beta_p$ and $\alpha_{k,k}=0$ for $k>p$.
+\end{theorem}
+
+\begin{proof}
+Write $x_t=y_t-\mu$, so $x_t=\sum_{j\leqslant p}\beta_jx_{t-j}+\varepsilon_t$. Fix
+$k\geqslant p$ and let $a=(\beta_1,\ldots,\beta_p,0,\ldots,0)$. The residual of that
+candidate is exactly $\varepsilon_t$, and $x_{t-j}\in\calL_{t-1}$ for $j\geqslant1$ while
+$\varepsilon_t$ is independent of $\calL_{t-1}$ with mean zero, so
+$\expc[\varepsilon_tx_{t-j}]=0$ for $j=1,\ldots,k$. Those are the normal equations of the
+projection (the projection theorem of the prerequisites), whose solution is unique when the
+covariance matrix of $(x_{t-1},\ldots,x_{t-k})$ is nonsingular. It is: a singular
+covariance matrix would make some combination $\sum_{j\leqslant k}b_jx_{t-j}$ with
+$b\neq\bzero$ vanish almost surely. Since
+$\cov(x_{t-j},\varepsilon_{t-l})=\sigma^2\psi_{l-j}$, which is $0$ for $l<j$ and $\sigma^2$
+for $l=j$, taking the covariance of that combination with $\varepsilon_{t-1}$ gives
+$b_1\sigma^2=0$, then with $\varepsilon_{t-2}$ gives $b_2\sigma^2=0$, and so on: the system
+is triangular and forces every $b_j=0$.
+\end{proof}
+
+\begin{remark}
+The correlogram and the partial correlogram are complementary identifiers: an $MA(q)$ has
+$\rho_k=0$ beyond lag $q$ and a partial correlogram that decays without cutting off, an
+$AR(p)$ has $\alpha_{k,k}=0$ beyond lag $p$ and a correlogram that decays without cutting
+off. Neither cuts off for an $ARMA$ with both orders positive.
+\end{remark}
+
+\begin{proposition}[Yule--Walker equations]\label{prop:yw}
+The coefficients of Definition~\ref{def:pacf} solve the linear system
+\begin{equation}\label{eq:yw}
+\rho_l=\sum_{j=1}^{k}\alpha_{j,k}\,\rho_{|l-j|} ,
+\qquad l=1,\ldots,k .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+The normal equations of the projection in Definition~\ref{def:pacf} are
+$\expc[\{x_t-\sum_ja_jx_{t-j}\}\,x_{t-l}]=0$ for $l=1,\ldots,k$, where $x_t=y_t-\mu$; that
+is $\gamma(l)=\sum_ja_j\gamma(l-j)$, and dividing by $\gamma(0)$
+gives~\eqref{eq:yw}.
+\end{proof}
+
+\begin{remark}
+Two sample versions of $\hat\alpha_{k,k}$ are in use and they are not the same number.
+Substituting the sample autocorrelations $r_k$ into~\eqref{eq:yw} and solving, which is what
+\texttt{pacf} does, forms every inner product from all $T$ observations; regressing $y_t$ on
+an intercept and $y_{t-1},\ldots,y_{t-k}$ forms them from the $T-k$ dates at which every
+regressor exists. The difference is an end effect of order $T^{-1}$, and
+§\ref{sec:10.5.1} both reproduces the package exactly from~\eqref{eq:yw} and measures the
+gap between the two.
+\end{remark}
+
+%==============================================================================
+\section{Estimation, Diagnostics, Forecasting}\label{sec:10.2}
+%==============================================================================
+
+\begin{reading}
+FREES §8.3, §8.4, §8.6.
+\end{reading}
+
+\subsection{Conditional least squares}\label{sec:10.2.1}
+
+\begin{definition}[Conditional least squares]\label{def:cls}
+Given $y_1,\ldots,y_T$, the \emph{conditional least squares} estimates of $\beta_0,\beta_1$
+in~\eqref{eq:ar1} minimise $\sum_{t=2}^{T}(y_t-b_0-b_1y_{t-1})^2$: ordinary least squares
+of $y_t$ on $y_{t-1}$ over the $T-1$ usable dates. The residuals are
+$e_t=y_t-\hat\beta_0-\hat\beta_1y_{t-1}$ and
+\begin{equation}\label{eq:ar1-s2}
+s^2=\frac{1}{T-3}\sum_{t=2}^{T}(e_t-\bar e)^2 .
+\end{equation}
+\end{definition}
+
+\begin{remark}
+The word \emph{conditional} records that the first observation contributes no term: the
+criterion is the sum of squared one-step errors given $y_1$, not the likelihood of the whole
+series. The divisor in~\eqref{eq:ar1-s2} is the number of usable dates $T-1$ minus the two
+fitted parameters, and $\bar e$ appears because the residuals of a regression that omits
+one observation need not sum to zero.
+\end{remark}
+
+\begin{proposition}[Relation to the sample autocorrelation]\label{prop:b1-r1}
+Write $\bar y_-=(T-1)^{-1}\sum_{t=1}^{T-1}y_t$ and $\bar y_+=(T-1)^{-1}\sum_{t=2}^{T}y_t$.
+Then
+\begin{equation}\label{eq:b1}
+\hat\beta_1=\frac{\sum_{t=2}^{T}(y_{t-1}-\bar y_-)(y_t-\bar y_+)}
+                 {\sum_{t=2}^{T}(y_{t-1}-\bar y_-)^2} ,
+\qquad
+\hat\beta_0=\bar y_+-\hat\beta_1\bar y_- ,
+\end{equation}
+and $\hat\beta_1-r_1=O(1/T)$ when no observation dominates, $r_1$ being the lag one sample
+autocorrelation of Unit 9.
+\end{proposition}
+
+\begin{proof}
+The displayed formulas are the $k=1$ least squares expressions of Unit 2 applied to the
+$T-1$ pairs $(y_{t-1},y_t)$. Comparing with $r_1$, whose numerator centres both factors at
+the overall $\bar y$ and whose denominator runs over all $T$ observations, the numerators
+differ by terms involving $\bar y_\pm-\bar y=O(1/T)$ and the denominators by the single
+term $(y_T-\bar y)^2$.
+\end{proof}
+
+\subsection{Large-sample theory}\label{sec:10.2.2}
+
+The summands of the numerator in~\eqref{eq:b1} are $y_{t-1}\varepsilon_t$, which are
+uncorrelated but not independent, so the central limit theorems of Units 7 and 8 do not
+apply to them. The prerequisites' central limit theorem for autoregressive scores does.
+
+\begin{theorem}[Asymptotics of conditional least squares]\label{thm:ar1-asym}
+Let $\{y_t\}$ be the stationary $AR(1)$ of Theorem~\ref{thm:ar1} with
+$\expc[\varepsilon_t^4]<\infty$. Then, as $T\to\infty$,
+\begin{equation}\label{eq:ar1-asym}
+\hat\beta_1\convp\beta_1 ,
+\qquad
+\sqrt{T}\,(\hat\beta_1-\beta_1)\ \convd\ N\bigl(0,\ 1-\beta_1^2\bigr) .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Write $x_t=y_t-\mu$, so that~\eqref{eq:b1} becomes, after subtracting $\mu$ from every
+observation,
+\[
+\hat\beta_1-\beta_1
+=\frac{\sum_{t=2}^{T}(x_{t-1}-\bar x_-)\varepsilon_t}{\sum_{t=2}^{T}(x_{t-1}-\bar x_-)^2} ,
+\]
+because $x_t=\beta_1x_{t-1}+\varepsilon_t$ makes the numerator of~\eqref{eq:b1} equal to
+$\beta_1\sum(x_{t-1}-\bar x_-)^2+\sum(x_{t-1}-\bar x_-)\varepsilon_t$, the centring of the
+second factor contributing nothing since $\sum_t(x_{t-1}-\bar x_-)=0$.
+
+\textbf{Denominator.} $\{x_t\}$ is weakly stationary with $\gamma(k)=\beta_1^k\gamma(0)\to0$,
+so $\bar x_-\convp0$ by the stationary law of large numbers of the prerequisites, and
+$\{x_t^2\}$ is weakly stationary with vanishing autocovariance by
+Proposition~\ref{prop:ar1-fourth}, so $T^{-1}\sum_{t}x_{t-1}^2\convp\gamma(0)$. Hence
+\[
+\frac1T\sum_{t=2}^{T}(x_{t-1}-\bar x_-)^2
+=\frac1T\sum_{t=2}^{T}x_{t-1}^2-\frac{T-1}{T}\bar x_-^{2}\ \convp\ \gamma(0)>0 .
+\]
+
+\textbf{Numerator.} With $a_j=\beta_1^{j}$ the sequence $x_{t-1}=\sum_{j\geqslant0}
+a_j\varepsilon_{t-1-j}$ is exactly the linear combination of the prerequisites' central
+limit theorem for autoregressive scores, whose limit variance is
+$\sigma^2\cdot\sigma^2\sum_j\beta_1^{2j}=\sigma^2\gamma(0)$. So
+$T^{-1/2}\sum_{t}x_{t-1}\varepsilon_t\convd N(0,\sigma^2\gamma(0))$. The centring costs
+nothing:
+\[
+\frac1{\sqrt T}\sum_{t=2}^{T}(x_{t-1}-\bar x_-)\varepsilon_t
+=\frac1{\sqrt T}\sum_{t=2}^{T}x_{t-1}\varepsilon_t
+ -\bar x_-\cdot\frac1{\sqrt T}\sum_{t=2}^{T}\varepsilon_t ,
+\]
+and the second term is a product of $\bar x_-\convp0$ with a quantity converging in
+distribution to $N(0,\sigma^2)$ by the prerequisites' central limit theorem for independent
+summands, hence tends to $0$ in probability by Slutsky's theorem.
+
+\textbf{Ratio.} Slutsky's theorem again gives
+$\sqrt T(\hat\beta_1-\beta_1)\convd N(0,\sigma^2\gamma(0)/\gamma(0)^2)$, and
+$\sigma^2/\gamma(0)=1-\beta_1^2$ by~\eqref{eq:ar1-moments}. Consistency follows from the
+same two limits with the $\sqrt T$ removed.
+\end{proof}
+
+\begin{corollary}[Standard error]\label{cor:ar1-se}
+An approximate standard error for $\hat\beta_1$ is $\sqrt{(1-\hat\beta_1^2)/T}$, and it
+agrees to order $T^{-1}$ with the ordinary least squares standard error
+$s/\{\sum_t(y_{t-1}-\bar y_-)^2\}^{1/2}$ reported by a regression routine.
+\end{corollary}
+
+\begin{proof}
+The first expression is~\eqref{eq:ar1-asym} with $\beta_1$ estimated. For the second, the
+regression standard error squared is $s^2/\sum_t(y_{t-1}-\bar y_-)^2$, whose numerator
+converges in probability to $\sigma^2$ and whose denominator is $T$ times a quantity
+converging to $\gamma(0)$; the ratio times $T$ therefore tends to
+$\sigma^2/\gamma(0)=1-\beta_1^2$.
+\end{proof}
+
+\begin{remark}
+Two facts are worth separating. The reported standard error is asymptotically correct, so
+the usual $t$ ratio may be used: the dependence in the design does not invalidate the
+regression output the way Unit 9's random walk did. But it is correct only asymptotically,
+and $\hat\beta_1$ is biased downwards in finite samples, the more so as $\beta_1$ approaches
+$1$; §\ref{sec:10.5.2} measures both.
+\end{remark}
+
+\begin{remark}
+The precision of $\hat\beta_1$ improves as $|\beta_1|$ grows: the asymptotic variance
+$(1-\beta_1^2)/T$ vanishes at the boundary. That is the first sign that the boundary is a
+different regime, and §\ref{sec:10.3.4} shows the whole distribution changes there.
+\end{remark}
+
+\subsection{Residual diagnostics}\label{sec:10.2.3}
+
+Unit 9 measured the coverage of the $\pm2/\sqrt T$ correlogram band by simulation, because
+the summands $\varepsilon_t\varepsilon_{t-k}$ of the numerator of $r_k$ are dependent and
+no central limit theorem then available reached them. Writing them as $u_{t-1}\varepsilon_t$
+with $u_{t-1}=\varepsilon_{t-k}$ puts them in the form the prerequisites cover.
+
+\begin{theorem}[Joint limit of the sample autocorrelations]\label{thm:acf-clt}
+Let $y_1,\ldots,y_T$ be white noise with mean $\mu$ and variance $\sigma^2$, and fix
+$K\geqslant1$. Then
+\begin{equation}\label{eq:acf-clt}
+\sqrt{T}\,(r_1,\ldots,r_K)'\ \convd\ N(\bzero,\ \bI_K) .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Put $\xi_t=y_t-\mu$ and $\ba_j=\mathbf{e}_{j+1}\in\Real^K$ for $0\leqslant j\leqslant K-1$,
+$\ba_j=\bzero$ beyond, so that $\bu_{t-1}=\sum_j\ba_j\xi_{t-1-j}
+=(\xi_{t-1},\ldots,\xi_{t-K})'$ and $\bGam=\expc[\bu\bu']=\sigma^2\bI_K$. The
+prerequisites' theorem gives
+\[
+\frac1{\sqrt T}\sum_{t=K+1}^{T}\bu_{t-1}\xi_t\ \convd\ N(\bzero,\ \sigma^4\bI_K) ,
+\]
+the theorem's sum running from $t=1$ and this one from $t=K+1$, a difference of $K$ terms
+each bounded in probability and multiplied by $T^{-1/2}$.
+
+The $k$th coordinate of the sum is $\sum_t\xi_t\xi_{t-k}$, the numerator of $r_k$ with the
+mean known. Writing $\bar\xi=\bar y-\mu$, the numerator actually used differs from it by
+\[
+-\bar\xi\sum_{t}\xi_{t-k}-\bar\xi\sum_{t}\xi_{t}+(T-k)\bar\xi^{2} ,
+\]
+and $\bar\xi=O_p(T^{-1/2})$ while each inner sum is $O_p(T^{1/2})$, so all three terms are
+$O_p(1)$ and vanish after division by $\sqrt T$. The denominator satisfies
+$T^{-1}\sum_t(y_t-\bar y)^2\convp\sigma^2$ by the weak law. Dividing and applying Slutsky's
+theorem gives~\eqref{eq:acf-clt}.
+\end{proof}
+
+\begin{corollary}[The correlogram band]\label{cor:acf-band2}
+Under white noise, $\prb\{|r_k|>2/\sqrt T\}\to\prb\{|Z|>2\}=0.0455$ for each fixed $k$, $Z$
+being standard normal.
+\end{corollary}
+
+\begin{proof}
+$\sqrt T\,r_k\convd N(0,1)$ by Theorem~\ref{thm:acf-clt}, and $\pm2$ are continuity points
+of the normal distribution function.
+\end{proof}
+
+\begin{remark}
+Unit 9 could prove only the Chebyshev bound $\tfrac14$ and measured $95.6\%$ and $95.8\%$
+coverage by simulation. Those two numbers are now explained: the band is a $95.45\%$ band
+in the limit.
+\end{remark}
+
+\begin{definition}[Portmanteau statistics]\label{def:portmanteau}
+For residual autocorrelations $r_k(e)$ and a user-chosen $K$,
+\begin{equation}\label{eq:portmanteau}
+Q_{BP}=T\sum_{k=1}^{K}r_k(e)^2 ,
+\qquad
+Q_{LB}=T(T+2)\sum_{k=1}^{K}\frac{r_k(e)^2}{T-k} .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Limit for an unfitted series]\label{thm:portmanteau}
+If $y_1,\ldots,y_T$ is white noise and the $r_k$ are computed from the series itself, then
+$Q_{BP}\convd\chi^2_K$ and $Q_{LB}\convd\chi^2_K$.
+\end{theorem}
+
+\begin{proof}
+$Q_{BP}=|\sqrt T\,\br|^2$ with $\br=(r_1,\ldots,r_K)'$, and
+Theorem~\ref{thm:acf-clt} with the continuous mapping theorem gives
+$|\sqrt T\br|^2\convd|Z|^2$ for $Z\sim N(\bzero,\bI_K)$, which is $\chi^2_K$ by the
+prerequisites. For $Q_{LB}$, write
+\[
+Q_{LB}=\sum_{k=1}^{K}\frac{T(T+2)}{T-k}\,r_k^2
+      =\sum_{k=1}^{K}\Bigl(1+\frac{k+2}{T-k}\Bigr)T\,r_k^2 ,
+\]
+so $Q_{LB}-Q_{BP}=\sum_k\{(k+2)/(T-k)\}Tr_k^2\convp0$, each $Tr_k^2$ being bounded in
+probability and each factor $O(1/T)$; Slutsky's theorem finishes.
+\end{proof}
+
+\begin{remark}
+When the $r_k$ are computed from the residuals of a fitted $ARMA(p,q)$, the limit is
+$\chi^2_{K-p-q}$ rather than $\chi^2_K$: fitting removes exactly $p+q$ directions from the
+residual correlogram. That statement is \emph{not} proved here. It needs the joint limit of
+the residual autocorrelations, which involves the estimation error and is beyond the
+prerequisites as they stand. §\ref{sec:10.5.3} measures it instead, and finds the mean of
+$Q_{LB}$ at $K-1$ and the size at the nominal $5\%$ only when the degrees of freedom are
+reduced.
+\end{remark}
+
+\begin{remark}
+$Q_{LB}$ inflates each term by $(T+2)/(T-k)$, a correction that matters only for $k$
+comparable with $T$. Its usual justification is that $\var(r_k)$ is closer to
+$(T-k)/\{T(T+2)\}$ than to $1/T$ in small samples; the limit theorem above cannot
+distinguish the two.
+\end{remark}
+
+\subsection{Forecasting}\label{sec:10.2.4}
+
+\begin{definition}[Chain rule]\label{def:chain}
+The $l$-step forecast from an $AR(1)$ fit is defined recursively by
+$\hat y_{T+l}=\hat\beta_0+\hat\beta_1\hat y_{T+l-1}$, starting from $\hat y_T=y_T$.
+\end{definition}
+
+\begin{theorem}[Optimal forecast and its error]\label{thm:ar1-forecast}
+For the stationary $AR(1)$ with known parameters, the minimum mean squared error predictor
+of $y_{T+l}$ among all square-integrable functions of the past is
+\begin{equation}\label{eq:ar1-fc}
+\expc[y_{T+l}\mid \calL_T]=\mu+\beta_1^{l}(y_T-\mu) ,
+\end{equation}
+and its error variance is
+\begin{equation}\label{eq:ar1-fcvar}
+\var(y_{T+l}-\hat y_{T+l})=\sigma^2\sum_{k=0}^{l-1}\beta_1^{2k}
+=\sigma^2\,\frac{1-\beta_1^{2l}}{1-\beta_1^{2}} .
+\end{equation}
+The point forecast tends to $\mu$ and the error variance to $\gamma(0)$ as $l\to\infty$.
+\end{theorem}
+
+\begin{proof}
+Iterating~\eqref{eq:ar1} forward $l$ steps,
+\begin{equation}\label{eq:ar1-iterate}
+y_{T+l}-\mu=\beta_1^{l}(y_T-\mu)+\sum_{k=0}^{l-1}\beta_1^{k}\varepsilon_{T+l-k} .
+\end{equation}
+Each innovation in the sum has index exceeding $T$, hence is independent of $\calL_T$ and
+has mean zero, while $y_T-\mu\in\calL_T$; taking conditional expectations
+gives~\eqref{eq:ar1-fc}, which minimises mean squared error by the projection property of
+conditional expectation in $L^2$ (prerequisites). The forecast error is the sum
+in~\eqref{eq:ar1-iterate}, whose terms are uncorrelated with variances
+$\sigma^2\beta_1^{2k}$, giving~\eqref{eq:ar1-fcvar}. The limits follow from
+$|\beta_1|<1$ and~\eqref{eq:ar1-moments}.
+\end{proof}
+
+\begin{corollary}[Forecast interval]\label{cor:ar1-pi}
+An approximate $100(1-\alpha)\%$ interval for $y_{T+l}$ is
+\begin{equation}\label{eq:ar1-pi}
+\hat y_{T+l}\ \pm\ t_{T-3,\,1-\alpha/2}\;s\;
+\Bigl(\sum_{k=0}^{l-1}\hat\beta_1^{2k}\Bigr)^{1/2} ,
+\end{equation}
+which for $l=1$ is $\hat y_{T+1}\pm t\,s$ and for $l=2$ is
+$\hat y_{T+2}\pm t\,s(1+\hat\beta_1^2)^{1/2}$.
+\end{corollary}
+
+\begin{proof}
+Substitute the estimates into~\eqref{eq:ar1-fcvar} and treat the estimation error in
+$\hat\beta_0,\hat\beta_1$ as negligible, which Theorem~\ref{thm:ar1-asym} justifies to
+order $T^{-1/2}$ against the $O(1)$ term $\sigma$.
+\end{proof}
+
+\begin{theorem}[General $\psi$-weight forecast]\label{thm:psi-forecast}
+For any process with the representation $y_t=\mu+\sum_{k\geqslant0}\psi_k\varepsilon_{t-k}$
+and $\sum_k|\psi_k|<\infty$,
+\begin{equation}\label{eq:psi-fc}
+\expc[y_{T+l}\mid\calL_T]=\mu+\sum_{k\geqslant l}\psi_k\varepsilon_{T+l-k} ,
+\qquad
+\var\bigl(y_{T+l}-\expc[y_{T+l}\mid\calL_T]\bigr)=\sigma^2\sum_{k=0}^{l-1}\psi_k^2 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Split the sum at $k=l$. The terms with $k<l$ carry innovations dated after $T$, which are
+independent of $\calL_T$ with mean zero; the terms with $k\geqslant l$ carry innovations
+dated at or before $T$, which lie in $\calL_T$. The forecast error is therefore
+$\sum_{k<l}\psi_k\varepsilon_{T+l-k}$, a sum of uncorrelated terms.
+\end{proof}
+
+\begin{remark}
+Three forecast-interval shapes have now been derived, and they differ in what the width does
+with the horizon. A linear trend with white noise errors (Unit 9) gives almost constant
+width; a random walk gives width growing like $\sqrt l$; a stationary $AR(1)$ gives width
+increasing to the finite limit $\sqrt{\gamma(0)}$, which is the standard deviation of the
+series itself. The last is the statement that beyond a few multiples of the correlation
+time nothing is known about the future except the marginal distribution.
+\end{remark}
+
+\begin{definition}[Smoothed series]\label{def:smoothed}
+The fitted values $\hat y_t=\hat\beta_0+\hat\beta_1y_{t-1}$, $t=2,\ldots,T$, are the
+\emph{smoothed series}: the one-step forecast made at each date from the estimated model.
+\end{definition}
+
+%==============================================================================
+\section{Smoothing, Seasonality, Unit Roots, Volatility}\label{sec:10.3}
+%==============================================================================
+
+\begin{reading}
+FREES §9.1--9.5.
+\end{reading}
+
+\subsection{Moving averages}\label{sec:10.3.1}
+
+\begin{definition}[Running average]\label{def:runavg}
+The running average of length $k$ is
+$\hat s_t=k^{-1}\sum_{j=0}^{k-1}y_{t-j}$, and the forecast it supplies is
+$\hat y_{T+l}=\hat s_T$ for every $l\geqslant1$.
+\end{definition}
+
+\begin{proposition}[Update and weighted least squares]\label{prop:runavg}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $\hat s_t=\hat s_{t-1}+(y_t-y_{t-k})/k$.
+\item $\hat s_T$ is the weighted least squares estimate of $\beta_0$ in $y_t=\beta_0+
+      \varepsilon_t$ with weights $w_t=\indc\{t>T-k\}$.
+\item If $\{\varepsilon_t\}$ is white noise then $\var(\hat s_t)=\sigma^2/k$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $k\hat s_t-k\hat s_{t-1}=y_t-y_{t-k}$, the two windows differing in one term at each
+end. (ii) The weighted criterion is $\sum_{t>T-k}(y_t-b_0)^2$, minimised at the mean of the
+last $k$ observations (Unit 4). (iii) The average of $k$ uncorrelated terms.
+\end{proof}
+
+\begin{proposition}[A running average lags a linear trend]\label{prop:runavg-lag}
+If $y_t=\beta_0+\beta_1t+\varepsilon_t$ then
+\begin{equation}\label{eq:runavg-lag}
+\expc[\hat s_t]=\beta_0+\beta_1\Bigl(t-\frac{k-1}{2}\Bigr) ,
+\qquad
+\expc\bigl[\hat s^{(2)}_t\bigr]=\beta_0+\beta_1\bigl(t-(k-1)\bigr) ,
+\end{equation}
+$\hat s^{(2)}$ being the running average of $\hat s^{(1)}=\hat s$. Consequently
+$2\hat s^{(1)}_T-\hat s^{(2)}_T$ is unbiased for the trend value at $T$ and
+$b_{1,T}=2(\hat s^{(1)}_T-\hat s^{(2)}_T)/(k-1)$ is unbiased for $\beta_1$.
+\end{proposition}
+
+\begin{proof}
+$\expc[\hat s_t]=k^{-1}\sum_{j<k}\{\beta_0+\beta_1(t-j)\}
+=\beta_0+\beta_1t-\beta_1k^{-1}\sum_{j<k}j$, and $\sum_{j<k}j=k(k-1)/2$. Applying the same
+operator again shifts the argument by another $(k-1)/2$. The two combinations follow by
+solving the pair of linear equations: $2\expc[\hat s^{(1)}]-\expc[\hat s^{(2)}]
+=\beta_0+\beta_1t$ and $\expc[\hat s^{(1)}]-\expc[\hat s^{(2)}]=\beta_1(k-1)/2$.
+\end{proof}
+
+\begin{remark}
+A running average of an increasing series is systematically too low, by half the window
+times the slope. Reading the smoothed curve as an estimate of the current level is therefore
+wrong whenever there is a trend, and double smoothing exists to correct exactly that.
+\end{remark}
+
+\subsection{Exponential smoothing}\label{sec:10.3.2}
+
+\begin{definition}[Exponential smoothing]\label{def:expsmooth}
+For $w\in(0,1)$ and a starting value $\hat s_0$,
+\begin{equation}\label{eq:expsmooth}
+\hat s_t=(1-w)y_t+w\,\hat s_{t-1} ,
+\end{equation}
+and the forecast is $\hat y_{T+l}=\hat s_T$ for every $l\geqslant1$. The smoothing parameter
+is chosen to minimise the sum of squared one-step errors
+$SS(w)=\sum_{t=2}^{T}(y_t-\hat s_{t-1})^2$.
+\end{definition}
+
+\begin{proposition}[Unrolled form and discounted least squares]\label{prop:expsmooth}
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item \[
+      \hat s_T=(1-w)\sum_{j=0}^{T-1}w^{j}y_{T-j}+w^{T}\hat s_0 .
+      \]
+      Thus the weights on the observations sum to $1-w^T$ and decay geometrically.
+\item The weighted least squares estimate of $\beta_0$ in $y_t=\beta_0+\varepsilon_t$ with
+      weights $w_t=w^{T-t}$ is $\sum_{t\leqslant T}w^{T-t}y_t/\sum_{t\leqslant T}w^{T-t}$,
+      which is $\hat s_T$ up to the starting value and the normalisation $1-w^T$.
+\item Under white noise the estimate in (ii) has variance tending to
+      $\sigma^2(1-w)/(1+w)$ as $T\to\infty$, so smaller $w$ tracks the data and larger $w$
+      smooths it.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Substitute~\eqref{eq:expsmooth} into itself $T$ times. (ii) Differentiating
+$\sum_tw^{T-t}(y_t-b_0)^2$ in $b_0$ gives the stated ratio; the denominator is
+$(1-w^T)/(1-w)$, so the ratio is $(1-w)\sum_jw^jy_{T-j}/(1-w^T)$. (iii) The variance is
+$\sigma^2\sum_tw^{2(T-t)}/(\sum_tw^{T-t})^2\to\sigma^2(1-w)^2/(1-w^2)$, which is
+$\sigma^2(1-w)/(1+w)$.
+\end{proof}
+
+\begin{theorem}[The model under which exponential smoothing is optimal]\label{thm:ima11}
+Let $\{y_t\}$ satisfy $\Delta y_t=\varepsilon_t-\theta\varepsilon_{t-1}$, the
+$ARIMA(0,1,1)$ model, with $|\theta|<1$. Then the minimum mean squared error one-step
+forecast satisfies the exponential smoothing recursion with $w=\theta$:
+\begin{equation}\label{eq:ima11}
+\hat s_T:=\expc[y_{T+1}\mid\calL_T]=(1-\theta)y_T+\theta\,\hat s_{T-1} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Taking conditional expectations in $y_{T+1}=y_T+\varepsilon_{T+1}-\theta\varepsilon_T$ and
+using $\expc[\varepsilon_{T+1}\mid\calL_T]=0$ gives $\hat s_T=y_T-\theta\varepsilon_T$.
+Applied one step earlier the same identity reads $\hat s_{T-1}=y_{T-1}-\theta
+\varepsilon_{T-1}$, so the one-step error is
+\[
+y_T-\hat s_{T-1}=y_T-y_{T-1}+\theta\varepsilon_{T-1}
+=\varepsilon_T-\theta\varepsilon_{T-1}+\theta\varepsilon_{T-1}=\varepsilon_T .
+\]
+Substituting $\varepsilon_T=y_T-\hat s_{T-1}$ into $\hat s_T=y_T-\theta\varepsilon_T$ gives
+$\hat s_T=y_T-\theta(y_T-\hat s_{T-1})$, which is~\eqref{eq:ima11}.
+\end{proof}
+
+\begin{remark}
+Exponential smoothing is therefore not a heuristic: it is the optimal forecast of a
+nonstationary process whose differences are $MA(1)$, and the smoothing parameter is that
+model's moving average coefficient. The same calculation explains the flat forecast
+function: $\expc[y_{T+l}\mid\calL_T]=\hat s_T$ for every $l\geqslant1$, since the extra
+innovations all have conditional mean zero.
+\end{remark}
+
+\begin{definition}[Holt--Winters]\label{def:holtwinters}
+With smoothing parameters $w_1,w_2,w_3$ and seasonal base $s$, the level, slope and
+seasonal estimates are updated by
+\begin{align}
+b_{0,t}&=(1-w_1)(y_t-\hat S_{t-s})+w_1(b_{0,t-1}+b_{1,t-1}) , \label{eq:hw1}\\
+b_{1,t}&=(1-w_2)(b_{0,t}-b_{0,t-1})+w_2b_{1,t-1} , \label{eq:hw2}\\
+\hat S_t&=(1-w_3)(y_t-b_{0,t})+w_3\hat S_{t-s} , \label{eq:hw3}
+\end{align}
+and the forecast is $\hat y_{T+l}=b_{0,T}+b_{1,T}l+\hat S_{T+l-s\lceil l/s\rceil}$.
+\end{definition}
+
+\begin{proposition}[Holt--Winters reduces to what it generalises]\label{prop:hw-reduce}
+Dropping~\eqref{eq:hw3} and setting $\hat S\equiv0$ leaves Holt's method for a local linear
+trend; setting in addition $b_{1,t}\equiv0$ leaves~\eqref{eq:expsmooth} with $w=w_1$.
+\end{proposition}
+
+\begin{proof}
+Immediate substitution.
+\end{proof}
+
+\subsection{Seasonal models}\label{sec:10.3.3}
+
+\begin{definition}[Seasonal autoregression]\label{def:sar}
+With seasonal base $s$, the $SAR(P)$ model is
+\begin{equation}\label{eq:sar}
+y_t=\beta_0+\beta_1y_{t-s}+\beta_2y_{t-2s}+\cdots+\beta_Py_{t-Ps}+\varepsilon_t ,
+\end{equation}
+which omits the intervening lags that an $AR(Ps)$ would include.
+\end{definition}
+
+\begin{proposition}[$SAR(1)$ is $s$ interleaved $AR(1)$ chains]\label{prop:sar1}
+Let $|\beta_1|<1$ in the $SAR(1)$ model $y_t=\beta_0+\beta_1y_{t-s}+\varepsilon_t$. Then
+each of the $s$ subseries $\{y_{ms+i}\}_{m}$, $i=1,\ldots,s$, is a stationary $AR(1)$ with
+coefficient $\beta_1$, the $s$ subseries are independent of one another, and the
+autocorrelation function of $\{y_t\}$ is
+\begin{equation}\label{eq:sar-acf}
+\rho_k=\begin{cases}\beta_1^{k/s} , & s \mid k ,\\[2pt] 0 , & \text{otherwise.}\end{cases}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Reading~\eqref{eq:sar} along a fixed residue class $i$ modulo $s$ gives exactly
+Definition~\ref{def:ar1} with the innovations $\{\varepsilon_{ms+i}\}_m$, which are
+independent and identically distributed; different residue classes use disjoint sets of
+innovations, hence are independent. Theorem~\ref{thm:ar1} applied within a class gives
+$\rho_{ms}=\beta_1^{m}$, and two observations in different classes are independent, so
+their correlation is $0$.
+\end{proof}
+
+\begin{remark}
+The correlogram of a $SAR(1)$ has spikes at $s,2s,\ldots$ and nothing between, which is what
+distinguishes it from an $AR(s)$: the latter fills in the intervening lags. A monthly series
+whose correlogram is large at $12$ and $24$ and negligible elsewhere is asking for the
+seasonal model, not the twelfth-order one, which would cost eleven extra parameters.
+\end{remark}
+
+\subsection{Unit roots}\label{sec:10.3.4}
+
+\begin{definition}[Dickey--Fuller regression]\label{def:df}
+Least squares is applied to
+\begin{equation}\label{eq:df}
+\Delta y_t=\beta_0+(\phi-1)\,y_{t-1}+\beta_1t+\varepsilon_t ,
+\end{equation}
+and $t_{DF}$ is the $t$ ratio on $y_{t-1}$. The hypothesis $\phi=1$ is a random walk and
+$\phi<1$ a stationary alternative, so the test is one-sided to the left. The
+\emph{augmented} version adds $\sum_{j\leqslant p}c_j\Delta y_{t-j}$ to the right
+of~\eqref{eq:df} to absorb serial correlation in the errors.
+\end{definition}
+
+\begin{theorem}[The rate and the shape both change at the boundary]\label{thm:df}
+Let $y_t=y_{t-1}+\varepsilon_t$ with $y_0=0$ and $\expc[\varepsilon_t^4]<\infty$, and fit
+$y_t$ on $y_{t-1}$ without intercept, giving
+$\hat\phi=\sum_ty_{t-1}y_t/\sum_ty_{t-1}^2$. Then
+\begin{equation}\label{eq:df-num}
+\frac1T\sum_{t=1}^{T}y_{t-1}\varepsilon_t
+=\frac12\Bigl(\frac{y_T^2}{T}-\frac1T\sum_{t=1}^{T}\varepsilon_t^2\Bigr)
+\ \convd\ \frac{\sigma^2}{2}\,(\chi^2_1-1) ,
+\end{equation}
+and
+\begin{equation}\label{eq:df-den}
+\expc\Bigl[\frac1{T^2}\sum_{t=1}^{T}y_{t-1}^2\Bigr]=\frac{\sigma^2(T-1)}{2T}
+\ \longrightarrow\ \frac{\sigma^2}{2} .
+\end{equation}
+So $T(\hat\phi-1)$, not $\sqrt T(\hat\phi-1)$, is the quantity of order one, and its
+numerator has a limit law that is not normal: it is skewed, with median at
+$\sigma^2(\chi^2_{1,0.5}-1)/2=-0.273\sigma^2$ and no mass below $-\sigma^2/2$.
+\end{theorem}
+
+\begin{proof}
+From $y_t=y_{t-1}+\varepsilon_t$, squaring gives
+$y_t^2=y_{t-1}^2+2y_{t-1}\varepsilon_t+\varepsilon_t^2$; summing over $t\leqslant T$ and
+telescoping gives $y_T^2=2\sum_ty_{t-1}\varepsilon_t+\sum_t\varepsilon_t^2$, which is the
+first equality in~\eqref{eq:df-num}. Now $y_T/\sqrt T=T^{-1/2}\sum_t\varepsilon_t\convd
+N(0,\sigma^2)$ by the prerequisites' central limit theorem, so $y_T^2/T\convd\sigma^2\chi^2_1$
+by the continuous mapping theorem; and $T^{-1}\sum_t\varepsilon_t^2\convp\sigma^2$ by the
+weak law, the fourth moment making $\{\varepsilon_t^2\}$ square integrable. Slutsky's
+theorem combines the two.
+
+For~\eqref{eq:df-den}, $\expc[y_{t-1}^2]=(t-1)\sigma^2$ and
+$\sum_{t=1}^{T}(t-1)=T(T-1)/2$.
+\end{proof}
+
+\begin{remark}
+The exact limit law of $t_{DF}$ is \emph{not} derived here. Obtaining it requires the joint
+limit of the numerator and the denominator, and the denominator's limit is a functional of a
+Brownian path, which the prerequisites do not construct. What Theorem~\ref{thm:df}
+establishes is the two facts that matter for using the test: the estimator converges at rate
+$T$ rather than $\sqrt T$, so the usual standard error is the wrong scale, and the limit is
+not normal, so normal critical values are wrong. §\ref{sec:10.5.5} obtains the critical
+values by simulation and compares them with the ones the package uses.
+\end{remark}
+
+\begin{remark}
+The test is one-sided and its critical values lie far into the left tail: at $T=250$ the
+$5\%$ point is near $-2.89$ with an intercept and $-3.45$ with an intercept and trend,
+against the normal $-1.64$. Using the normal value would reject a true unit root far too
+often. The direction of the error is the opposite of Unit 9's spurious regression, where the
+same nonstationarity made $t$ ratios too large.
+\end{remark}
+
+\subsection{Volatility}\label{sec:10.3.5}
+
+\begin{definition}[ARCH and GARCH]\label{def:garch}
+Let $\{z_t\}$ be independent standard normal. The $GARCH(1,1)$ model is
+\begin{equation}\label{eq:garch}
+\varepsilon_t=\sigma_tz_t ,
+\qquad
+\sigma_t^2=\omega+\alpha\varepsilon_{t-1}^2+\delta\sigma_{t-1}^2 ,
+\end{equation}
+with $\omega>0$, $\alpha,\delta\geqslant0$ and $\alpha+\delta<1$. The case $\delta=0$ is
+$ARCH(1)$. FREES writes $w,\gamma_1,\delta_1$ for $\omega,\alpha,\delta$.
+\end{definition}
+
+\begin{theorem}[A GARCH series is white noise with a non-constant conditional variance]
+\label{thm:garch-moments}
+Suppose $\{\varepsilon_t\}$ solves~\eqref{eq:garch} and is weakly stationary with
+$\expc[\varepsilon_t^2]<\infty$. Then
+\begin{equation}\label{eq:garch-var}
+\expc[\varepsilon_t]=0 ,
+\qquad
+\cov(\varepsilon_t,\varepsilon_{t+k})=0 \ (k\neq0) ,
+\qquad
+\var(\varepsilon_t)=\frac{\omega}{1-\alpha-\delta} ,
+\end{equation}
+while the conditional variance given the past is $\sigma_t^2$, which depends on $t$.
+Moreover $\{\varepsilon_t^2\}$ satisfies
+\begin{equation}\label{eq:garch-arma}
+\varepsilon_t^2=\omega+(\alpha+\delta)\varepsilon_{t-1}^2+\nu_t-\delta\nu_{t-1} ,
+\qquad \nu_t=\varepsilon_t^2-\sigma_t^2 ,
+\end{equation}
+an $ARMA(1,1)$ whose innovations $\nu_t$ are uncorrelated with mean zero.
+\end{theorem}
+
+\begin{proof}
+$\sigma_t$ is determined by $\varepsilon_{t-1},\varepsilon_{t-2},\ldots$, hence is
+independent of $z_t$, so $\expc[\varepsilon_t]=\expc[\sigma_t]\expc[z_t]=0$ and, for $k>0$,
+$\expc[\varepsilon_t\varepsilon_{t+k}]=\expc[\varepsilon_t\sigma_{t+k}]\expc[z_{t+k}]=0$,
+$\varepsilon_t\sigma_{t+k}$ being determined by innovations dated before $t+k$. Taking
+expectations in~\eqref{eq:garch}, $\expc[\varepsilon_t^2]=\expc[\sigma_t^2]$ because
+$\expc[z_t^2]=1$, so weak stationarity gives
+$\expc[\varepsilon^2]=\omega+\alpha\expc[\varepsilon^2]+\delta\expc[\varepsilon^2]$ and
+hence~\eqref{eq:garch-var}.
+
+For~\eqref{eq:garch-arma}, substitute $\sigma_t^2=\varepsilon_t^2-\nu_t$ and
+$\sigma_{t-1}^2=\varepsilon_{t-1}^2-\nu_{t-1}$ into~\eqref{eq:garch}:
+\[
+\varepsilon_t^2-\nu_t=\omega+\alpha\varepsilon_{t-1}^2
+ +\delta(\varepsilon_{t-1}^2-\nu_{t-1}) ,
+\]
+which rearranges to the stated form. That $\nu_t=\sigma_t^2(z_t^2-1)$ has mean zero and is
+uncorrelated across $t$ follows as above, $\expc[z_t^2-1]=0$ and $\sigma_t^2$ being
+determined by the past.
+\end{proof}
+
+\begin{theorem}[Conditional normality produces unconditional fat tails]\label{thm:arch-kurt}
+For a weakly stationary $ARCH(1)$ with $3\alpha^2<1$,
+\begin{equation}\label{eq:arch-kurt}
+\expc[\varepsilon_t^4]=\frac{3\omega^2(1+\alpha)}{(1-\alpha)(1-3\alpha^2)} ,
+\qquad
+\frac{\expc[\varepsilon_t^4]}{\{\expc[\varepsilon_t^2]\}^2}
+=\frac{3(1-\alpha^2)}{1-3\alpha^2}\ >\ 3 \quad\text{for }\alpha>0 .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+$\expc[\varepsilon_t^4]=\expc[\sigma_t^4z_t^4]=3\expc[\sigma_t^4]$, the fourth moment of a
+standard normal being $3$ and $\sigma_t$ independent of $z_t$. With $\delta=0$,
+\[
+\expc[\sigma_t^4]=\expc[(\omega+\alpha\varepsilon_{t-1}^2)^2]
+=\omega^2+2\omega\alpha\expc[\varepsilon^2]+\alpha^2\expc[\varepsilon^4] ,
+\]
+and $\expc[\varepsilon^2]=\omega/(1-\alpha)$ by~\eqref{eq:garch-var}. Substituting and
+solving for $\expc[\varepsilon^4]$,
+\[
+\expc[\varepsilon^4](1-3\alpha^2)=3\omega^2\Bigl(1+\frac{2\alpha}{1-\alpha}\Bigr)
+=\frac{3\omega^2(1+\alpha)}{1-\alpha} .
+\]
+Dividing by $\{\omega/(1-\alpha)\}^2$ gives the kurtosis
+$3(1+\alpha)(1-\alpha)/(1-3\alpha^2)$, and $1-\alpha^2>1-3\alpha^2>0$ for $\alpha>0$.
+\end{proof}
+
+\begin{remark}
+The innovations are conditionally normal at every date, and the series is nonetheless
+leptokurtic: at $\alpha=0.5$ the kurtosis is $9$. Mixing normals of different variances
+produces heavy tails, which is what a plot of daily returns shows.
+\end{remark}
+
+\begin{definition}[Conditional likelihood]\label{def:garch-lik}
+Given $\varepsilon_1,\ldots,\varepsilon_n$ and a starting value $\sigma_1^2$, the
+recursion~\eqref{eq:garch} determines $\sigma_2^2,\ldots,\sigma_n^2$, and the parameters are
+estimated by maximising
+\begin{equation}\label{eq:garch-lik}
+\ell(\omega,\alpha,\delta)
+=-\frac12\sum_{t=2}^{n}\Bigl\{\ln(2\pi\sigma_t^2)+\frac{\varepsilon_t^2}{\sigma_t^2}\Bigr\} .
+\end{equation}
+\end{definition}
+
+\begin{remark}
+The likelihood~\eqref{eq:garch-lik} is not concave in $(\omega,\alpha,\delta)$, so the
+maximum likelihood theorem of the prerequisites does not apply and the standard errors it
+would supply are not available here. §\ref{sec:10.5.6} maximises~\eqref{eq:garch-lik}
+directly and checks the estimates against a package, which is what can be verified; the
+asymptotic theory of GARCH estimation is not developed in this course.
+\end{remark}
+
+%==============================================================================
+\section{Regression Trees}\label{sec:10.4}
+%==============================================================================
+
+\begin{reading}
+ISLR §8.1.1.
+\end{reading}
+
+\subsection{The predictor}\label{sec:10.4.1}
+
+\begin{definition}[Partition predictor]\label{def:tree}
+Let $R_1,\ldots,R_J$ be disjoint sets covering the predictor space. The associated
+\emph{partition predictor} is
+\begin{equation}\label{eq:tree}
+\hat f(\bx)=\sum_{j=1}^{J}\hat c_j\,\indc\{\bx\in R_j\} ,
+\end{equation}
+constant on each region. A \emph{regression tree} is a partition predictor whose regions
+are boxes obtained by successive splits on one coordinate at a time.
+\end{definition}
+
+\begin{proposition}[The region constants are the region means]\label{prop:tree-means}
+For fixed regions, the values $\hat c_1,\ldots,\hat c_J$ minimising
+$\sum_{i=1}^{n}\{y_i-\hat f(\bx_i)\}^2$ are the region means
+$\hat c_j=n_j^{-1}\sum_{i:\bx_i\in R_j}y_i$, where $n_j=|\{i:\bx_i\in R_j\}|$, and the
+minimised value is $\sum_j\sum_{i\in R_j}(y_i-\hat c_j)^2$.
+\end{proposition}
+
+\begin{proof}
+The criterion separates into $J$ sums, the $j$th involving only $c_j$; each is minimised at
+the mean of its observations (Unit 2 with a single intercept).
+\end{proof}
+
+\begin{proposition}[A tree is a linear model on indicators]\label{prop:tree-lm}
+Let $\bD$ be the $n\times J$ matrix with $D_{ij}=\indc\{\bx_i\in R_j\}$. For fixed regions
+the fitted values of~\eqref{eq:tree} are $\bD(\bD'\bD)^{-1}\bD'\bY$, the orthogonal
+projection of $\bY$ on the column space of $\bD$, and $\bD'\bD=\diag(n_1,\ldots,n_J)$.
+\end{proposition}
+
+\begin{proof}
+The regions are disjoint and cover the space, so each row of $\bD$ has exactly one $1$ and
+the columns are orthogonal with squared norms $n_j$. Least squares on $\bD$ is
+Proposition~\ref{prop:tree-means}, and Unit 2 identifies the fitted values with the
+projection.
+\end{proof}
+
+\begin{remark}
+The columns of $\bD$ are the seasonal dummies of Unit 9 with the calendar replaced by a
+partition of the predictor space; the identifiability discussion there applies verbatim,
+which is why~\eqref{eq:tree} carries no separate intercept. What makes a tree different from
+an ordinary dummy regression is not the fit given the regions, which is a projection, but
+that the regions are chosen from the same data.
+\end{remark}
+
+\subsection{Recursive binary splitting}\label{sec:10.4.2}
+
+\begin{remark}
+Minimising the residual sum of squares over all partitions into $J$ boxes is not a
+computation that can be carried out. Even the restricted family in which each of $p$
+predictors is cut at one of $n-1$ places, applied recursively, has more members than can be
+enumerated: the first split alone admits $p(n-1)$ choices, and each subsequent split
+multiplies the count again. Trees are therefore grown greedily, one split at a time.
+\end{remark}
+
+\begin{definition}[Split]\label{def:split}
+A split of a node $R$ on coordinate $j$ at cutpoint $c$ produces
+$R_L=R\cap\{\bx:x_j<c\}$ and $R_R=R\cap\{\bx:x_j\geqslant c\}$. Recursive binary splitting
+chooses, at each node, the $(j,c)$ minimising
+\begin{equation}\label{eq:split-crit}
+\sum_{i\in R_L}(y_i-\bar y_L)^2+\sum_{i\in R_R}(y_i-\bar y_R)^2 ,
+\end{equation}
+and stops when a node has fewer than a preset number of observations.
+\end{definition}
+
+\begin{theorem}[What a split gains]\label{thm:split-gain}
+Let a node contain $n$ observations with mean $\bar y$, and let a split send $n_L$ of them
+to the left with mean $\bar y_L$ and $n_R=n-n_L$ to the right with mean $\bar y_R$. Then
+\begin{equation}\label{eq:anova}
+\sum_{i}(y_i-\bar y)^2
+=\sum_{i\in R_L}(y_i-\bar y_L)^2+\sum_{i\in R_R}(y_i-\bar y_R)^2
+ +\frac{n_Ln_R}{n}(\bar y_L-\bar y_R)^2 .
+\end{equation}
+Minimising~\eqref{eq:split-crit} is therefore the same as maximising
+$n_Ln_R(\bar y_L-\bar y_R)^2/n$, and the gain is zero exactly when the two region means
+coincide.
+\end{theorem}
+
+\begin{proof}
+Split the left sum at $\bar y_L$: $\sum_{i\in R_L}(y_i-\bar y)^2
+=\sum_{i\in R_L}(y_i-\bar y_L)^2+n_L(\bar y_L-\bar y)^2$, the cross term vanishing because
+$\sum_{i\in R_L}(y_i-\bar y_L)=0$; similarly on the right. Adding,
+\[
+\sum_i(y_i-\bar y)^2=\sum_{i\in R_L}(y_i-\bar y_L)^2+\sum_{i\in R_R}(y_i-\bar y_R)^2
+ +n_L(\bar y_L-\bar y)^2+n_R(\bar y_R-\bar y)^2 .
+\]
+Since $n\bar y=n_L\bar y_L+n_R\bar y_R$, one has $\bar y_L-\bar y=(n_R/n)
+(\bar y_L-\bar y_R)$ and $\bar y_R-\bar y=-(n_L/n)(\bar y_L-\bar y_R)$, so the last two
+terms are $\{n_Ln_R^2+n_Rn_L^2\}(\bar y_L-\bar y_R)^2/n^2=n_Ln_R(\bar y_L-\bar y_R)^2/n$.
+\end{proof}
+
+\begin{corollary}[Cost of one node]\label{cor:split-cost}
+Sorting each predictor once, the best split of a node of size $n$ over $p$ predictors is
+found in $O(pn)$ further operations.
+\end{corollary}
+
+\begin{proof}
+Sweeping the sorted values of one predictor from left to right, $n_L$ increases by one at a
+time and $\sum_{i\in R_L}y_i$ is maintained by a single addition, so
+$\bar y_L$, $\bar y_R$ and the gain of Theorem~\ref{thm:split-gain} are each computed in a
+fixed number of operations per candidate cutpoint. There are $n-1$ cutpoints per predictor.
+\end{proof}
+
+\begin{remark}
+The identity~\eqref{eq:anova} is the one-way analysis of variance decomposition of Unit 3
+with two groups. It says a split is judged by the separation of the two group means weighted
+by $n_Ln_R/n$, which penalises splits that peel off a handful of observations however
+extreme they are.
+\end{remark}
+
+\begin{proposition}[Monotone invariance]\label{prop:tree-monotone}
+Replacing a predictor $x_j$ by $g(x_j)$ for any strictly increasing $g$ leaves every tree
+grown by Definition~\ref{def:split} unchanged, up to relabelling the cutpoints.
+\end{proposition}
+
+\begin{proof}
+The candidate splits of coordinate $j$ are determined by the ordering of the observed
+values, which $g$ preserves, and the criterion~\eqref{eq:split-crit} depends on the split
+only through which observations fall on each side.
+\end{proof}
+
+\begin{remark}
+A tree therefore needs no decision about logarithms, standardisation or outlying predictor
+values, all of which change a linear fit. It pays for that with the two weaknesses of a
+piecewise-constant predictor: the fitted surface is a step function, so a genuinely linear
+relation is approximated by a staircase that needs many splits, and the prediction at any
+$\bx$ outside the range of the training data equals the prediction at the nearest corner of
+the box, so a tree cannot extrapolate at all. §\ref{sec:10.6.4} exhibits both.
+\end{remark}
+
+\begin{remark}
+Nothing above says when to stop. Growing until each leaf is small overfits, and the repair,
+cost-complexity pruning with the penalty chosen by cross-validation, is Unit 11.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:10.5}
+%==============================================================================
+
+\begin{reading}
+FREES §8.3, §8.6, §9.2, §9.4--9.5; ISLR §8.3.2.
+\end{reading}
+
+Three series and one cross-sectional data set. \texttt{LakeHuron}: annual mean level of
+Lake Huron in feet, $T=98$, a textbook stationary autoregression. \texttt{EuStockMarkets}:
+the DAX column again, whose log differences carry no autocorrelation in the level and a
+great deal in the squares. \texttt{Nile}: annual flow of the Nile at Aswan, $T=100$.
+\texttt{Boston} from \texttt{ISLR2} for the tree.
+
+<<data-setup>>=
+y  <- as.numeric(LakeHuron); T <- length(y)
+dl <- diff(log(as.numeric(EuStockMarkets[, "DAX"])))
+c(T_huron = T, mean = mean(y), sd = sd(y),
+  n_dax = length(dl), sd_dax = sd(dl))
+@
+
+\subsection{Identification (§\ref{sec:10.1.1}, §\ref{sec:10.1.3})}\label{sec:10.5.1}
+
+Theorem~\ref{thm:ar1} predicts $\rho_k=\beta_1^k$ and Theorem~\ref{thm:pacf} predicts
+$\alpha_{k,k}=0$ beyond the order. Both are read off the same series.
+
+<<identify>>=
+r <- acf(y,  plot = FALSE, lag.max = 5)$acf[2:6]
+a <- pacf(y, plot = FALSE, lag.max = 5)$acf[1:5]
+round(rbind(acf = r, geometric_prediction = r[1]^(1:5), pacf = a), 4)
+@
+
+The correlogram decays but faster than $r_1^k$ at every lag, and the partial correlogram is
+not negligible at lag $2$, against a band of $\pm2/\sqrt{98}=\pm0.202$: an $AR(2)$ is
+indicated, not an $AR(1)$. Solving the Yule--Walker system~\eqref{eq:yw} with the sample
+autocorrelations reproduces \texttt{pacf} exactly; the regression version does not.
+
+<<pacf-two-ways>>=
+lagm <- function(v, k) c(rep(NA, k), head(v, -k))
+rk <- acf(y, plot = FALSE, lag.max = 6)$acf[-1]
+yw <- sapply(1:5, function(k) {
+  R <- outer(1:k, 1:k, function(i, j) c(1, rk)[abs(i - j) + 1])
+  solve(R, rk[1:k])[k] })
+lsq <- sapply(1:5, function(k) {
+  Z <- sapply(1:k, function(j) lagm(y, j)); coef(lm(y ~ Z))[k + 1] })
+round(rbind(package = a, yule_walker = yw, package_minus_yw = a - yw,
+            least_squares = unname(lsq)), 6)
+@
+
+The end effect is $O(T^{-1})$: multiplying the gap by $T$ leaves a constant.
+
+<<pacf-gap>>=
+set.seed(19)
+t(sapply(c(50, 200, 800), function(n) {
+  g <- replicate(400, {
+    z <- as.numeric(arima.sim(list(ar = c(0.6, -0.3)), n))
+    q <- acf(z, plot = FALSE, lag.max = 2)$acf[-1]
+    R <- outer(1:2, 1:2, function(i, j) c(1, q)[abs(i - j) + 1])
+    solve(R, q)[2] - coef(lm(z ~ cbind(lagm(z, 1), lagm(z, 2))))[3] })
+  c(T = n, mean_absolute_gap = mean(abs(g)), gap_times_T = mean(abs(g))*n) }))
+@
+
+\begin{figure}[H]\centering
+<<huron-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0),
+          cex = 0.7)
+plot(1875:1972, y, type = "l", col = "grey30", xlab = "", ylab = "level (ft)",
+     main = "Lake Huron")
+plot(y[-T], y[-1], pch = 16, cex = 0.5, col = "grey40", xlab = "",
+     ylab = expression(y[t]), main = expression(y[t]~" against "~y[t-1]))
+abline(lm(y[-1] ~ y[-T]), col = "#B45309", lwd = 2)
+acf(y, lag.max = 20, main = "ACF", col = "#1E3A8A", lwd = 2, xlab = "lag")
+pacf(y, lag.max = 20, main = "PACF", col = "#B45309", lwd = 2, xlab = "lag")
+par(op)
+@
+\caption{The series and the three pictures that identify its model. The scatter of $y_t$
+against $y_{t-1}$ has slope $\hat\beta_1$; the correlogram decays geometrically as
+Theorem~\ref{thm:ar1} requires of an autoregression, unlike the near-flat correlogram of a
+random walk; the partial correlogram is large at lag $1$, appreciable at lag $2$ and
+negligible thereafter.}\label{fig:huron}
+\end{figure}
+
+\subsection{Conditional least squares and its asymptotics
+(§\ref{sec:10.2.1}--§\ref{sec:10.2.2})}\label{sec:10.5.2}
+
+Proposition~\ref{prop:b1-r1} four ways: the closed form, \texttt{lm}, \texttt{arima} with
+the conditional sum of squares method, and $r_1$.
+
+<<cls>>=
+m1 <- lm(y[-1] ~ y[-T]); b1 <- unname(coef(m1)[2]); e <- residuals(m1)
+num <- sum((y[-T] - mean(y[-T])) * (y[-1] - mean(y[-1])))
+den <- sum((y[-T] - mean(y[-T]))^2)
+c(b1_closed_form = num/den, b1_lm = b1,
+  b1_arima_css = unname(coef(arima(y, order = c(1,0,0), method = "CSS"))[1]),
+  r1 = acf(y, plot = FALSE)$acf[2],
+  s_lm = summary(m1)$sigma,
+  s_formula = sqrt(sum((e - mean(e))^2)/(T - 3)))
+@
+
+Theorem~\ref{thm:ar1-asym} says $\sqrt T(\hat\beta_1-\beta_1)\convd N(0,1-\beta_1^2)$, and
+Corollary~\ref{cor:ar1-se} says the regression standard error already estimates that.
+
+<<se-check>>=
+c(se_reported = summary(m1)$coef[2, 2],
+  se_asymptotic = sqrt((1 - b1^2)/(T - 1)),
+  difference = summary(m1)$coef[2, 2] - sqrt((1 - b1^2)/(T - 1)),
+  implied_gamma0 = summary(m1)$sigma^2/(1 - b1^2),
+  sample_variance = var(y))
+@
+
+The two standard errors differ in the fifth decimal. The estimator is nonetheless biased
+downwards, and the bias is $O(T^{-1})$ against a standard deviation of order $T^{-1/2}$.
+
+<<bias-sim, cache=FALSE>>=
+set.seed(31); B <- 4000
+t(sapply(c(50, 100, 400), function(n) {
+  b <- replicate(B, { z <- as.numeric(arima.sim(list(ar = 0.8), n))
+                      coef(lm(z[-1] ~ z[-n]))[2] })
+  c(T = n, mean_b1 = mean(b), bias = mean(b) - 0.8, sd_b1 = sd(b),
+    asymptotic_sd = sqrt((1 - 0.8^2)/n),
+    bias_over_sd = (mean(b) - 0.8)/sd(b)) }))
+@
+
+The bias roughly halves when $T$ doubles while the standard deviation falls by
+$\sqrt2$, so the ratio of the two shrinks and the bias becomes irrelevant.
+
+\subsection{Correlograms and portmanteau tests (§\ref{sec:10.2.3})}\label{sec:10.5.3}
+
+Theorem~\ref{thm:acf-clt} gives $\sqrt T\,r_k\convd N(0,1)$, so
+Corollary~\ref{cor:acf-band2} makes the $\pm2/\sqrt T$ band a $95.45\%$ band. Unit 9
+measured $95.6\%$ and $95.8\%$ without being able to prove it.
+
+<<acf-band>>=
+set.seed(3); B <- 5000
+t(sapply(c(50, 200), function(n) {
+  rk <- replicate(B, acf(rnorm(n), plot = FALSE, lag.max = 1)$acf[2])
+  c(T = n, sd_r1 = sd(rk), one_over_sqrt_T = 1/sqrt(n),
+    inside_band = mean(abs(rk) < 2/sqrt(n)), limit = 1 - 2*pnorm(-2)) }))
+@
+
+Theorem~\ref{thm:portmanteau} gives $Q_{LB}\convd\chi^2_K$ for an unfitted series. The
+degrees-of-freedom reduction for residuals of a fitted model was stated but not proved; it
+is measured here.
+
+<<ljung-box>>=
+set.seed(11); B <- 3000; n <- 200; K <- 10
+Q <- function(x) { rk <- acf(x, plot = FALSE, lag.max = K)$acf[2:(K+1)]
+                   m <- length(x); m*(m + 2)*sum(rk^2/(m - 1:K)) }
+q0 <- replicate(B, Q(rnorm(n)))
+q1 <- replicate(B, { z <- as.numeric(arima.sim(list(ar = 0.6), n))
+                     Q(residuals(lm(z[-1] ~ z[-n]))) })
+rbind(white_noise   = c(mean_Q = mean(q0), reject_at_K = mean(q0 > qchisq(.95, K)),
+                        reject_at_K_minus_1 = mean(q0 > qchisq(.95, K - 1))),
+      AR1_residuals = c(mean(q1), mean(q1 > qchisq(.95, K)),
+                        mean(q1 > qchisq(.95, K - 1))))
+@
+
+The mean of $Q_{LB}$ is $K=10$ for the unfitted series and $K-1=9$ for the residuals of a
+fitted $AR(1)$, and only the reduced degrees of freedom give the nominal $5\%$. Applied to
+Lake Huron with $K=10$, neither order is rejected.
+
+<<huron-lb>>=
+m2 <- lm(y[-(1:2)] ~ y[-c(1, T)] + y[-((T-1):T)])
+lb <- function(res, fitdf) unlist(Box.test(res, lag = 10,
+                                  type = "Ljung-Box", fitdf = fitdf)[1:3])
+rbind(AR1 = c(lb(residuals(m1), 1), s = summary(m1)$sigma),
+      AR2 = c(lb(residuals(m2), 2), s = summary(m2)$sigma))
+@
+
+A portmanteau statistic spread over ten lags has little power against a single missing one.
+The case for the second order rests instead on the partial correlogram, whose lag two value
+lies outside the band, on the $t$ ratio of the second coefficient, and on the residual
+standard deviation.
+
+<<huron-ar2>>=
+round(summary(m2)$coef, 4)
+@
+
+\subsection{Forecasting (§\ref{sec:10.2.4})}\label{sec:10.5.4}
+
+The chain rule of Definition~\ref{def:chain} against the closed
+form~\eqref{eq:ar1-fc}, and the error variance~\eqref{eq:ar1-fcvar} against its limit
+$\gamma(0)$.
+
+<<forecast>>=
+b0 <- unname(coef(m1)[1]); s <- summary(m1)$sigma; mu <- b0/(1 - b1)
+ch <- numeric(9); ch[1] <- y[T]
+for (k in 2:9) ch[k] <- b0 + b1*ch[k - 1]
+l <- 1:8
+round(rbind(chain_rule = ch[-1], closed_form = mu + b1^l*(y[T] - mu),
+            half_width = 2*s*sqrt(cumsum(b1^(2*(l - 1)))),
+            fraction_of_gamma0 = cumsum(b1^(2*(l - 1)))*(1 - b1^2)), 4)
+@
+
+The point forecasts converge to $\hat\mu=\Sexpr{round(mu,3)}$ and the interval half-width
+to $2\sqrt{\hat\gamma(0)}$: eight years ahead the model already knows almost nothing beyond
+the marginal distribution of the series.
+
+\begin{figure}[H]\centering
+<<forecast-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+lf <- 1:20; pf <- mu + b1^lf*(y[T] - mu)
+hw <- 2*s*sqrt(cumsum(b1^(2*(lf - 1))))
+rw <- y[T] + 0*lf; hr <- 2*sd(diff(y))*sqrt(lf)
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+yl <- range(y, pf + hw, pf - hw, rw + hr, rw - hr)
+for (w in 1:2) {
+  cl <- if (w == 1) "#1E3A8A" else "#B45309"
+  M  <- if (w == 1) cbind(pf, pf - hw, pf + hw) else cbind(rw, rw - hr, rw + hr)
+  plot(1875:1972, y, type = "l", col = "grey30", xlim = c(1875, 1992),
+       ylim = yl, xlab = "year", ylab = "level (ft)",
+       main = if (w == 1) "AR(1)" else "random walk")
+  lines(1972 + lf, M[, 1], lwd = 2, col = cl)
+  lines(1972 + lf, M[, 2], lty = 2, col = cl)
+  lines(1972 + lf, M[, 3], lty = 2, col = cl)
+  abline(h = mu, col = "grey75"); abline(v = 1972, col = "grey85")
+}
+par(op)
+@
+\caption{Twenty-year forecasts of the same series under the two models. The stationary
+$AR(1)$ reverts to $\hat\mu$ with an interval widening to
+$2\sqrt{\hat\gamma(0)}$ and no further (Theorem~\ref{thm:ar1-forecast}); the random walk
+stays at the last observation with an interval widening like $\sqrt l$ without bound
+(Unit 9). The two agree for one step and disagree completely after twenty.}\label{fig:fc}
+\end{figure}
+
+\subsection{Unit roots (§\ref{sec:10.3.4})}\label{sec:10.5.5}
+
+The algebraic identity behind~\eqref{eq:df-num}, and its limit law.
+
+<<df-numerator>>=
+set.seed(3); B <- 8000; n <- 250
+nm <- replicate(B, { u <- rnorm(n); z <- cumsum(u)
+  c(sum(z[-n]*u[-1])/n, (z[n]^2/n - mean(u^2))/2) })
+c(identity_max_gap = max(abs(nm[1, ] - nm[2, ])),
+  mean = mean(nm[1, ]), sd = sd(nm[1, ]), sd_of_half_chisq = sqrt(1/2))
+round(rbind(simulated = quantile(nm[1, ], c(.05, .25, .5, .75, .95)),
+            half_chisq_minus_one = (qchisq(c(.05,.25,.5,.75,.95), 1) - 1)/2), 3)
+@
+
+The limit is not normal: it is skewed, its quartiles at $-0.45$ and $0.16$ straddling a
+median of $-0.27$, with a long right tail. The $t$ statistic inherits that.
+
+<<df-critical>>=
+set.seed(21); B <- 8000; n <- 250
+tdf <- function(trend) replicate(B, {
+  z <- cumsum(rnorm(n + 1)); dz <- diff(z); zl <- z[-(n + 1)]
+  tv <- seq_along(dz)
+  if (trend) summary(lm(dz ~ zl + tv))$coef[2, 3]
+  else       summary(lm(dz ~ zl))$coef[2, 3] })
+round(rbind(constant_only = quantile(tdf(FALSE), c(.01, .05, .10)),
+            with_trend = quantile(tdf(TRUE), c(.01, .05, .10)),
+            package_table_with_trend = -c(3.99, 3.43, 3.13),
+            normal_reference = qnorm(c(.01, .05, .10))), 3)
+@
+
+\texttt{tseries::adf.test} fits~\eqref{eq:df} with a trend, and the third row is its own
+tabulated critical values at this sample size, read out of the function's table. The
+simulated and tabulated rows agree to about $0.02$; the normal row is nowhere near either.
+
+<<adf-dax>>=
+suppressMessages(library(tseries))
+lev <- suppressWarnings(adf.test(as.numeric(EuStockMarkets[, "DAX"])))
+dif <- suppressWarnings(adf.test(dl))
+hur <- suppressWarnings(adf.test(y))
+rbind(DAX_level = c(t_DF = unname(lev$statistic), p = lev$p.value),
+      DAX_log_difference = c(unname(dif$statistic), dif$p.value),
+      LakeHuron = c(unname(hur$statistic), hur$p.value))
+@
+
+The DAX is indistinguishable from a random walk and its log differences are not. Lake Huron
+is not rejected either, at $p=0.25$, even though §\ref{sec:10.5.2} fitted it as a stationary
+$AR(1)$ with $\hat\beta_1=0.84$. That is a failure of power, not evidence of a unit root, and
+the size of the failure can be measured: the test is run on series generated from exactly
+that model.
+
+<<adf-power>>=
+set.seed(23)
+pv <- replicate(600, suppressWarnings(
+  adf.test(as.numeric(arima.sim(list(ar = 0.836), 98)))$p.value))
+c(T = 98, phi = 0.836, reject_at_5_percent = mean(pv <= 0.05),
+  median_p_value = median(pv))
+@
+
+Against a true $AR(1)$ with $\beta_1=0.84$ at $T=98$ the test rejects a quarter of the time.
+Its default augmentation fits a trend and four lagged differences on $93$ usable dates, and
+most of the information goes to them. A failure to reject is therefore weak evidence, and
+the correlogram and partial correlogram of §\ref{sec:10.5.1} are the stronger argument here.
+
+\begin{figure}[H]\centering
+<<df-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+set.seed(21); B <- 6000; n <- 250
+tv0 <- replicate(B, { z <- cumsum(rnorm(n + 1)); dz <- diff(z)
+  summary(lm(dz ~ z[-(n + 1)]))$coef[2, 3] })
+op <- par(mar = c(4, 4.2, 1.4, 0.8), cex = 0.85)
+hist(tv0, breaks = 60, freq = FALSE, col = "grey88", border = "grey60",
+     xlab = expression(t[DF]), main = "", xlim = c(-5, 3))
+curve(dnorm(x), add = TRUE, col = "#B45309", lwd = 2)
+abline(v = quantile(tv0, .05), col = "#1E3A8A", lwd = 2)
+abline(v = qnorm(.05), col = "#B45309", lwd = 2, lty = 2)
+legend("topleft", bty = "n", cex = 0.8,
+       legend = c("simulated null", "standard normal",
+                  "5% point, simulated", "5% point, normal"),
+       col = c("grey75", "#B45309", "#1E3A8A", "#B45309"),
+       lwd = c(6, 2, 2, 2), lty = c(1, 1, 1, 2))
+par(op)
+@
+\caption{The null distribution of $t_{DF}$ at $T=250$ against the standard normal. It is
+shifted left and skewed, and its $5\%$ point (solid) is at $-2.89$ where the normal's
+(dashed) is at $-1.64$. Theorem~\ref{thm:df} explains the shift: the numerator's limit is a
+recentred $\chi^2_1$, which puts most of its mass below zero.}\label{fig:df}
+\end{figure}
+
+\subsection{Volatility (§\ref{sec:10.3.5})}\label{sec:10.5.6}
+
+Theorem~\ref{thm:garch-moments} says the returns are uncorrelated while the squares are
+not, and Theorem~\ref{thm:arch-kurt} says the kurtosis exceeds $3$.
+
+<<dax-vol>>=
+ed <- dl - mean(dl)
+c(n = length(ed), kurtosis = mean(ed^4)/mean(ed^2)^2,
+  acf1_returns = acf(ed, plot = FALSE)$acf[2],
+  acf1_squares = acf(ed^2, plot = FALSE)$acf[2],
+  acf2_squares = acf(ed^2, plot = FALSE)$acf[3],
+  LB_returns_p = Box.test(ed, 10, "Ljung-Box")$p.value,
+  LB_squares_p = Box.test(ed^2, 10, "Ljung-Box")$p.value)
+@
+
+The conditional likelihood~\eqref{eq:garch-lik} is maximised directly and compared with
+\texttt{garch} from \texttt{tseries}. Both condition on the first observation.
+
+<<garch-fit>>=
+nll <- function(p, x) {
+  w <- exp(p[1]); al <- plogis(p[2]); de <- plogis(p[3])*(1 - al)
+  v <- numeric(length(x)); v[1] <- mean(x^2)
+  for (t in 2:length(x)) v[t] <- w + al*x[t-1]^2 + de*v[t-1]
+  0.5*sum(log(2*pi*v[-1]) + x[-1]^2/v[-1]) }
+op <- optim(c(log(1e-6), qlogis(0.07), qlogis(0.95)), nll, x = ed,
+            method = "BFGS", control = list(reltol = 1e-14, maxit = 2000))
+mn <- c(exp(op$par[1]), plogis(op$par[2]),
+        plogis(op$par[3])*(1 - plogis(op$par[2])))
+pk <- garch(ed, order = c(1, 1), trace = FALSE)
+round(rbind(manual = c(omega = mn[1], alpha = mn[2], delta = mn[3]),
+            tseries = unname(pk$coef),
+            difference = mn - unname(pk$coef)), 8)
+c(loglik_manual = -op$value, loglik_tseries = c(logLik(pk)),
+  difference = -op$value - c(logLik(pk)))
+@
+
+Theorem~\ref{thm:garch-moments} then gives the unconditional variance, which is compared
+with the sample one.
+
+<<garch-uncond>>=
+c(persistence = mn[2] + mn[3],
+  implied_sd = sqrt(mn[1]/(1 - mn[2] - mn[3])), sample_sd = sd(ed),
+  half_life_days = log(0.5)/log(mn[2] + mn[3]))
+@
+
+\begin{figure}[H]\centering
+<<garch-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
+v <- numeric(length(ed)); v[1] <- mean(ed^2)
+for (t in 2:length(ed)) v[t] <- mn[1] + mn[2]*ed[t-1]^2 + mn[3]*v[t-1]
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0),
+          cex = 0.7)
+plot(ed, type = "l", col = "grey35", xlab = "", ylab = "log return",
+     main = "DAX daily log returns")
+plot(sqrt(v), type = "l", col = "#B45309", lwd = 1.2, xlab = "",
+     ylab = expression(hat(sigma)[t]), main = "fitted conditional s.d.")
+acf(ed, lag.max = 30, main = "ACF, returns", col = "#1E3A8A", lwd = 2,
+    xlab = "lag", ylim = c(-0.06, 0.20))
+acf(ed^2, lag.max = 30, main = "ACF, squared returns", col = "#B45309",
+    lwd = 2, xlab = "lag", ylim = c(-0.06, 0.20))
+par(op)
+@
+\caption{Volatility clustering. The returns pass every test for white noise in the level and
+fail every one in the squares, which is exactly what
+Theorem~\ref{thm:garch-moments} describes: zero autocorrelation with a conditional variance
+that follows an $ARMA(1,1)$ in $\varepsilon_t^2$. The vertical axes of the two correlograms
+are cropped at $0.20$, so the spike of height $1$ at lag $0$ runs off the
+top.}\label{fig:garch}
+\end{figure}
+
+\subsection{Smoothing (§\ref{sec:10.3.1}--§\ref{sec:10.3.2})}\label{sec:10.5.7}
+
+Proposition~\ref{prop:runavg-lag}: a running average of length $k$ lags a linear trend by
+$(k-1)/2$ and a doubly smoothed one by $k-1$.
+
+<<runavg>>=
+set.seed(9); n <- 200; tv <- 1:n; yt <- 5 + 0.3*tv + rnorm(n)
+ma <- function(x, k) as.numeric(stats::filter(x, rep(1/k, k), sides = 1))
+k <- 12; s1 <- ma(yt, k); s2 <- ma(s1, k); ok <- !is.na(s2)
+c(k = k, lag_single = mean((yt - s1)[ok])/0.3, theory = (k - 1)/2,
+  lag_double = mean((yt - s2)[ok])/0.3, theory_double = k - 1,
+  trend_estimate = 2*(s1[n] - s2[n])/(k - 1), truth = 0.3)
+@
+
+Theorem~\ref{thm:ima11}: exponential smoothing is the optimal one-step forecast of an
+$ARIMA(0,1,1)$, with $w$ equal to the moving average coefficient. Three quantities that
+should agree are computed independently.
+
+<<ima11>>=
+ew <- function(x, w) { z <- numeric(length(x)); z[1] <- x[1]
+  for (t in 2:length(x)) z[t] <- (1 - w)*x[t] + w*z[t-1]; z }
+SSw <- function(x, w) { m <- length(x); sum((x[-1] - ew(x, w)[-m])^2) }
+set.seed(17)
+z <- cumsum(as.numeric(arima.sim(list(ma = -0.7), 400)))
+im <- arima(z, order = c(0, 1, 1)); th <- -unname(coef(im)[1])
+c(theta_true = 0.7, theta_hat = th,
+  w_minimising_SS = optimize(function(w) SSw(z, w), c(.001, .999))$minimum,
+  sigma_arima = sqrt(im$sigma2), rms_one_step = sqrt(SSw(z, th)/399),
+  max_gap_to_arima_forecasts =
+    max(abs(c(NA, ew(z, th)[-400]) - (z - residuals(im)))[100:400]))
+@
+
+The smoothed series reproduces \texttt{arima}'s one-step forecasts to machine precision.
+On real data, Proposition~\ref{prop:expsmooth}(ii) is checked against
+\texttt{HoltWinters}, which minimises the same criterion.
+
+<<expsmooth-real>>=
+t(sapply(list(Nile = as.numeric(Nile), LakeHuron = y), function(x) {
+  wst <- optimize(function(w) SSw(x, w), c(.001, .999))$minimum
+  hw <- HoltWinters(ts(x), beta = FALSE, gamma = FALSE)
+  c(w_manual = wst, w_package = 1 - unname(hw$alpha),
+    SS_manual = SSw(x, wst), SSE_package = hw$SSE,
+    SS_at_package_w = SSw(x, 1 - unname(hw$alpha))) }))
+@
+
+On the Nile the two agree to every printed digit and the optimum is interior. On Lake Huron
+both push $w$ to the boundary: the series is an autoregression, not an $ARIMA(0,1,1)$, and
+the criterion prefers no smoothing at all.
+
+\subsection{Regression trees (§\ref{sec:10.4})}\label{sec:10.5.8}
+
+Theorem~\ref{thm:split-gain} makes the best split of a node computable by one sweep of a
+sorted predictor. The result is compared with the split \texttt{tree} chooses.
+
+<<tree-split>>=
+suppressMessages({library(ISLR2); library(tree)})
+best <- function(x, yv) {
+  o <- order(x); xs <- x[o]; ys <- yv[o]; m <- length(yv)
+  cs <- cumsum(ys); j <- 1:(m - 1)
+  g <- (cs[j]/j - (cs[m] - cs[j])/(m - j))^2 * j*(m - j)/m
+  g[xs[j] == xs[j + 1]] <- -Inf
+  i <- which.max(g); c(cut = (xs[i] + xs[i + 1])/2, gain = g[i]) }
+tab <- t(sapply(setdiff(names(Boston), "medv"),
+                function(v) best(Boston[[v]], Boston$medv)))
+round(head(tab[order(-tab[, "gain"]), ], 4), 3)
+@
+
+<<tree-package>>=
+tr <- tree(medv ~ ., data = Boston)
+head(tr$frame[, c("var", "n", "dev", "yval")], 3)
+@
+
+The identity~\eqref{eq:anova} is verified at that split.
+
+<<tree-anova>>=
+yv <- Boston$medv; L <- Boston$rm < 6.941; m <- length(yv)
+d <- c(total = sum((yv - mean(yv))^2),
+       left = sum((yv[L] - mean(yv[L]))^2),
+       right = sum((yv[!L] - mean(yv[!L]))^2),
+       between = sum(L)*sum(!L)/m*(mean(yv[L]) - mean(yv[!L]))^2)
+c(d, identity_gap = unname(d[1] - d[2] - d[3] - d[4]))
+@
+
+Proposition~\ref{prop:tree-monotone}: monotone transformations of the predictors change
+nothing.
+
+<<tree-monotone>>=
+B2 <- Boston; B2$rm <- exp(B2$rm/2); B2$lstat <- log(B2$lstat)
+tr2 <- tree(medv ~ ., data = B2)
+c(largest_difference_in_fitted = max(abs(predict(tr) - predict(tr2))),
+  leaves_original = sum(tr$frame$var == "<leaf>"),
+  leaves_transformed = sum(tr2$frame$var == "<leaf>"))
+@
+
+\begin{figure}[H]\centering
+<<tree-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
+t2 <- tree(medv ~ rm + lstat, data = Boston,
+           control = tree.control(nrow(Boston), mindev = 0.02))
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.8)
+plot(Boston$rm, Boston$lstat, pch = 16, cex = 0.45,
+     col = grey(0.85 - 0.7*(Boston$medv - min(Boston$medv))/diff(range(Boston$medv))),
+     xlab = "rm", ylab = "lstat", main = "partition")
+partition.tree(t2, add = TRUE, ordvars = c("rm", "lstat"), col = "#B45309")
+set.seed(2); xx <- runif(200, 0, 10); yy <- 2 + 1.5*xx + rnorm(200)
+dd <- data.frame(xx, yy); t1 <- tree(yy ~ xx, data = dd)
+gx <- data.frame(xx = seq(0, 16, length.out = 400))
+plot(xx, yy, pch = 16, cex = 0.45, col = "grey55", xlim = c(0, 16),
+     ylim = c(0, 27), xlab = "x", ylab = "y", main = "staircase and extrapolation")
+lines(gx$xx, predict(t1, gx), col = "#B45309", lwd = 2)
+abline(coef(lm(yy ~ xx, dd)), col = "#1E3A8A", lwd = 2, lty = 2)
+abline(v = max(xx), col = "grey80")
+par(op)
+@
+\caption{Left: the boxes a two-predictor tree cuts out of the \texttt{Boston} feature space,
+shading by \texttt{medv}. Right: a tree (solid) and a straight line (dashed) fitted to data
+generated from $y=2+1.5x+\varepsilon$. The tree approximates the line by a staircase inside
+the data and is exactly flat outside it, which is what
+Definition~\ref{def:tree} forces.}\label{fig:tree}
+\end{figure}
+
+<<tree-extrapolate>>=
+nd <- data.frame(xx = c(2, 5, 8, 12, 20))
+round(rbind(tree = predict(t1, nd), linear = predict(lm(yy ~ xx, dd), nd),
+            truth = 2 + 1.5*nd$xx), 3)
+@
+
+%==============================================================================
+\section{Pitfalls}\label{sec:10.6}
+%==============================================================================
+
+\subsection{Fitting an autoregression to a series with a unit root}\label{sec:10.6.1}
+
+Theorem~\ref{thm:ar1-asym} assumes $|\beta_1|<1$. Applied at $\beta_1=1$ its standard error
+is $\sqrt{(1-\hat\beta_1^2)/T}$, which collapses towards zero, and the reported $t$ ratio
+for the hypothesis $\beta_1=1$ has none of its usual meaning.
+
+<<pitfall-unitroot>>=
+set.seed(4); B <- 3000
+t(sapply(c(0.8, 0.95, 1.0), function(ph) {
+  r <- t(replicate(B, {
+    z <- if (ph == 1) cumsum(rnorm(200)) else
+         as.numeric(arima.sim(list(ar = ph), 200))
+    cf <- summary(lm(z[-1] ~ z[-200]))$coef
+    c(cf[2, 1], (cf[2, 1] - ph)/cf[2, 2]) }))
+  c(phi = ph, mean_b1 = mean(r[, 1]),
+    mean_t = mean(r[, 2]), sd_t = sd(r[, 2]),
+    reject_at_1.96 = mean(abs(r[, 2]) > 1.96)) }))
+@
+
+\textbf{Diagnostic.} A fitted $\hat\beta_1$ close to $1$, a correlogram that decays hardly at
+all, and a Dickey--Fuller test that does not reject.
+\textbf{Fix.} Test for a unit root with the right critical values (§\ref{sec:10.5.5}) and
+difference the series if it is not rejected. At $\beta_1=1$ the $t$ statistic for the true
+value is centred well below zero and rejects far more often than $5\%$; at $\beta_1=0.95$ it
+is already visibly off.
+
+\subsection{Reading a partial correlogram as if the series were stationary}
+\label{sec:10.6.2}
+
+FREES notes that a large lag one partial autocorrelation is itself a sign of
+nonstationarity. The reverse mistake is to select a model order from the partial correlogram
+of a series that has not been differenced.
+
+<<pitfall-pacf>>=
+dax <- as.numeric(EuStockMarkets[, "DAX"])
+round(rbind(level = pacf(dax, plot = FALSE, lag.max = 6)$acf[1:6],
+            log_difference = pacf(diff(log(dax)), plot = FALSE,
+                                  lag.max = 6)$acf[1:6]), 4)
+@
+
+\textbf{Diagnostic.} A first partial autocorrelation at $0.998$, with everything after it
+inside the band.
+\textbf{Fix.} Difference first, then identify. On the level the partial correlogram says
+$AR(1)$ with $\hat\beta_1\approx1$, which is the random walk in disguise; on the log
+differences it says nothing beyond lag $2$.
+
+\subsection{Judging residuals of a fitted model against $\chi^2_K$}\label{sec:10.6.3}
+
+§\ref{sec:10.5.3} measured the size of the portmanteau test at $2.9\%$ when the degrees of
+freedom are not reduced. Under-rejection is the safer direction, but it hides genuine
+misspecification. The reverse error, using $K$ degrees of freedom for a heavily
+parametrised model, is not safe.
+
+<<pitfall-lb>>=
+set.seed(13); B <- 2000; n <- 200; K <- 10
+q <- replicate(B, {
+  z <- as.numeric(arima.sim(list(ar = c(0.5, -0.3, 0.2, 0.1)), n))
+  e <- residuals(arima(z, order = c(4, 0, 0), method = "CSS"))
+  rk <- acf(e, plot = FALSE, lag.max = K)$acf[2:(K+1)]
+  n*(n + 2)*sum(rk^2/(n - 1:K)) })
+c(mean_Q = mean(q), K = K, K_minus_p = K - 4,
+  reject_at_K = mean(q > qchisq(.95, K)),
+  reject_at_K_minus_p = mean(q > qchisq(.95, K - 4)))
+@
+
+\textbf{Diagnostic.} A portmanteau statistic evaluated with the same degrees of freedom
+whatever the model order.
+\textbf{Fix.} Subtract the number of fitted autoregressive and moving average coefficients.
+With four of them the mean of $Q_{LB}$ is near $K-4$, and only the reduced degrees of
+freedom give a test of the advertised size.
+
+\subsection{Expecting a tree to extrapolate}\label{sec:10.6.4}
+
+<<pitfall-tree>>=
+set.seed(6); n <- 300
+x1 <- runif(n, 0, 10); x2 <- runif(n, 0, 10)
+yv <- 3 + 2*x1 - 1.5*x2 + rnorm(n)
+d <- data.frame(x1, x2, yv)
+nd <- data.frame(x1 = c(5, 9, 14, 30), x2 = 5)
+tf <- tree(yv ~ x1 + x2, data = d)
+round(rbind(tree = predict(tf, nd), linear = predict(lm(yv ~ x1 + x2, d), nd),
+            truth = 3 + 2*nd$x1 - 1.5*nd$x2), 3)
+@
+
+\textbf{Diagnostic.} Identical predictions for inputs far outside the training range, and a
+tree fitted to a linear relation using many splits to trace a straight line.
+\textbf{Fix.} Nothing repairs this within a single tree: the predictor is constant on each
+box by construction (Definition~\ref{def:tree}). Either use a model that is linear in the
+offending variable, or restrict the tree to interpolation. The staircase inside the data can
+be reduced by ensembles (Unit 12); the flatness outside it cannot.
+
+\subsection{Reporting a GARCH fit without checking the optimiser}\label{sec:10.6.5}
+
+The likelihood~\eqref{eq:garch-lik} is not concave, and the parameters live on a constrained
+set. A fit started elsewhere can stop elsewhere.
+
+<<pitfall-garch>>=
+starts <- rbind(c(log(1e-6), qlogis(0.07), qlogis(0.95)),
+                c(log(1e-3), qlogis(0.40), qlogis(0.30)),
+                c(log(1e-9), qlogis(0.01), qlogis(0.99)))
+t(apply(starts, 1, function(p0) {
+  o <- optim(p0, nll, x = ed, method = "BFGS",
+             control = list(reltol = 1e-14, maxit = 2000))
+  c(omega = exp(o$par[1]), alpha = plogis(o$par[2]),
+    delta = plogis(o$par[3])*(1 - plogis(o$par[2])),
+    loglik = -o$value, convergence = o$convergence) }))
+@
+
+\textbf{Diagnostic.} Different starting values reaching different log-likelihoods, all with
+a convergence code of zero.
+\textbf{Fix.} Start from several places and keep the best, and report the log-likelihood so
+that the comparison can be made. Two of the three starts here stop at a degenerate point,
+with $\hat\alpha$ numerically zero, $\hat\delta$ at its upper bound and a log-likelihood
+about $95$ below the best; the optimiser reports success at all three. A GARCH fit whose
+$\hat\alpha+\hat\delta$ is exactly $1$ and whose $\hat\omega$ is at machine zero has not
+converged to anything, whatever the exit code says.
+
+%==============================================================================
+\section{Exercises}\label{sec:10.7}
+%==============================================================================
+
+\begin{exercise}\label{ex:ar1-moments}
+An $AR(1)$ series has $\beta_0=3$, $\beta_1=0.6$ and $\sigma^2=4$. Find its mean, variance,
+and the correlations at lags $1$, $2$ and $5$. How large is the series' standard deviation
+compared with that of its innovations?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:ar1}, $\mu=3/(1-0.6)=7.5$ and $\gamma(0)=4/(1-0.36)=6.25$, so the
+series has standard deviation $2.5$ against the innovations' $2$, a ratio of
+$1/\sqrt{1-\beta_1^2}=1.25$.
+
+The correlations are $\rho_k=0.6^k$: $0.6$, $0.36$ and $0.0778$. The correlogram decays
+geometrically and is inside a $\pm2/\sqrt T$ band by lag $5$ for any $T$ below about $660$,
+which is why an $AR(1)$ with a moderate coefficient looks like white noise after a few lags.
+\end{solution}
+
+\begin{exercise}\label{ex:se}
+A stationary $AR(1)$ is fitted to $T=100$ observations and gives $\hat\beta_1=0.9$. What is
+the approximate standard error, and how does it change if $\hat\beta_1$ were $0.5$? Explain
+the direction of the change.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:ar1-asym} and Corollary~\ref{cor:ar1-se} the standard error is
+$\sqrt{(1-\hat\beta_1^2)/T}$: $\sqrt{0.19/100}=0.0436$ at $0.9$ and
+$\sqrt{0.75/100}=0.0866$ at $0.5$, twice as large.
+
+The reason is that the regressor is the series itself. A larger $|\beta_1|$ gives the series
+a larger variance, $\gamma(0)=\sigma^2/(1-\beta_1^2)$, so the design spreads out while the
+error variance $\sigma^2$ stays fixed, and the slope is estimated more precisely. The limit
+$\beta_1\to1$ is not a limit of ever-better estimation of the same kind: the asymptotics
+break down there (§\ref{sec:10.3.4}).
+\end{solution}
+
+\begin{exercise}\label{ex:identify}
+A correlogram decays geometrically with $r_1=0.7$ and a partial correlogram has
+$\hat\alpha_{1,1}=0.7$ with everything after it inside the band. Which model, and why not
+the other one?
+\end{exercise}
+
+\begin{solution}
+An $AR(1)$ with $\hat\beta_1\approx0.7$. Theorem~\ref{thm:pacf} says an $AR(p)$ has a
+partial correlogram that vanishes beyond lag $p$, which matches at $p=1$, and
+Theorem~\ref{thm:ar1} says its correlogram decays geometrically, which also matches.
+
+An $MA(q)$ is ruled out by Proposition~\ref{prop:maq}: its correlogram would be exactly zero
+beyond lag $q$, and here the correlogram decays without ever cutting off. The two
+diagnostics are complementary and the pattern here is the autoregressive one on both.
+\end{solution}
+
+\begin{exercise}\label{ex:stationarity}
+For which $\beta_1$ is $y_t=\beta_0+\beta_1y_{t-1}+\varepsilon_t$ stationary? Is
+$y_t=1.02y_{t-1}-0.24y_{t-2}+\varepsilon_t$ stationary, despite a coefficient exceeding one?
+\end{exercise}
+
+\begin{solution}
+For $|\beta_1|<1$ (Theorem~\ref{thm:ar1}); at $\beta_1=1$ the process is a random walk and
+no weakly stationary solution exists (Proposition~\ref{prop:ar1-boundary}).
+
+For the second, Theorem~\ref{thm:arp-stat} asks about the roots of
+$\Phi(x)=1-1.02x+0.24x^2$. The discriminant is $1.02^2-4(0.24)=0.0804$, so the roots are
+$\{1.02\pm0.2835\}/0.48$, that is $2.71$ and $1.54$, both outside the unit circle. The
+process is stationary. The condition is on the roots and never on the size of the
+coefficients: $\beta_1+\beta_2=0.78<1$ here, which is what actually controls the persistence.
+\end{solution}
+
+\begin{exercise}\label{ex:forecast}
+An $AR(1)$ fit gives $\hat\beta_0=2$, $\hat\beta_1=0.8$, $s=3$, and the last observation is
+$y_T=20$. Forecast one, three and ten steps ahead with approximate $95\%$ intervals. What do
+the forecast and the interval approach?
+\end{exercise}
+
+\begin{solution}
+$\hat\mu=2/(1-0.8)=10$, so by Theorem~\ref{thm:ar1-forecast}
+$\hat y_{T+l}=10+0.8^{l}(20-10)$: $18.0$, $15.12$ and $11.07$.
+
+The half-widths are $2s\{\sum_{k<l}0.8^{2k}\}^{1/2}$, that is $2(3)\sqrt{1}=6.00$,
+$2(3)\sqrt{2.0496}=8.59$ and $2(3)\sqrt{2.7458}=9.94$, giving $(12.00,24.00)$,
+$(6.53,23.71)$ and $(1.13,21.02)$.
+
+Both converge: the forecast to $\hat\mu=10$ and the half-width to
+$2s/\sqrt{1-0.8^2}=2(3)/0.6=10$. Far enough ahead the model says only that the observation
+will come from the marginal distribution of the series, which is the essential difference
+from a random walk, whose interval grows without bound.
+\end{solution}
+
+\begin{exercise}\label{ex:lb}
+An $AR(2)$ is fitted to $T=120$ observations and $Q_{LB}=19.4$ at $K=12$. Is the fit
+adequate? What changes if the same number is quoted for the undifferenced series with no
+model fitted?
+\end{exercise}
+
+\begin{solution}
+With an $ARMA(p,q)$ fitted the reference is $\chi^2_{K-p-q}=\chi^2_{10}$, whose $95\%$ point
+is $18.31$. Since $19.4>18.31$ the hypothesis of no residual autocorrelation is rejected at
+$5\%$: something remains, and a higher order or a moving average term is worth trying.
+
+With no model fitted the reference is $\chi^2_{12}$ by Theorem~\ref{thm:portmanteau}, whose
+$95\%$ point is $21.03$, and the same number would not be rejected. The two conclusions are
+opposite, which is why the degrees of freedom must be reduced by the number of fitted
+autoregressive and moving average coefficients; §\ref{sec:10.5.3} and §\ref{sec:10.6.3}
+measure the size of the error.
+\end{solution}
+
+\begin{exercise}\label{ex:acfband}
+Unit 9 could prove only $\prb\{|r_k|>2/\sqrt T\}\leqslant\tfrac14$ for white noise. What is
+the correct limiting value, what made the improvement possible, and what does the band still
+not license?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:acf-clt}, $\sqrt T\,r_k\convd N(0,1)$, so the limiting exceedance
+probability is $\prb\{|Z|>2\}=0.0455$ (Corollary~\ref{cor:acf-band2}), which explains the
+$95.6\%$ and $95.8\%$ Unit 9 measured.
+
+What made it possible is the central limit theorem for autoregressive scores in the
+prerequisites: the summands $\xi_t\xi_{t-k}$ are uncorrelated but dependent, and
+Lindeberg--Feller needs independence. Writing them as $u_{t-1}\xi_t$ with
+$u_{t-1}=\xi_{t-k}$ puts them in exactly the covered form.
+
+It still does not license reading twenty lags at once. Each is an individual $4.55\%$ test,
+so about one point outside the band is expected under white noise, and the joint statement is
+$Q_{LB}$, not the picture.
+\end{solution}
+
+\begin{exercise}\label{ex:expsmooth}
+Show that exponential smoothing with parameter $w$ is the optimal one-step forecast of some
+model, and identify it. What are the forecasts two and three steps ahead?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:ima11} the model is $ARIMA(0,1,1)$, $\Delta y_t=\varepsilon_t-\theta
+\varepsilon_{t-1}$, with $\theta=w$: the optimal one-step forecast satisfies
+$\hat s_T=(1-\theta)y_T+\theta\hat s_{T-1}$, which is the smoothing recursion, and the
+one-step error is exactly $\varepsilon_T$.
+
+The forecasts further ahead are all $\hat s_T$. Taking conditional expectations in
+$y_{T+2}=y_{T+1}+\varepsilon_{T+2}-\theta\varepsilon_{T+1}$ gives
+$\expc[y_{T+2}\mid\calL_T]=\expc[y_{T+1}\mid\calL_T]=\hat s_T$, and the argument repeats.
+The flat forecast function that looks like an assumption of the method is a consequence of
+the model behind it.
+\end{solution}
+
+\begin{exercise}\label{ex:ma-lag}
+A quarterly series with a linear trend is smoothed with a running average of length $k=4$.
+By how much does the smoothed series lag the trend, and how is that repaired?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:runavg-lag} the expected smoothed value at $t$ is the trend value
+at $t-(k-1)/2=t-1.5$: it lags by one and a half quarters, so with a slope of $\beta_1$ per
+quarter the level is understated by $1.5\beta_1$.
+
+Double smoothing repairs it. The doubly smoothed series lags by $k-1=3$ quarters, so
+$2\hat s^{(1)}_T-\hat s^{(2)}_T$ is unbiased for the current level and
+$2(\hat s^{(1)}_T-\hat s^{(2)}_T)/(k-1)$ is unbiased for the slope. §\ref{sec:10.5.7}
+checks both on simulated data with a known slope.
+\end{solution}
+
+\begin{exercise}\label{ex:unitroot}
+A Dickey--Fuller regression on $T=250$ observations with an intercept gives
+$t_{DF}=-2.10$. What is concluded, and what would a naive normal comparison have said?
+\end{exercise}
+
+\begin{solution}
+The $5\%$ point of the null distribution at this sample size is near $-2.89$
+(§\ref{sec:10.5.5}), and $-2.10$ is well above it, so the unit root is not rejected: the
+series should be treated as a random walk and differenced.
+
+A normal comparison would use $-1.645$, find $-2.10$ beyond it, and declare the series
+stationary. Theorem~\ref{thm:df} says why the normal is the wrong reference: at $\phi=1$
+the numerator of the estimator converges after division by $T$, not $\sqrt T$, and its limit
+is a recentred $\chi^2_1$, which is skewed and sits mostly below zero. The mistake is in the
+dangerous direction, since it licenses a stationary model for a series that has none.
+\end{solution}
+
+\begin{exercise}\label{ex:garch}
+A $GARCH(1,1)$ fit to daily returns gives $\hat\omega=5\times10^{-6}$, $\hat\alpha=0.07$ and
+$\hat\delta=0.90$. Find the implied unconditional standard deviation. If instead an
+$ARCH(1)$ with $\alpha=0.5$ were fitted, what kurtosis would the model imply?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:garch-moments}, $\var(\varepsilon_t)=\omega/(1-\alpha-\delta)
+=5\times10^{-6}/0.03=1.667\times10^{-4}$, a standard deviation of $0.0129$, about $1.3\%$
+per day. The persistence $\hat\alpha+\hat\delta=0.97$ means a shock to volatility has a half
+life of $\ln(0.5)/\ln(0.97)=22.8$ days.
+
+For the $ARCH(1)$, Theorem~\ref{thm:arch-kurt} gives kurtosis
+$3(1-\alpha^2)/(1-3\alpha^2)=3(0.75)/(0.25)=9$, three times the normal value, even though
+the model is conditionally normal at every date. That is the point of the model: fat tails
+are produced by mixing normals of varying variance, not by assuming a fat-tailed innovation.
+\end{solution}
+
+\begin{exercise}\label{ex:tree-split}
+A node holds $n=100$ observations with $\sum(y_i-\bar y)^2=800$. A candidate split sends
+$40$ observations with mean $12$ to the left and $60$ with mean $18$ to the right. What is
+the residual sum of squares after the split, and which of two candidate splits with the same
+mean difference should be preferred?
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:split-gain} the gain is $n_Ln_R(\bar y_L-\bar y_R)^2/n
+=40(60)(6)^2/100=864$. That exceeds $800$, which is impossible, so no such node exists: the
+identity~\eqref{eq:anova} bounds the gain by the node's total sum of squares. With a mean
+difference of $4$ instead, the gain is $40(60)(16)/100=384$ and the remaining sum of squares
+is $800-384=416$.
+
+Between two splits with the same mean difference, prefer the more balanced one: the weight
+$n_Ln_R/n$ is maximised at $n_L=n_R=n/2$ and falls to almost nothing when one side holds a
+handful of observations. That is what stops a single extreme point from being split off.
+\end{solution}
+
+\begin{exercise}\label{ex:tree-invariance}
+A regression tree and a linear model are both fitted with \texttt{lstat} as a predictor. The
+analyst replaces \texttt{lstat} by $\ln(\texttt{lstat})$. What happens to each fit, and what
+happens if a test point lies beyond the training range?
+\end{exercise}
+
+\begin{solution}
+The tree is unchanged: by Proposition~\ref{prop:tree-monotone} a strictly increasing
+transformation preserves the ordering of the observed values, and the split criterion depends
+on nothing else. §\ref{sec:10.5.8} verifies that the fitted values agree exactly. The linear
+model changes completely, since it fits a straight line in whichever coordinate is supplied.
+
+Beyond the training range the tree returns the mean of the outermost box, the same value for
+every such point, however far out. The linear model extrapolates its line, which may be
+wrong but at least moves. §\ref{sec:10.6.4} shows a tree predicting the same number at
+$x=14$ and $x=30$ when the truth differs by $32$.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) verify that conditional least squares, \texttt{arima} with the conditional sum of
+squares method, and the closed form agree; (b) verify that the asymptotic standard error
+$\sqrt{(1-\hat\beta_1^2)/T}$ matches the one a regression prints; (c) show by simulation
+that the Ljung--Box statistic on residuals of a fitted $AR(1)$ needs one fewer degree of
+freedom.
+\end{exercise}
+
+\begin{solution}
+(a) and (b) are §\ref{sec:10.5.2}, where the two standard errors agree in the fifth decimal;
+(c) is §\ref{sec:10.5.3}.
+
+The point to watch in (c) is that the error is one of size, not of consistency: using
+$\chi^2_K$ makes the test too conservative, so a model that fails is not detected. The
+diagnosis is the mean of the statistic, which sits at $K-1$ rather than $K$ over the
+replicates, and §\ref{sec:10.6.3} repeats it with four fitted coefficients, where the mean
+drops to $K-4$.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,707 @@
+% Compile:  python build.py 05
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 5\ \ Variable Selection and Dimension Reduction}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{5.\arabic{theorem}}
+\renewcommand\thetheorem  {5.\arabic{theorem}}
+\renewcommand\thelemma    {5.\arabic{theorem}}
+\renewcommand\theproposition{5.\arabic{theorem}}
+\renewcommand\thecorollary{5.\arabic{theorem}}
+\renewcommand\theexample  {5.\arabic{example}}
+\renewcommand\theexercise {5.\arabic{exercise}}
+\renewcommand\thefigure   {5.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Variable Selection and Dimension Reduction}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit05-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 5.\ Variable Selection and Dimension Reduction}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{Subset Selection}\label{sec:5.1}
+%==============================================================================
+
+\begin{reading}
+FREES §5.2, §6.2--6.3 · ISLR §6.1.1--6.1.2.
+\end{reading}
+
+$R^2$ cannot rank models of different size, since it never decreases when a predictor is
+added (Unit 2). Selection therefore needs both a search over subsets and a criterion that
+charges for size.
+
+\begin{definition}[Search procedures]\label{def:search}
+With $k$ candidate predictors:
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item \emph{Best subset selection} fits all $2^k$ models and keeps, for each size $d$, the
+      one with smallest $\SSE$.
+\item \emph{Forward stepwise} starts from the intercept-only model and at each step adds
+      the predictor giving the largest reduction in $\SSE$.
+\item \emph{Backward stepwise} starts from the full model and at each step deletes the
+      predictor giving the smallest increase in $\SSE$.
+\end{enumerate}
+\end{definition}
+
+\begin{proposition}[Cost of the search]\label{prop:search-cost}
+Best subset fits $2^k$ models; each stepwise procedure fits $1+k(k+1)/2$.
+\end{proposition}
+
+\begin{proof}
+There are $\binom{k}{d}$ subsets of size $d$ and $\sum_d\binom{k}{d}=2^k$. Forward stepwise
+fits one null model, then $k$ models at the first step, $k-1$ at the second, and so on,
+giving $1+\sum_{j=1}^{k}j = 1+k(k+1)/2$; backward stepwise is the same count in reverse.
+\end{proof}
+
+\begin{remark}
+At $k=20$ the two counts are $1{,}048{,}576$ and $211$. The saving is not free: stepwise is
+greedy and can miss the best subset of a given size, since a variable useless alone may be
+essential in company. Backward stepwise additionally requires $n>k$, so it is unavailable
+in high dimensions, whereas forward stepwise is not.
+\end{remark}
+
+%==============================================================================
+\section{Selection Criteria}\label{sec:5.2}
+%==============================================================================
+
+\begin{reading}
+FREES §5.6 · ISLR §6.1.3.
+\end{reading}
+
+Write $d$ for the number of estimated coefficients including the intercept, $\bH$ for the
+projection onto the fitted model's column space, $\bM=\bI-\bH$, and let
+$\hat\sigma^2$ estimate $\sigma^2$ from a model believed adequate, usually the full one.
+
+\subsection{The optimism of the training error}\label{sec:5.2.1}
+
+\begin{definition}[In-sample prediction error]\label{def:errin}
+Let $\bY=\bmu+\be$ with $\var(\be)=\sigma^2\bI$, and let $\bY^{\mathrm{new}}=\bmu+\be^{\mathrm{new}}$
+be an independent replicate at the same design. The \emph{in-sample prediction error} is
+\begin{equation}\label{eq:errin}
+\mathrm{Err}_{\mathrm{in}}
+= \frac1n\,\expc\bigl|\bY^{\mathrm{new}}-\hat\bY\bigr|^2 ,
+\qquad \hat\bY = \bH\bY .
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Mallows]\label{thm:mallows}
+For any $\bmu$, whether or not it lies in the fitted model's column space,
+\begin{equation}\label{eq:mallows}
+\boxed{\;n\,\mathrm{Err}_{\mathrm{in}} = \expc[\SSE] + 2d\sigma^2 . \;}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Both sides are computed from Lemma ``expectation of a quadratic form'' of the
+prerequisites, $\expc[\bz'\bA\bz]=\tr(\bA\bSig)+\bmu_z'\bA\bmu_z$.
+
+\textbf{The training error.} $\SSE=|\bM\bY|^2=\bY'\bM\bY$ with $\expc[\bY]=\bmu$ and
+$\var(\bY)=\sigma^2\bI$, so
+\[
+\expc[\SSE] = \sigma^2\tr(\bM) + \bmu'\bM\bmu = \sigma^2(n-d) + |\bM\bmu|^2 ,
+\]
+using $\tr(\bM)=n-d$ and $\bM'\bM=\bM$.
+
+\textbf{The prediction error.} Since $\be^{\mathrm{new}}$ is independent of $\bY$ with mean
+zero,
+\[
+\expc\bigl|\bY^{\mathrm{new}}-\hat\bY\bigr|^2
+= \expc\bigl|\bmu-\bH\bY\bigr|^2 + \expc\bigl|\be^{\mathrm{new}}\bigr|^2
+= \expc\bigl|\bM\bmu-\bH\be\bigr|^2 + n\sigma^2 ,
+\]
+where $\bmu-\bH\bY = \bmu-\bH\bmu-\bH\be = \bM\bmu-\bH\be$. The cross term vanishes because
+$\expc[\be]=\bzero$, and $\expc|\bH\be|^2=\sigma^2\tr(\bH)=\sigma^2 d$, so
+\[
+n\,\mathrm{Err}_{\mathrm{in}} = |\bM\bmu|^2 + \sigma^2d + n\sigma^2 .
+\]
+
+Subtracting, $n\,\mathrm{Err}_{\mathrm{in}} - \expc[\SSE] = \sigma^2d - \sigma^2(n-d) + n\sigma^2
+= 2d\sigma^2$.
+\end{proof}
+
+\begin{remark}
+The bias term $|\bM\bmu|^2$ cancels, so~\eqref{eq:mallows} holds under misspecification.
+The training error understates prediction error by $2d\sigma^2/n$, and that quantity grows
+with the number of parameters: this is the precise form of the statement in Unit 1 that
+training error is optimistic and that the optimism widens with flexibility.
+\end{remark}
+
+\begin{definition}[Criteria]\label{def:criteria}
+\begin{align}
+C_p &= \frac{1}{n}\bigl(\SSE + 2d\,\hat\sigma^2\bigr), \label{eq:cp}\\
+\AIC &= \frac{1}{n}\bigl(\SSE + 2d\,\hat\sigma^2\bigr), \label{eq:aic}\\
+\BIC &= \frac{1}{n}\bigl(\SSE + \ln(n)\,d\,\hat\sigma^2\bigr), \label{eq:bic}\\
+\bar R^2 &= 1 - \frac{\SSE/(n-d)}{\SST/(n-1)} . \label{eq:adjr2}
+\end{align}
+Smaller is better for the first three, larger for the fourth.
+\end{definition}
+
+\begin{corollary}\label{cor:cp-unbiased}
+$C_p$ with $\hat\sigma^2=\sigma^2$ is unbiased for $\mathrm{Err}_{\mathrm{in}}$.
+\end{corollary}
+
+\begin{proof}
+Divide~\eqref{eq:mallows} by $n$ and compare with~\eqref{eq:cp}.
+\end{proof}
+
+\begin{proposition}[$\AIC$ and $C_p$ coincide here]\label{prop:aic-cp}
+For the Gaussian linear model with $\sigma^2$ known, $-2\ell+2d$ equals
+$n\,C_p/\sigma^2$ up to an additive constant free of the model.
+\end{proposition}
+
+\begin{proof}
+By the log-likelihood of Unit 2,
+$\ell = -\frac n2\ln(2\pi\sigma^2)-\SSE/(2\sigma^2)$, so
+\[
+-2\ell+2d = n\ln(2\pi\sigma^2) + \frac{\SSE}{\sigma^2}+2d
+= \frac{1}{\sigma^2}\bigl(\SSE+2d\sigma^2\bigr) + n\ln(2\pi\sigma^2) .
+\]
+The first term is $nC_p/\sigma^2$ and the second does not depend on which predictors are
+used.
+\end{proof}
+
+\begin{remark}
+$\BIC$ replaces the penalty $2$ by $\ln n$, which exceeds $2$ once $n>7$, so $\BIC$ selects
+models at least as small as $\AIC$. The two answer different questions: $\BIC$ is
+consistent for the true model when one is among the candidates, while $\AIC$ and $C_p$
+target prediction error and do not become model-selection consistent as $n$ grows. Neither
+dominates.
+\end{remark}
+
+\subsection{Adjusted \texorpdfstring{$R^2$}{R2}}\label{sec:5.2.2}
+
+\begin{lemma}[Effect of one added regressor]\label{lem:sse-drop}
+Let $\bM_k$ be the residual maker for $\bX_k$ and let $\bx\notin\calC(\bX_k)$ be appended.
+Then the residual maker of the enlarged design is
+$\bM_{k+1}=\bM_k-\bM_k\bx(\bx'\bM_k\bx)^{-1}\bx'\bM_k$, the new coefficient is
+$\hat\beta = \bx'\bM_k\bY/(\bx'\bM_k\bx)$, and
+\begin{equation}\label{eq:sse-drop}
+\SSE_k-\SSE_{k+1} = \frac{(\bx'\bM_k\bY)^2}{\bx'\bM_k\bx} = \hat\beta^2\,\bx'\bM_k\bx .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+$\calC([\bX_k\ \bx])$ is spanned by $\calC(\bX_k)$ together with $\bM_k\bx$, and these are
+orthogonal, so the projection onto the enlarged space is the sum of the projection onto
+$\calC(\bX_k)$ and the projection onto the line through $\bM_k\bx$. Subtracting from $\bI$,
+\[
+\bM_{k+1} = \bM_k - \frac{\bM_k\bx\,\bx'\bM_k}{\bx'\bM_k\bx} .
+\]
+Hence $\SSE_{k+1}=\bY'\bM_{k+1}\bY = \SSE_k - (\bx'\bM_k\bY)^2/(\bx'\bM_k\bx)$. The
+coefficient formula is Frisch--Waugh--Lovell (Unit 3) with $\bX_1=\bx$, and substituting it
+gives the right-hand form.
+\end{proof}
+
+\begin{theorem}[$\bar R^2$ rises exactly when $|t|>1$]\label{thm:adjr2-t}
+Adding one regressor increases $\bar R^2$ if and only if its $t$ statistic in the enlarged
+model exceeds $1$ in absolute value.
+\end{theorem}
+
+\begin{proof}
+$\SST$ does not depend on the regressors, so $\bar R^2$ increases exactly when $\MSE$
+decreases, that is when
+\[
+\frac{\SSE_{k+1}}{n-d-1} < \frac{\SSE_k}{n-d} ,
+\]
+writing $d$ for the number of parameters before the addition. Substituting
+$\SSE_k=\SSE_{k+1}+\hat\beta^2\,\bx'\bM_k\bx$ from Lemma~\ref{lem:sse-drop} and clearing
+denominators,
+\[
+(n-d)\SSE_{k+1} < (n-d-1)\SSE_{k+1} + (n-d-1)\hat\beta^2\,\bx'\bM_k\bx ,
+\]
+that is $\SSE_{k+1} < (n-d-1)\hat\beta^2\,\bx'\bM_k\bx$. Dividing by
+$\SSE_{k+1}=(n-d-1)\MSE_{k+1}$ gives
+\[
+1 < \frac{\hat\beta^2\,\bx'\bM_k\bx}{\MSE_{k+1}} .
+\]
+By Lemma~\ref{lem:sse-drop} and Frisch--Waugh--Lovell,
+$\var(\hat\beta)=\sigma^2/(\bx'\bM_k\bx)$, so
+$\SE(\hat\beta)^2=\MSE_{k+1}/(\bx'\bM_k\bx)$ and the right-hand side is exactly
+$t^2=\hat\beta^2/\SE(\hat\beta)^2$.
+\end{proof}
+
+\begin{remark}
+The usual significance threshold is $|t|>2$, so $\bar R^2$ admits variables that a $t$ test
+would reject. It penalises size, but weakly; $C_p$, $\AIC$ and $\BIC$ penalise more.
+\end{remark}
+
+\begin{proposition}[Likelihood-ratio test]\label{prop:lrt}
+For nested Gaussian linear models differing in $q$ constraints,
+$-2(\ell_R-\ell_U) = n\ln(\SSE_R/\SSE_U)$, which is asymptotically $\chi^2_q$ under the
+null.
+\end{proposition}
+
+\begin{proof}
+Maximising the Gaussian likelihood over $\sigma^2$ gives $\hat\sigma^2=\SSE/n$ and profile
+log-likelihood $\ell = -\frac n2\ln(2\pi\SSE/n)-\frac n2$, by Unit 2. Differencing the two
+models, the constants cancel and
+$-2(\ell_R-\ell_U)= n\ln\SSE_R - n\ln\SSE_U$. The $\chi^2_q$ limit is the general
+likelihood-ratio result; for these models the exact $F$ test of Unit 3 is available and
+preferable in small samples.
+\end{proof}
+
+%==============================================================================
+\section{Dimension Reduction}\label{sec:5.3}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.3, §12.2.
+\end{reading}
+
+Subset selection discards predictors. Dimension reduction instead replaces the $k$
+predictors by $M<k$ linear combinations and regresses on those.
+
+\subsection{Principal components}\label{sec:5.3.1}
+
+Let $\bX$ be $n\times k$ with columns centred, and let $\bS=\bX'\bX/(n-1)$ be the sample
+covariance matrix, symmetric and positive semi-definite.
+
+\begin{definition}[Principal components]\label{def:pca}
+The \emph{first principal component loading vector} is a unit $\bphi_1\in\Real^k$
+maximising the sample variance of the scores $\bX\bphi$, namely $\bphi'\bS\bphi$. The
+$j$-th loading vector maximises the same quantity subject to being orthogonal to
+$\bphi_1,\ldots,\bphi_{j-1}$, and $\bz_j=\bX\bphi_j$ is the $j$-th \emph{score} vector.
+\end{definition}
+
+\begin{theorem}[Principal components are eigenvectors]\label{thm:pca}
+Let $\bS$ have eigenvalues $\lambda_1\geqslant\cdots\geqslant\lambda_k\geqslant0$ with
+orthonormal eigenvectors $\bv_1,\ldots,\bv_k$. Then $\bphi_j=\bv_j$ and the maximised
+variance is $\lambda_j$. The score vectors are uncorrelated, with
+$\bz_j'\bz_l/(n-1)=\lambda_j\delta_{jl}$.
+\end{theorem}
+
+\begin{proof}
+The spectral theorem of the prerequisites gives the eigendecomposition, and its Rayleigh
+corollary gives $\max_{|\bphi|=1}\bphi'\bS\bphi=\lambda_1$, attained at $\bv_1$: that is
+the case $j=1$.
+
+For $j>1$, write $\bphi=\sum_l c_l\bv_l$ with $\sum_l c_l^2=1$. Orthogonality to
+$\bv_1,\ldots,\bv_{j-1}$ forces $c_1=\cdots=c_{j-1}=0$, so
+$\bphi'\bS\bphi=\sum_{l\geqslant j}\lambda_lc_l^2\leqslant\lambda_j$, with equality at
+$\bphi=\bv_j$.
+
+For the scores, $\bz_j'\bz_l = \bphi_j'\bX'\bX\bphi_l = (n-1)\bv_j'\bS\bv_l
+= (n-1)\lambda_l\bv_j'\bv_l$, which is $(n-1)\lambda_j$ when $j=l$ and zero otherwise.
+\end{proof}
+
+\begin{definition}[Proportion of variance explained]\label{def:pve}
+The $j$-th component explains the fraction
+$\PVE_j = \lambda_j/\sum_{l}\lambda_l$ of the total sample variance.
+\end{definition}
+
+\begin{proposition}\label{prop:pve}
+$\sum_l\lambda_l=\tr(\bS)=\sum_j s_{jj}$, so the $\PVE_j$ sum to $1$.
+\end{proposition}
+
+\begin{proof}
+$\tr(\bS)=\tr(\bV\bLam\bV')=\tr(\bLam)$ by the cyclic property of the trace
+(prerequisites), and $\tr(\bLam)=\sum_l\lambda_l$.
+\end{proof}
+
+\begin{remark}[Scaling is a modelling choice]
+$\bS$ changes under rescaling of the columns, and so do its eigenvectors: a variable
+measured in metres rather than kilometres has $10^6$ times the variance and will dominate
+the first component. Standardising each column to unit variance replaces $\bS$ by the
+correlation matrix and removes the dependence on units. It is the default unless the
+variables are already in comparable units.
+\end{remark}
+
+\subsection{Principal components regression}\label{sec:5.3.2}
+
+\begin{definition}[PCR]\label{def:pcr}
+\emph{Principal components regression} with $M$ components regresses $\bY$ on
+$\bz_1,\ldots,\bz_M$ and an intercept.
+\end{definition}
+
+\begin{proposition}[PCR with all components is least squares]\label{prop:pcr-full}
+If $\bX$ has full column rank and $M=k$, the PCR fit equals the least squares fit of $\bY$
+on $\bX$.
+\end{proposition}
+
+\begin{proof}
+The score matrix is $\bZ=\bX\bV$ with $\bV$ orthogonal, hence invertible, so
+$\calC(\bZ)=\calC(\bX)$. Least squares fitted values are the orthogonal projection onto the
+column space (Unit 2), and the two column spaces coincide.
+\end{proof}
+
+\begin{remark}
+So PCR is not a new estimator but a path from the null model to least squares, indexed by
+$M$. It reduces variance by discarding the low-variance directions of $\bX$, at the cost of
+bias if the response happens to depend on them. The directions are chosen without looking
+at $\bY$, which is the essential difference from the next method, and the reason PCR can
+discard exactly the direction that matters.
+\end{remark}
+
+\subsection{Partial least squares}\label{sec:5.3.3}
+
+\begin{definition}[PLS]\label{def:pls}
+The first \emph{partial least squares} direction is $\bphi_1$ with
+$\phi_{1j}\propto\langle\bx_j,\bY\rangle$, the coefficient from regressing $\bY$ on $\bx_j$
+alone. Subsequent directions repeat the construction after replacing each $\bx_j$ by its
+residual from regressing on the directions already found.
+\end{definition}
+
+\begin{remark}
+PLS uses $\bY$ in choosing the directions, so it targets directions that both vary and
+predict, whereas PCA targets variance alone. In practice the gain over PCR is usually
+small: the extra variance introduced by estimating the directions from $\bY$ offsets the
+bias reduction.
+\end{remark}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:5.4}
+%==============================================================================
+
+\begin{reading}
+ISLR §6.5.
+\end{reading}
+
+Data: \texttt{Hitters} from \texttt{ISLR2}, salary on the other variables, rows with
+missing salary removed.
+
+<<data-setup>>=
+suppressMessages({library(ISLR2); library(leaps); library(pls)})
+d <- na.omit(Hitters); n <- nrow(d)
+full <- lm(Salary ~ ., data = d); k <- length(coef(full)) - 1L
+s2   <- sum(residuals(full)^2) / (n - k - 1)     # sigma^2 from the full model
+c(n = n, k = k, sigma2 = s2)
+@
+
+\subsection{The criteria (§\ref{sec:5.2})}\label{sec:5.4.1}
+
+<<criteria-check>>=
+m   <- lm(Salary ~ AtBat + Hits + Walks + CRBI + Division + PutOuts, data = d)
+dd  <- length(coef(m)); RSS <- sum(residuals(m)^2)
+SST <- sum((d$Salary - mean(d$Salary))^2)
+c(Cp    = (RSS + 2*dd*s2)/n,
+  AIC   = (RSS + 2*dd*s2)/n,                     # same formula, ISLR 6.1.3
+  BIC   = (RSS + log(n)*dd*s2)/n,
+  adjR2_manual = 1 - (RSS/(n-dd)) / (SST/(n-1)),
+  adjR2_lm     = summary(m)$adj.r.squared)
+@
+
+The optimism of Theorem~\ref{thm:mallows} is $2d\sigma^2/n$ per observation. Simulating
+from a known $\bmu$ lets both sides of~\eqref{eq:mallows} be computed.
+
+<<mallows-sim>>=
+set.seed(1)
+X  <- model.matrix(full); nn <- nrow(X)
+Hm <- X %*% solve(t(X) %*% X) %*% t(X); dof <- ncol(X)
+mu <- drop(X %*% coef(full)); sg <- 200; B <- 3000
+res <- replicate(B, {
+  y  <- mu + rnorm(nn, sd = sg)
+  yh <- drop(Hm %*% y)
+  c(SSE = sum((y - yh)^2),
+    pred = sum((mu + rnorm(nn, sd = sg) - yh)^2))
+})
+c(E_SSE = mean(res["SSE", ]), n_Err_in = mean(res["pred", ]),
+  difference = mean(res["pred", ]) - mean(res["SSE", ]),
+  two_d_sigma2 = 2 * dof * sg^2)
+@
+
+\subsection{Subset selection (§\ref{sec:5.1})}\label{sec:5.4.2}
+
+<<regsubsets>>=
+rs <- regsubsets(Salary ~ ., data = d, nvmax = 19)
+sm <- summary(rs)
+c(best_by_Cp = which.min(sm$cp), best_by_BIC = which.min(sm$bic),
+  best_by_adjR2 = which.max(sm$adjr2))
+@
+
+The three criteria disagree, and in the predicted direction: $\BIC$ is the most
+parsimonious, $\bar R^2$ the least, with $C_p$ between.
+
+<<stepwise-counts>>=
+c(best_subset_models = 2^k, stepwise_models = 1 + k*(k+1)/2)   # Proposition 5.2
+@
+
+<<forward-vs-best>>=
+fw <- summary(regsubsets(Salary ~ ., data = d, nvmax = 19, method = "forward"))
+same <- sapply(1:19, function(j) identical(sm$which[j, ], fw$which[j, ]))
+c(sizes_where_forward_matches_best = sum(same), of = 19,
+  first_disagreement = which(!same)[1])
+@
+
+Greedy search is not exact: forward stepwise reproduces the best subset at some sizes and
+not others.
+
+\subsection{Principal components (§\ref{sec:5.3})}\label{sec:5.4.3}
+
+<<pca-check>>=
+Xs <- scale(model.matrix(full)[, -1])            # centred and scaled
+S  <- cov(Xs)
+ev <- eigen(S); pc <- prcomp(Xs, center = FALSE, scale. = FALSE)
+c(lambda1_eigen = ev$values[1], pc_sdev2 = pc$sdev[1]^2,   # Theorem 5.13
+  loading_max_diff = max(abs(abs(ev$vectors[, 1]) - abs(pc$rotation[, 1]))),
+  scores_uncorrelated = max(abs(cor(pc$x)[upper.tri(diag(ncol(Xs)))])))
+@
+
+<<pve-check>>=
+c(sum_lambda = sum(ev$values), trace_S = sum(diag(S)),      # Proposition 5.14
+  PVE1 = ev$values[1]/sum(ev$values),
+  PVE_sums_to_one = sum(ev$values/sum(ev$values)))
+@
+
+<<pcr-check>>=
+pcrfit <- pcr(Salary ~ ., data = d, scale = TRUE, validation = "none")
+c(max_diff_vs_OLS = max(abs(predict(pcrfit, ncomp = 19) - fitted(full))))
+@
+
+PCR with all $19$ components reproduces least squares to machine precision, which is
+Proposition~\ref{prop:pcr-full}.
+
+%==============================================================================
+\section{Pitfalls}\label{sec:5.5}
+%==============================================================================
+
+\subsection{Reporting the selected model's $p$-values}\label{sec:5.5.1}
+
+The $t$ statistics of a model chosen by searching over subsets are not $t$ distributed: the
+selection used the same data. Below, no predictor has any effect.
+
+<<pitfall-selective>>=
+set.seed(2)
+nS <- 100; pS <- 40
+Xn <- matrix(rnorm(nS*pS), nS, pS); yn <- rnorm(nS)
+sel <- order(abs(cor(Xn, yn)), decreasing = TRUE)[1:5]
+ms  <- lm(yn ~ Xn[, sel])
+c(n_significant_at_5pct = sum(coef(summary(ms))[-1, 4] < 0.05),
+  smallest_p = min(coef(summary(ms))[-1, 4]),
+  R2 = summary(ms)$r.squared)
+@
+
+\textbf{Diagnostic.} Significant coefficients in a model whose variables were chosen for
+their association with the response.
+\textbf{Fix.} Hold out data not used in the selection, or cross-validate the whole
+procedure as in Unit 1.
+
+\subsection{Choosing $\hat\sigma^2$ from the model being scored}\label{sec:5.5.2}
+
+$C_p$ requires an estimate of $\sigma^2$ from a model believed adequate, and substituting the
+candidate's own estimate makes the criterion degenerate. In the standardised form
+$C_p=\mathrm{RSS}_d/\hat\sigma^2-n+2(d+1)$, putting
+$\hat\sigma^2=\mathrm{RSS}_d/(n-d-1)$ gives $\mathrm{RSS}_d/\hat\sigma^2=n-d-1$ identically,
+so
+\[
+C_p=(n-d-1)-n+2(d+1)=d+1 ,
+\]
+a function of the size alone: the data have dropped out and the smallest model always wins.
+The residual sums of squares are extracted through the model matrix, since
+\texttt{regsubsets} names the dummy columns of a factor and those are not columns of the
+data frame.
+
+<<pitfall-sigma>>=
+Xd <- model.matrix(Salary ~ ., d); sizes <- 1:19
+RSS <- sapply(sizes, function(j)
+  sum(residuals(lm(d$Salary ~ Xd[, names(coef(rs, j))[-1], drop = FALSE]))^2))
+std_full <- RSS/s2 - n + 2*(sizes + 1)
+std_own  <- RSS/(RSS/(n - sizes - 1)) - n + 2*(sizes + 1)
+rbind(size = sizes, sigma2_from_full = round(std_full, 2),
+      sigma2_from_own = round(std_own, 2),
+      d_plus_1 = sizes + 1)[, c(1:6, 18:19)]
+c(chosen_from_full = which.min(std_full), chosen_from_own = which.min(std_own),
+  largest_gap_to_d_plus_1 = max(abs(std_own - (sizes + 1))))
+@
+
+\textbf{Diagnostic.} A $C_p$ column equal to $d+1$, or more generally one that is a function
+of the model size alone and moves not at all when the data change.
+\textbf{Fix.} Estimate $\sigma^2$ once, from the full model or another adequate one. The
+scale-free form used elsewhere in this unit, $C_p=\{\mathrm{RSS}_d+2(d+1)\hat\sigma^2\}/n$,
+does not collapse in the same way: the same substitution turns it into
+$(\mathrm{RSS}_d/n)(n+d+1)/(n-d-1)$, which still penalises size. It is nonetheless a
+different criterion from the one intended, and on these data it is not the collapse but the
+silent change of criterion that is the hazard.
+
+\subsection{Standardisation before PCA}\label{sec:5.5.3}
+
+Principal components are not scale invariant.
+
+<<pitfall-scale>>=
+Xr <- model.matrix(full)[, -1]
+Xr2 <- Xr; Xr2[, "CRuns"] <- Xr2[, "CRuns"] * 1000     # a change of units
+c(PVE1_unscaled_original = summary(prcomp(Xr))$importance[2, 1],
+  PVE1_unscaled_reunited = summary(prcomp(Xr2))$importance[2, 1],
+  PVE1_scaled_original   = summary(prcomp(Xr,  scale. = TRUE))$importance[2, 1],
+  PVE1_scaled_reunited   = summary(prcomp(Xr2, scale. = TRUE))$importance[2, 1])
+@
+
+\textbf{Diagnostic.} A first component dominated by whichever variable has the largest
+numerical spread.
+\textbf{Fix.} Scale to unit variance unless the variables are already comparable.
+
+%==============================================================================
+\section{Exercises}\label{sec:5.6}
+%==============================================================================
+
+\begin{exercise}\label{ex:counts}
+With $k=15$ candidate predictors, how many models does best subset selection fit, and how
+many does forward stepwise? At which size do they first differ in the number of models
+considered?
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:search-cost}, $2^{15}=32{,}768$ and $1+15\cdot16/2=121$.
+
+They already differ at size $1$ in the sense of coverage, but not in count: both examine
+all $15$ single-predictor models. At size $2$ best subset examines
+$\binom{15}{2}=105$ models while forward stepwise examines only the $14$ that extend its
+chosen first variable. That is where the greedy restriction first bites.
+\end{solution}
+
+\begin{exercise}\label{ex:mallows-num}
+A model with $d=6$ parameters fitted to $n=100$ observations has $\SSE=2400$, and
+$\hat\sigma^2=27$ from the full model. Compute $C_p$ and $\BIC$. A second model has $d=9$
+and $\SSE=2250$; which is preferred by each criterion?
+\end{exercise}
+
+\begin{solution}
+For the first, $C_p=(2400+2\cdot6\cdot27)/100 = (2400+324)/100 = 27.24$ and
+$\BIC = (2400+\ln(100)\cdot6\cdot27)/100 = (2400+746.0)/100 = 31.46$, using
+$\ln 100 = 4.605$.
+
+For the second, $C_p=(2250+2\cdot9\cdot27)/100=(2250+486)/100=27.36$ and
+$\BIC=(2250+4.605\cdot9\cdot27)/100=(2250+1119.0)/100=33.69$.
+
+$C_p$ prefers the smaller model, $27.24<27.36$, and $\BIC$ prefers it more decisively,
+$31.46<33.69$. The extra three parameters bought a $\SSE$ reduction of $150$, less than the
+$162$ that $C_p$ charges for them.
+\end{solution}
+
+\begin{exercise}\label{ex:mallows-proof}
+Prove that $\expc[\SSE]+2d\sigma^2 = n\,\mathrm{Err}_{\mathrm{in}}$ and explain why the
+result does not require the fitted model to be correct.
+\end{exercise}
+
+\begin{solution}
+The proof is Theorem~\ref{thm:mallows}. The bias term is $|\bM\bmu|^2$, which measures how
+far the true mean lies from the fitted model's column space; it appears in $\expc[\SSE]$
+and in $n\,\mathrm{Err}_{\mathrm{in}}$ with the same coefficient and therefore cancels on
+subtraction. Nothing in the argument assumed $\bmu\in\calC(\bX)$: only
+$\expc[\bY]=\bmu$, $\var(\bY)=\sigma^2\bI$, and that $\bH$ is a projection of rank $d$.
+\end{solution}
+
+\begin{exercise}\label{ex:adjr2}
+Show that adding a regressor raises $\bar R^2$ exactly when $|t|>1$, and say what this
+implies about using $\bar R^2$ to select.
+\end{exercise}
+
+\begin{solution}
+The proof is Theorem~\ref{thm:adjr2-t}. The threshold $|t|>1$ is far weaker than the
+conventional $|t|>2$, so $\bar R^2$ retains variables that a significance test would
+discard, and it therefore selects models that are systematically too large. It penalises
+size, but not enough to be a serious criterion; $C_p$, $\AIC$ and $\BIC$ all charge more.
+\end{solution}
+
+\begin{exercise}\label{ex:aic-bic}
+For what $n$ does $\BIC$ penalise more heavily than $\AIC$? What does each converge to as
+$n$ grows, when the true model is among the candidates?
+\end{exercise}
+
+\begin{solution}
+The penalties are $2d\hat\sigma^2$ and $\ln(n)d\hat\sigma^2$, so $\BIC$ is the heavier as
+soon as $\ln n>2$, that is $n>e^2=7.39$, so from $n=8$ onward.
+
+As $n\to\infty$, $\BIC$ selects the true model with probability tending to one, being
+model-selection consistent. $\AIC$ does not: its penalty is too light, and it retains
+spurious variables with probability bounded away from zero. In exchange $\AIC$ and $C_p$
+target prediction error, and when no candidate is correct that is the more relevant
+target.
+\end{solution}
+
+\begin{exercise}\label{ex:pca-eigen}
+Show that the first principal component loading vector is the leading eigenvector of the
+sample covariance matrix, and that the score vectors are uncorrelated.
+\end{exercise}
+
+\begin{solution}
+Both are Theorem~\ref{thm:pca}. The first claim is the Rayleigh characterisation of the
+largest eigenvalue applied to $\bS$, which is symmetric, so the spectral theorem provides
+an orthonormal eigenbasis. The second follows from
+$\bz_j'\bz_l=(n-1)\lambda_l\bv_j'\bv_l$, which vanishes for $j\neq l$ by orthonormality of
+the eigenvectors. Uncorrelatedness is what makes the regression on the scores in PCR a
+sequence of independent one-dimensional problems.
+\end{solution}
+
+\begin{exercise}\label{ex:pcr-vs-lasso}
+PCR with $M<k$ components and best subset selection with $M$ predictors both produce a
+model using $M$ derived quantities. How do they differ, and when would each fail?
+\end{exercise}
+
+\begin{solution}
+Subset selection keeps $M$ of the original predictors and discards the rest, so the fitted
+model is interpretable in the original variables. PCR keeps $M$ linear combinations of
+\emph{all} predictors, so no variable is discarded and interpretation is in terms of
+components.
+
+Subset selection fails when the signal is spread thinly across many correlated predictors,
+none individually strong. PCR fails when the response depends on a low-variance direction
+of $\bX$, since the directions are chosen from $\bX$ alone without reference to $\bY$; that
+direction is discarded early however predictive it is. Partial least squares addresses that
+particular failure by using $\bY$ in the construction.
+\end{solution}
+
+\begin{exercise}\label{ex:scaling}
+Why does standardising the columns change the principal components, and when should it be
+omitted?
+\end{exercise}
+
+\begin{solution}
+The components maximise $\bphi'\bS\bphi$, and $\bS$ is not invariant under rescaling of the
+columns: multiplying a column by $c$ multiplies its variance by $c^2$ and its covariances
+by $c$. A variable recorded in smaller units acquires a larger variance and pulls the first
+component toward itself, regardless of any substantive importance.
+
+Standardisation should be omitted when the variables are already in the same units and
+their relative variances are meaningful, for instance repeated measurements of one quantity
+at several times, where rescaling each separately would destroy information.
+\end{solution}
+
+\begin{exercise}\label{ex:selective}
+A colleague fits all $2^{20}$ subsets, reports the model with the smallest $\SSE$ at its
+size, and quotes its $t$ statistics. What is wrong, and what would you report instead?
+\end{exercise}
+
+\begin{solution}
+The model was chosen because it fits this data set best, so its coefficients are the
+extreme order statistics of a large search and their $t$ statistics are inflated. The
+reference distribution for a $t$ statistic assumes the variable was fixed in advance, which
+it was not, so the quoted $p$-values are not $p$-values (§\ref{sec:5.5.1}).
+
+Report instead an error estimate computed on data untouched by the selection, or
+cross-validate the entire procedure, selection included, as in Unit 1. If inference on the
+coefficients is really wanted, the honest route is to select on one half of the data and
+fit on the other.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+In R: (a) verify Theorem~\ref{thm:mallows} by simulation; (b) confirm that PCR with all
+components equals least squares; (c) show that the principal components change when one
+column is rescaled but not when the columns are standardised.
+\end{exercise}
+
+\begin{solution}
+(a) is §\ref{sec:5.4.1}, (b) §\ref{sec:5.4.3} and (c) §\ref{sec:5.5.3}. In (a) note that
+the simulated difference between the two expectations should match $2d\sigma^2$ up to Monte
+Carlo error, and that the agreement does not depend on the fitted model being correct.
+\end{solution}
+
+\end{document}

@@ -1,0 +1,26 @@
+# knitr output: unitNN.tex is generated from unitNN.Rnw, never edited by hand.
+unit*.tex
+prereq.tex
+figs/
+
+# LaTeX intermediates
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.nav
+*.snm
+*.synctex.gz
+*.vrb
+*.xdv
+_minted*/
+
+# Sweave.sty is copied in by knitr::render_sweave() at knit time.
+Sweave.sty
+
+# The student edition is a build artefact of the instructor edition.
+unit*-student.pdf

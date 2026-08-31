@@ -1,0 +1,1983 @@
+\begin{center}
+  {SOCIETY OF ACTUARIES\par}
+  \vspace{1.2em}
+  {\bfseries EXAM SRM - STATISTICS FOR RISK MODELING\par}
+  \vspace{1.2em}
+  {\bfseries EXAM SRM SAMPLE QUESTIONS AND SOLUTIONS\par}
+\end{center}
+\vspace{1em}
+
+These questions and solutions are representative of the types of questions that might be asked of candidates sitting for Exam SRM. These questions are intended to represent the depth of understanding required of candidates. The distribution of questions by topic is not intended to represent the distribution of questions on future exams.
+
+April 2019 update: Question 2, answer III was changed. While the statement was true, it was not directly supported by the required readings.
+
+July 2019 update: Questions 29-32 were added.
+
+September 2019 update: Questions 33-44 were added.
+
+December 2019 update: Question 40 item I was modified.
+
+January 2020 update: Question 41 item I was modified.
+
+November 2020 update: Questions 6 and 14 were modified and Questions 45-48 were added.
+
+February 2021 update: Questions 49-53 were added.
+
+July 2021 update: Questions 54-55 were added.
+
+October 2021 update: Questions 56-57 added.
+
+February 2022 update: Questions 58-60 were added. Question 59 corrected in July 2022.
+
+June 2022 update: Questions 61-63 were added.
+
+September 2022 update: Question 64 was added.
+
+August 2023 update: Questions 66-67 were added, Questions 17, 28, 47, and 65 were deleted (no longer on the syllabus)
+
+June 2024 update: Questions 68-70 were added.
+
+July 2024 update: Questions 71-72 were added
+
+February 2025 update: Questions 8, 27, and 54 were modified
+
+July 2025 update: Questions 73-74 were added
+
+February 2026 update: Question 75 was added
+
+Copyright 2026 by the Society of Actuaries
+
+% ---- each question immediately followed by its own solution ----
+% Assembled by texify_qa_merge.py from srm_02.tex + srm_03.tex; do not
+% hand-edit this file — edit those, or SKILL.srm.md, and re-merge.
+
+\begin{question}{1}
+You are given the following four pairs of observations:
+\[ x_1 = (-1,0),\quad x_2 = (1,1),\quad x_3 = (2,-1),\text{ and } x_4 = (5,10). \]
+A hierarchical clustering algorithm is used with complete linkage and Euclidean distance.
+
+Calculate the intercluster dissimilarity between $\{x_1, x_2\}$ and $\{x_4\}$.
+
+\begin{choices}
+\item 2.2
+\item 3.2
+\item 9.9
+\item 10.8
+\item 11.7
+\end{choices}
+\end{question}
+\begin{solution}{1}{E}
+First, calculate the distance between pairs of elements in each set. There are two pairs here:
+\begin{align*}
+x_1, x_4 &: \sqrt{(-1-5)^2 + (0-10)^2} = \sqrt{136} = 11.66 \\
+x_2, x_4 &: \sqrt{(1-5)^2 + (1-10)^2} = \sqrt{97} = 9.85.
+\end{align*}
+For complete linkage, the dissimilarity measure used is the maximum, which is 11.66.
+\end{solution}
+
+\begin{question}{2}
+Determine which of the following statements is/are true.
+\begin{statements}
+\item The number of clusters must be pre-specified for both $K$-means and hierarchical clustering.
+\item The $K$-means clustering algorithm is less sensitive to the presence of outliers than the hierarchical clustering algorithm.
+\item The $K$-means clustering algorithm requires random assignments while the hierarchical clustering algorithm does not.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+% SIC: source prints "I, II and II"; means "I, II and III".
+\item I, II and II
+\item The correct answer is not given by (A), (B), (C), or (D)
+\end{choices}
+\end{question}
+\begin{solution}{2}{C}
+I is false because the number of clusters is pre-specified in the $K$-means algorithm but not for the hierarchical algorithm.
+
+II is also false because both algorithms force each observation to a cluster so that both may be heavily distorted by the presence of outliers.
+
+III is true.
+\end{solution}
+
+\begin{question}{3}
+You are given:
+\begin{given}
+\item The random walk model
+\[ y_t = y_0 + c_1 + c_2 + \cdots + c_t \]
+where $c_t,\, t = 0,1,2,\ldots,T$ denote observations from a white noise process.
+\item The following nine observed values of $c_t$:
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+$t$   & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 & 19 \\ \hline
+$c_t$ & 2  & 3  & 5  & 3  & 4  & 2  & 4  & 1  & 2  \\ \hline
+\end{tabular}
+\end{center}
+\item The average value of $c_1, c_2, \ldots, c_{10}$ is 2.
+\item The 9 step ahead forecast of $y_{19}$, $\hat{y}_{19}$, is estimated based on the observed value of $y_{10}$.
+\end{given}
+
+Calculate the forecast error, $y_{19} - \hat{y}_{19}$.
+
+\begin{choices}
+\item 1
+\item 2
+\item 3
+\item 8
+\item 18
+\end{choices}
+\end{question}
+\begin{solution}{3}{D}
+\begin{align*}
+y_{10} &= y_0 + c_1 + \cdots + c_{10} = y_0 + 20 \\
+y_{19} &= y_{10} + c_{11} + \cdots + c_{19} = y_0 + 20 + c_{11} + \cdots + c_{19} = y_0 + 20 + 26 = y_0 + 46 \\
+\hat{y}_{19} &= y_{10} + \hat{c}_{11} + \cdots + \hat{c}_{19} = y_0 + 20 + 9(2) = y_0 + 38 \\
+y_{19} - \hat{y}_{19} &= (y_0 + 46) - (y_0 + 38) = 8.
+\end{align*}
+\end{solution}
+
+\begin{question}{4}
+You are given:
+\begin{given}
+\item The random walk model
+\[ y_t = y_0 + c_1 + c_2 + \cdots + c_t \]
+where $c_t,\, t = 0,1,2,\ldots T$ denote observations from a white noise process.
+\item The following ten observed values of $y_t$.
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+$t$   & 1 & 2 & 3  & 4  & 5  & 6  & 7  & 8  & 9  & 10 \\ \hline
+$y_t$ & 2 & 5 & 10 & 13 & 18 & 20 & 24 & 25 & 27 & 30 \\ \hline
+\end{tabular}
+\end{center}
+\item $y_0 = 0$
+\end{given}
+
+Calculate the standard error of the 9 step-ahead forecast, $\hat{y}_{19}$.
+
+\begin{choices}
+\item 4/3
+\item 4
+\item 9
+\item 12
+\item 16
+\end{choices}
+\end{question}
+\begin{solution}{4}{B}
+$c_t = y_t - y_{t-1}$ and hence $c_1, c_2, \ldots c_{10} = 2,3,5,3,5,2,4,1,2,3.$
+
+The mean of the $c$ values is 3, the variance is $(1+0+4+0+4+1+1+4+1+0)/9 = 16/9$. The standard deviation is $4/3$. The standard error of the forecast is $(4/3)\sqrt{9} = 4.$
+\end{solution}
+
+\begin{question}{5}
+Consider the following statements:
+\begin{statements}
+\item Principal Component Analysis (PCA) provide low-dimensional linear surfaces that are closest to the observations.
+\item The first principal component is the line in $p$-dimensional space that is closest to the observations.
+\item PCA finds a low dimension representation of a dataset that contains as much variation as possible.
+\item PCA serves as a tool for data visualization.
+\end{statements}
+
+Determine which of the statements are correct.
+
+\begin{choices}
+\item Statements I, II, and III only
+\item Statements I, II, and IV only
+\item Statements I, III, and IV only
+\item Statements II, III, and IV only
+\item Statements I, II, III, and IV are all correct
+\end{choices}
+\end{question}
+\begin{solution}{5}{E}
+Statement I is correct -- Principal components provide low-dimensional linear surfaces that are closest to the observations.
+
+Statement II is correct -- The first principal component is the line in $p$-dimensional space that is closest to the observations.
+
+Statement III is correct -- PCA finds a low dimension representation of a dataset that contains as much variation as possible.
+
+Statement IV is correct -- PCA serves as a tool for data visualization.
+\end{solution}
+
+\begin{question}{6}
+Consider the following statements:
+\begin{statements}
+\item The proportion of variance explained by an additional principal component never decreases as more principal components are added.
+\item The cumulative proportion of variance explained never decreases as more principal components are added.
+\item Using all possible principal components provides the best understanding of the data.
+\item A scree plot provides a method for determining the number of principal components to use.
+\end{statements}
+
+Determine which of the statements are correct.
+
+\begin{choices}
+\item Statements I and II only
+\item Statements I and III only
+\item Statements I and IV only
+\item Statements II and III only
+\item Statements II and IV only
+\end{choices}
+\end{question}
+\begin{solution}{6}{E}
+Statement I is incorrect -- The proportion of variance explained by an additional principal component decreases or stays the same as more principal components are added.
+
+Statement II is correct -- The cumulative proportion of variance explained increases or stays the same as more principal components are added.
+
+Statement III is incorrect -- We want to use the least number of principal components required to get the best understanding of the data.
+
+Statement IV is correct -- Typically, the number of principal components is chosen based on a scree plot.
+\end{solution}
+
+\begin{question}{7}
+Determine which of the following pairs of distribution and link function is the most appropriate to model if a person is hospitalized or not.
+
+\begin{choices}
+\item Normal distribution, identity link function
+\item Normal distribution, logit link function
+\item Binomial distribution, linear link function
+\item Binomial distribution, logit link function
+\item It cannot be determined from the information given.
+\end{choices}
+\end{question}
+\begin{solution}{7}{}
+The intent is to model a binary outcome, thus a classification model is desired. In GLM, this is equivalent to binomial distribution. The link function should be one that restricts values to the range zero to one. Of linear and logit, only logit has this property.
+\end{solution}
+
+\begin{question}{8}
+Determine which of the following statements describe the advantages of using a subset selection process, such as backward selection.
+\begin{statements}
+\item Doing so will likely result in a simpler model
+\item Doing so will likely improve prediction accuracy
+\item The results are likely to be easier to interpret
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II, and III
+\item The correct answer is not given by (A), (B), (C), or (D)
+\end{choices}
+\end{question}
+\begin{solution}{8}{D}
+Subset selection procedures will tend to remove the irrelevant variables from the predictors, thus resulting in a simpler and easier to interpret model. Accuracy will likely be improved due to reduction in variance.
+\end{solution}
+
+\begin{question}{9}
+A classification tree is being constructed to predict if an insurance policy will lapse. A random sample of 100 policies contains 30 that lapsed. You are considering two splits:
+
+Split 1: One node has 20 observations with 12 lapses and one node has 80 observations with 18 lapses.
+
+Split 2: One node has 10 observations with 8 lapses and one node has 90 observations with 22 lapses.
+
+The total Gini index after a split is the weighted average of the Gini index at each node, with the weights proportional to the number of observations in each node.
+
+The total entropy after a split is the weighted average of the entropy at each node, with the weights proportional to the number of observations in each node.
+
+Determine which of the following statements is/are true.
+\begin{statements}
+\item Split 1 is preferred based on the total Gini index.
+\item Split 1 is preferred based on the total entropy.
+\item Split 1 is preferred based on having fewer classification errors.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II, and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{9}{E}
+The total Gini index for Split 1 is $2[20(12/20)(8/20) + 80(18/80)(62/80)]/100 = 0.375$ and for Split 2 is $2[10(8/10)(2/10) + 90(22/90)(68/90)]/100 = 0.3644$. Smaller is better, so Split 2 is preferred. The factor of 2 is due to summing two identical terms (which occurs when there are only two classes).
+
+The total entropy for Split 1 is $-[20(12/20)\ln(12/20) + 20(8/20)\ln(8/20) + 80(18/80)\ln(18/80) + 80(62/80)\ln(62/80)]/100 = 0.5611$ and for Split 2 is $-[10(8/10)\ln(8/10) + 10(2/10)\ln(2/10) + 90(22/90)\ln(22/90) + 90(68/90)\ln(68/90)]/100 = 0.5506$. Smaller is better, so Split 2 is preferred.
+
+For Split 1, there are $8 + 18 = 26$ errors and for Split 2 there are $2 + 22 = 24$ errors. With fewer errors, Split 2 is preferred.
+\end{solution}
+
+\begin{question}{10}
+Determine which of the following statements about random forests is/are true.
+\begin{statements}
+\item If the number of predictors used at each split is equal to the total number of available predictors, the result is the same as using bagging.
+\item When building a specific tree, the same subset of predictor variables is used at each split.
+\item Random forests are an improvement over bagging because the trees are decorrelated.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{10}{C}
+II is false because with random forest a new subset of predictors is selected for each split.
+\end{solution}
+
+\begin{question}{11}
+You are given the following results from a regression model.
+
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Observation number ($i$) & $y_i$ & $\hat{f}(x_i)$ \\ \hline
+1 & 2 & 4 \\ \hline
+2 & 5 & 3 \\ \hline
+3 & 6 & 9 \\ \hline
+4 & 8 & 3 \\ \hline
+5 & 4 & 6 \\ \hline
+\end{tabular}
+\end{center}
+
+Calculate the sum of squared errors (SSE).
+
+\begin{choices}
+\item $-35$
+\item $-5$
+\item 5
+\item 35
+\item 46
+\end{choices}
+\end{question}
+\begin{solution}{11}{E}
+Solution: SSE is sum of the squared differences between the observed and predicted values. That is, $[(2-4)^2 + (5-3)^2 + (6-9)^2 + (8-3)^2 + (4-6)^2] = 46.$
+\end{solution}
+
+\begin{question}{12}
+Determine which of the following statements is true.
+
+\begin{choices}
+\item Linear regression is a flexible approach
+\item Lasso is more flexible than a linear regression approach
+\item Bagging is a low flexibility approach
+\item There are methods that have high flexibility and are also easy to interpret
+\item None of (A), (B), (C), or (D) are true
+\end{choices}
+\end{question}
+\begin{solution}{12}{E}
+A is false, linear regression is considered inflexible because the number of possible models is restricted to a certain form.
+
+B is false, the lasso determines the subset of variables to use while linear regression allows the analyst discretion regarding adding or moving variables.
+
+C is false, bagging provides additional flexibility.
+
+D is false, there is a tradeoff between being flexible and easy to interpret.
+\end{solution}
+
+\begin{question}{13}
+Determine which of the following statements is/are true for a simple linear relationship, $y = \beta_0 + \beta_1 x + \varepsilon$.
+\begin{statements}
+\item If $\varepsilon = 0$, the 95\% confidence interval is equal to the 95\% prediction interval.
+\item The prediction interval is always at least as wide as the confidence interval.
+\item The prediction interval quantifies the possible range for $\expc(y \mid x)$.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II, and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{13}{E}
+I is true. The prediction interval includes the irreducible error, but in this case it is zero.
+
+II is true. Because it includes the irreducible error, the prediction interval is at least as wide as the confidence interval.
+
+III. is false. It is the confidence interval that quantifies this range.
+\end{solution}
+
+\begin{question}{14}
+From an investigation of the residuals of fitting a linear regression by ordinary least squares it is clear that the spread of the residuals increases as the predicted values increase. Observed values of the dependent variable range from 0 to 100.
+
+Determine which of the following statements is/are true with regard to transforming the dependent variable to make the variance of the residuals more constant.
+\begin{statements}
+\item Taking the logarithm of one plus the value of the dependent variable may make the variance of the residuals more constant.
+\item A square root transformation may make the variance of the residuals more constant.
+\item A logit transformation may make the variance of the residuals more constant.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{14}{B}
+Adding a constant to the dependent variable avoids the problem of the logarithm of zero being negative infinity. In general, a log transformation may make the variance constant. Hence I is true. Power transformations with the power less than one, such as the square root transformation, may make the variance constant. Hence II is true. A logit transformation requires that the variable take on values between 0 and 1 and hence cannot be used here.
+\end{solution}
+
+\begin{question}{15}
+You are performing a $K$-means clustering algorithm on a set of data. The data has been initialized randomly with 3 clusters as follows:
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Cluster & Data Point \\ \hline
+A & $(2, -1)$ \\ \hline
+A & $(-1, 2)$ \\ \hline
+A & $(-2, 1)$ \\ \hline
+A & $(1, 2)$ \\ \hline
+B & $(4, 0)$ \\ \hline
+B & $(4, -1)$ \\ \hline
+B & $(0, -2)$ \\ \hline
+B & $(0, -5)$ \\ \hline
+C & $(-1, 0)$ \\ \hline
+C & $(3, 8)$ \\ \hline
+C & $(-2, 0)$ \\ \hline
+C & $(0, 0)$ \\ \hline
+\end{tabular}
+\end{center}
+
+A single iteration of the algorithm is performed using the Euclidian distance between points and the cluster containing the fewest number of data points is identified.
+
+Calculate the number of data points in this cluster.
+
+\begin{choices}
+\item 0
+\item 1
+\item 2
+\item 3
+\item 4
+\end{choices}
+\end{question}
+\begin{solution}{15}{D}
+The cluster centers are A: $(0, 1)$, B: $(2, -2)$, and C: $(0, 2)$. The new assignments are:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Cluster & Data Point & New Cluster \\ \hline
+A & $(2, -1)$ & B \\ \hline
+A & $(-1, 2)$ & C \\ \hline
+A & $(-2, 1)$ & A \\ \hline
+A & $(1, 2)$ & C \\ \hline
+B & $(4, 0)$ & B \\ \hline
+B & $(4, -1)$ & B \\ \hline
+B & $(0, -2)$ & B \\ \hline
+B & $(0, -5)$ & B \\ \hline
+C & $(-1, 0)$ & A \\ \hline
+C & $(3, 8)$ & C \\ \hline
+C & $(-2, 0)$ & A \\ \hline
+C & $(0, 0)$ & A \\ \hline
+\end{tabular}
+\end{center}
+
+Cluster C has the fewest points with three.
+\end{solution}
+
+\begin{question}{16}
+Determine which of the following statements is applicable to $K$-means clustering and is not applicable to hierarchical clustering.
+
+\begin{choices}
+\item If two different people are given the same data and perform one iteration of the algorithm, their results at that point will be the same.
+\item At each iteration of the algorithm, the number of clusters will be greater than the number of clusters in the previous iteration of the algorithm.
+\item The algorithm needs to be run only once, regardless of how many clusters are ultimately decided to use.
+\item The algorithm must be initialized with an assignment of the data points to a cluster.
+% SIC: source prints "meet the meet the"; means "meet the".
+\item None of (A), (B), (C), or (D) meet the meet the stated criterion.
+\end{choices}
+\end{question}
+\begin{solution}{16}{D}
+(A) For $K$-means the initial cluster assignments are random. Thus different people can have different clusters, so the statement is not true for $K$-means clustering.
+
+(B) For $K$-means the number of clusters is set in advance and does not change as the algorithm is run. For hierarchical clustering the number of clusters is determined after the algorithm is completed.
+
+(C) For $K$-means the algorithm needs to be re-run if the number of clusters is changed. This is not the case for hierarchical clustering.
+
+(D) This is true for $K$-means clustering. Agglomerative hierarchical clustering starts with each data point being its own cluster.
+\end{solution}
+
+\begin{question}{17}
+\deleted
+\end{question}
+
+\begin{question}{18}
+For a simple linear regression model the sum of squares of the residuals is $\sum_{i=1}^{25} e_i^2 = 230$ and the $R^2$ statistic is 0.64.
+
+Calculate the total sum of squares (TSS) for this model.
+
+\begin{choices}
+\item 605.94
+\item 638.89
+\item 690.77
+\item 701.59
+\item 750.87
+\end{choices}
+\end{question}
+\begin{solution}{18}{B}
+\[ TSS = (\text{Residual Sum of Squares})/(1 - R^2) = 230/(1 - 0.64) = 638.89 \]
+\end{solution}
+
+\begin{question}{19}
+The regression model $Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1 X_2 + \varepsilon$ is being investigated. The following maximized log-likelihoods are obtained:
+\begin{itemize}
+\item Using only the intercept term: $-1126.91$
+\item Using only the intercept term, $X_1$, and $X_2$: $-1122.41$
+\item Using all four terms: $-1121.91$
+\end{itemize}
+The null hypothesis $H_0 : \beta_1 = \beta_2 = \beta_3 = 0$ is being tested at the 5\% significance level using the likelihood ratio test.
+
+Determine which of the following is true.
+
+\begin{choices}
+\item The test statistic is equal to 1 and the hypothesis cannot be rejected.
+\item The test statistic is equal to 9 and the hypothesis cannot be rejected
+\item The test statistic is equal to 10 and the hypothesis cannot be rejected.
+\item The test statistic is equal to 9 and the hypothesis should be rejected.
+\item The test statistic is equal to 10 and the hypothesis should be rejected.
+\end{choices}
+\end{question}
+\begin{solution}{19}{E}
+The only two models that need to be considered are the full model with all four coefficients and the null model with only the intercept term. The test statistic is twice the difference of the log-likelihoods, which is 10.
+
+The number of degrees of freedom is the difference in the number of coefficients in the two models, which is three.
+
+At 5\% significance with three degrees of freedom, the test statistic of 10 exceeds the 7.81 threshold, so the null hypothesis should be rejected.
+\end{solution}
+
+\begin{question}{20}
+An analyst is modeling the probability of a certain phenomenon occurring. The analyst has observed that the simple linear model currently in use results in predicted values less than zero and greater than one.
+
+Determine which of the following is the most appropriate way to address this issue.
+
+\begin{choices}
+\item Limit the data to observations that are expected to result in predicted values between 0 and 1.
+\item Consider predicted values below 0 as 0 and values above 1 as 1.
+\item Use a logit function to transform the linear model into only predicting values between 0 and 1.
+\item Use the canonical link function for the Poisson distribution to transform the linear model into only predicting values between 0 and 1.
+\item None of the above.
+\end{choices}
+\end{question}
+\begin{solution}{20}{C}
+(A) is not appropriate because removing data will likely bias the model estimates.
+
+(B) is not appropriate because altering data will likely bias the model estimates.
+
+(C) is correct.
+
+(D) is not appropriate because the canonical link function is the logarithm, which will not restrict values to the range zero to one.
+\end{solution}
+
+\begin{question}{21}
+A random walk is expressed as
+\[ y_t = y_{t-1} + c_t \quad \text{for } t = 1, 2, \ldots \]
+where
+\[ \expc(c_t) = \mu_c \text{ and } \var(c_t) = \sigma_c^2, \quad t = 1, 2, \ldots \]
+
+Determine which statements is/are true with respect to a random walk model.
+\begin{statements}
+\item If $\mu_c \neq 0$, then the random walk is nonstationary in the mean.
+\item If $\sigma_c^2 = 0$, then the random walk is nonstationary in the variance.
+\item If $\sigma_c^2 > 0$, then the random walk is nonstationary in the variance.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{21}{C}
+I is true because the mean $\expc(y_t) = y_0 + t\mu_c$ depends on $t$.
+
+% SIC: source prints "does not depend in t"; means "does not depend on t".
+II is false because the variance $\var(y_t) = t\sigma_c^2 = 0$ does not depend in $t$.
+
+III is true because the variance depends on $t$.
+\end{solution}
+
+\begin{question}{22}
+A stationary autoregressive model of order one can be written as
+\[ y_t = \beta_0 + \beta_1 y_{t-1} + \varepsilon_t, \quad t = 1, 2, \ldots. \]
+
+Determine which of the following statements about this model is NOT true.
+
+\begin{choices}
+\item The parameter $\beta_0$ must not equal 1.
+\item The absolute value of the parameter $\beta_1$ must be less than 1.
+\item If the parameter $\beta_1 = 0$, then the model reduces to a white noise process.
+\item If the parameter $\beta_1 = 1$, then the model is a random walk.
+\item Only the immediate past value, $y_{t-1}$, is used as a predictor for $y_t$.
+\end{choices}
+\end{question}
+\begin{solution}{22}{A}
+The intercept term may be any value, hence (A) is false.
+\end{solution}
+
+\begin{question}{23}
+Toby observes the following coffee prices in his company cafeteria:
+\begin{itemize}
+\item 12 ounces for 1.00
+\item 16 ounces for 1.20
+\item 20 ounces for 1.40
+\end{itemize}
+The cafeteria announces that they will begin to sell any amount of coffee for a price that is the value predicted by a simple linear regression using least squares of the current prices on size.
+
+Toby and his co-worker Karen want to determine how much they would save each day, using the new pricing, if, instead of each buying a 24-ounce coffee, they bought a 48-ounce coffee and shared it.
+
+Calculate the amount they would save.
+
+\begin{choices}
+\item It would cost them 0.40 more.
+\item It would cost the same.
+\item They would save 0.40.
+\item They would save 0.80.
+\item They would save 1.20.
+\end{choices}
+\end{question}
+\begin{solution}{23}{C}
+The regression line is $y = 0.40 + 0.05\,x$. This can be obtained by either using the formula for the regression coefficients or by observing that the three points lie on a straight line and hence that line must be the solution. A 24-ounce cup costs 1.60. Two of them cost 3.20. A 48-ounce cup costs \$2.80. So the savings is 0.40.
+\end{solution}
+
+\begin{question}{24}
+Sarah performs a regression of the return on a mutual fund ($y$) on four predictors plus an intercept. She uses monthly returns over 105 months.
+
+Her software calculates the $F$ statistic for the regression as $F = 20.0$, but then it quits working before it calculates the value of $R^2$. While she waits on hold with the help desk, she tries to calculate $R^2$ from the $F$-statistic.
+
+Determine which of the following statements about the attempted calculation is true.
+
+\begin{choices}
+\item There is insufficient information, but it could be calculated if she had the value of the residual sum of squares (RSS).
+\item There is insufficient information, but it could be calculated if she had the value of the total sum of squares (TSS) and RSS.
+\item $R^2 = 0.44$
+\item $R^2 = 0.56$
+\item $R^2 = 0.80$
+\end{choices}
+\end{question}
+\begin{solution}{24}{C}
+Even though the formula for $R^2$ involves RSS and TSS, she just needs their ratio, which can be obtained from $F$.
+\begin{align*}
+F &= \frac{(TSS - RSS)/4}{RSS/(105 - 4 - 1)} = 20 \\
+\frac{TSS - RSS}{RSS} &= 20(4)/100 = 0.80 \\
+\frac{TSS}{RSS} &= 1.80 \\
+\frac{RSS}{TSS} &= \frac{1}{1.80} \\
+R^2 &= 1 - \frac{RSS}{TSS} = 1 - \frac{1}{1.80} = \frac{0.80}{1.80} = 0.44
+\end{align*}
+\end{solution}
+
+\begin{question}{25}
+Determine which of the following statements concerning decision tree pruning is/are true.
+\begin{statements}
+\item The recursive binary splitting method can lead to overfitting the data.
+\item A tree with more splits tends to have lower variance.
+\item When using the cost complexity pruning method, $\alpha = 0$ results in a very large tree.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{25}{C}
+I is true because the method optimizes with respect to the training set, but may perform poorly on the test set.
+
+II is false because additional splits tends to increase variance due to adding to the complexity of the model.
+
+III is true because in this case only the training error is measured.
+\end{solution}
+
+\begin{question}{26}
+Each picture below represents a two-dimensional space where observations are classified into two categories. The categories are representing by light and dark shading. A classification tree is to be constructed for each space.
+
+Determine which space can be modeled with no error by a classification tree.
+\begin{statements}
+\item \srmfig{q26a}
+\item \srmfig{q26b}
+\item \srmfig{q26c}
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II, and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{26}{A}
+% SIC: source prints "must divide the one the existing regions"; means "must divide one of the existing regions".
+Each step must divide the one the existing regions into two parts, using either a vertical or a horizontal line. Only I can be created this way.
+\end{solution}
+
+\begin{question}{27}
+Trevor is modeling monthly incurred dental claims. Trevor has 48 monthly claims observations and three potential predictors:
+\begin{itemize}
+\item Number of weekdays in the month
+\item Number of weekend days in the month
+\item Average number of insured members during the month
+\end{itemize}
+Trevor obtained the following results from a linear regression:
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+ & \textbf{Coefficient} & \textbf{Standard Error} & \textbf{\textit{t} Stat} & \textbf{\textit{p}-value} \\ \hline
+Intercept & $-45{,}765{,}767.76$ & $20{,}441{,}816.55$ & $-2.24$ & 0.0303 \\ \hline
+Number of weekdays & $513{,}280.76$ & $233{,}143.23$ & 2.20 & 0.0330 \\ \hline
+Number of weekend days & $280{,}148.46$ & $483{,}001.55$ & 0.58 & 0.5649 \\ \hline
+Average number of members & 38.64 & 6.42 & 6.01 & 0.0000 \\ \hline
+\end{tabular}
+\end{center}
+
+Determine which of the following predictors should be dropped, using a 5\% significance level.
+
+\begin{choices}
+\item None
+\item Number of weekdays only
+\item Number of weekend days only
+\item Average number of members
+\item All three predictors should be dropped
+\end{choices}
+\end{question}
+\begin{solution}{27}{C}
+Only variables with a $p$-value greater than 0.05 should be considered. Because only one of the variables (Number of weekend days) meets this criterion, it should be dropped.
+\end{solution}
+
+\begin{question}{28}
+\deleted
+\end{question}
+
+\begin{question}{29}
+Determine which of the following considerations may make decision trees preferable to other statistical learning methods.
+\begin{statements}
+\item Decision trees are easily interpretable.
+\item Decision trees can be displayed graphically.
+\item Decision trees are easier to explain than linear regression methods.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{29}{E}
+All three statements are true. See Section 8.1 of \textit{An Introduction to Statistical Learning}. The statement that trees are easier to explain than linear regression methods may not be obvious. For those familiar with regression but just learning about trees, the reverse may be the case. However, for those not familiar with regression, relating the dependent variable to the independent variables, especially if the dependent variable has been transformed, can be difficult to explain.
+\end{solution}
+
+\begin{question}{30}
+Principal component analysis is applied to a large data set with four variables. Loadings for the first four principal components are estimated.
+
+% SIC: source prints "with respect the loadings"; means "with respect to the loadings".
+Determine which of the following statements is/are true with respect the loadings.
+\begin{statements}
+\item The loadings are unique.
+\item For a given principal component, the sum of the squares of the loadings across the four variables is one.
+\item Together, the four principal components explain 100\% of the variance.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{30}{D}
+I is false because the loadings are unique only up to a sign flip.
+
+II is true. Principal components are designed to maximize variance. If there are no constraints on the magnitude of the loadings, the variance can be made arbitrarily large. The PCA algorithm's constraint is that the sum of the squares of the loadings equals 1.
+
+III is true because four components can capture all the variation in four variables, provided there are at least four data points (note that the problem states that the data set is large).
+\end{solution}
+
+\begin{question}{31}
+% SIC: stem ends without a full stop.
+Determine which of the following indicates that a nonstationary time series can be represented as a random walk
+\begin{statements}
+\item A control chart of the series detects a linear trend in time and increasing variability.
+\item The differenced series follows a white noise model.
+\item The standard deviation of the original series is greater than the standard deviation of the differenced series.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{31}{D}
+See Page 242 of \textit{Regression Modeling with Actuarial and Financial Applications}.
+
+I is true because a random walk is characterized by a linear trend and increasing variability.
+
+II is true because differencing removes the linear trend and stabilizes the variance.
+
+III is true as both the linear trend and the increasing variability contribute to a higher standard deviation.
+\end{solution}
+
+\begin{question}{32}
+You are given a set of $n$ observations, each with $p$ features.
+
+Determine which of the following statements is/are true with respect to clustering methods.
+\begin{statements}
+\item The $n$ observations can be clustered on the basis of the $p$ features to identify subgroups among the observations.
+\item The $p$ features can be clustered on the basis of the $n$ observations to identify subgroups among the features.
+\item Clustering is an unsupervised learning method and is often performed as part of an exploratory data analysis.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{32}{E}
+I and II are both true because the roles of rows and columns can be reversed in the clustering algorithm. (See Section 10.3 of \textit{An Introduction to Statistical Learning}.)
+
+III is true. Clustering is unsupervised learning because there is no dependent (target) variable. It can be used in exploratory data analysis to learn about relationships between observations or features.
+\end{solution}
+
+\begin{question}{33}
+The regression tree shown below was produced from a dataset of auto claim payments. Age Category (agecat: 1, 2, 3, 4, 5, 6) and Vehicle Age (veh\_age: 1, 2, 3, 4, \ldots) are both predictor variables, and log of claim amount (LCA) is the dependent variable.
+
+\srmfig{q33}
+
+Consider three autos I, II, III:
+
+\begin{description}
+\item[I:] An Auto in Age Category 1 and Vehicle Age 4
+\item[II:] An Auto in Age Category 5 and Vehicle Age 5
+\item[III:] An Auto in Age Category 5 and Vehicle Age 3
+\end{description}
+
+Rank the estimated LCA of Autos I, II, and III.
+
+\begin{choices}
+\item $\mathrm{LCA(I)} < \mathrm{LCA(II)} < \mathrm{LCA(III)}$
+\item $\mathrm{LCA(I)} < \mathrm{LCA(III)} < \mathrm{LCA(II)}$
+\item $\mathrm{LCA(II)} < \mathrm{LCA(I)} < \mathrm{LCA(III)}$
+\item $\mathrm{LCA(II)} < \mathrm{LCA(III)} < \mathrm{LCA(I)}$
+\item $\mathrm{LCA(III)} < \mathrm{LCA(II)} < \mathrm{LCA(I)}$
+\end{choices}
+\end{question}
+\begin{solution}{33}{E}
+$\mathrm{LCA(I)} = 8.146$ \\
+$\mathrm{LCA(II)} = 8.028$ \\
+$\mathrm{LCA(III)} = 7.771$
+\end{solution}
+
+\begin{question}{34}
+Determine which of the following statements is/are true about clustering methods.
+\begin{statements}
+\item If $K$ is held constant, $K$-means clustering will always produce the same cluster assignments.
+\item Given a linkage and a dissimilarity measure, hierarchical clustering will always produce the same cluster assignments for a specific number of clusters.
+\item Given identical data sets, cutting a dendrogram to obtain five clusters produces the same cluster assignments as $K$-means clustering with $K = 5$.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{34}{B}
+I is false. $K$-means clustering is subject to the random initial assignment of clusters.
+
+II is true. Hierarchical clustering is deterministic, not requiring a random initial assignment.
+
+III is false. The two methods differ in their approaches and hence may not yield the same clusters.
+\end{solution}
+
+\begin{question}{35}
+Consider the following scree plot.
+
+\srmfig{q35}
+
+Determine the minimum number of principal components that are needed to explain at least 80\% of the variance of the original dataset.
+
+\begin{choices}
+\item One
+\item Two
+\item Three
+\item Four
+\item It cannot be determined from the information given.
+\end{choices}
+\end{question}
+\begin{solution}{35}{B}
+The first PC explains about 62\% of the variance. The second PC explains about 23\% of the variance. Combined they explain about 85\% of the variance, and hence two PCs are sufficient.
+\end{solution}
+
+\begin{question}{36}
+Determine which of the following statements about hierarchical clustering is/are true.
+\begin{statements}
+\item The method may not assign extreme outliers to any cluster.
+\item The resulting dendrogram can be used to obtain different numbers of clusters.
+\item The method is not robust to small changes in the data.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{36}{D}
+I is false. All observations are assigned to a cluster.
+
+II is true. By cutting the dendrogram at different heights, any number of clusters can be obtained.
+
+III is true. Clustering methods have high variance, that is, having a different random sample from the population can lead to different clustering.
+\end{solution}
+
+\begin{question}{37}
+Analysts W, X, Y, and Z are each performing Principal Components Analysis on the same data set with three variables. They use different programs with their default settings and discover that they have different factor loadings for the first principal component. Their loadings are:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+ & Variable 1 & Variable 2 & Variable 3 \\ \hline
+W & $-0.549$ & $-0.594$ & $0.587$ \\ \hline
+X & $-0.549$ & $0.594$ & $0.587$ \\ \hline
+Y & $0.549$ & $-0.594$ & $-0.587$ \\ \hline
+Z & $0.140$ & $-0.570$ & $-0.809$ \\ \hline
+\end{tabular}
+\end{center}
+
+Determine which of the following is/are plausible explanations for the different loadings.
+\begin{statements}
+\item Loadings are unique up to a sign flip and hence X's and Y's programs could make different arbitrary sign choices.
+\item Z's program defaults to not scaling the variables while Y's program defaults to scaling them.
+\item Loadings are unique up to a sign flip and hence W's and X's programs could make different arbitrary sign choices.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{37}{B}
+I is true. Uniqueness up to a sign flip means all three signs must be flipped. This is true for X and Y.
+
+% SIC: source prints "The presence of absence of scaling"; means "The presence or absence of scaling".
+II is true. The presence of absence of scaling can change the loadings.
+
+III is false. Uniqueness up to a sign flip means all three signs must be flipped. For W and X only the second loading is flipped.
+\end{solution}
+
+\begin{question}{38}
+You are given two models:
+
+\begin{description}
+\item[Model L:] $y_t = \beta_0 + \beta_1 t + \varepsilon_t$
+
+where $\{\varepsilon_t\}$ is a white noise process, for $t = 0,1,2,\ldots$
+
+\item[Model M:]
+\begin{align*}
+y_t &= y_0 + \mu_c t + u_t \\
+c_t &= y_t - y_{t-1} \\
+u_t &= \sum_{j=1}^{t} \varepsilon_j
+\end{align*}
+where $\{\varepsilon_t\}$ is a white noise process, for $t = 0,1,2,\ldots$
+\end{description}
+
+Determine which of the following statements is/are true.
+\begin{statements}
+\item Model L is a linear trend in time model where the error component is not a random walk.
+\item Model M is a random walk model where the error component of the model is also a random walk.
+\item The comparison between Model L and Model M is not clear when the parameter $\mu_c = 0$.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{38}{D}
+I is true. See formula (7.8) in the Frees text.
+
+II. is true. See formula (7.9) in the Frees text.
+
+III is true. The only difference is the error terms, which are difficult to compare. See page 243 in the Frees text.
+\end{solution}
+
+\begin{question}{39}
+You are given a dataset with two variables, which is graphed below. You want to predict $y$ using $x$.
+
+\srmfig{q39}
+
+Determine which statement regarding using a generalized linear model (GLM) or a random forest is true.
+
+\begin{choices}
+\item A random forest is appropriate because the dataset contains only quantitative variables.
+\item A random forest is appropriate because the data does not follow a straight line.
+\item A GLM is not appropriate because the variance of $y$ given $x$ is not constant.
+\item A random forest is appropriate because there is a clear relationship between $y$ and $x$.
+\item A GLM is appropriate because it can accommodate polynomial relationships.
+\end{choices}
+\end{question}
+\begin{solution}{39}{E}
+(A) is false. Trees work better with qualitative data.
+
+(B) is false. While trees accommodate nonlinear relations, as seen in (E) a linear model can work very well here.
+
+(C) is false. The variance is constant, so that is not an issue here.
+
+(D) is false. There is a clear relationship as noted in answer (E).
+
+(E) is true. The points appear to lie on a quadratic curve so a model such as $y = \beta_0 + \beta_1 x + \beta_2 x^2$ can work well here. Recall that linear models must be linear in the coefficients, not necessarily linear in the variables.
+\end{solution}
+
+\begin{question}{40}
+Determine which of the following statements about clustering is/are true.
+\begin{statements}
+\item Cutting a dendrogram at a lower height will not decrease the number of clusters.
+\item $K$-means clustering requires plotting the data before determining the number of clusters.
+\item For a given number of clusters, hierarchical clustering can sometimes yield less accurate results than $K$-means clustering.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{40}{C}
+I is true. At the lowest height, each observation is its own cluster. The number of clusters decreases as the height increases.
+
+II is false. There is no need to plot the data to perform $K$-means clustering.
+
+III is true. $K$-means does a fresh analysis for each value of $K$ while for hierarchical clustering, reduction in the number of clusters is tied to clusters already made. This can miss cases where the clusters are not nested.
+\end{solution}
+
+\begin{question}{41}
+For a random forest, let $p$ be the total number of features and $m$ be the number of features selected at each split.
+
+Determine which of the following statements is/are true.
+\begin{statements}
+\item When $m = p$, random forest and bagging are the same procedure.
+\item $\dfrac{p-m}{p}$ is the probability a split will not consider the strongest predictor.
+\item The typical choice of $m$ is $\dfrac{p}{2}$.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{41}{B}
+I is true. Random forests differ from bagging by setting $m < p$.
+
+II is true. $p - m$ represents the splits not chosen.
+
+III is false. Typical choices are the square root of $p$ or $p/3$.
+\end{solution}
+
+\begin{question}{42}
+Determine which of the following statements is NOT true about the linear probability, logistic, and probit regression models for binary dependent variables.
+
+\begin{choices}
+\item The three major drawbacks of the linear probability model are poor fitted values, heteroscedasticity, and meaningless residual analysis.
+\item The logistic and probit regression models aim to circumvent the drawbacks of linear probability models.
+\item The logit function is given by $\pi(z) = \e^{z} / (1 + \e^{z})$.
+\item The probit function is given by $\pi(z) = \Phi(z)$ where $\Phi$ is the standard normal distribution function.
+\item The logit and probit functions are substantially different.
+\end{choices}
+\end{question}
+\begin{solution}{42}{E}
+The logit and probit models are similar (see page 307 of Frees, which also discusses items A-D).
+\end{solution}
+
+\begin{question}{43}
+Determine which of the following statements about clustering methods is NOT true.
+
+\begin{choices}
+\item Clustering is used to discover structure within a data set.
+\item Clustering is used to find homogeneous subgroups among the observations within a data set.
+\item Clustering is an unsupervised learning method.
+\item Clustering is used to reduce the dimensionality of a dataset while retaining explanation for a good fraction of the variance.
+\item In $K$-means clustering, it is necessary to pre-specify the number of clusters.
+\end{choices}
+\end{question}
+\begin{solution}{43}{D}
+Item D is a statement about principal components analysis, not clustering.
+\end{solution}
+
+\begin{question}{44}
+Two actuaries are analyzing dental claims for a group of $n = 100$ participants. The predictor variable is sex, with 0 and 1 as possible values.
+
+Actuary 1 uses the following regression model:
+\[ Y = \beta + \varepsilon. \]
+
+Actuary 2 uses the following regression model:
+\[ Y = \beta_0 + \beta_1 \times \mathrm{Sex} + \varepsilon. \]
+
+The residual sum of squares for the regression of Actuary 2 is 250,000 and the total sum of squares is 490,000.
+
+Calculate the $F$-statistic to test whether the model of Actuary 2 is a significant improvement over the model of Actuary 1.
+
+\begin{choices}
+\item 92
+\item 93
+\item 94
+\item 95
+\item 96
+\end{choices}
+\end{question}
+\begin{solution}{44}{C}
+The model of Actuary 1 is the null model and hence values from it are not needed. The solution is
+\[ F = \frac{(TSS - RSS)/1}{RSS/(n-2)} = \frac{490{,}000 - 250{,}000}{250{,}000/98} = 94.08. \]
+\end{solution}
+
+\begin{question}{45}
+The actuarial student committee of a large firm has collected data on exam scores. A generalized linear model where the target is the exam score on a 0-10 scale is constructed using a log link, resulting in the following estimated coefficients
+\begin{center}
+\begin{tabular}{|l|c|}
+\hline
+Predictor Variables & Coefficient \\ \hline
+Intercept & $-0.1$ \\ \hline
+Study Time (in units of 100 hours) & 0.5 \\ \hline
+Attempt (1 for first attempt, else 0) & 0.5 \\ \hline
+Master's degree (1 for Yes, 0 for No) & $-0.1$ \\ \hline
+Interaction of Attempt and Master's degree & 0.2 \\ \hline
+\end{tabular}
+\end{center}
+
+The company is about to offer a job to an applicant who has a Master's degree and for whom the exam would be a first attempt. It would like to offer half of the study time that will result in an expected exam score of 6.0.
+
+Calculate the amount of study time that the company should offer.
+
+\begin{choices}
+\item 123 hours
+\item 126 hours
+\item 129 hours
+\item 132 hours
+\item 135 hours
+\end{choices}
+\end{question}
+\begin{solution}{45}{C}
+Let $T$ be the study time offered. The equation to solve is
+\begin{align*}
+6.0 &= \exp[-0.1 + 0.5(2T) + 0.5 - 0.1 + 0.2] = \exp(0.5 + T) \\
+1.79176 &= 0.5 + T \\
+T &= 1.29176 \text{ or } 129 \text{ hours.}
+\end{align*}
+\end{solution}
+
+\begin{question}{46}
+A time series was observed at times $0, 1, \ldots, 100$. The last four observations along with estimates based on exponential and double exponential smoothing with $w = 0.8$ are:
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+Time ($t$) & 97 & 98 & 99 & 100 \\ \hline
+Observation ($y_t$) & 96.9 & 98.1 & 99.0 & 100.2 \\ \hline
+Estimates ($\hat{s}^{(1)}_t$) & 93.1 & 94.1 & 95.1 & \\ \hline
+Estimates ($\hat{s}^{(2)}_t$) & 88.9 & 89.9 & & \\ \hline
+\end{tabular}
+\end{center}
+
+All forecasts should be rounded to one decimal place and the trend should be rounded to three decimal places.
+
+Let $F$ be the predicted value of $y_{102}$ using exponential smoothing with $w = 0.8$.
+
+Let $G$ be the predicted value of $y_{102}$ using double exponential smoothing with $w = 0.8$.
+
+Calculate the absolute difference between $F$ and $G$, $|F - G|$.
+
+\begin{choices}
+\item 0.0
+\item 2.1
+\item 4.2
+\item 6.3
+\item 8.4
+\end{choices}
+\end{question}
+\begin{solution}{46}{D}
+The smoothed forecast at 100 is $0.2(100.2) + 0.8(95.1) = 96.1$. This is also the forecast at 102.
+
+The smoothed values are at 99: $0.2(95.1) + 0.8(89.9) = 90.9$. At 100: $0.2(96.1) + 0.8(90.9) = 91.9$. The trend is $0.2(96.1 - 91.9)/.8 = 1.05$. The intercept (value at 100) is $2(96.1) - 91.9 = 100.3$. The forecast at time 102 is $100.3 + 2(1.05) = 102.4$.
+
+The difference is 6.3.
+\end{solution}
+
+\begin{question}{47}
+\deleted
+\end{question}
+
+\begin{question}{48}
+The following tree was constructed using recursive binary splitting with the left branch indicating that the inequality is true.
+
+\srmfig{q48}
+
+Determine which of the following plots represents this tree.
+
+\begin{choices}
+\item \srmfig{q48a}
+\item \srmfig{q48b}
+\item \srmfig{q48c}
+\item \srmfig{q48d}
+\item \srmfig{q48e}
+\end{choices}
+\end{question}
+\begin{solution}{48}{B}
+The first split is $X_1 < t_1$. This requires a horizontal line at $t_1$ on the vertical axis. Graphs B, C, and E have such a line.
+
+The second split is the case where the first split is true. That means all further action is below the line just described. All three graphs do that. The second split is $x_2 < t_2$. This requires a vertical line at $t_2$ on the horizontal axis with the line only going up to $t_1$. Again, all three graphs have this.
+
+The third split is when the second split is true. That means all further action is to the left of the line just described. That rules out graph C. The only difference between graphs B and E is which part relates to node C and which to node D. The third split indicates that node C is the case when $x_1 < t_3$. Only graph B has this region marked as C.
+\end{solution}
+
+\begin{question}{49}
+Trish runs a regression on a data set of $n$ observations. She then calculates a 95\% confidence interval $(t, u)$ on $y$ for a given set of predictors. She also calculates a 95\% prediction interval $(v, w)$ on $y$ for the same set of predictors.
+
+Determine which of the following must be true.
+
+\begin{statements}
+\item $\displaystyle \lim_{n \to \infty} (u - t) = 0$
+\item $\displaystyle \lim_{n \to \infty} (w - v) = 0$
+\item $w - v > u - t$
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{49}{C}
+I is true. A confidence interval reflects the error in estimating the expected value. With an infinite amount of data, the error goes to zero.
+
+II is false. A prediction interval also reflects the uncertainty in the predicted observation. That uncertainty is independent of the sample size and thus the interval cannot go to zero.
+
+III is true. The additional uncertainty in making predictions about a future value as compared to estimating its expected value leads to a wider interval.
+\end{solution}
+
+\begin{question}{50}
+Determine which of the following statements regarding statistical learning methods is/are true.
+
+\begin{statements}
+\item Methods that are highly interpretable are more likely to be highly flexible.
+\item When inference is the goal, there are clear advantages to using a lasso method versus a bagging method.
+\item Using a more flexible method will produce a more accurate prediction against unseen data.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{50}{B}
+I is false. Highly flexible models are harder to interpret. For example, a ninth degree polynomial is harder to interpret than a straight line.
+
+II is true. Inference is easier when using simple and relatively inflexible methods. Lasso is simpler and less flexible than bagging.
+
+III is false. Flexible methods tend to overfit the training set and be less accurate when applied to unseen data.
+\end{solution}
+
+\begin{question}{51}
+You are given the following regression tree predicting the weight of ducks in kilograms (kg):
+
+\srmfig{q51}
+
+You predict the weight of the following three ducks:
+\begin{description}
+\item[X:] Wing Span $= 5.5$ cm, Male, Age $= 7$ years
+\item[Y:] Wing Span $= 5.8$ cm, Female, Age $= 5$ years
+\item[Z:] Wing Span $= 5.7$ cm, Male, Age $= 8$ years
+\end{description}
+
+Determine the order of the predicted weights of the three ducks.
+
+\begin{choices}
+\item $\mathrm{X} < \mathrm{Y} < \mathrm{Z}$
+\item $\mathrm{X} < \mathrm{Z} < \mathrm{Y}$
+\item $\mathrm{Y} < \mathrm{X} < \mathrm{Z}$
+\item $\mathrm{Y} < \mathrm{Z} < \mathrm{X}$
+\item $\mathrm{Z} < \mathrm{X} < \mathrm{Y}$
+\end{choices}
+\end{question}
+\begin{solution}{51}{C}
+For duck X: Age $= 7$ $\Rightarrow$ go left. Gender $=$ Male $\Rightarrow$ go right. Prediction $= 0.90$ kg.
+
+For duck Y: Age $= 5$ $\Rightarrow$ go left. Gender $=$ Female $\Rightarrow$ go left. Prediction $= 0.80$ kg.
+
+% SIC: source omits the unit "kg" here; other predictions in this paragraph carry it.
+For duck Z: Age $= 8$ $\Rightarrow$ go right. Gender $=$ Male $\Rightarrow$ go right. Wing Span $= 5.7$ $\Rightarrow$ go right. Prediction $= 1.25$.
+
+$Y < X < Z$.
+\end{solution}
+
+\begin{question}{52}
+Determine which of the following statements is/are true about Pearson residuals.
+
+\begin{statements}
+\item They can be used to calculate a goodness-of-fit statistic.
+\item They can be used to detect if additional variables of interest can be used to improve the model specification.
+\item They can be used to identify unusual observations.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II, and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{52}{D}
+I is true. See Page 348 of Frees.
+
+II is true. See Page 347 of Frees.
+
+III is true. See Page 347 of Frees.
+\end{solution}
+
+\begin{question}{53}
+Determine which of the following statements is NOT true about the equation
+\[ Y = \beta_0 + \beta_1 X + \varepsilon. \]
+
+\begin{choices}
+\item $\beta_0$ is the expected value of $Y$.
+\item $\beta_1$ is the average increase in $Y$ associated with a one-unit increase in $X$.
+\item The error term, $\varepsilon$, is typically assumed to be independent of $X$.
+\item The equation defines the population regression line.
+\item The method of least squares is commonly used to estimate the coefficients $\beta_0$ and $\beta_1$.
+\end{choices}
+\end{question}
+\begin{solution}{53}{A}
+(A) is false. $\beta_0$ is the expected value of $Y$ when $X = 0$.
+
+The other four statements are true (see Page 63 of James, et al.)
+\end{solution}
+
+\begin{question}{54}
+For a regression model of executive compensation, you are given:
+\begin{given}
+\item The following statistics:
+\begin{center}
+\begin{tabular}{|l|r|r|r|r|}
+\hline
+\multicolumn{5}{|c|}{Executive Compensation} \\ \hline
+Coefficients: & Estimate & Std. Error & $t$-statistic & $p$-value \\ \hline
+(INTERCEPT) & $-28{,}595.5$ & 220.5 & $-129.7$ & $<0.001$ \\ \hline
+AGEMINUS35 & 7,366.3 & 12.5 & 588.1 & $<0.001$ \\ \hline
+TOPSCHOOL & 50.0 & 119.7 & 0.4 & 0.676 \\ \hline
+LARGECITY & 147.9 & 119.7 & 1.2 & 0.217 \\ \hline
+MBA & 2,490.9 & 119.7 & 20.8 & $<0.001$ \\ \hline
+YEARSEXP & 15,286.6 & 7.2 & 2132.8 & $<0.001$ \\ \hline
+\end{tabular}
+\end{center}
+\item The acceptable significance level is $\alpha = 0.10$.
+\end{given}
+
+Determine which predictor or predictors should be removed first prior to rerunning the model.
+
+\begin{choices}
+\item AGEMINUS35
+\item AGEMINUS35, MBA, and YEARSEXP
+\item TOPSCHOOL
+\item TOPSCHOOL and LARGECITY
+\item YEARSEXP
+\end{choices}
+\end{question}
+\begin{solution}{54}{C}
+The variables TOPSCHOOL and LARGECITY both lack significance and are candidates for removal. However, only one variable should be removed at a time, and it should be the one with the highest $p$-value, which is TOPSCHOOL. After removing TOPSCHOOL and rerunning the model it is possible that LARGECITY will become significant.
+\end{solution}
+
+\begin{question}{55}
+You are given the following eight observations from a time series that follows a random walk model:
+\begin{center}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
+\hline
+Time ($t$) & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\ \hline
+Observation ($y_t$) & 3 & 5 & 7 & 8 & 12 & 15 & 21 & 22 \\ \hline
+\end{tabular}
+\end{center}
+
+You plan to fit this model to the first five observations and then evaluate it against the last three observations using one-step forecast residuals. The estimated mean of the white noise process is 2.25.
+
+Let $F$ be the mean error (ME) of the three predicted observations.
+
+Let $G$ be the mean square error (MSE) of the three predicted observations.
+
+Calculate the absolute difference between $F$ and $G$, $|F - G|$.
+
+\begin{choices}
+\item 3.48
+\item 4.31
+\item 5.54
+\item 6.47
+\item 7.63
+\end{choices}
+\end{question}
+\begin{solution}{55}{B}
+The three one-step predicted values are $12 + 2.25 = 14.25$; $15 + 2.25 = 17.25$; and $21 + 2.25 = 23.25$. The errors are $15 - 14.25 = 0.75$; $21 - 17.25 = 3.75$; and $22 - 23.25 = -1.25$.
+\[ F = (0.75 + 3.75 - 1.25)/3 = 1.083 \]
+\[ G = (0.75^2 + 3.75^2 + 1.25^2)/3 = 5.396 \]
+The absolute difference is 4.313.
+\end{solution}
+
+\begin{question}{56}
+Determine which of the following statements about prediction is true.
+
+\begin{choices}
+\item Each of several candidate regression models must produce the same prediction.
+\item When making predictions, it is assumed that the new observation follows the same model as the one used in the sample.
+\item A point prediction is more reliable than an interval prediction.
+\item A wider prediction interval is more informative than a narrower prediction interval.
+\item A prediction interval should not contain the single point prediction.
+\end{choices}
+\end{question}
+\begin{solution}{56}{B}
+A is false because different models are likely to produce different results.
+
+B is true because using the fitted model implies that this model continues to apply.
+
+C is false as there is no easy way to compare reliability of the two approaches.
+
+D is false in that a narrower interval provides more useful information about the true value.
+
+E is false in that the interval contains the most likely values with the point prediction being the single most likely point.
+\end{solution}
+
+\begin{question}{57}
+You are given:
+\begin{given}
+\item The following observed values of the response variable, $R$, and predictor variables $X$, $Y$, $Z$:
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+$R$ & 4.75 & 4.67 & 4.67 & 4.56 & 4.53 & 3.91 & 3.90 & 3.90 & 3.89 \\ \hline
+$X$ & M & F & M & F & M & F & F & M & M \\ \hline
+$Y$ & A & A & D & D & B & C & B & D & B \\ \hline
+$Z$ & 2 & 4 & 1 & 3 & 2 & 2 & 5 & 5 & 1 \\ \hline
+\end{tabular}
+\end{center}
+\item The following plot of the corresponding regression tree:
+\srmfig{q57}
+\end{given}
+
+Calculate the Mean Response (MR) for each of the end nodes.
+
+\begin{choices}
+\item $\mathrm{MR}(\mathrm{T1}) = 4.39$,\ \ $\mathrm{MR}(\mathrm{T2}) = 4.38$,\ \ $\mathrm{MR}(\mathrm{T3}) = 4.29$,\ \ $\mathrm{MR}(\mathrm{T4}) = 3.90$
+\item $\mathrm{MR}(\mathrm{T1}) = 4.26$,\ \ $\mathrm{MR}(\mathrm{T2}) = 4.38$,\ \ $\mathrm{MR}(\mathrm{T3}) = 4.62$,\ \ $\mathrm{MR}(\mathrm{T4}) = 3.90$
+\item $\mathrm{MR}(\mathrm{T1}) = 4.26$,\ \ $\mathrm{MR}(\mathrm{T2}) = 4.39$,\ \ $\mathrm{MR}(\mathrm{T3}) = 3.90$,\ \ $\mathrm{MR}(\mathrm{T4}) = 4.29$
+\item $\mathrm{MR}(\mathrm{T1}) = 4.64$,\ \ $\mathrm{MR}(\mathrm{T2}) = 4.29$,\ \ $\mathrm{MR}(\mathrm{T3}) = 4.38$,\ \ $\mathrm{MR}(\mathrm{T4}) = 3.90$
+\item $\mathrm{MR}(\mathrm{T1}) = 4.64$,\ \ $\mathrm{MR}(\mathrm{T2}) = 4.38$,\ \ $\mathrm{MR}(\mathrm{T3}) = 4.39$,\ \ $\mathrm{MR}(\mathrm{T4}) = 3.90$
+\end{choices}
+\end{question}
+\begin{solution}{57}{A}
+T1 has observations with $Z \leqslant 3$ and $Y = \mathrm{A}$ or $\mathrm{B}$, which are observations 1, 5, and 9. The values are 4.75, 4.53, and 3.89, which average to 4.39.
+
+T2 has observations with $Z \leqslant 3$ and $Y = \mathrm{C}$ or $\mathrm{D}$, which are observations 3, 4, and 6. The values are 4.67, 4.56, and 3.91, which average to 4.38.
+
+T3 has observations with $Z > 3$ and $X = \mathrm{F}$, which are observations 2 and 7. The values are 4.67 and 3.90, which average to 4.29.
+
+T4 has observations with $Z > 3$ and $X = \mathrm{M}$, which is observation 8. The value is 3.90.
+\end{solution}
+
+\begin{question}{58}
+You are given the following six observed values of the autoregressive model of order one time series
+\[ y_t = \beta_0 + \beta_1 y_{t-1} + \varepsilon_t \quad \text{with}\ \var(\varepsilon_t) = \sigma^2. \]
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+$t$   & 1  & 2  & 3  & 4  & 5  & 6  \\ \hline
+$y_t$ & 31 & 35 & 37 & 41 & 45 & 51 \\ \hline
+\end{tabular}
+\end{center}
+
+The approximation to the conditional least squares method is used to estimate $\beta_0$ and $\beta_1$.
+
+Calculate the mean squared error $s^2$ that estimates $\sigma^2$.
+
+\begin{choices}
+\item 13
+\item 21
+\item 22
+\item 26
+\item 35
+\end{choices}
+\end{question}
+\begin{solution}{58}{C}
+The estimate of $\beta_1$ is
+\[ b_1 = r_1 = \dfrac{\begin{array}{c}(31-40)(35-40) + (35-40)(37-40) + (37-40)(41-40) \\ {}+ (41-40)(45-40) + (45-40)(51-40)\end{array}}{(31-40)^2 + (35-40)^2 + (37-40)^2 + (41-40)^2 + (45-40)^2 + (51-40)^2} = \dfrac{117}{262} = 0.4466. \]
+The estimator of $\beta_0$ is $b_0 = \bar{y}(1 - r_1) = 22.136$.
+
+The residuals are then
+\begin{align*}
+e_2 &= 35 - (22.136 + 0.4466 \times 31) = -0.9806 \\
+e_3 &= 37 - (22.136 + 0.4466 \times 35) = -0.7670 \\
+e_4 &= 41 - (22.136 + 0.4466 \times 37) = 2.3398 \\
+e_5 &= 45 - (22.136 + 0.4466 \times 41) = 4.5534 \\
+e_6 &= 51 - (22.136 + 0.4466 \times 45) = 8.7670.
+\end{align*}
+The average residual is $\bar{e} = 2.78252$ and then the mean square error is
+\[ s^2 = \dfrac{\begin{array}{c}(-0.9806 - 2.78252)^2 + (-0.7670 - 2.78252)^2 + (2.3398 - 2.78252)^2 \\ {}+ (4.5534 - 2.78252)^2 + (8.7670 - 2.78252)^2\end{array}}{6 - 3} = 21.969. \]
+\end{solution}
+
+\begin{question}{59}
+You apply 2-means clustering to a set of five observations with two features. You are given the following initial cluster assignments:
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Observation & $X_1$ & $X_2$ & Initial cluster \\ \hline
+1 & 1 & 3 & 1 \\ \hline
+2 & 0 & 4 & 1 \\ \hline
+3 & 6 & 2 & 1 \\ \hline
+4 & 5 & 2 & 2 \\ \hline
+5 & 1 & 6 & 2 \\ \hline
+\end{tabular}
+\end{center}
+
+Calculate the total within-cluster variation of the initial cluster assignments, based on Euclidean distance measure.
+
+\begin{choices}
+\item 32.0
+\item 70.3
+\item 77.3
+\item 118.3
+\item 141.0
+\end{choices}
+\end{question}
+\begin{solution}{59}{C}
+The means for cluster 1 are $(1 + 0 + 6)/3 = 2.3333$ for $X_1$ and $(3 + 4 + 2)/3 = 3$ for $X_2$ and the variation is
+\[ (1 - 2.3333)^2 + (3 - 3)^2 + (0 - 2.3333)^2 + (4 - 3)^2 + (6 - 2.3333)^2 + (2 - 3)^2 = 22.6667. \]
+The means for cluster 2 are $(5 + 1)/2 = 3$ for $X_1$ and $(2 + 6)/2 = 4$ for $X_2$ and the variation is $(5 - 3)^2 + (2 - 4)^2 + (1 - 3)^2 + (6 - 4)^2 = 16$.
+
+The total within-cluster variation is (per equation (10.12) in the first edition of \textit{ISLR}) $2(22.6667 + 16) = 77.33$.
+\end{solution}
+
+\begin{question}{60}
+Determine which of the following statements about selecting the optimal number of clusters in $K$-means clustering is/are true.
+
+\begin{statements}
+\item $K$ should be set equal to $n$, the number of observations.
+\item Choose $K$ such that the total within-cluster variation is minimized.
+\item The determination of $K$ is subjective and there does not exist one method to determine the optimal number of clusters.
+\end{statements}
+
+\begin{choices}
+\item I only
+\item II only
+\item III only
+\item I, II and III
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{60}{C}
+I is false. Setting $K = n$ will almost certainly overfit as there are unlikely to be that many true clusters.
+
+II is false. Within-cluster variation is minimized when $K = n$, which as noted above is unlikely to be optimal.
+
+III is true. There is no exact method for determining the optimal value of $K$.
+\end{solution}
+
+\begin{question}{61}
+A linear model has been fit to a dataset containing six predictor variables, F, G, H, I, J, and K.
+
+Determine which of the following statements regarding using Akaike information criterion (AIC) or Bayesian information criterion (BIC) to select an optimal set of predictor variables for this linear model is/are true.
+
+\begin{statements}
+\item AIC and BIC provide a direct estimate of the test error.
+\item When choosing between the subsets $\{F, G, H\}$ and $\{I, J, K\}$, AIC will always select the same subset as BIC.
+\item For large sample sizes ($n > 7$), the number of variables selected by BIC will be less than or equal to the number selected by AIC.
+\end{statements}
+
+\begin{choices}
+\item None
+\item I and II only
+\item I and III only
+\item II and III only
+\item The correct answer is not given by (A), (B), (C), or (D).
+\end{choices}
+\end{question}
+\begin{solution}{61}{D}
+I is false, AIC and BIC make an indirect estimate by adjusting the training error.
+
+II is true, for a fixed value of the number of predictors, the two provide the same ranking.
+
+% SIC: source prints "less than equal to"; means "less than or equal to".
+III is true as for $n > 7$, BIC provides a greater penalty for additional variables, and hence will select a number less than equal to that selected by AIC.
+\end{solution}
+
+\begin{question}{62}
+In a simple linear regression model based on over 100 observations, you are given the following estimates.
+\begin{given}
+\item The estimated slope is $-1.03$.
+\item The standard error of the estimated slope is 0.06.
+\end{given}
+
+Calculate the 95\% confidence interval for the slope.
+
+\begin{choices}
+\item $(-1.15, -0.91)$
+\item $(-1.13, -0.93)$
+\item $(-1.11, -0.95)$
+\item $(-1.09, -0.97)$
+\item $(-1.07, -0.99)$
+\end{choices}
+\end{question}
+\begin{solution}{62}{A}
+% SIC: source prints "and interval"; means "an interval".
+Using the rule of thumb $t$-value of 2 produces and interval of $-1.03 \pm 2(0.06)$ for an interval of $(-1.15, -0.91)$. Note that if the more precise value of 1.96 is used, the same answer (to two decimal places) is obtained.
+\end{solution}
+
+\begin{question}{63}
+You have constructed the following regression tree predicting unit sales (in thousands) of car seats. The variable ShelveLoc has possible values Good, Medium, and Bad.
+
+\srmfig{q63}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Variable} & \textbf{Observed Value} \\ \hline
+ShelveLoc & Good \\ \hline
+Price & 120 \\ \hline
+Age & 57 \\ \hline
+Advertising & 12 \\ \hline
+\end{tabular}
+\end{center}
+
+Determine the predicted unit sales (in thousands) for the above observation based on the regression tree.
+
+\begin{choices}
+\item 4.7
+\item 6.6
+\item 7.4
+\item 9.2
+\item 9.4
+\end{choices}
+\end{question}
+\begin{solution}{63}{D}
+For the first split, ShelveLoc $=$ Good, the answer is no, and the branch to the right is taken. For the second split, Price $= 120 \geqslant 110$, the answer is yes, and the branch to the left is taken. The node has a predicted value of 9.2.
+\end{solution}
+
+\begin{question}{64}
+You are given a stationary AR(1) model, $y_t = \beta_0 + \beta_1 y_{t-1} + \varepsilon_t,\ t = 2, \ldots, T.$
+
+% SIC: source prints "which or the following"; means "which of the following".
+Determine which or the following is always true.
+
+\begin{choices}
+\item $\beta_0 \ne 0$
+\item $\beta_0 = 1$
+\item $\beta_1 = 0$
+\item $\beta_1 = 1$
+\item $|\beta_1| < 1$
+\end{choices}
+\end{question}
+\begin{solution}{64}{E}
+From the definition of a stationary AR(1) process on Page 254 of Frees, the parameter $\beta_0$ can be any fixed constant, ruling out answers (A) and (B). To be stationary it is necessary that $-1 < \beta_1 < 1$, which makes answer (E) correct.
+\end{solution}
+
+\begin{question}{65}
+\deleted
+\end{question}
+
+\begin{question}{66}
+% SIC: source omits the closing ")" — the sentence ends "...branch of a split." with no closing paren.
+You are given the following regression tree (where the inequality represents the values in the left-hand branch of a split.
+
+\srmfig{q66}
+
+Determine the set of regions that represents this regression tree.
+
+\begin{choices}
+\item Region 1: $\{X \mid X_1 \leqslant 5,\ X_2 \leqslant 40\}$ \\
+      Region 2: $\{X \mid X_1 \leqslant 5,\ X_2 > 40\}$ \\
+      Region 3: $\{X \mid X_1 > 5\}$ \\
+      Region 4: $\{X \mid X_1 > 10,\ X_2 \leqslant 60\}$ \\
+      Region 5: $\{X \mid X_1 > 10,\ X_2 > 60\}$
+\item Region 1: $\{X \mid X_1 \leqslant 5,\ X_2 \leqslant 40\}$ \\
+      Region 2: $\{X \mid X_1 \leqslant 5,\ X_2 > 40\}$ \\
+      Region 3: $\{X \mid X_1 > 5,\ X_2 \leqslant 60\}$ \\
+      Region 4: $\{X \mid X_1 > 10,\ X_2 \leqslant 60\}$ \\
+      Region 5: $\{X \mid X_1 > 10,\ X_2 > 60\}$
+\item Region 1: $\{X \mid X_1 \leqslant 5,\ X_2 > 40\}$ \\
+      Region 2: $\{X \mid X_1 \leqslant 5,\ X_2 \leqslant 40\}$ \\
+      Region 3: $\{X \mid 5 < X_1 \leqslant 10\}$ \\
+      Region 4: $\{X \mid X_1 > 10,\ X_2 \leqslant 60\}$ \\
+      Region 5: $\{X \mid X_1 > 10,\ X_2 > 60\}$
+\item Region 1: $\{X \mid X_1 \leqslant 5,\ X_2 \leqslant 40\}$ \\
+      Region 2: $\{X \mid X_1 \leqslant 5,\ X_2 > 40\}$ \\
+      Region 3: $\{X \mid 5 < X_1 \leqslant 10\}$ \\
+      Region 4: $\{X \mid X_1 > 10,\ X_2 \leqslant 60\}$ \\
+      Region 5: $\{X \mid X_1 > 10,\ X_2 > 60\}$
+\item % SIC: source is missing the closing "}" on Region 1.
+      Region 1: $\{X \mid X_1 \leqslant 5,\ X_2 \leqslant 40$ \\
+      Region 2: $\{X \mid X_1 \leqslant 5,\ X_2 > 40\}$ \\
+      % SIC: source sets the ">" at subscript size (Word artifact); the relation is X_1 > 5.
+      Region 3: $\{X \mid X_1 > 5,\ X_2 \leqslant 60\}$ \\
+      Region 4: $\{X \mid X_1 > 10,\ X_2 > 60\}$ \\
+      Region 5: $\{X \mid X_1 > 10,\ X_2 \leqslant 60\}$
+\end{choices}
+\end{question}
+\begin{solution}{66}{D}
+To be in Region 1, $X_1$ must be $\leqslant 5$ and $X_2$ must be $\leqslant 40$. This eliminates answer C
+
+To be in Region 2, $X_1$ must be $\leqslant 5$ and $X_2$ must be $> 40$. This also eliminates answer C.
+
+To be in Region 3, $X_1$ must be $> 5$ and be $\leqslant 10$. This eliminates answers A, B, and E.
+
+That leaves only answer D as possible. To confirm:
+
+% SIC: source prints a stray "." before the ">", on this line and the next.
+To be in Region 4, $X_1$ must be .$> 10$ and $X_2$ must be $\leqslant 60$.
+
+To be in Region 5, $X_1$ must be .$> 10$ and $X_2$ must be $> 60$.
+
+Both of these are satisfied by answer D.
+\end{solution}
+
+\begin{question}{67}
+A and B each attempt a task 10 times. A is successful 8 out of 10 times while B is successful 2 out of 10 times. They fit a logistic regression model to predict an individual's success with linear term $\beta_0 + \beta_1 X$, where $X$ is an indicator variable for individual A.
+
+The full model estimates that A will be successful 80\% of the time and B will be successful 20\% of the time. Under the null hypothesis that $\beta_1 = 0$, the estimate is that both A and B will be successful 50\% of the time. The likelihood ratio test is applied to the logistic regression model.
+
+Determine the lowest available significance level at which the null hypothesis is rejected.
+
+\begin{choices}
+\item 0.100
+\item 0.050
+\item 0.025
+\item 0.010
+\item 0.005
+\end{choices}
+\end{question}
+\begin{solution}{67}{D}
+In the full model, there are 16 outcomes with a probability of 0.8 and 4 outcomes with a probability of 0.2, so the loglikelihood is $16 \ln 0.8 + 4 \ln 0.2 = -10.01$. In the reduced model, the probability of each of the 20 outcomes is 0.5, so the loglikelihood is $20 \ln 0.5 = -13.86$.
+
+The likelihood ratio test statistic (equal to twice the difference in loglikelihoods) has a chi-square distribution with degrees of freedom equal to the difference in the number of explanatory variables, in this case 1. The test statistic is $2(-10.01 - (-13.86)) = 7.71$. The critical values for one degree of freedom are 6.635 and 7.879 for $p = 0.010$ and 0.005 respectively, so the null hypothesis can be rejected at 0.010 but not 0.005.
+\end{solution}
+
+\begin{question}{68}
+You are fitting a boosted regression tree with shrinkage parameter $\lambda = 0.08$. There is a single numeric predictor variable, $x$, and the target variable is $y$. Each tree is to have a single split. The first tree, built using all the training data has the following split:
+\begin{itemize}
+\item If $x < 17.5$, then the predicted value of $y$ is 125.4.
+\item If $x \geqslant 17.5$, then the predicted value of $y$ is 350.5.
+\end{itemize}
+The following are three observations from the training set:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Observation & $x$ & $y$ \\ \hline
+1 & 15.2 & 139 \\ \hline
+2 & 12.9 & 156 \\ \hline
+3 & 23.6 & 289 \\ \hline
+\end{tabular}
+\end{center}
+
+Calculate the updated residuals for these three observations $(r_1, r_2, r_3)$.
+
+\begin{choices}
+\item $(-406.1, -389.1, -31.1)$
+\item $(-211.4, -194.4, 163.6)$
+\item $(10.0, 10.0, 28.0)$
+\item $(111.0, 128.0, 279.0)$
+\item $(129.0, 146.0, 261.0)$
+\end{choices}
+\end{question}
+\begin{solution}{68}{E}
+The initial residuals are the observations $(139, 156, 289)$. They are updated by subtracting $\lambda$ times the prediction from the tree. For the three observations the predictions are 125.4, 125.4, and 350.5. The updated residuals are $139 - 0.08(125.4) = 129.0$, $156 - 0.08(125.4) = 146.0$, and $289 - 0.08(350.5) = 261.0$.
+\end{solution}
+
+\begin{question}{69}
+You are fitting a boosted regression tree with shrinkage parameter $\lambda = 0.08$. There is a single numeric predictor variable, $x$, and the target variable is $y$. Each tree is to have a single split. The first tree, built using all the training data has the following split:
+\begin{itemize}
+\item If $x < 17.5$, then the predicted value of $y$ is 125.4.
+\item If $x \geqslant 17.5$, then the predicted value of $y$ is 350.5.
+\end{itemize}
+The following are three observations from the training set:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Observation & $x$ & $y$ \\ \hline
+1 & 15.2 & 139 \\ \hline
+2 & 12.9 & 156 \\ \hline
+3 & 23.6 & 289 \\ \hline
+\end{tabular}
+\end{center}
+
+Calculate the updated predictions for these three observations $(\hat{f}(x_1), \hat{f}(x_2), \hat{f}(x_3))$.
+
+\begin{choices}
+\item $(-406.1, -389.1, -31.1)$
+\item $(-211.4, -194.4, 163.6)$
+\item $(10.0, 10.0, 28.0)$
+\item $(111.0, 128.0, 279.0)$
+\item $(129.0, 146.0, 261.0)$
+\end{choices}
+\end{question}
+\begin{solution}{69}{C}
+% SIC: source omits the period after "zero".
+The initial fitted values are all zero They are updated by adding $\lambda$ times the prediction from the tree. For the three observations the predictions are 125.4, 125.4, and 350.5. The updated predictions are $0 + 0.08(125.4) = 10.0$, $0 + 0.08(125.4) = 10.0$, and $0 + 0.08(350.5) = 28.0$.
+\end{solution}
+
+\begin{question}{70}
+A dataset has 100 observations with six predictor variables, $X_1$, $X_2$, $X_3$, $X_4$, $X_5$, and $X_6$ and a response variable, $Y$. Three ordinary regression models have been run, with the following results:
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Model Number & Variables Used & Residual Sum of Squares & Residual Standard Error \\ \hline
+I & $X_1$ only & 183{,}663.30 & 43.2911 \\ \hline
+II & $X_1$ and $X_2$ only & 8{,}826.47 & 9.5391 \\ \hline
+III & $X_1, X_2, X_3, X_4, X_5$, and $X_6$ & 8{,}319.59 & 9.4582 \\ \hline
+\end{tabular}
+\end{center}
+
+The Akaike Information Criterion (AIC) is to be used to select the best model from these three choices.
+
+Determine which of the following statements is true.
+
+\begin{choices}
+\item Select Model I with an AIC value of 1{,}838.42
+\item Select Model I with an AIC value of 1{,}874.12
+\item Select Model II with an AIC value of 91.84
+\item Select Model II with an AIC value of 91.90
+\item Select Model III with an AIC value of 93.93
+\end{choices}
+\end{question}
+\begin{solution}{70}{C}
+The AIC formula uses the estimated variance from the full model, $\hat{\sigma}^2 = 9.4582^2 = 89.45755$. For each model, the AIC is:
+
+% SIC: source prints an opening "(" closed by "]" here and on the next two lines.
+Model I: $[183{,}663.30 + 2(1)(89.45755]/100 = 1{,}836.42$
+
+Model II: $[8{,}826.47 + 2(2)(89.45755]/100 = 91.84$
+
+Model III: $[8{,}319.59 + 2(6)(89.45755]/100 = 93.93$
+
+The model with the smallest AIC should be selected, which is Model II with AIC $= 91.84$.
+
+Note that the residual standard error did not have to be given. It can be calculated from the residual sum of squares, the sample size, and the number of predictors.
+\end{solution}
+
+\begin{question}{71}
+Determine which of the following statements regarding the effect of omitting important variables from the regression model specification is NOT true.
+
+\begin{choices}
+\item It will result in underfitting.
+\item It will increase the width of prediction intervals.
+\item The coefficient estimates will remain unbiased.
+\item The estimate of the variance, $s^2$, is inflated.
+\item The total sum of squares remains unchanged.
+\end{choices}
+\end{question}
+\begin{solution}{71}{C}
+Per Frees (page 197), the estimates will be biased.
+\end{solution}
+
+\begin{question}{72}
+An actuary is investigating the probability of a policyholder incurring positive medical expenditures. Using a sample of data from the company's claims files, a logistic regression model is fit and produces the following table of estimates:
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+Predictor Variable & Coefficient Estimate & Standard error & $p$-value \\ \hline
+Age & 0.257 & 0.102 & 0.0117 \\ \hline
+Sex & $-0.955$ & 0.542 & 0.0781 \\ \hline
+Education & 0.103 & 0.069 & 0.1355 \\ \hline
+Log(Income) & $-0.516$ & 0.157 & 0.0010 \\ \hline
+\end{tabular}
+\end{center}
+
+Determine which of the following predictor variables are significant, using a 5\% level of significance.
+
+\begin{choices}
+\item Log(Income) only
+\item Education only
+\item Age and Log(Income) only
+\item Sex and Education only
+\item All four are significant
+\end{choices}
+\end{question}
+\begin{solution}{72}{C}
+Any variable with a $p$-value less than 0.05 is significant. Hence, Age and Log(Income) are the only significant variables.
+\end{solution}
+
+\begin{question}{73}
+You are using cost complexity pruning to determine the optimal regression tree, using Mean Squared Error as the measure of prediction error.
+
+The graph provides the Mean Squared Error for three different approaches.
+
+\srmfig{q73}
+
+% SIC: source ends this lead-in with a comma instead of a full stop.
+Determine the tree size of the optimal pruned tree,
+
+\begin{choices}
+\item 2
+\item 5
+\item 6
+\item 9
+\item 10
+\end{choices}
+\end{question}
+\begin{solution}{73}{B}
+Cost-complexity pruning minimizes the cross-validation MSE. The minimum occurs at a tree of size five.
+\end{solution}
+
+\begin{question}{74}
+In a random forest, a random sample of $m$ predictors is selected from the full set of $p$ predictors. Determine which of the following statements are true:
+
+\begin{statements}
+\item The $m$ predictors are sampled with replacement.
+\item The $m$ predictors are sampled without replacement.
+\item A fresh sample of $m$ predictors are selected for each split.
+\item A fresh sample of $m$ predictors are selected for each tree, but not for each split.
+\end{statements}
+
+\begin{choices}
+\item Only I and III are true.
+\item Only I and IV are true.
+\item Only II and III are true.
+\item Only II and IV are true.
+\item Fewer than two of the statements are true.
+\end{choices}
+\end{question}
+\begin{solution}{74}{C}
+II and III are true. Random forests require that the predictors be sampled without replacement. If not, the same predictor could be selected more than once and thus fewer than $m$ predictors would be used. While it is possible to draw a fresh sample for each tree, that is not the definition of a random forest.
+\end{solution}
+
+\begin{question}{75}
+Determine which of the following statements about the Tweedie distribution with $1 < p < 2$ is NOT true.
+
+\begin{choices}
+\item Its variance is $\phi \mu^p$.
+\item The probability mass at zero is $\e^{-\lambda}$.
+\item It is a member of the linear exponential family.
+\item The Poisson distribution is a special case of this Tweedie distribution.
+\item This Tweedie distribution is a Poisson sum of gamma random variables.
+\end{choices}
+\end{question}
+\begin{solution}{75}{D}
+D is not correct. As $p$ approaches 1, this distribution approaches the Poisson distribution. Thus, Poisson is a limiting, not a special, case of this Tweedie distribution. Note that there are definitions of this distribution that allow values outside $1 < p < 2$. Then $p = 1$ is a special case. For this question $p$ was specifically set in that interval.
+\end{solution}

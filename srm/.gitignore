@@ -1,0 +1,20 @@
+# Most texify state is disposable, but the map and two local QA tools are
+# hand-written source files referenced by README.md and must be versioned.
+.texify_work/*
+!.texify_work/srm.map.yaml
+!.texify_work/smoke.tex
+!.texify_work/mathdiff.py
+!.texify_work/run1/
+.texify_work/run1/*
+!.texify_work/run1/*.tex
+!.texify_work/run2/
+.texify_work/run2/*
+!.texify_work/run2/*.tex
+
+*.aux
+*.log
+*.out
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+__pycache__/

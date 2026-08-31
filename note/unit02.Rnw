@@ -1,0 +1,2196 @@
+% Compile:  python build.py 02
+% or by hand:
+%   Rscript -e "knitr::knit('unit02.Rnw')"
+%   xelatex -shell-escape unit02.tex        # run twice to settle the toc
+\documentclass[17pt]{extarticle}
+
+\input{asm_preamble.tex}
+
+% Unit 2 specific
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 2\ \ Multiple Regression I: Matrix Theory}}
+
+\setcounter{theorem}{0}\setcounter{example}{0}
+\renewcommand\thedefinition{2.\arabic{theorem}}
+\renewcommand\thetheorem  {2.\arabic{theorem}}
+\renewcommand\thelemma    {2.\arabic{theorem}}
+\renewcommand\theproposition{2.\arabic{theorem}}
+\renewcommand\thecorollary{2.\arabic{theorem}}
+\renewcommand\theexample  {2.\arabic{example}}
+\renewcommand\theexercise {2.\arabic{exercise}}
+\renewcommand\thefigure   {2.\arabic{figure}}
+
+\title{\color{hdrBG}\bfseries\Huge Multiple Regression I: Matrix Theory}
+\author{}\date{}
+
+\begin{document}
+
+<<setup, include=FALSE>>=
+source("asm_knitr_setup.R")
+knitr::opts_chunk$set(fig.path = "figs/unit02-")
+library(ISLR2)
+@
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 2.\ Multiple Regression I: Matrix Theory}
+\end{center}
+\vspace*{\fill}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+%==============================================================================
+\section{The Multiple Regression Model}\label{sec:2.1}
+%==============================================================================
+
+\begin{reading}
+FREES §3.2 · ISLR §3.2.1 · CLM §1.
+\end{reading}
+
+\subsection{Model and matrix notation}\label{sec:2.1.1}
+
+\begin{definition}[Multiple Linear Regression Model]\label{def:model}
+Given $n$ observations, each consisting of a dependent variable $Y_i$ and $k$ explanatory
+variables $X_{i1},\ldots,X_{ik}$, the \emph{multiple linear regression model} assumes
+\begin{equation}\label{eq:model-scalar}
+Y_i = \beta_0 + \beta_1 X_{i1} + \beta_2 X_{i2} + \cdots + \beta_k X_{ik} + \varepsilon_i,
+\qquad i = 1,\ldots,n,
+\end{equation}
+equivalently, in matrix form,
+\begin{equation}\label{eq:model-matrix}
+\boxed{\bY = \bX\bb + \be}
+\end{equation}
+where
+\[
+\bY = \begin{pmatrix} Y_1 \\ Y_2 \\ \vdots \\ Y_n \end{pmatrix}_{n \times 1}, \quad
+\bX = \begin{pmatrix} 1 & X_{11} & \cdots & X_{1k} \\
+                      1 & X_{21} & \cdots & X_{2k} \\
+                      \vdots & \vdots & \ddots & \vdots \\
+                      1 & X_{n1} & \cdots & X_{nk} \end{pmatrix}_{n \times (k+1)}, \quad
+\bb = \begin{pmatrix} \beta_0 \\ \beta_1 \\ \vdots \\ \beta_k \end{pmatrix}, \quad
+\be = \begin{pmatrix} \varepsilon_1 \\ \varepsilon_2 \\ \vdots \\ \varepsilon_n \end{pmatrix}.
+\]
+$\bX$ is the \emph{design matrix}; its first column is $\bone$, carrying the intercept.
+Writing $\bx_i'$ for the $i$-th row of $\bX$ gives $Y_i = \bx_i'\bb + \varepsilon_i$.
+\end{definition}
+
+\begin{remark}[Counts]
+$k$ is the number of explanatory variables, excluding the intercept; $k+1$ is the number
+of parameters, i.e.\ the number of columns of $\bX$; $n-k-1$ is the residual degrees of
+freedom. ISLR writes $p$ for $k$ and $p+1$ for $k+1$; FREES writes $k$, as here.
+\end{remark}
+
+\subsection{Classical assumptions}\label{sec:2.1.2}
+
+\begin{definition}[Classical Assumptions]\label{def:assumptions}
+The following are imposed on model~\eqref{eq:model-matrix}:
+\begin{enumerate}[label=\textup{(A\arabic*)}]
+\item\Atarget{1} \emph{Linearity}: $\expc[\bY\mid\bX] = \bX\bb$.
+\item\Atarget{2} \emph{Zero conditional mean}: $\expc[\be\mid\bX] = \bzero$.
+\item\Atarget{3} \emph{Spherical errors}: $\var(\be\mid\bX) = \sigma^2\bI_n$; that is,
+      $\var(\varepsilon_i)=\sigma^2$ for every $i$ (homoscedasticity) and
+      $\cov(\varepsilon_i,\varepsilon_j)=0$ for $i\neq j$ (no serial correlation).
+\item\Atarget{4} \emph{Full rank}: $\rank(\bX)=k+1$, requiring $n\geqslant k+1$; inference
+      requires $n>k+1$ so that $\MSE = \SSE/(n-k-1)$ is defined.
+\item\Atarget{5} \emph{Normality}: $\be\mid\bX \sim N(\bzero,\sigma^2\bI_n)$.
+\end{enumerate}
+\Aref{1}--\Aref{4} are the \emph{Gauss--Markov assumptions}; \Aref{5} is needed only for
+exact finite-sample distributions.
+\end{definition}
+
+\begin{remark}
+$\bX$ is treated as fixed and all expectations, variances and distributions are
+conditional on it, with the conditioning suppressed.
+\end{remark}
+
+\begin{remark}[\Aref{1} and \Aref{2} are equivalent]
+Taking conditional expectations in $\bY = \bX\bb+\be$ gives
+$\expc[\bY\mid\bX] = \bX\bb + \expc[\be\mid\bX]$, so each holds if and only if the other
+does. Both are stated because \Aref{1} matches how the model is written and \Aref{2} how
+residuals are handled.
+\end{remark}
+
+\begin{remark}[Which assumption carries which result]
+\begin{ctab}[\small]
+\begin{tabular}{@{}lll@{}}
+\toprule
+Result & Requires & Fails under \\
+\midrule
+$\hat\bb$ exists, is unique          & \Aref{4}            & perfect collinearity \\
+$\hat\bb$ unbiased                   & \Aref{1}, \Aref{2}  & omitted variable, wrong functional form \\
+$\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$ & $+$\,\Aref{3}     & heteroscedasticity, autocorrelation \\
+$\hat\bb$ is BLUE                    & \Aref{1}--\Aref{4}  & any of the above \\
+$t$, $F$ exact                       & $+$\,\Aref{5}       & heavy tails, small $n$ \\
+\bottomrule
+\end{tabular}
+\end{ctab}
+Normality is required for none of the first four rows.
+\end{remark}
+
+%==============================================================================
+\section{Least Squares in Matrix Form}\label{sec:2.2}
+%==============================================================================
+
+\begin{reading}
+FREES §3.1 · ISLR §3.2.1 · CLM §2.1--2.3 · MC §4, §6.
+\end{reading}
+
+\subsection{Normal equations}\label{sec:2.2.1}
+
+\begin{definition}[Ordinary Least Squares]\label{def:ols}
+The \emph{OLS estimator} $\hat\bb$ minimises
+\begin{equation}\label{eq:sse-obj}
+Q(\bb) = \sum_{i=1}^{n}(Y_i - \bx_i'\bb)^2
+       = (\bY-\bX\bb)'(\bY-\bX\bb) = \|\bY-\bX\bb\|^2 .
+\end{equation}
+\end{definition}
+
+\begin{lemma}[Matrix differentiation]\label{lem:matrix-diff}
+For $\bb\in\Real^p$, constant $\ba\in\Real^p$ and constant $\bA\in\Real^{p\times p}$,
+write $Df(\bb) := \partial f/\partial\bb'$ (a row vector). Then
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item $D(\ba'\bb) = D(\bb'\ba) = \ba'$;
+\item $D(\bb'\bA\bb) = \bb'(\bA+\bA')$, which is $2\bb'\bA$ when $\bA'=\bA$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Apply the first identification theorem,
+$\dd f(\bb) = \bc(\bb)'\dd\bb \ifff Df(\bb)=\bc(\bb)'$.
+
+\textbf{(i)} $\dd(\ba'\bb) = \ba'\dd\bb$ since $\dd\ba=0$; and $\bb'\ba = \ba'\bb$.
+
+\textbf{(ii)} With $\dd\bA=0$, the product rule and $(\dd\bb)'\bA\bb = \bb'\bA'\dd\bb$ give
+\[
+\dd(\bb'\bA\bb) = (\dd\bb)'\bA\bb + \bb'\bA\,\dd\bb
+= \bb'(\bA+\bA')\,\dd\bb. \qedhere
+\]
+\end{proof}
+
+\begin{theorem}[OLS estimator]\label{thm:ols}
+Under \Aref{4},
+\begin{equation}\label{eq:ols}
+\boxed{\hat\bb = (\bX'\bX)^{-1}\bX'\bY.}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} Expand, using that the scalar $\bY'\bX\bb$ equals its transpose:
+\begin{equation}\label{eq:sse-expand}
+Q(\bb) = \bY'\bY - \bY'\bX\bb - \bb'\bX'\bY + \bb'\bX'\bX\bb
+       = \bY'\bY - 2\bb'\bX'\bY + \bb'\bX'\bX\bb .
+\end{equation}
+
+\textbf{Step 2.} By Lemma~\ref{lem:matrix-diff} with $\ba=\bX'\bY$, $\bA=\bX'\bX$
+symmetric, $DQ(\bb) = -2\bY'\bX + 2\bb'\bX'\bX$. Setting $DQ=\bzero'$ and transposing
+gives the \emph{normal equations}
+\begin{equation}\label{eq:normal-eq}
+\bX'\bX\hat\bb = \bX'\bY .
+\end{equation}
+
+\textbf{Step 3.} $\rank(\bX'\bX)=\rank(\bX)$: if $\bX\bv=\bzero$ then $\bX'\bX\bv=\bzero$;
+conversely $\bX'\bX\bv=\bzero$ gives $\bv'\bX'\bX\bv = \|\bX\bv\|^2 = 0$, hence
+$\bX\bv=\bzero$. The null spaces coincide, so the ranks do. By \Aref{4} that rank is
+$k+1$, so $\bX'\bX$ is invertible and~\eqref{eq:normal-eq} gives~\eqref{eq:ols}.
+
+\textbf{Step 4.} The Hessian is $2\bX'\bX$, and $\bv'\bX'\bX\bv = \|\bX\bv\|^2 > 0$ for
+$\bv\neq\bzero$ by \Aref{4}: positive definite, so $\hat\bb$ is a global minimum.
+\end{proof}
+
+\begin{remark}
+Only Step 3 uses \Aref{4}. Without it $\bX'\bX$ is singular and~\eqref{eq:normal-eq} has
+infinitely many solutions; R reports \texttt{NA} for the redundant coefficients rather
+than raising an error. Near-singularity leaves $\bX'\bX$ invertible but ill-conditioned,
+so $\hat\bb$ exists and is unstable.
+\end{remark}
+
+\subsection{Orthogonal projection}\label{sec:2.2.2}
+
+\begin{theorem}[OLS as orthogonal projection]\label{thm:ols-proj}
+The fitted vector $\hat\bY = \bX\hat\bb$ is the orthogonal projection of $\bY$ onto
+$\calC(\bX)$, and $\hat\bb = (\bX'\bX)^{-1}\bX'\bY$.
+\end{theorem}
+
+\begin{proof}
+Minimising $\|\bY-\bX\bb\|^2$ is finding the point of $\calC(\bX)$ closest to $\bY$.
+
+\textbf{Step 1.} $\hat\bY\in\calC(\bX)$ minimises $\|\bY-\tilde\bY\|^2$ over
+$\tilde\bY\in\calC(\bX)$ iff $\bY-\hat\bY \perp \calC(\bX)$.
+
+($\Leftarrow$) For $\tilde\bY\in\calC(\bX)$, $\hat\bY-\tilde\bY\in\calC(\bX)$, so
+$(\bY-\hat\bY)\perp(\hat\bY-\tilde\bY)$ and Pythagoras gives
+\[
+\|\bY-\tilde\bY\|^2 = \|\bY-\hat\bY\|^2 + \|\hat\bY-\tilde\bY\|^2 \geqslant \|\bY-\hat\bY\|^2,
+\]
+with equality iff $\tilde\bY=\hat\bY$.
+
+($\Rightarrow$) If some $\bv\in\calC(\bX)$ with $\|\bv\|=1$ had
+$\bv'(\bY-\hat\bY)\neq 0$, then for $\tilde\bY = \hat\bY+t\bv$,
+\[
+\|\bY-\tilde\bY\|^2 = \|\bY-\hat\bY\|^2 - 2t\,\bv'(\bY-\hat\bY) + t^2 ,
+\]
+strictly smaller at $t^\ast = \bv'(\bY-\hat\bY)$, contradicting optimality.
+
+\textbf{Step 2.} The residual is orthogonal to $\calC(\bX)$ iff orthogonal to each column
+of $\bX$, i.e.\ $\bX'(\bY-\hat\bY)=\bzero$; with $\hat\bY=\bX\hat\bb$ this
+is~\eqref{eq:normal-eq}.
+
+\textbf{Step 3.} \Aref{4} makes $\bX'\bX$ invertible.
+\end{proof}
+
+%==============================================================================
+\section{Hat Matrix, Residuals, Leverage}\label{sec:2.3}
+%==============================================================================
+
+\begin{reading}
+FREES §3.2 · ISLR §3.3.3 · CLM §2.4--2.7.
+\end{reading}
+
+\subsection{Hat matrix and residual maker}\label{sec:2.3.1}
+
+\begin{definition}[Hat matrix, residual maker]\label{def:hat-matrix}
+\begin{equation}\label{eq:hat}
+\bH = \bX(\bX'\bX)^{-1}\bX', \qquad \bM = \bI_n - \bH ,
+\end{equation}
+so that $\hat\bY = \bH\bY$ and $\mathbf{e} = \bM\bY$.
+\end{definition}
+
+\begin{remark}[Errors versus residuals]
+The \emph{error} $\varepsilon_i = Y_i - \bx_i'\bb$ is unobservable; the \emph{residual}
+$e_i = Y_i - \bx_i'\hat\bb$ is observable. Since
+$\bM\bX = \bX-\bX(\bX'\bX)^{-1}\bX'\bX = \bzero$,
+\begin{equation}\label{eq:e-Me}
+\mathbf{e} = \bM\bY = \bM(\bX\bb+\be) = \bM\be ,
+\end{equation}
+a rank-deficient linear map of $\be$; this is the source of the $n-k-1$ degrees of freedom.
+\end{remark}
+
+\begin{definition}[Idempotent matrix]\label{def:idempotent}
+A square matrix $\bA$ is \emph{idempotent} if $\bA^2 = \bA$.
+\end{definition}
+
+\begin{lemma}[Trace equals rank]\label{lem:idempotent}
+If $\bA$ is $n\times n$ and idempotent, then $\tr(\bA) = \rank(\bA)$.
+\end{lemma}
+
+\begin{proof}
+\textbf{Step 1.} If $\bA\bv=\lambda\bv$, $\bv\neq\bzero$, then
+$\lambda\bv = \bA^2\bv = \lambda^2\bv$, so $\lambda\in\{0,1\}$.
+
+\textbf{Step 2.} $\Real^n = \calN(\bA)\oplus\calC(\bA)$: any $\bv$ splits as
+$(\bv-\bA\bv) + \bA\bv$, with $\bA(\bv-\bA\bv)=\bzero$; and if
+$\bv=\bA\bw\in\calC(\bA)\cap\calN(\bA)$ then $\bv=\bA^2\bw=\bA\bv=\bzero$.
+
+\textbf{Step 3.} Every $\bu\in\calC(\bA)$ has $\bA\bu=\bu$. A basis of $\calN(\bA)$
+(eigenvalue $0$) together with a basis of $\calC(\bA)$ (eigenvalue $1$) is an eigenvector
+basis, so $\bA = \bP\bLam\bP^{-1}$ with $\bLam$ diagonal, entries in $\{0,1\}$.
+
+\textbf{Step 4.} With $r=\rank(\bA)$, $\bLam$ has $r$ ones, so
+$\tr(\bA) = \tr(\bLam) = r$.
+\end{proof}
+
+\begin{theorem}[Properties of $\bH$ and $\bM$]\label{thm:HM}
+\leavevmode
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{HM:i}   $\bH$ and $\bM$ are symmetric and idempotent.
+\item\label{HM:ii}  $\bH\bX = \bX$ and $\bM\bX = \bzero$.
+\item\label{HM:iii} $\bH\bM = \bM\bH = \bzero$.
+\item\label{HM:iv}  $\tr(\bH) = k+1$ and $\tr(\bM) = n-k-1$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i)} Since $(\bX'\bX)^{-1}$ is symmetric,
+\[
+\bH' = \bX[(\bX'\bX)^{-1}]'\bX' = \bH .
+\]
+Moreover,
+\[
+\bH^2
+= \bX(\bX'\bX)^{-1}
+  \underbrace{\bX'\bX(\bX'\bX)^{-1}}_{\bI_{k+1}}\bX'
+= \bH .
+\]
+Then $\bM'=\bI-\bH'=\bM$ and $\bM^2 = \bI-2\bH+\bH^2 = \bM$.
+
+\textbf{(ii)} $\bH\bX = \bX(\bX'\bX)^{-1}\bX'\bX = \bX$, hence $\bM\bX = \bzero$.
+
+\textbf{(iii)} $\bH\bM = \bH-\bH^2 = \bzero$; likewise $\bM\bH=\bzero$.
+
+\textbf{(iv)} By Lemma~\ref{lem:idempotent}, $\tr(\bH)=\rank(\bH)$. Now
+$\calC(\bH)=\calC(\bX)$: every column of $\bH$ is $\bX$ times a vector, and $\bH\bX=\bX$
+from~\ref{HM:ii} puts every column of $\bX$ in $\calC(\bH)$. By \Aref{4},
+$\dim\calC(\bX) = k+1$, so $\tr(\bH)=k+1$ and $\tr(\bM)=n-k-1$.
+\end{proof}
+
+\begin{remark}
+$\bH$ is symmetric, idempotent, with $\calC(\bH)=\calC(\bX)$: these three properties
+characterise the orthogonal projection onto $\calC(\bX)$, so
+Theorem~\ref{thm:ols-proj} and Definition~\ref{def:hat-matrix} describe one object. $\bM$
+projects onto $\calC(\bX)^{\perp}$, of dimension $n-k-1$.
+\end{remark}
+
+\subsection{Residual identities}\label{sec:2.3.2}
+
+\begin{theorem}[Implications of the normal equations]\label{thm:normal-eq}
+The OLS residuals satisfy
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{ne:i}   $\bX'\mathbf{e} = \bzero$;
+\item\label{ne:ii}  $\sum_i e_i = 0$, provided the model contains an intercept;
+\item\label{ne:iii} $\hat\bY'\mathbf{e} = 0$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i)} Rearranging~\eqref{eq:normal-eq}, $\bX'(\bY-\bX\hat\bb) = \bzero$.
+\textbf{(ii)} The first column of $\bX$ is $\bone$, so the first component of
+$\bX'\mathbf{e}=\bzero$ is $\bone'\mathbf{e} = \sum_i e_i = 0$.
+\textbf{(iii)} $\hat\bY'\mathbf{e} = \hat\bb'\bX'\mathbf{e} = 0$ by (i).
+\end{proof}
+
+\begin{remark}
+These hold for every data set, whatever the fit: they follow from the choice of
+$\hat\bb$, not from the model being correct. A residual mean of zero is therefore not
+evidence of anything, and the identities place no constraint on structure \emph{within}
+the residuals, which is where a misspecified model shows.
+\end{remark}
+
+\subsection{Leverage}\label{sec:2.3.3}
+
+\begin{definition}[Leverage]\label{def:leverage}
+The \emph{leverage} of observation $i$ is $h_{ii}$, the $i$-th diagonal entry of $\bH$.
+\end{definition}
+
+\begin{theorem}[Properties of leverage]\label{thm:leverage}
+\leavevmode
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{lev:i}  $0 \leqslant h_{ii} \leqslant 1$;
+\item\label{lev:ii} $\sum_{i=1}^n h_{ii} = k+1$, so the mean leverage is $(k+1)/n$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i)} $\bH = \bH'\bH$, so comparing $(i,i)$ entries with $h_{ji}=h_{ij}$,
+\[
+h_{ii} = \sum_{j=1}^{n} h_{ij}^2 = h_{ii}^2 + \sum_{j\neq i} h_{ij}^2 .
+\]
+The left equality gives $h_{ii}\geqslant 0$; dropping the tail gives
+$h_{ii}(1-h_{ii})\geqslant 0$, hence $h_{ii}\leqslant 1$.
+\textbf{(ii)} $\sum_i h_{ii} = \tr(\bH) = k+1$ by Theorem~\ref{thm:HM}\ref{HM:iv}.
+\end{proof}
+
+\begin{remark}
+$h_{ii}$ depends on $\bX$ alone, not on $\bY$: it measures how extreme the predictor
+values are. The conventional flag is $h_{ii} > 2(k+1)/n$, twice the mean.
+\end{remark}
+
+\periodmark{End of period 1 of 3.}
+
+%==============================================================================
+\section{Finite-Sample Properties}\label{sec:2.4}
+%==============================================================================
+
+\begin{reading}
+FREES §3.2 · ISLR §3.2.1 · CLM §3. Only \Aref{1}--\Aref{4} are used.
+\end{reading}
+
+\begin{definition}[Sums of squares and mean squares]\label{def:sumsq}
+For the fitted model $\hat\bY=\bX\hat\bb$,
+\[
+\SST = \sum_i (Y_i-\bar Y)^2, \quad
+\SSR = \sum_i (\hat Y_i - \bar Y)^2, \quad
+\SSE = \sum_i (Y_i-\hat Y_i)^2 = \mathbf{e}'\mathbf{e},
+\]
+\[
+\MSE = s^2 = \frac{\SSE}{n-k-1}, \qquad \MSR = \frac{\SSR}{k} .
+\]
+\end{definition}
+
+\begin{remark}[Notation]
+FREES writes $\SSE$ and $\SST$; ISLR writes $\RSS$ and $\TSS$ for the same two
+quantities. Both spellings occur in the SOA sample questions.
+\end{remark}
+
+\begin{lemma}[Variance under a linear map]\label{lem:var-linear}
+If $\var(\bz)$ is defined, $\bA$ is $m\times n$ constant and $\mathbf{b}\in\Real^m$
+constant, then $\var(\bA\bz+\mathbf{b}) = \bA\var(\bz)\bA'$. In particular
+$\var(\bY) = \sigma^2\bI_n$ under \Aref{1}--\Aref{3}.
+\end{lemma}
+
+\begin{proof}
+With $\bmu = \expc[\bz]$, $\expc[\bA\bz+\mathbf{b}] = \bA\bmu+\mathbf{b}$, so
+\[
+\var(\bA\bz+\mathbf{b}) = \expc\bigl[\bA(\bz-\bmu)(\bz-\bmu)'\bA'\bigr]
+= \bA\var(\bz)\bA' .
+\]
+Applying this to $\bY = \bX\bb+\be$ gives $\var(\bY)=\var(\be)=\sigma^2\bI_n$ by \Aref{3}.
+\end{proof}
+
+\subsection{Unbiasedness and variance}\label{sec:2.4.1}
+
+\begin{theorem}[Unbiasedness]\label{thm:unbiased}
+Under \Aref{1}--\Aref{2}, $\expc[\hat\bb] = \bb$.
+\end{theorem}
+
+\begin{proof}
+Substituting $\bY = \bX\bb+\be$ into $\hat\bb = (\bX'\bX)^{-1}\bX'\bY$,
+\begin{equation}\label{eq:beta-decomp}
+\hat\bb = (\bX'\bX)^{-1}\bX'\bX\bb + (\bX'\bX)^{-1}\bX'\be
+        = \bb + (\bX'\bX)^{-1}\bX'\be ,
+\end{equation}
+and $\expc[\be]=\bzero$ by \Aref{2}.
+\end{proof}
+
+\begin{theorem}[Variance--covariance matrix]\label{thm:var-beta}
+Under \Aref{1}--\Aref{4}, $\var(\hat\bb) = \sigma^2(\bX'\bX)^{-1}$.
+\end{theorem}
+
+\begin{proof}
+By~\eqref{eq:beta-decomp} and Lemma~\ref{lem:var-linear} with
+$\bA=(\bX'\bX)^{-1}\bX'$,
+\[
+\var(\hat\bb) = (\bX'\bX)^{-1}\bX'(\sigma^2\bI)\bX(\bX'\bX)^{-1}
+= \sigma^2(\bX'\bX)^{-1} .
+\]
+The $j$-th diagonal entry is $\var(\hat\beta_j) = \sigma^2[(\bX'\bX)^{-1}]_{jj}$.
+\end{proof}
+
+\begin{remark}
+Three consequences: standard errors scale with $\sigma$; well-spread predictors make
+$\bX'\bX$ large and $(\bX'\bX)^{-1}$ small; and correlated predictors make $\bX'\bX$
+near-singular and inflate $(\bX'\bX)^{-1}$.
+\end{remark}
+
+\subsection{The Gauss--Markov theorem}\label{sec:2.4.2}
+
+\begin{theorem}[Gauss--Markov]\label{thm:gm}
+Under \Aref{1}--\Aref{4}, $\hat\bb$ is the best linear unbiased estimator of $\bb$: for
+any linear unbiased $\tilde\bb = \bC\bY$ with $\bC$ constant,
+$\var(\tilde\bb)-\var(\hat\bb)$ is positive semi-definite, so
+$\var(\tilde\beta_j)\geqslant\var(\hat\beta_j)$ for every $j$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} $\expc[\tilde\bb] = \bC\bX\bb = \bb$ for all $\bb$ forces
+$\bC\bX=\bI_{k+1}$.
+
+\textbf{Step 2.} Write $\bC = (\bX'\bX)^{-1}\bX' + \bD$; then
+$\bD\bX = \bC\bX - \bI_{k+1} = \bzero$.
+
+\textbf{Step 3.} By Lemma~\ref{lem:var-linear}, $\var(\tilde\bb) = \sigma^2\bC\bC'$,
+which expands to
+\begin{align*}
+\sigma^2\bC\bC' ={}& \sigma^2(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1} && \text{(A)}\\
+& + \sigma^2(\bX'\bX)^{-1}\bX'\bD' && \text{(B)}\\
+& + \sigma^2\bD\bX(\bX'\bX)^{-1}   && \text{(C)}\\
+& + \sigma^2\bD\bD' . && \text{(D)}
+\end{align*}
+(A) is $\sigma^2(\bX'\bX)^{-1}$; (C) vanishes since $\bD\bX=\bzero$; (B) is its transpose
+and also vanishes. Hence $\var(\tilde\bb) = \var(\hat\bb) + \sigma^2\bD\bD'$, and
+$\bv'\bD\bD'\bv = \|\bD'\bv\|^2\geqslant 0$. Equality forces $\bD=\bzero$.
+\end{proof}
+
+\begin{remark}
+The theorem ranks OLS only within the class of estimators linear in $\bY$ \emph{and}
+unbiased. Dropping unbiasedness admits estimators with smaller mean squared error, ridge
+among them; no normality is used, and nothing is claimed about prediction error on new
+data.
+\end{remark}
+
+\subsection{Estimating \texorpdfstring{$\sigma^2$}{sigma-squared}}\label{sec:2.4.3}
+
+\begin{lemma}[Expectation of a quadratic form]\label{lem:quadratic-form}
+If $\expc[\bz]=\bmu$, $\var(\bz)=\bSig$ and $\bA$ is constant $n\times n$, then
+$\expc[\bz'\bA\bz] = \tr(\bA\bSig) + \bmu'\bA\bmu$.
+\end{lemma}
+
+\begin{proof}
+$\expc[\bz'\bA\bz] = \sum_{i,j} a_{ij}\expc[z_i z_j]$ and
+$\expc[z_i z_j] = \Sigma_{ij} + \mu_i\mu_j$. The first part is
+$\sum_{i,j} a_{ij}\Sigma_{ij} = \tr(\bA\bSig)$ by symmetry of $\bSig$; the second is
+$\bmu'\bA\bmu$.
+\end{proof}
+
+\begin{theorem}[Unbiasedness of $\MSE$]\label{thm:mse-unbiased}
+Under \Aref{1}--\Aref{4}, $\expc[\MSE] = \sigma^2$.
+\end{theorem}
+
+\begin{proof}
+By~\eqref{eq:e-Me} and symmetric idempotency of $\bM$,
+$\SSE = \be'\bM'\bM\be = \be'\bM\be$. Lemma~\ref{lem:quadratic-form} with
+$\bmu=\bzero$, $\bSig=\sigma^2\bI$ gives
+$\expc[\SSE] = \sigma^2\tr(\bM) = \sigma^2(n-k-1)$ by
+Theorem~\ref{thm:HM}\ref{HM:iv}.
+\end{proof}
+
+\begin{remark}
+The divisor is $n-k-1$ because $\tr(\bM) = n-\tr(\bH) = n-(k+1)$: the residual vector
+lies in the $(n-k-1)$-dimensional space $\calC(\bX)^\perp$. Dividing by $n$ instead gives
+an estimator biased downward by the factor $(n-k-1)/n$.
+\end{remark}
+
+\begin{theorem}[Variance of the residuals]\label{thm:var-resid}
+Under \Aref{1}--\Aref{4}, $\var(\mathbf{e}) = \sigma^2\bM$, so
+$\var(e_i) = \sigma^2(1-h_{ii})$.
+\end{theorem}
+
+\begin{proof}
+$\var(\mathbf{e}) = \bM(\sigma^2\bI)\bM' = \sigma^2\bM^2 = \sigma^2\bM$; the $(i,i)$ entry
+of $\bI-\bH$ is $1-h_{ii}$.
+\end{proof}
+
+\begin{remark}
+Residuals are heteroscedastic by construction even when the errors are not, so residual
+plots use the \emph{standardised} residual $e_i/(s\sqrt{1-h_{ii}})$, which is
+\texttt{rstandard} in R.
+\end{remark}
+
+%==============================================================================
+\section{Exact Inference Under Normality}\label{sec:2.5}
+%==============================================================================
+
+\begin{reading}
+CLM §4--5; FREES §3.4 uses these distributions. \Aref{5} is now in force.
+\end{reading}
+
+\subsection{Multivariate normal tools}\label{sec:2.5.1}
+
+\begin{theorem}[Closure under linear maps]\label{thm:mvn-linear}
+If $\bz\sim N(\bmu,\bSig)$, $\bA$ is $m\times n$ constant and $\mathbf{b}\in\Real^m$
+constant, then $\bA\bz+\mathbf{b} \sim N(\bA\bmu+\mathbf{b},\, \bA\bSig\bA')$.
+\end{theorem}
+
+\begin{proof}
+With $M_{\bz}(\mathbf{t}) = \exp(\mathbf{t}'\bmu + \tfrac12\mathbf{t}'\bSig\mathbf{t})$,
+\[
+M_{\bA\bz+\mathbf{b}}(\mathbf{t}) = e^{\mathbf{t}'\mathbf{b}}M_{\bz}(\bA'\mathbf{t})
+= \exp\bigl(\mathbf{t}'(\bA\bmu+\mathbf{b}) + \tfrac12\mathbf{t}'\bA\bSig\bA'\mathbf{t}\bigr),
+\]
+the mgf of $N(\bA\bmu+\mathbf{b},\,\bA\bSig\bA')$; the mgf is unique.
+\end{proof}
+
+\begin{theorem}[Uncorrelated $\Leftrightarrow$ independent, jointly normal]\label{thm:mvn-uncorr-indep}
+If $(\bU',\bV')'$ is jointly normal with cross-covariance $\bSig_{UV}$, then
+$\bSig_{UV}=\bzero$ iff $\bU$ and $\bV$ are independent.
+\end{theorem}
+
+\begin{proof}
+($\Leftarrow$) holds for any distribution. ($\Rightarrow$) With $\bSig_{UV}=\bzero$ the
+covariance is block diagonal, so
+\[
+M(\mathbf{s},\mathbf{t}) = \exp\bigl(\mathbf{s}'\bmu_U + \tfrac12\mathbf{s}'\bSig_{UU}\mathbf{s}\bigr)
+\exp\bigl(\mathbf{t}'\bmu_V + \tfrac12\mathbf{t}'\bSig_{VV}\mathbf{t}\bigr)
+= M_{\bU}(\mathbf{s})M_{\bV}(\mathbf{t}) . \qedhere
+\]
+\end{proof}
+
+\begin{remark}
+For general distributions uncorrelatedness does not imply independence; the equivalence
+is special to the multivariate normal, and is what makes exact $t$ and $F$ inference
+possible.
+\end{remark}
+
+\begin{theorem}[Chi-square quadratic forms]\label{thm:quadratic-chisq}
+If $\bz\sim N(\bzero,\bI_n)$ and $\bA$ is symmetric idempotent, then
+$\bz'\bA\bz \sim \chi^2_r$ with $r = \rank(\bA)=\tr(\bA)$.
+\end{theorem}
+
+\begin{proof}
+Write $\bA = \bP\bLam\bP'$ with $\bP$ orthogonal; by Lemma~\ref{lem:idempotent} the
+eigenvalues are $r$ ones and $n-r$ zeros. With $\bw = \bP'\bz \sim N(\bzero,\bI_n)$ by
+Theorem~\ref{thm:mvn-linear},
+$\bz'\bA\bz = \bw'\bLam\bw = \sum_{i=1}^{r} w_i^2 \sim \chi^2_r$.
+\end{proof}
+
+\begin{theorem}[Cochran]\label{thm:cochran}
+If $\bz\sim N(\bzero,\bI_n)$ and $\bA_1,\bA_2$ are symmetric idempotent with
+$\bA_1\bA_2=\bzero$, then $\bz'\bA_1\bz$ and $\bz'\bA_2\bz$ are independent.
+\end{theorem}
+
+\begin{proof}
+$(\bU',\bV')' = (\bA_1',\bA_2')'\bz$ is one linear map of one normal vector, hence
+jointly normal by Theorem~\ref{thm:mvn-linear}; individual normality would not suffice.
+Its cross-covariance is $\bA_1\bA_2 = \bzero$, so $\bU$ and $\bV$ are independent by
+Theorem~\ref{thm:mvn-uncorr-indep}, and $\bz'\bA_i\bz = \|\bA_i\bz\|^2$ is a function of
+one of them alone.
+\end{proof}
+
+\subsection{Sampling distributions}\label{sec:2.5.2}
+
+\begin{theorem}[Normality of $\hat\bb$]\label{thm:beta-dist}
+Under \Aref{1}--\Aref{5}, $\hat\bb \sim N\bigl(\bb,\;\sigma^2(\bX'\bX)^{-1}\bigr)$.
+\end{theorem}
+
+\begin{proof}
+By~\eqref{eq:beta-decomp}, $\hat\bb$ is an affine map of $\be\sim N(\bzero,\sigma^2\bI)$;
+apply Theorem~\ref{thm:mvn-linear} with $\bA=(\bX'\bX)^{-1}\bX'$.
+\end{proof}
+
+\begin{theorem}[Distribution of $\SSE$; independence from $\hat\bb$]\label{thm:sse-dist}
+Under \Aref{1}--\Aref{5}, $\SSE/\sigma^2 \sim \chi^2_{n-k-1}$, and $\SSE$ is independent
+of $\hat\bb$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} With $\bz = \be/\sigma \sim N(\bzero,\bI_n)$,
+$\SSE/\sigma^2 = \bz'\bM\bz$.
+
+\textbf{Step 2.} $\bM$ is symmetric idempotent with $\tr(\bM)=n-k-1$, so
+Theorem~\ref{thm:quadratic-chisq} applies.
+
+\textbf{Step 3.} The stacked vector
+\[
+\begin{pmatrix}\hat\bb-\bb\\ \mathbf{e}\end{pmatrix}
+= \begin{pmatrix}(\bX'\bX)^{-1}\bX'\\ \bM\end{pmatrix}\be
+\]
+is jointly normal, with cross-covariance
+$\sigma^2(\bX'\bX)^{-1}\bX'\bM = \bzero$ since $\bX'\bM = (\bM\bX)' = \bzero$. Apply
+Theorem~\ref{thm:mvn-uncorr-indep}.
+\end{proof}
+
+\begin{remark}
+A $t$ statistic is a standard normal over $\sqrt{\chi^2_\nu/\nu}$ \emph{with numerator
+and denominator independent}. Here the numerator comes from $\hat\beta_j$ and the
+denominator from $\SSE$; Step 3 supplies the independence, without which the ratio would
+not be $t$.
+\end{remark}
+
+\begin{theorem}[OLS equals MLE under normality]\label{thm:mle}
+Under \Aref{1}--\Aref{5}, $\hat\bb$ is the maximum likelihood estimator of $\bb$, and
+$\hat\sigma^2_{\mathrm{MLE}} = \SSE/n$, biased downward by the factor $(n-k-1)/n$.
+\end{theorem}
+
+\begin{proof}
+$\bY \sim N(\bX\bb,\sigma^2\bI)$, so
+\begin{equation}\label{eq:loglik}
+\ell(\bb,\sigma^2) = -\frac n2\ln(2\pi) - \frac n2\ln\sigma^2
+- \frac{1}{2\sigma^2}(\bY-\bX\bb)'(\bY-\bX\bb) .
+\end{equation}
+Only the last term involves $\bb$, with negative coefficient $-1/(2\sigma^2)$, so
+maximising over $\bb$ minimises $Q(\bb)$. Substituting $\hat\bb$,
+\[
+\frac{\partial\ell}{\partial\sigma^2}
+= -\frac{n}{2\sigma^2} + \frac{\SSE}{2(\sigma^2)^2} = 0
+\ie \hat\sigma^2_{\mathrm{MLE}} = \frac{\SSE}{n},
+\]
+and $\expc[\SSE] = (n-k-1)\sigma^2$ by Theorem~\ref{thm:mse-unbiased}.
+\end{proof}
+
+\begin{remark}
+Since OLS is maximum likelihood here, any criterion built from the maximised likelihood,
+$\AIC$ and $\BIC$ among them, can be computed from~\eqref{eq:loglik} with
+$\hat\sigma^2_{\mathrm{MLE}}$ substituted, and needs no further distribution theory.
+\end{remark}
+
+\periodmark{End of period 2 of 3.}
+
+%==============================================================================
+\section{Goodness of Fit}\label{sec:2.6}
+%==============================================================================
+
+\begin{reading}
+FREES §3.3 · ISLR §3.2.2 · CLM §6.
+\end{reading}
+
+\subsection{Variance decomposition}\label{sec:2.6.1}
+
+\begin{definition}[Centering matrix]\label{def:centering}
+$\bM_0 = \bI_n - \tfrac1n\bone\bone'$, so that $\bM_0\bv = \bv-\bar v\bone$.
+\end{definition}
+
+\begin{remark}
+$\bM_0$ is the residual maker for the intercept-only model, $\bM$ that for the full
+design: $\bM_0$ centers, $\bM$ regresses out all of $\bX$. Both are symmetric idempotent,
+with $\tr(\bM_0) = n-1$ and $\tr(\bM)=n-k-1$, projecting onto $\bone^\perp$ and
+$\calC(\bX)^\perp$ respectively. With an intercept, $\bone\in\calC(\bX)$, so
+$\bM\bM_0=\bM_0\bM=\bM$.
+\end{remark}
+
+\begin{theorem}[Variance decomposition]\label{thm:anova}
+In a model with an intercept,
+\begin{equation}\label{eq:anova}
+\boxed{\SST = \SSR + \SSE,}
+\end{equation}
+with $\SST = \bY'\bM_0\bY$, $\SSR = \hat\bY'\bM_0\hat\bY$ and
+$\SSE = \mathbf{e}'\mathbf{e}$.
+\end{theorem}
+
+\begin{proof}
+\textbf{Step 1.} For any $\bv$, using $\bM_0'\bM_0=\bM_0$,
+$\bv'\bM_0\bv = \|\bv-\bar v\bone\|^2 = \sum_i (v_i-\bar v)^2$. Take $\bv=\bY$ and
+$\bv=\hat\bY$; the latter needs $\overline{\hat Y}=\bar Y$, which follows from
+$\bone'\hat\bY = \bone'(\bY-\mathbf{e}) = \bone'\bY$ by
+Theorem~\ref{thm:normal-eq}\ref{ne:ii}.
+
+\textbf{Step 2.} Since $\bar e = 0$,
+\begin{equation}\label{eq:M0-decomp}
+\bM_0\bY = \bM_0\hat\bY + \bM_0\mathbf{e} = \bM_0\hat\bY + \mathbf{e} .
+\end{equation}
+
+\textbf{Step 3.} Expanding, $\SST = \SSR + 2\,\mathbf{e}'\bM_0\hat\bY + \SSE$.
+
+\textbf{Step 4.} $\mathbf{e}'\bM_0\hat\bY = \mathbf{e}'\hat\bY - \bar Y\,\mathbf{e}'\bone
+= 0$ by Theorem~\ref{thm:normal-eq}\ref{ne:ii},\ref{ne:iii}.
+\end{proof}
+
+\begin{remark}
+Equation~\eqref{eq:M0-decomp} is orthogonal, so~\eqref{eq:anova} is Pythagoras. Without an
+intercept $\bar e \neq 0$, the cross term survives and~\eqref{eq:anova} is false.
+\end{remark}
+
+\subsection{\texorpdfstring{$R^2$}{R2} and adjusted \texorpdfstring{$R^2$}{R2}}\label{sec:2.6.2}
+
+\begin{definition}[Coefficient of determination]\label{def:R2}
+\begin{equation}\label{eq:R2}
+R^2 = \frac{\SSR}{\SST} = 1 - \frac{\SSE}{\SST},
+\qquad
+\bar R^2 = 1 - \frac{\SSE/(n-k-1)}{\SST/(n-1)} = 1 - \frac{n-1}{n-k-1}(1-R^2) .
+\end{equation}
+$\bar R^2$ may be negative.
+\end{definition}
+
+\begin{proposition}[Bounds]\label{prop:R2-bounds}
+In a model with an intercept, $0\leqslant R^2\leqslant 1$.
+\end{proposition}
+
+\begin{proof}
+$\SSR\geqslant0$ and $\SST>0$ give the lower bound; $\SST=\SSR+\SSE$ with $\SSE\geqslant0$
+gives the upper.
+\end{proof}
+
+\begin{theorem}[Monotonicity]\label{thm:R2-monotone}
+Adding a regressor cannot decrease $R^2$.
+\end{theorem}
+
+\begin{proof}
+With $\calC_k\subseteq\calC_{k+1}$ the two column spaces, Theorem~\ref{thm:ols-proj} makes
+$\hat\bY_{k+1}$ the closest point of $\calC_{k+1}$ to $\bY$, and
+$\hat\bY_k\in\calC_k\subseteq\calC_{k+1}$, so $\SSE_{k+1} \leqslant \SSE_k$. $\SST$ does
+not depend on the regressors.
+\end{proof}
+
+\begin{remark}
+$R^2$ therefore cannot compare models of different size: adding pure noise raises it. The
+alternatives are penalised criteria ($\bar R^2$, $C_p$, $\AIC$, $\BIC$) and out-of-sample
+error by cross-validation. Of these $\bar R^2$ is the weakest: it rises whenever the new
+variable has $|t| > 1$.
+\end{remark}
+
+\subsection{ANOVA table and the overall \texorpdfstring{$F$}{F} test}\label{sec:2.6.3}
+
+\begin{ctab}[\small]
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Source & Sum of squares & $\df$ & Mean square \\
+\midrule
+Regression & $\SSR$ & $k$       & $\MSR = \SSR/k$ \\
+Error      & $\SSE$ & $n-k-1$   & $\MSE = \SSE/(n-k-1)$ \\
+\midrule
+Total      & $\SST$ & $n-1$     & \\
+\bottomrule
+\end{tabular}
+\end{ctab}
+
+\begin{lemma}[The regression projection]\label{lem:HH0}
+Let $\bH_0=\tfrac1n\bone\bone'$ and suppose $\bone\in\calC(\bX)$. Then
+$\bH\bH_0=\bH_0\bH=\bH_0$; $\bH-\bH_0$ is symmetric idempotent with $\tr(\bH-\bH_0)=k$;
+and $(\bH-\bH_0)\bM=\bzero$.
+\end{lemma}
+
+\begin{proof}
+$\bH$ projects onto $\calC(\bX)\ni\bone$, so $\bH\bone=\bone$ and
+$\bH\bH_0=\tfrac1n(\bH\bone)\bone'=\bH_0$; transposing gives $\bH_0\bH=\bH_0$. Hence
+$\bH-\bH_0$ is symmetric and
+\[
+(\bH-\bH_0)^2 = \bH-\bH\bH_0-\bH_0\bH+\bH_0 = \bH-\bH_0 ,
+\]
+with $\tr(\bH-\bH_0)=\tr(\bH)-\tr(\bH_0)=(k+1)-1=k$ by
+Theorem~\ref{thm:HM}\ref{HM:iv}. Finally $(\bH-\bH_0)\bM = \bH\bM-\bH_0\bH\bM = \bzero$,
+using $\bH\bM=\bzero$ from Theorem~\ref{thm:HM}\ref{HM:iii} and $\bH_0=\bH_0\bH$.
+\end{proof}
+
+\begin{theorem}[Overall $F$ test]\label{thm:F-test}
+Under \Aref{1}--\Aref{5}, for $H_0\colon \beta_1=\cdots=\beta_k=0$,
+\begin{equation}\label{eq:F}
+F = \frac{\MSR}{\MSE} = \frac{\SSR/k}{\SSE/(n-k-1)}
+  = \frac{R^2/k}{(1-R^2)/(n-k-1)} \sim F_{k,\,n-k-1} .
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Under $H_0$ the design collapses to the intercept, with projection
+$\bH_0=\tfrac1n\bone\bone'$. With $\bz=\be/\sigma$, write
+$\SSR/\sigma^2 = \bz'(\bH-\bH_0)\bz$ and $\SSE/\sigma^2 = \bz'\bM\bz$. By
+Lemma~\ref{lem:HH0} and Theorem~\ref{thm:HM}, both $\bH-\bH_0$ and $\bM$ are symmetric
+idempotent with traces $k$ and $n-k-1$, so Theorem~\ref{thm:quadratic-chisq} gives
+$\chi^2_k$ and $\chi^2_{n-k-1}$; and $(\bH-\bH_0)\bM = \bzero$, so they are independent by
+Theorem~\ref{thm:cochran}. The ratio of independent chi-squares over their degrees of
+freedom is $F$. Dividing numerator and denominator by $\SST$ gives the last form.
+\end{proof}
+
+\begin{corollary}\label{cor:R2-from-F}
+$\ds R^2 = \frac{kF}{kF + n-k-1}$.
+\end{corollary}
+
+\begin{example}\label{ex:q24}
+A regression of a mutual fund's return on four predictors plus an intercept, over $105$
+monthly observations, reports $F = 20.0$; the software failed before computing $R^2$.
+Since $R^2$ depends on $\SSE$ and $\SST$ only through their ratio, and $F$ determines
+that ratio, no further information is needed. With $k=4$ and $n-k-1 = 100$,
+\[
+\frac{(\SST-\SSE)/4}{\SSE/100} = 20
+\ie \frac{\SST-\SSE}{\SSE} = 0.80
+\ie \frac{\SST}{\SSE} = 1.80 ,
+\]
+so $R^2 = 1 - 1/1.80 = 0.444$, as Corollary~\ref{cor:R2-from-F} also gives directly from
+$kF = 80$.
+\end{example}
+
+\begin{example}\label{ex:q44}
+Dental claims for $n=100$ participants. Actuary 1 fits $Y = \beta + \varepsilon$; Actuary
+2 fits $Y = \beta_0 + \beta_1\,\mathrm{Sex} + \varepsilon$, obtaining $\SSE = 250{,}000$
+with $\SST = 490{,}000$. Actuary 1's model is the null model, so its residual sum of
+squares is $\SST$ and no separate information about it is required. With $k=1$,
+\[
+F = \frac{(\SST-\SSE)/1}{\SSE/(n-2)}
+  = \frac{240{,}000}{250{,}000/98} = 94.08 \quad\text{on } F_{1,98} .
+\]
+Two checks: the prerequisites' corollary that the square of a $t_\nu$ variable is
+$F_{1,\nu}$ gives $t = \sqrt{94.08} = 9.70$; and
+$R^2 = 1-250{,}000/490{,}000 = 0.4898$ reproduces $F$ through~\eqref{eq:F}.
+\end{example}
+
+\begin{example}\label{ex:q11q18}
+(i) Observed $y = (2,5,6,8,4)$, fitted $\hat f = (4,3,9,3,6)$:
+$\SSE = 4+4+9+25+4 = 46$.
+(ii) Simple linear regression with $\sum_{i} e_i^2 = 230$ and $R^2 = 0.64$: from
+$R^2 = 1-\SSE/\SST$, $\SST = 230/0.36 = 638.89$; $n$ is not needed.
+\end{example}
+
+%==============================================================================
+\section{The Case \texorpdfstring{$k=1$}{k=1}}\label{sec:2.7}
+%==============================================================================
+
+\begin{reading}
+FREES §2.1--2.5 · ISLR §3.1.
+\end{reading}
+
+Simple linear regression is $k=1$: $\bX = [\bone\ \bx]$, and \Aref{4} reduces to the
+requirement that the $x_i$ are not all equal.
+
+\begin{definition}[Sample correlation]\label{def:corr}
+With $s_x^2 = (n-1)^{-1}\sum_i(x_i-\bar x)^2$ and $s_y^2$ likewise,
+\begin{equation}\label{eq:corr}
+r = \frac{\sum_i (x_i-\bar x)(y_i-\bar y)}
+         {\sqrt{\sum_i (x_i-\bar x)^2}\sqrt{\sum_i (y_i-\bar y)^2}} .
+\end{equation}
+\end{definition}
+
+\begin{proposition}[Bounds]\label{prop:corr-bounds}
+$-1\leqslant r\leqslant 1$, with $|r|=1$ iff the points lie on a straight line.
+\end{proposition}
+
+\begin{proof}
+With $u_i = x_i-\bar x$ and $v_i = y_i-\bar y$, Cauchy--Schwarz gives
+$(\sum_i u_iv_i)^2 \leqslant (\sum_i u_i^2)(\sum_i v_i^2)$, i.e.\ $r^2\leqslant1$, with
+equality iff $v_i = c\,u_i$ for all $i$.
+\end{proof}
+
+\begin{corollary}[Least squares estimates]\label{cor:slr-ls}
+\begin{equation}\label{eq:slr-ls}
+b_1 = \frac{\sum_i (x_i-\bar x)(y_i-\bar y)}{\sum_i (x_i-\bar x)^2} = r\,\frac{s_y}{s_x},
+\qquad b_0 = \bar y - b_1\bar x .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+With $\bX = [\bone\ \bx]$ the normal equations~\eqref{eq:normal-eq} read
+\[
+\begin{pmatrix} n & \sum_i x_i \\ \sum_i x_i & \sum_i x_i^2 \end{pmatrix}
+\begin{pmatrix} b_0 \\ b_1 \end{pmatrix}
+= \begin{pmatrix} \sum_i y_i \\ \sum_i x_iy_i \end{pmatrix} .
+\]
+The first row is $nb_0 + b_1\sum_i x_i = \sum_i y_i$, i.e.\ $b_0 = \bar y - b_1\bar x$.
+Substituting into the second and using $\sum_i x_i^2 - n\bar x^2 = \sum_i(x_i-\bar x)^2$
+and $\sum_i x_iy_i - n\bar x\bar y = \sum_i(x_i-\bar x)(y_i-\bar y)$ gives the stated
+$b_1$; dividing numerator and denominator by $n-1$ turns it into $r\,s_y/s_x$.
+\end{proof}
+
+\begin{remark}
+$b_0 = \bar y - b_1\bar x$ says the fitted line passes through $(\bar x,\bar y)$, which is
+the $k=1$ form of the residual identity $\bone'\mathbf{e}=0$.
+\end{remark}
+
+\begin{corollary}[Variance of the slope]\label{cor:slr-var}
+\begin{equation}\label{eq:slr-var}
+\var(b_1) = \frac{\sigma^2}{(n-1)s_x^2} ,
+\qquad
+\SE(b_1) = \frac{s}{s_x\sqrt{n-1}} ,
+\qquad
+\var(b_0) = \sigma^2\left(\frac1n + \frac{\bar x^2}{(n-1)s_x^2}\right) .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+For $\bX = [\bone\ \bx]$,
+\[
+\bX'\bX = \begin{pmatrix} n & n\bar x \\ n\bar x & \sum_i x_i^2\end{pmatrix},
+\qquad
+(\bX'\bX)^{-1} = \frac{1}{n\sum_i(x_i-\bar x)^2}
+\begin{pmatrix} \sum_i x_i^2 & -n\bar x \\ -n\bar x & n \end{pmatrix},
+\]
+the determinant being $n\sum_i x_i^2 - n^2\bar x^2 = n\sum_i(x_i-\bar x)^2$. Reading the
+diagonal of $\sigma^2(\bX'\bX)^{-1}$,
+\[
+\var(b_1) = \frac{\sigma^2 n}{n\sum_i(x_i-\bar x)^2} = \frac{\sigma^2}{(n-1)s_x^2},
+\qquad
+\var(b_0) = \frac{\sigma^2\sum_i x_i^2}{n\sum_i(x_i-\bar x)^2}
+          = \sigma^2\Bigl(\frac1n + \frac{\bar x^2}{(n-1)s_x^2}\Bigr),
+\]
+the last using $\sum_i x_i^2 = \sum_i(x_i-\bar x)^2 + n\bar x^2$. Replacing $\sigma$ by
+$s$ gives $\SE(b_1)$.
+\end{proof}
+
+\begin{remark}
+$\SE(b_1)$ falls as the predictor spreads out, so where the $x_i$ are placed is a design
+choice: doubling $s_x$ at fixed $n$ and $\sigma$ halves the standard error of the slope.
+\end{remark}
+
+\begin{corollary}[$R^2 = r^2$]\label{cor:R2-r2}
+With one explanatory variable and an intercept, $R^2 = r^2$.
+\end{corollary}
+
+\begin{proof}
+By Corollary~\ref{cor:slr-ls}, $\hat y_i - \bar y = b_1(x_i-\bar x)$, so
+$\SSR = b_1^2\sum_i(x_i-\bar x)^2 = b_1^2(n-1)s_x^2$. Substituting $b_1 = r\,s_y/s_x$ gives
+$\SSR = r^2(n-1)s_y^2 = r^2\SST$.
+\end{proof}
+
+\begin{remark}
+So when $k=1$ the sign of the association is carried by $r$ and its strength by $R^2$, and
+the two are equivalent. This fails for $k>1$: there $R^2$ is the squared correlation
+between $y_i$ and $\hat y_i$, not between $y$ and any one predictor. Note also that the overall $F$ then tests the single slope, and
+$F = t^2$ because the square of a $t_\nu$ variable is $F_{1,\nu}$, which is the
+prerequisites' corollary on those two laws.
+\end{remark}
+
+\begin{example}[The market model]\label{ex:capm}
+FREES §2.7 fits $r_{it} = \beta_0+\beta_1 r_{mt}+\varepsilon_t$, the return on a security
+against the return on a market index. Here $\beta_1$ measures sensitivity to market
+movements, with $\beta_1>1$ amplifying them, and by Corollary~\ref{cor:R2-r2},
+$R^2 = r^2$ is the proportion of the security's return variation attributable to the
+market, its systematic share; $1-R^2$ is the diversifiable share.
+\end{example}
+
+%==============================================================================
+\section{Computation: Formulas Against Package Output}\label{sec:2.8}
+%==============================================================================
+
+\begin{reading}
+ISLR §3.6.3.
+\end{reading}
+
+Data: \texttt{Boston} from \texttt{ISLR2}, with $k=3$.
+
+<<data-setup>>=
+library(ISLR2)
+fit <- lm(medv ~ lstat + age + rm, data = Boston)
+X <- model.matrix(fit)                        # n x (k+1), intercept first
+y <- Boston$medv
+e <- residuals(fit)
+n <- nrow(X); k <- ncol(X) - 1L
+c(n = n, k = k, df = n - k - 1L)
+@
+
+\subsection{The estimator and its variance (§\ref{sec:2.2}, §\ref{sec:2.4.1})}\label{sec:2.8.1}
+
+<<ols-by-hand>>=
+XtX   <- t(X) %*% X
+b_man <- drop(solve(XtX, t(X) %*% y))         # (X'X)^{-1} X'Y
+cbind(manual = b_man, lm = coef(fit), diff = b_man - coef(fit))
+@
+
+\begin{remark}
+$(\bX'\bX)^{-1}$ is never formed explicitly above: \texttt{solve(XtX, .)} solves the
+system. \texttt{lm} does not even form $\bX'\bX$, factoring $\bX = \bQ\bR$ instead, which
+avoids squaring the condition number. Equation~\eqref{eq:ols} is how OLS is reasoned
+about, not how it is computed.
+\end{remark}
+
+<<vcov-check>>=
+s2    <- sum(e^2) / (n - k - 1)               # MSE = SSE/(n-k-1)
+V_man <- s2 * solve(XtX)                      # s^2 (X'X)^{-1}
+c(max_abs_diff = max(abs(V_man - vcov(fit))),
+  s2_manual = s2, s2_lm = summary(fit)$sigma^2)
+@
+
+\subsection{Projection, residuals, leverage (§\ref{sec:2.3})}\label{sec:2.8.2}
+
+<<hat-matrix>>=
+H <- X %*% solve(XtX) %*% t(X)                # H = X(X'X)^{-1}X'
+M <- diag(n) - H
+c(symmetric  = max(abs(H - t(H))),            # H' = H
+  idempotent = max(abs(H %*% H - H)),         # H^2 = H
+  HM_zero    = max(abs(H %*% M)),             # HM = 0
+  MX_zero    = max(abs(M %*% X)))             # MX = 0
+@
+
+<<hat-traces>>=
+c(tr_H = sum(diag(H)), k_plus_1 = k + 1,      # tr(H) = k+1
+  tr_M = sum(diag(M)), n_minus_k_1 = n - k - 1)
+@
+
+<<hat-fitted-resid>>=
+c(fitted   = max(abs(drop(H %*% y) - fitted(fit))),   # Yhat = HY
+  resid    = max(abs(drop(M %*% y) - e)),             # e = MY
+  Me_eq_e  = max(abs(drop(M %*% e) - e)),             # e already in C(X)-perp
+  leverage = max(abs(diag(H) - hatvalues(fit))))      # h_ii = (i,i) entry of H
+@
+
+\noindent The identity $\mathbf{e} = \bM\be$ of~\eqref{eq:e-Me} cannot be checked on real
+data, $\be$ being unobservable: it needs a design where $\be$ is set rather than observed.
+
+<<resid-identities>>=
+c(Xt_e     = max(abs(t(X) %*% e)),            # X'e = 0
+  sum_e    = sum(e),                          # 1'e = 0 (needs the intercept)
+  yhat_t_e = sum(fitted(fit) * e),            # Yhat'e = 0
+  h_bounds = c(min(diag(H)), max(diag(H))))   # 0 <= h_ii <= 1
+@
+
+Theorem~\ref{thm:var-resid} says $\var(e_i) = \sigma^2(1-h_{ii})$, so the standardised
+residual is $e_i/(s\sqrt{1-h_{ii}})$; this is what \texttt{rstandard} returns.
+
+<<rstandard-check>>=
+r_man <- e / (sqrt(s2) * sqrt(1 - hatvalues(fit)))
+c(max_abs_diff = max(abs(r_man - rstandard(fit))),
+  sd_raw_e = sd(e), sd_std_e = sd(r_man))
+@
+
+\subsection{Standard errors, \texorpdfstring{$t$}{t} and \texorpdfstring{$p$}{p} (§\ref{sec:2.5})}\label{sec:2.8.3}
+
+<<inference-check>>=
+se_man <- sqrt(diag(V_man))                             # sqrt of diag(s^2 (X'X)^{-1})
+t_man  <- coef(fit) / se_man                            # beta_j / se(beta_j)
+p_man  <- 2 * pt(abs(t_man), df = n - k - 1, lower.tail = FALSE)
+tab    <- coef(summary(fit))
+round(cbind(se_man, se_lm = tab[, 2],
+            t_man,  t_lm  = tab[, 3],
+            p_man,  p_lm  = tab[, 4]), 8)
+@
+
+\subsection{Goodness of fit (§\ref{sec:2.6})}\label{sec:2.8.4}
+
+<<anova-decomposition>>=
+SSE <- sum(e^2)
+SST <- sum((y - mean(y))^2)
+SSR <- SST - SSE
+c(SST = SST, SSR_plus_SSE = SSR + SSE,        # SST = SSR + SSE
+  diff = SST - (SSR + SSE))
+@
+
+<<anova-vs-r>>=
+# anova() reports SEQUENTIAL sums of squares; the first k rows sum to SSR.
+seq_ss <- anova(fit)[["Sum Sq"]]
+c(SSR = SSR, sum_sequential = sum(seq_ss[1:k]),
+  SSE = SSE, anova_residual = seq_ss[k + 1L])
+@
+
+<<r2-check>>=
+R2    <- 1 - SSE / SST                        # coefficient of determination
+adjR2 <- 1 - (n - 1) / (n - k - 1) * (1 - R2)
+Fst   <- (SSR / k) / (SSE / (n - k - 1))      # MSR / MSE
+c(R2 = R2,       R2_lm  = summary(fit)$r.squared,
+  adj = adjR2,   adj_lm = summary(fit)$adj.r.squared,
+  F   = Fst,     F_lm   = summary(fit)$fstatistic[["value"]])
+@
+
+<<r2-alt-forms>>=
+c(R2_def       = R2,                          # 1 - SSE/SST
+  R2_cor2      = cor(y, fitted(fit))^2,       # squared correlation of y, yhat
+  R2_from_F    = k * Fst / (k * Fst + n - k - 1),
+  F_from_R2    = (R2 / k) / ((1 - R2) / (n - k - 1)))
+@
+
+The overall $F$ test compares the fitted model with the intercept-only model, which is
+what \texttt{anova} does when given both:
+
+<<f-vs-null>>=
+null_fit <- lm(medv ~ 1, data = Boston)
+cmp <- anova(null_fit, fit)
+c(F_manual = Fst, F_anova = cmp[["F"]][2],
+  SSE_null = sum(residuals(null_fit)^2), SST = SST,   # null RSS equals SST
+  p_manual = pf(Fst, k, n - k - 1, lower.tail = FALSE))
+@
+
+\subsection{Likelihood, \texorpdfstring{$\sigma^2$}{sigma2} and prediction (§\ref{sec:2.5.2})}\label{sec:2.8.5}
+
+<<mle-check>>=
+s2_mle <- SSE / n                             # the MLE divides by n, not n-k-1
+c(s2_unbiased = s2, s2_mle = s2_mle,
+  ratio = s2_mle / s2, factor = (n - k - 1) / n)
+@
+
+Equation~\eqref{eq:loglik} evaluated at the MLE, against \texttt{logLik}; R's
+\texttt{logLik.lm} uses $\hat\sigma^2_{\mathrm{MLE}}$ and counts $k+2$ parameters
+(the $k+1$ coefficients and $\sigma$), which is what makes the \texttt{AIC} agree.
+
+<<loglik-check>>=
+ll_man <- -n/2 * log(2*pi) - n/2 * log(s2_mle) - SSE / (2 * s2_mle)
+c(loglik_manual = ll_man,   loglik_R = as.numeric(logLik(fit)),
+  npar_R        = attr(logLik(fit), "df"),
+  AIC_manual    = -2*ll_man + 2*(k + 2), AIC_R = AIC(fit),
+  BIC_manual    = -2*ll_man + log(n)*(k + 2), BIC_R = BIC(fit))
+@
+
+<<predict-check>>=
+x0 <- c(1, lstat = 10, age = 60, rm = 6.5)    # a new observation, intercept first
+nd <- data.frame(lstat = 10, age = 60, rm = 6.5)
+c(manual  = sum(x0 * coef(fit)),
+  predict = unname(predict(fit, newdata = nd)))
+@
+
+\subsection{The sampling theory by simulation (§\ref{sec:2.4}, §\ref{sec:2.5.2})}\label{sec:2.8.6}
+
+Theorems~\ref{thm:unbiased}, \ref{thm:var-beta} and~\ref{thm:sse-dist} are statements
+about repeated sampling. The design is held fixed, as the assumptions require, and only
+the errors are redrawn.
+
+<<simulation>>=
+set.seed(1)
+Xs <- X[1:60, ]                               # fixed design: n = 60, k = 3
+ns <- nrow(Xs); ks <- ncol(Xs) - 1L
+beta_true <- c(10, -0.5, 0.02, 3)
+sigma <- 4; B <- 5000
+
+bhat <- matrix(NA_real_, B, ks + 1L); sse <- numeric(B)
+for (b in seq_len(B)) {
+  ysim <- drop(Xs %*% beta_true) + rnorm(ns, sd = sigma)
+  f <- lm.fit(Xs, ysim)
+  bhat[b, ] <- f$coefficients; sse[b] <- sum(f$residuals^2)
+}
+@
+
+<<simulation-check>>=
+rbind(true = beta_true, mean_bhat = colMeans(bhat))            # E[bhat] = beta
+round(cbind(empirical = apply(bhat, 2, var),                   # var(bhat)
+            theory    = sigma^2 * diag(solve(t(Xs) %*% Xs))), 5)
+c(mean_SSE_over_s2 = mean(sse) / sigma^2,  df = ns - ks - 1L,  # chi-square moments
+  var_SSE_over_s2  = var(sse / sigma^2),   two_df = 2*(ns - ks - 1L))
+@
+
+With $\be$ known, \eqref{eq:e-Me} can also be checked directly:
+
+<<e-eq-Meps>>=
+set.seed(11)
+eps   <- rnorm(ns, sd = sigma)
+Ms    <- diag(ns) - Xs %*% solve(t(Xs) %*% Xs) %*% t(Xs)
+e_sim <- lm.fit(Xs, drop(Xs %*% beta_true) + eps)$residuals
+c(max_abs_diff = max(abs(e_sim - drop(Ms %*% eps))),           # e = M eps
+  sd_eps = sd(eps), sd_e = sd(e_sim))                          # e is not eps
+@
+
+Independence of $\hat\bb$ and $\SSE$ (Theorem~\ref{thm:sse-dist}, Step 3) shows up as zero
+correlation across replications:
+
+<<independence-check>>=
+round(cor(bhat, sse), 4)
+@
+
+<<sse-hist, fig.height=2.5, fig.width=6.4, echo=FALSE>>=
+op <- par(mar = c(4, 4, 1, 1))
+hist(sse / sigma^2, breaks = 40, freq = FALSE, col = "grey88", border = "white",
+     main = "", xlab = expression(SSE/sigma^2))
+curve(dchisq(x, df = ns - ks - 1), add = TRUE, lwd = 2, col = "#B45309")
+par(op)
+@
+
+\begin{figure}[!ht]\centering
+\caption{Simulated $\SSE/\sigma^2$ against the $\chi^2_{56}$ density
+(Theorem~\ref{thm:sse-dist}), $B = 5000$ replications on a fixed design.}
+\end{figure}
+
+\subsection{The case $k=1$ (§\ref{sec:2.7})}\label{sec:2.8.7}
+
+<<slr-setup>>=
+xs <- Boston$lstat                              # a single predictor
+slr <- lm(medv ~ lstat, data = Boston)
+r <- cor(xs, y); sx <- sd(xs); sy <- sd(y)
+@
+
+<<slr-coef>>=
+b1 <- r * sy / sx                               # r s_y / s_x
+b0 <- mean(y) - b1 * mean(xs)                   # ybar - b1 xbar
+cbind(manual = c(b0, b1), lm = coef(slr), diff = c(b0, b1) - coef(slr))
+@
+
+<<slr-se>>=
+s_slr <- summary(slr)$sigma
+se_b1 <- s_slr / (sx * sqrt(n - 1))             # s / (s_x sqrt(n-1))
+se_b0 <- s_slr * sqrt(1/n + mean(xs)^2 / ((n - 1) * sx^2))
+cbind(manual = c(se_b0, se_b1), lm = coef(summary(slr))[, "Std. Error"])
+@
+
+<<slr-r2>>=
+c(R2_lm      = summary(slr)$r.squared,
+  r_squared  = r^2,                             # R^2 = r^2 when k = 1
+  cor_y_yhat = cor(y, fitted(slr))^2,
+  t_squared  = coef(summary(slr))["lstat", "t value"]^2,
+  F_lm       = summary(slr)$fstatistic[["value"]])
+@
+
+The market model of Example~\ref{ex:capm}, simulated from a known $\beta_1$ so that the
+regression can be checked against the truth:
+
+<<capm-sim>>=
+set.seed(1)
+Tn <- 240                                       # 20 years of monthly returns
+rmk <- rnorm(Tn, mean = 0.007, sd = 0.045)      # market return
+beta_true <- 1.30; sd_idio <- 0.030
+ri  <- 0.001 + beta_true * rmk + rnorm(Tn, sd = sd_idio)
+capm <- lm(ri ~ rmk)
+c(beta_true = beta_true, beta_hat = coef(capm)[["rmk"]],
+  in_CI = as.numeric(beta_true >= confint(capm)["rmk", 1] &
+                     beta_true <= confint(capm)["rmk", 2]),
+  R2 = summary(capm)$r.squared,
+  systematic_share = beta_true^2 * var(rmk) / (beta_true^2 * var(rmk) + sd_idio^2))
+@
+
+%==============================================================================
+\section{Pitfalls}\label{sec:2.9}
+%==============================================================================
+
+\subsection{Reading the residual identities as diagnostics}\label{sec:2.9.1}
+
+Theorem~\ref{thm:normal-eq} holds for every fit. A straight line through quadratic data
+satisfies all three identities exactly.
+
+<<pitfall-identities>>=
+set.seed(2)
+x  <- seq(-3, 3, length.out = 80)
+yq <- x^2 + rnorm(80, sd = 0.3)              # truly quadratic
+bad <- lm(yq ~ x)                             # a straight line is fitted anyway
+c(sum_resid   = sum(residuals(bad)),          # 1'e = 0 regardless of fit
+  cor_x_resid = cor(x, residuals(bad)),       # X'e = 0 regardless of fit
+  R2          = summary(bad)$r.squared)
+@
+
+\textbf{Diagnostic.} Plot residuals against fitted values and look for curvature, which
+the identities do not forbid.
+\textbf{Fix.} Add the missing term; here, a quadratic one.
+
+<<pitfall-identities-fix>>=
+good <- lm(yq ~ x + I(x^2))
+c(R2_linear = summary(bad)$r.squared, R2_quadratic = summary(good)$r.squared,
+  SSE_linear = sum(residuals(bad)^2), SSE_quadratic = sum(residuals(good)^2))
+@
+
+\subsection{Treating $R^2$ as a selection criterion}\label{sec:2.9.2}
+
+By Theorem~\ref{thm:R2-monotone}, $R^2$ rises when pure noise is added.
+
+<<pitfall-r2>>=
+set.seed(3)
+d  <- Boston[1:60, ]
+m1 <- lm(medv ~ lstat, data = d)
+noise <- matrix(rnorm(60 * 20), 60, 20)       # 20 columns of noise
+m2 <- lm(d$medv ~ d$lstat + noise)
+c(R2_1 = summary(m1)$r.squared,     R2_2 = summary(m2)$r.squared,
+  adj1 = summary(m1)$adj.r.squared, adj2 = summary(m2)$adj.r.squared)
+@
+
+\textbf{Diagnostic.} $R^2$ rises while $\bar R^2$ falls.
+\textbf{Fix.} Compare on a penalised criterion ($C_p$, $\AIC$, $\BIC$) or on
+out-of-sample error.
+
+\subsection{$R^2$ without an intercept}\label{sec:2.9.3}
+
+Theorem~\ref{thm:anova} requires $\bone\in\calC(\bX)$. Without it R switches to an
+uncentered definition of $R^2$, which is not comparable with the usual one.
+
+<<pitfall-nointercept>>=
+m_int <- lm(medv ~ lstat, data = Boston)
+m_no  <- lm(medv ~ lstat - 1, data = Boston)
+c(R2_with = summary(m_int)$r.squared,  R2_without = summary(m_no)$r.squared,
+  SSE_with = sum(residuals(m_int)^2),  SSE_without = sum(residuals(m_no)^2),
+  sum_resid_without = sum(residuals(m_no)))
+@
+
+\textbf{Diagnostic.} The no-intercept fit has the larger $\SSE$ and the larger reported
+$R^2$; its residuals do not sum to zero, so Theorem~\ref{thm:anova} does not apply.
+\textbf{Fix.} Retain the intercept; compare models on $\SSE$ or an information criterion.
+
+%==============================================================================
+\section{Exercises}\label{sec:2.10}
+%==============================================================================
+
+\begin{exercise}\label{ex:rank}
+(a) Show $\rank(\bX'\bX)=\rank(\bX)$ by proving the two matrices have the same null space,
+and say where Theorem~\ref{thm:ols} uses it.
+(b) Show $\bX'\bX$ is always positive semi-definite, and positive definite exactly under
+\Aref{4}.
+(c) Prove $\bM=\bI-\bH$ is symmetric idempotent and deduce $\tr(\bM)=n-k-1$ without
+quoting Theorem~\ref{thm:HM}\ref{HM:iv}.
+\end{exercise}
+
+\begin{solution}
+(a) If $\bX\bv=\bzero$ then $\bX'\bX\bv=\bzero$. Conversely $\bX'\bX\bv=\bzero$ gives
+$\bv'\bX'\bX\bv=\|\bX\bv\|^2=0$, hence $\bX\bv=\bzero$. The null spaces coincide, and by
+rank--nullity applied to two matrices with $k+1$ columns, so do the ranks. Step 3 uses it:
+\Aref{4} gives $\rank(\bX)=k+1$, and only through this equality does it make $\bX'\bX$
+invertible.
+
+(b) $\bv'\bX'\bX\bv=\|\bX\bv\|^2\geqslant0$ for every $\bv$, with no assumption. It is
+strict for every $\bv\neq\bzero$ iff $\calN(\bX)=\{\bzero\}$, which by rank--nullity is
+\Aref{4}. This is Step 4 of the same proof: the condition that makes $\hat\bb$ exist makes
+the Hessian positive definite, so nothing extra is needed for a minimum rather than a
+stationary point.
+
+(c) $\bM'=\bI-\bH'=\bM$ and $\bM^2=\bI-2\bH+\bH^2=\bM$, using $\bH'=\bH$ and
+$\bH^2=\bH$. By linearity $\tr(\bM)=n-\tr(\bH)$, and $\bH$ idempotent gives
+$\tr(\bH)=\rank(\bH)$ by Lemma~\ref{lem:idempotent}. Finally $\calC(\bH)=\calC(\bX)$: every
+column of $\bH$ lies in $\calC(\bX)$, while $\bH\bX=\bX$ puts every column of $\bX$ in
+$\calC(\bH)$. Hence $\tr(\bH)=\rank(\bX)=k+1$ by \Aref{4}.
+\end{solution}
+
+\begin{exercise}\label{ex:proj-unique}
+The remark after Theorem~\ref{thm:HM} asserts that symmetry, idempotency and
+$\calC(\bP)=\calC(\bX)$ characterise $\bH$. Prove it. Which of the three fails for
+$\bP = \bH+\bA$ with $\bA$ antisymmetric and $\bA\bX=\bzero$?
+\end{exercise}
+
+\begin{solution}
+A symmetric idempotent $\bP$ acts as the identity on $\calC(\bP)$ and kills
+$\calC(\bP)^\perp$: if $\bv=\bP\bw$ then $\bP\bv=\bP^2\bw=\bv$, and by symmetry
+$\calN(\bP)=\calN(\bP')=\calC(\bP)^\perp$. Both $\bP$ and $\bH$ are symmetric idempotent
+with column space $\calC(\bX)$, so both are the identity on $\calC(\bX)$ and zero on
+$\calC(\bX)^\perp$. Since $\Real^n=\calC(\bX)\oplus\calC(\bX)^\perp$ they agree on a
+spanning set, so $\bP=\bH$.
+
+For the perturbation, $\bA\bX=\bzero$ gives $\bA\bH=\bA\bX(\bX'\bX)^{-1}\bX'=\bzero$ and
+$\bH\bA=(\bA'\bH)'=(-\bA\bH)'=\bzero$, so $\bP^2=\bH+\bA^2$ and idempotency requires
+$\bA^2=\bzero$; for antisymmetric $\bA$ that forces $\tr(\bA\bA')=-\tr(\bA^2)=0$, hence
+$\bA=\bzero$. Symmetry fails first: $\bP'=\bH-\bA\neq\bP$. Dropping symmetry alone leaves
+an \emph{oblique} projection onto $\calC(\bX)$, which reproduces $\calC(\bX)$ but does not
+minimise $\|\bY-\tilde\bY\|$.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 5]\label{ex:islr-linear-comb}
+For regression through the origin, $\hat\beta=\sum_i x_iy_i/\sum_j x_j^2$ and
+$\hat y_i = x_i\hat\beta$. Write $\hat y_i=\sum_{j} a_{j}y_{j}$ and identify $a_j$. Show
+the same statement for the general model is $\hat\bY=\bH\bY$, and that the weights sum to
+$1$ when an intercept is present.
+\end{exercise}
+
+\begin{solution}
+Substituting,
+\[
+\hat y_i = x_i\frac{\sum_j x_jy_j}{\sum_l x_l^2} = \sum_j a_j y_j ,
+\qquad a_j = \frac{x_ix_j}{\sum_l x_l^2} .
+\]
+So the fitted values are linear combinations of the responses with weights determined by
+$\bX$ alone.
+
+For the general model $\hat\bY=\bH\bY$, so $\hat Y_i=\sum_j h_{ij}Y_j$ and the weight of
+$Y_j$ in $\hat Y_i$ is $h_{ij}$. The single-regressor case is $\bH=\bx\bx'/(\bx'\bx)$,
+whose $(i,j)$ entry is the $a_j$ above. With an intercept, $\bH\bone=\bone$ because
+$\bone\in\calC(\bX)$, so $\sum_j h_{ij}=1$ for every $i$: each fitted value is a weighted
+average of the responses, with weights summing to one but not necessarily non-negative.
+The weight an observation gives itself is $h_{ii}$, its leverage
+(Definition~\ref{def:leverage}), which is why $\partial\hat Y_i/\partial Y_i=h_{ii}$.
+\end{solution}
+
+\begin{exercise}\label{ex:varres}
+Derive $\var(e_i)=\sigma^2(1-h_{ii})$ and explain why a high-leverage observation has a
+less variable residual. Deduce $\cov(e_i,e_j)=-\sigma^2h_{ij}$, and compute the residual
+correlation implied by $h_{ij}=-0.02$, $h_{ii}=h_{jj}=0.05$.
+\end{exercise}
+
+\begin{solution}
+From $\mathbf{e}=\bM\be$ and Lemma~\ref{lem:var-linear},
+$\var(\mathbf{e})=\bM(\sigma^2\bI)\bM'=\sigma^2\bM$ by symmetry and idempotency; the
+$(i,i)$ entry of $\bI-\bH$ is $1-h_{ii}$ and the $(i,j)$ entry is $-h_{ij}$.
+
+A high-leverage point has extreme predictor values, so the fitted surface is pulled toward
+it and its residual has little freedom; as $h_{ii}\to1$ the fit passes through the point
+and the residual is identically zero.
+
+For the correlation,
+\[
+\cor(e_i,e_j) = \frac{-\sigma^2h_{ij}}{\sigma^2\sqrt{(1-h_{ii})(1-h_{jj})}}
+= \frac{0.02}{0.95} = 0.0211 .
+\]
+Since $|h_{ij}|\leqslant\sqrt{h_{ii}h_{jj}}$ and the average leverage is $(k+1)/n$, the
+residual correlations are of order $(k+1)/n$: negligible when $n$ is large relative to $k$,
+and not otherwise. Any test treating residuals as independent carries that error before
+model adequacy is considered.
+\end{solution}
+
+\begin{exercise}\label{ex:leverage-form}
+With an intercept, prove $h_{ii}\geqslant1/n$, with equality iff $\bx_i$ sits at the
+centroid of the design. For $k=1$ derive
+\[
+h_{ii} = \frac1n + \frac{(x_i-\bar x)^2}{\sum_j (x_j-\bar x)^2}
+\]
+and check it against \texttt{hatvalues} for \texttt{medv} on \texttt{lstat}.
+\end{exercise}
+
+\begin{solution}
+Let $\bH_0=\tfrac1n\bone\bone'$, with all diagonal entries $1/n$. By
+Lemma~\ref{lem:HH0}, $\bH-\bH_0$ is symmetric idempotent, hence positive semi-definite, so
+$h_{ii}-1/n=\mathbf{e}_i'(\bH-\bH_0)\mathbf{e}_i=\|(\bH-\bH_0)\mathbf{e}_i\|^2\geqslant0$
+for the $i$-th coordinate vector. Equality forces $(\bH-\bH_0)\mathbf{e}_i=\bzero$, that
+is, the $i$-th row of $\bH$ is constant at $1/n$, which happens exactly when $\bx_i$ is at
+the centroid.
+
+For $k=1$, with $S_{xx}=\sum_j(x_j-\bar x)^2$ and $\bx_i'=(1,x_i)$, the explicit inverse of
+Corollary~\ref{cor:slr-var} gives
+\[
+h_{ii}=\bx_i'(\bX'\bX)^{-1}\bx_i
+= \frac{\sum_j x_j^2-2n\bar xx_i+nx_i^2}{nS_{xx}}
+= \frac{S_{xx}+n(x_i-\bar x)^2}{nS_{xx}}
+= \frac1n+\frac{(x_i-\bar x)^2}{S_{xx}} ,
+\]
+using $\sum_j x_j^2=S_{xx}+n\bar x^2$. Leverage in simple regression is an exact quadratic
+in the distance from $\bar x$, with minimum $1/n$.
+<<s2-leverage-form>>=
+Sxx <- sum((xs - mean(xs))^2)                   # xs is Boston$lstat
+h1  <- 1/n + (xs - mean(xs))^2 / Sxx
+c(max_abs_diff = max(abs(h1 - hatvalues(slr))), one_over_n = 1/n,
+  min_h = min(h1), max_h = max(h1),
+  lstat_at_min = xs[which.min(h1)], mean_lstat = mean(xs))
+@
+\end{solution}
+
+\begin{exercise}\label{ex:leverage-one}
+Show $h_{ii}=1$ forces $h_{ij}=0$ for every $j\neq i$ and $e_i=0$. Construct a design where
+this happens, fit it, and say what the model then estimates.
+\end{exercise}
+
+\begin{solution}
+From the proof of Theorem~\ref{thm:leverage}\ref{lev:i},
+$h_{ii}=h_{ii}^2+\sum_{j\neq i}h_{ij}^2$; at $h_{ii}=1$ the first two terms are equal, so
+every $h_{ij}$ vanishes. Then $\hat Y_i=\sum_j h_{ij}Y_j=Y_i$ and $e_i=0$, consistently
+with $\var(e_i)=\sigma^2(1-h_{ii})=0$.
+
+An indicator that is $1$ for observation $i$ alone does it: the column lets the fit
+reproduce $Y_i$ exactly at no cost elsewhere.
+<<s2-leverage-one>>=
+dd <- data.frame(y = c(3, 5, 4, 9, 6), xv = 1:5,
+                 dum = as.numeric(1:5 == 4))
+md <- lm(y ~ xv + dum, data = dd); mn <- lm(y ~ xv, data = dd)
+rbind(hat = round(hatvalues(md), 4), resid = round(residuals(md), 10),
+      resid_no_dummy = round(residuals(mn), 4))
+c(sum_h = sum(hatvalues(md)), k_plus_1 = 3,
+  SSE_with = sum(residuals(md)^2), SSE_without = sum(residuals(mn)^2))
+@
+The leverages sum to $k+1$ as Theorem~\ref{thm:leverage}\ref{lev:ii} requires, and the
+fourth residual is exactly zero. The model then fits a line to the other four observations
+plus a parameter absorbing $Y_i$ whole: observation $i$ contributes nothing to the slope
+and nothing to $\SSE$, and the residual degrees of freedom fall by one to record it. A
+singleton indicator is a formal deletion of an observation, which is worth recognising when
+one appears by accident as a rare factor level.
+\end{solution}
+
+\begin{exercise}\label{ex:anova-fail}
+Prove $\SST=\SSR+\SSE$, stating where the intercept is used, and give a design for which
+the identity fails.
+\end{exercise}
+
+\begin{solution}
+The proof is Theorem~\ref{thm:anova}. The intercept is used twice: Step 2 needs
+$\bar e=0$ so that $\bM_0\mathbf{e}=\mathbf{e}$, and Step 4 needs $\mathbf{e}'\bone=0$.
+Both are Theorem~\ref{thm:normal-eq}\ref{ne:ii}, which holds only because $\bone$ is a
+column of $\bX$.
+
+Take $n=2$, $\bX=(1,2)'$ without an intercept, $\bY=(3,3)'$. Then
+$\hat\beta=\bX'\bY/\bX'\bX=9/5=1.8$, $\hat\bY=(1.8,3.6)'$ and $\mathbf{e}=(1.2,-0.6)'$, so
+$\sum_ie_i=0.6\neq0$. Here $\SST=0$ while $\SSR=1.62$ and $\SSE=1.8$, so
+$\SSR+\SSE=3.42\neq0=\SST$.
+\end{solution}
+
+\begin{exercise}\label{ex:R2-cor}
+Prove that in any model with an intercept, $R^2$ equals the squared sample correlation
+between $Y_i$ and $\hat Y_i$. Deduce Corollary~\ref{cor:R2-r2} as the case $k=1$, and
+explain why $R^2$ is not the squared correlation with any single predictor when $k>1$.
+\end{exercise}
+
+\begin{solution}
+Since $\overline{\hat Y}=\bar Y$ (Theorem~\ref{thm:anova}, Step 1), the covariance
+numerator is
+\[
+\sum_i(Y_i-\bar Y)(\hat Y_i-\bar Y) = \hat\bY'\bM_0\bY
+= \hat\bY'\bM_0(\hat\bY+\mathbf{e}) = \SSR+\hat\bY'\mathbf{e} = \SSR ,
+\]
+using $\bM_0\mathbf{e}=\mathbf{e}$ and Theorem~\ref{thm:normal-eq}\ref{ne:iii}. The two
+sums of squares in the denominator are $\SST$ and $\SSR$, so
+$\cor(Y,\hat Y)^2=\SSR^2/(\SST\cdot\SSR)=R^2$. This is the check \texttt{R2\_cor2} of
+§\ref{sec:2.8.4}.
+
+For $k=1$, $\hat Y_i=b_0+b_1x_i$ is affine in $x_i$ and correlation is invariant under an
+affine map up to sign, so $\cor(Y,\hat Y)^2=r^2$: Corollary~\ref{cor:R2-r2}.
+
+For $k>1$, $\hat\bY$ combines all $k$ predictors. $R^2$ can be large while every individual
+$|\cor(Y,X_j)|$ is small, if the predictors combine, and barely above
+$\max_j\cor(Y,X_j)^2$ when they are near-duplicates.
+\end{solution}
+
+\begin{exercise}\label{ex:add-regressor}
+Let $\bX_+=[\bX\ \ \bz]$ with $\bz\notin\calC(\bX)$ and $\bM=\bI-\bH$.
+(a) Show the projection onto $\calC(\bX_+)$ minus that onto $\calC(\bX)$ is
+$\bM\bz(\bz'\bM\bz)^{-1}\bz'\bM$, of rank one.
+(b) Deduce $\SSE-\SSE_+=(\bz'\bM\bY)^2/(\bz'\bM\bz)$.
+(c) Show the coefficient on $\bz$ is $\hat\gamma=\bz'\bM\bY/(\bz'\bM\bz)$ with
+$\var(\hat\gamma)=\sigma^2/(\bz'\bM\bz)$.
+(d) Conclude $t^2=(\SSE-\SSE_+)/s_+^2$.
+(e) Verify all four by adding \texttt{rm} to \texttt{medv} on \texttt{lstat} and
+\texttt{age}.
+\end{exercise}
+
+\begin{solution}
+(a) $\calC(\bX_+)=\calC(\bX)\oplus\mathrm{span}(\bM\bz)$: the two pieces are orthogonal
+because $\bX'\bM=\bzero$, both lie in $\calC(\bX_+)$ because $\bM\bz=\bz-\bH\bz$, and their
+dimensions add to $k+2$. The projection onto an orthogonal direct sum is the sum of the
+projections, and the projection onto $\mathrm{span}(\bM\bz)$ is
+$\bP_z=\bM\bz(\bz'\bM\bz)^{-1}\bz'\bM$, using $\|\bM\bz\|^2=\bz'\bM\bz$. So
+$\bH_+=\bH+\bP_z$ with $\rank(\bP_z)=1$.
+
+(b) $\SSE-\SSE_+=\bY'(\bI-\bH)\bY-\bY'(\bI-\bH_+)\bY=\bY'\bP_z\bY
+=(\bz'\bM\bY)^2/(\bz'\bM\bz)$.
+
+(c) Write $\hat\bY_+=\bX\hat\bb_++\bz\hat\gamma$ and apply $\bM$:
+$\bM\hat\bY_+=\hat\gamma\,\bM\bz$. But
+$\bM\hat\bY_+=\bM(\bH+\bP_z)\bY=\bP_z\bY=\bM\bz(\bz'\bM\bY)/(\bz'\bM\bz)$, since
+$\bM\bH=\bzero$ and $\bM\bP_z=\bP_z$. Comparing gives $\hat\gamma$; it is a fixed linear
+map of $\bY$, so Lemma~\ref{lem:var-linear} gives
+$\var(\hat\gamma)=\sigma^2\bz'\bM\bM\bz/(\bz'\bM\bz)^2=\sigma^2/(\bz'\bM\bz)$.
+
+(d) $t^2=\hat\gamma^2(\bz'\bM\bz)/s_+^2=(\bz'\bM\bY)^2/\{(\bz'\bM\bz)s_+^2\}$, which is
+(b) divided by $s_+^2$.
+<<s2-add-regressor>>=
+m_old <- lm(medv ~ lstat + age, data = Boston)
+X0 <- model.matrix(m_old)
+M0 <- diag(n) - X0 %*% solve(crossprod(X0)) %*% t(X0)
+z  <- Boston$rm
+zMz <- drop(t(z) %*% M0 %*% z); zMy <- drop(t(z) %*% M0 %*% y)
+s2p <- sum(residuals(fit)^2)/(n - 4)
+c(gamma_formula = zMy/zMz,            gamma_lm = coef(fit)[["rm"]],
+  se_formula    = sqrt(s2p/zMz),      se_lm    = coef(summary(fit))["rm", 2],
+  SSE_drop      = sum(residuals(m_old)^2) - sum(residuals(fit)^2),
+  quad_form     = zMy^2/zMz,
+  t_squared     = coef(summary(fit))["rm", 3]^2,
+  drop_over_s2  = (sum(residuals(m_old)^2) - sum(residuals(fit)^2))/s2p)
+@
+Nothing here needs normality: (a) to (c) are algebra and Lemma~\ref{lem:var-linear}, and
+only reading $t$ as a $t$ distribution needs \Aref{5}.
+\end{solution}
+
+\begin{exercise}\label{ex:adjR2-t}
+The remark after Theorem~\ref{thm:R2-monotone} says $\bar R^2$ rises when a variable with
+$|t|>1$ is added. Prove it, and verify on \texttt{Boston} with noise columns whose $t$
+falls either side of $1$.
+\end{exercise}
+
+\begin{solution}
+$\bar R^2=1-s^2/\{\SST/(n-1)\}$ and $\SST$ does not change, so $\bar R^2$ rises iff $s^2$
+falls. With $s_+^2=\SSE_+/(n-k-2)$ and $s^2=\SSE/(n-k-1)$,
+\[
+s_+^2<s^2
+\ifff \SSE_+(n-k-1)<\SSE\,(n-k-2)
+\ifff \SSE-\SSE_+ > \frac{\SSE_+}{n-k-2} = s_+^2 ,
+\]
+subtracting $\SSE_+(n-k-2)$ from both sides. By Exercise~\ref{ex:add-regressor}(d) the
+left side is $t^2s_+^2$, so the condition is exactly $t^2>1$.
+<<s2-adjr2>>=
+base <- lm(medv ~ lstat + age, data = Boston)
+t(sapply(c(202, 203, 204, 205), function(sd) {
+  set.seed(sd); zz <- rnorm(n)
+  mb <- lm(medv ~ lstat + age + zz, data = Boston)
+  c(seed = sd, t = coef(summary(mb))["zz", 3],
+    adjR2_before = summary(base)$adj.r.squared,
+    adjR2_after  = summary(mb)$adj.r.squared)
+}))
+@
+The turn falls between $|t| = 0.75$ and $|t| = 1.04$. A variable is retained by $\bar R^2$
+on evidence far weaker than $|t|>2$, which is why $\bar R^2$ selects models that are too
+large.
+\end{solution}
+
+\begin{exercise}[FREES exercise 3.1]\label{ex:frees-anova}
+A dataset of $n=100$ observations has $s_y=80$; a regression on three explanatory variables
+gives $s=50$. Reconstruct the whole ANOVA table, then compute $R^2$, $\bar R^2$ and $F$,
+and test model adequacy at $5\%$. State the effect on each quantity of adding a fourth
+predictor that is pure noise.
+\end{exercise}
+
+\begin{solution}
+Two mean squares determine everything: $\SST=(n-1)s_y^2$ and $\SSE=(n-k-1)s^2$, and
+$\SSR=\SST-\SSE$ by Theorem~\ref{thm:anova}.
+<<s2-frees-anova>>=
+nA <- 100; kA <- 3; syA <- 80; sA <- 50
+SSTa <- (nA - 1)*syA^2; SSEa <- (nA - kA - 1)*sA^2; SSRa <- SSTa - SSEa
+c(SST = SSTa, SSR = SSRa, SSE = SSEa,
+  MSR = SSRa/kA, MSE = sA^2, F = (SSRa/kA)/sA^2,
+  F_crit_5pct = qf(0.95, kA, nA - kA - 1),
+  R2 = SSRa/SSTa, adjR2 = 1 - sA^2/syA^2)
+@
+The table is
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+Source & Sum of squares & $\df$ & Mean square\\
+\midrule
+Regression & $393{,}600$ & $3$  & $131{,}200$\\
+Error      & $240{,}000$ & $96$ & $2{,}500$\\
+\midrule
+Total      & $633{,}600$ & $99$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+$F=52.48$ against a $5\%$ critical value of $2.70$, so the three predictors are jointly
+significant. Note $\bar R^2=1-s^2/s_y^2$ exactly, which is the definition
+in~\eqref{eq:R2} rearranged, and needs no sums of squares at all.
+
+Adding a noise predictor: $\SST$ is unchanged, since it does not involve $\bX$; $\SSE$ falls
+weakly and $\SSR$ rises weakly, so $R^2$ rises (Theorem~\ref{thm:R2-monotone}); $s$ and
+$\bar R^2$ move according to whether the new $|t|$ exceeds $1$
+(Exercise~\ref{ex:adjR2-t}), which for a null variable on $95$ degrees of freedom happens
+with probability $0.32$; and $F$ falls, since the numerator degrees of freedom rise while
+$\SSR$ hardly moves.
+\end{solution}
+
+\begin{exercise}[FREES exercise 4.1]\label{ex:frees-F-R2}
+(a) Establish $F=\dfrac{R^2}{1-R^2}\cdot\dfrac{n-k-1}{k}$ from
+Definition~\ref{def:sumsq}.
+(b) Compute $F$ and test model adequacy at $5\%$ for $k=5$, $R^2=0.20$, first at $n=40$ and
+then at $n=400$. Explain the difference in one sentence.
+\end{exercise}
+
+\begin{solution}
+(a) $F=\MSR/\MSE=(\SSR/k)/\{\SSE/(n-k-1)\}$. Dividing numerator and denominator by $\SST$
+and using $\SSR/\SST=R^2$, $\SSE/\SST=1-R^2$ (Theorem~\ref{thm:anova}) gives the display,
+which is~\eqref{eq:F}.
+<<s2-frees-F>>=
+t(sapply(c(40, 400), function(nn) {
+  R2v <- 0.20; kv <- 5
+  Fv <- R2v/(1 - R2v) * (nn - kv - 1)/kv
+  c(n = nn, F = Fv, crit_5pct = qf(0.95, kv, nn - kv - 1),
+    p_value = pf(Fv, kv, nn - kv - 1, lower.tail = FALSE))
+}))
+@
+(b) At $n=40$, $F=1.70$ against a critical value of $2.49$: not significant. At $n=400$,
+$F=19.7$ against $2.24$: overwhelmingly significant. The same $R^2$ is decisive or
+worthless depending on $n$, because $F$ is $R^2/(1-R^2)$ scaled by the residual degrees of
+freedom, and $R^2$ alone says nothing about the evidence.
+\end{solution}
+
+\begin{exercise}[FREES exercise 3.2]\label{ex:frees-vcov}
+With $n=100$, $k=3$, $s=50$ and
+\[
+(\bX'\bX)^{-1} = \begin{pmatrix}
+100 & 20 & 20 & 20\\ 20 & 90 & 30 & 40\\ 20 & 30 & 80 & 50\\ 20 & 40 & 50 & 70
+\end{pmatrix},
+\]
+determine $\SE(b_3)$, the estimated $\cov(b_2,b_3)$ and $\cor(b_2,b_3)$, and the estimated
+variance of $4b_2+3b_3$.
+\end{exercise}
+
+\begin{solution}
+By Theorem~\ref{thm:var-beta} the estimated covariance matrix is $s^2(\bX'\bX)^{-1}$, so
+$\SE(b_j)=s\sqrt{[(\bX'\bX)^{-1}]_{jj}}$ and
+$\widehat\cov(b_i,b_j)=s^2[(\bX'\bX)^{-1}]_{ij}$. The correlation cancels $s^2$ entirely,
+so it can be read off $(\bX'\bX)^{-1}$ without knowing $s$. For a linear combination,
+Lemma~\ref{lem:var-linear} with $\bc=(0,0,4,3)'$ gives
+$\widehat\var(\bc'\bb)=s^2\bc'(\bX'\bX)^{-1}\bc$, which expands to
+$s^2\{16(80)+9(70)+2(4)(3)(50)\}$.
+<<s2-frees-vcov>>=
+XtXi <- rbind(c(100, 20, 20, 20), c(20, 90, 30, 40),
+              c(20, 30, 80, 50),  c(20, 40, 50, 70))
+sF <- 50; cF <- c(0, 0, 4, 3)
+c(se_b3   = sF*sqrt(XtXi[4, 4]),
+  cov_b23 = sF^2*XtXi[3, 4],
+  cor_b23 = XtXi[3, 4]/sqrt(XtXi[3, 3]*XtXi[4, 4]),
+  var_lin = sF^2*drop(t(cF) %*% XtXi %*% cF),
+  se_lin  = sF*sqrt(drop(t(cF) %*% XtXi %*% cF)))
+@
+The correlation $0.668$ is high enough that the two coefficients cannot be interpreted
+separately: the covariance term contributes $3{,}000{,}000$ of the $7{,}775{,}000$ total
+variance of $4b_2+3b_3$, so ignoring it would understate the standard error by a factor of
+$\sqrt{7775/4775}=1.28$.
+\end{solution}
+
+\begin{exercise}[FREES exercise 3.3]\label{ex:frees-design}
+For the data
+\[
+\bx_1 = (-1,2,4,6)',\quad \bx_2 = (0,0,1,1)',\quad \by=(0,1,5,8)' ,
+\]
+fit $y=\beta_0+\beta_1x_1+\beta_2x_2+\varepsilon$ by hand: write $\bX$, compute $\hat\bb$,
+$s$, $\hat y_3$, $\SE(b_2)$ and $t(b_1)$. How many residual degrees of freedom are there,
+and what does that do to the test?
+\end{exercise}
+
+\begin{solution}
+$\bX$ has the intercept column first, so it is $4\times3$ and $n-k-1=4-3=1$.
+<<s2-frees-design>>=
+Xf <- cbind(1, x1 = c(-1, 2, 4, 6), x2 = c(0, 0, 1, 1))
+yf <- c(0, 1, 5, 8)
+Af <- solve(crossprod(Xf)); bf <- drop(Af %*% crossprod(Xf, yf))
+ef <- yf - Xf %*% bf; sf <- sqrt(sum(ef^2)/(4 - 3))
+round(Af, 5)
+c(b0 = bf[1], b1 = bf[2], b2 = bf[3], s = sf,
+  yhat3 = drop(Xf[3, ] %*% bf), se_b2 = sf*sqrt(Af[3, 3]),
+  t_b1 = bf[2]/(sf*sqrt(Af[2, 2])),
+  p_b1 = 2*pt(abs(bf[2]/(sf*sqrt(Af[2, 2]))), df = 1, lower.tail = FALSE))
+@
+By Theorem~\ref{thm:ols}, $\hat\bb=(\bX'\bX)^{-1}\bX'\by=(0.1538,\,0.6923,\,2.8846)'$; by
+Definition~\ref{def:sumsq}, $s=\sqrt{\SSE/1}=1.3728$; the third fitted value is
+$0.1538+0.6923(4)+2.8846=5.8077$; and by Theorem~\ref{thm:var-beta},
+$\SE(b_2)=s\sqrt{4.1154}=2.785$ and $t(b_1)=0.6923/(1.3728\sqrt{0.15385})=1.286$.
+
+With one residual degree of freedom the test is nearly powerless: $t_{1}$ has such heavy
+tails that the two-sided $p$-value at $|t|=1.286$ is $0.42$, and the $5\%$ critical value
+is $12.7$. Four observations and three parameters leave almost nothing with which to
+estimate $\sigma^2$, so \Aref{4}'s requirement $n>k+1$ is met by the narrowest possible
+margin.
+\end{solution}
+
+\begin{exercise}\label{ex:pred-var}
+Derive the variance of a fitted value at a new $\bx_0$ and the variance of the prediction
+error for a new response there, and hence the two intervals. Show
+$\var(\hat Y_i)=\sigma^2h_{ii}$ at an observed point, and check that
+$\var(\hat Y_i)+\var(e_i)=\sigma^2$. Evaluate at
+$\texttt{lstat}=10$, $\texttt{age}=60$, $\texttt{rm}=6.5$ and explain the ratio of the two
+widths.
+\end{exercise}
+
+\begin{solution}
+$\hat Y_0=\bx_0'\hat\bb$ is a linear map of $\hat\bb$, so Lemma~\ref{lem:var-linear} and
+Theorem~\ref{thm:var-beta} give $\var(\hat Y_0)=\sigma^2\bx_0'(\bX'\bX)^{-1}\bx_0$. A new
+response is $Y_0=\bx_0'\bb+\varepsilon_0$ with $\varepsilon_0$ independent of the sample, so
+$\var(Y_0-\hat Y_0)=\sigma^2\{1+\bx_0'(\bX'\bX)^{-1}\bx_0\}$. Replacing $\sigma$ by $s$ and
+using Theorems~\ref{thm:beta-dist} and~\ref{thm:sse-dist} gives $t_{n-k-1}$ intervals
+$\hat Y_0\pm t\,s\sqrt{\bx_0'(\bX'\bX)^{-1}\bx_0}$ for $\expc[Y_0]$ and
+$\hat Y_0\pm t\,s\sqrt{1+\bx_0'(\bX'\bX)^{-1}\bx_0}$ for $Y_0$.
+
+At an observed point $\bx_0=\bx_i$ the quadratic form is $h_{ii}$, so
+$\var(\hat Y_i)=\sigma^2h_{ii}$ and, with Theorem~\ref{thm:var-resid},
+$\var(\hat Y_i)+\var(e_i)=\sigma^2h_{ii}+\sigma^2(1-h_{ii})=\sigma^2$: leverage is the
+share of $\sigma^2$ that goes into the fitted value, and $1-h_{ii}$ the share left in the
+residual. The two add because $\hat\bY=\bH\bY$ and $\mathbf{e}=\bM\bY$ are uncorrelated,
+$\bH\bM=\bzero$.
+<<s2-pred-var>>=
+x0 <- c(1, 10, 60, 6.5); nd0 <- data.frame(lstat = 10, age = 60, rm = 6.5)
+lev0 <- drop(t(x0) %*% solve(XtX) %*% x0); tq <- qt(0.975, n - k - 1)
+pr <- predict(fit, nd0, se.fit = TRUE)
+c(se_fit_manual = sqrt(s2*lev0), se_fit_R = pr$se.fit,
+  CI_width = 2*tq*sqrt(s2*lev0), PI_width = 2*tq*sqrt(s2*(1 + lev0)),
+  ratio = sqrt((1 + lev0)/lev0))
+rbind(manual = c(pr$fit + c(-1, 1)*tq*sqrt(s2*lev0),
+                 pr$fit + c(-1, 1)*tq*sqrt(s2*(1 + lev0))),
+      R      = c(predict(fit, nd0, interval = "confidence")[2:3],
+                 predict(fit, nd0, interval = "prediction")[2:3]))
+@
+The ratio is $\sqrt{(1+h)/h}$, which is $21$ here. The confidence interval shrinks like
+$n^{-1/2}$ and would close entirely with enough data; the prediction interval cannot fall
+below $2ts$, a new observation carrying its own $\varepsilon_0$. For $n=200$, $k=9$ and
+$h_{ii}=0.31$ with $s=12.4$, the same formulas give $\SE(\hat Y_i)=12.4\sqrt{0.31}=6.90$
+and $\sd(e_i)=12.4\sqrt{0.69}=10.30$, and the point is flagged since $0.31$ is far past the
+conventional $2(k+1)/n=0.10$.
+\end{solution}
+
+\begin{exercise}\label{ex:HH0}
+Using Lemma~\ref{lem:HH0}, show $\SSR=\|(\bH-\bH_0)\bY\|^2$ and that the overall $F$
+compares mean squared lengths in two orthogonal subspaces of dimensions $k$ and $n-k-1$
+whose direct sum is $\bone^\perp$. Deduce that $F$ is unchanged if a constant is added to
+every $Y_i$ or if $\bY$ is multiplied by a non-zero constant.
+\end{exercise}
+
+\begin{solution}
+The intercept makes $\bH_0\bY=\bar Y\bone$ and $\bH\bH_0=\bH_0$, so
+$\hat\bY-\bar Y\bone=(\bH-\bH_0)\bY$ and $\SSR$ is its squared length; idempotency and
+symmetry give $\|(\bH-\bH_0)\bY\|^2=\bY'(\bH-\bH_0)\bY$, and likewise $\SSE=\bY'\bM\bY$.
+
+The two subspaces are $\calC(\bH-\bH_0)$, of dimension $\tr(\bH-\bH_0)=k$, and $\calC(\bM)$,
+of dimension $n-k-1$. They are orthogonal because $(\bH-\bH_0)\bM=\bzero$, and
+$(\bH-\bH_0)+\bM=\bI-\bH_0$, the projection onto $\bone^\perp$, so they sum to it and the
+dimensions add to $n-1$. Then
+\[
+F = \frac{\|(\bH-\bH_0)\bY\|^2/k}{\|\bM\bY\|^2/(n-k-1)} .
+\]
+Adding $c\bone$ changes neither: $\bone\in\calC(\bX)$ gives $(\bH-\bH_0)\bone=\bzero$ and
+$\bM\bone=\bzero$. Multiplying $\bY$ by $a\neq0$ multiplies both by $a^2$, which cancels.
+So $F$, and with it $R^2$ by Corollary~\ref{cor:R2-from-F}, is invariant to the origin and
+scale of the response: reporting in dollars or thousands of dollars changes every
+coefficient and no test statistic. It is not invariant to a non-affine transform such as a
+logarithm, which changes the subspaces the projections act on.
+\end{solution}
+
+\begin{exercise}\label{ex:normality-role}
+The table after Definition~\ref{def:assumptions} says normality is required for none of its
+first four rows. For each of $\expc[\hat\bb]=\bb$,
+$\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$, $\expc[\MSE]=\sigma^2$, Gauss--Markov,
+$\SST=\SSR+\SSE$ and $R^2\leqslant1$, say which of \Aref{1}--\Aref{5} the proof uses. Which
+results in the unit are false without \Aref{5}?
+\end{exercise}
+
+\begin{solution}
+$\expc[\hat\bb]=\bb$ uses \Aref{1}, \Aref{2} for the mean and \Aref{4} for existence.
+$\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$ adds \Aref{3}: Lemma~\ref{lem:var-linear} is an
+identity about second moments. $\expc[\MSE]=\sigma^2$ likewise, through
+Lemma~\ref{lem:quadratic-form}, which needs only $\expc[\be]=\bzero$ and
+$\var(\be)=\sigma^2\bI$. Gauss--Markov uses \Aref{1}--\Aref{4} and its proof is algebra on
+$\bC\bC'$. $\SST=\SSR+\SSE$ and $0\leqslant R^2\leqslant1$ use no probabilistic assumption
+at all: they hold for any $\bY$ and any $\bX$ containing $\bone$.
+
+The results that fail without \Aref{5} are the distributional ones:
+Theorem~\ref{thm:beta-dist}, Theorem~\ref{thm:sse-dist}, Theorem~\ref{thm:F-test} and
+Theorem~\ref{thm:mle}. The third fails as an \emph{approximation} too unless a central limit
+theorem applies, which is a condition on the design as well as the errors, specifically on
+whether one observation's weight dominates. Note also that \emph{uncorrelated} in \Aref{3}
+becomes \emph{independent} only under \Aref{5}, by
+Theorem~\ref{thm:mvn-uncorr-indep}; that is why Step 3 of Theorem~\ref{thm:sse-dist} can
+conclude independence from a zero cross-covariance.
+\end{solution}
+
+\begin{exercise}\label{ex:ridge}
+Ridge regression, $\hat\bb_\lambda=(\bX'\bX+\lambda\bI)^{-1}\bX'\bY$ with $\lambda>0$, is
+linear in $\bY$ and can have smaller mean squared error than OLS. Which hypothesis of
+Theorem~\ref{thm:gm} does it violate?
+\end{exercise}
+
+\begin{solution}
+Unbiasedness, not linearity. With $\bA_\lambda=(\bX'\bX+\lambda\bI)^{-1}\bX'$,
+$\hat\bb_\lambda=\bA_\lambda\bY$ is linear, but
+\[
+\expc[\hat\bb_\lambda]=(\bX'\bX+\lambda\bI)^{-1}\bX'\bX\,\bb \neq \bb
+\qquad(\lambda>0),
+\]
+so it lies outside the class Theorem~\ref{thm:gm} optimises over. The theorem compares
+variances within the unbiased class; mean squared error is bias$^2$ plus variance, and
+ridge accepts bias to reduce variance. Shrinking $\hat\bb$ toward zero by any small enough
+factor always helps, the variance falling at first order in the shrinkage while the squared
+bias grows only at second order.
+\end{solution}
+
+\begin{exercise}\label{ex:mse-shrink}
+Take $k=1$ with no intercept, $\hat\beta=\bx'\bY/S$ with $S=\bx'\bx$, and consider
+$c\hat\beta$ for $c\in[0,1]$. Compute its mean squared error, find the minimising
+$c^\ast$, show $c^\ast<1$ always, and evaluate at $S=100$, $\sigma^2=4$, $\beta=1$. Why
+can $c^\ast$ not be used in practice?
+\end{exercise}
+
+\begin{solution}
+$\expc[\hat\beta]=\beta$ and $\var(\hat\beta)=\sigma^2/S$, so $c\hat\beta$ has bias
+$(c-1)\beta$ and variance $c^2\sigma^2/S$:
+\[
+\MSE(c) = c^2\frac{\sigma^2}{S}+(1-c)^2\beta^2 .
+\]
+This is a convex quadratic; setting $2c\sigma^2/S-2(1-c)\beta^2=0$,
+\[
+c^\ast = \frac{\beta^2}{\beta^2+\sigma^2/S}\in(0,1) ,
+\]
+strictly less than $1$ for every $\sigma^2>0$ and finite $S$. Substituting,
+\[
+\MSE(c^\ast) = \frac{\beta^2\sigma^2/S}{\beta^2+\sigma^2/S}
+= c^\ast\cdot\frac{\sigma^2}{S} = c^\ast\,\MSE(1) ,
+\]
+so the best shrinkage improves on OLS by exactly the factor $c^\ast$. At $S=100$,
+$\sigma^2=4$, $\beta=1$: $\sigma^2/S=0.04$, $c^\ast=0.9615$, $\MSE(\text{OLS})=0.04$ and
+$\MSE(c^\ast\hat\beta)=0.03846$, an improvement of $3.8\%$.
+
+$c^\ast$ depends on $\beta$, the unknown being estimated. What can be done is to choose the
+amount of shrinkage by an estimate of prediction error. The gain is small here because
+$\beta^2$ is large relative to $\sigma^2/S$; the improvement factor
+$\{1+\sigma^2/(S\beta^2)\}^{-1}$ is a statement about the signal-to-noise ratio.
+\end{solution}
+
+\begin{exercise}\label{ex:ovb}
+The true model is $\bY=\bX_1\bb_1+\bX_2\bb_2+\be$ but only $\bX_1$ is fitted. Show
+$\expc[\hat\bb_1]=\bb_1+(\bX_1'\bX_1)^{-1}\bX_1'\bX_2\bb_2$, state when the omission causes
+no bias, and give the sign of the bias on a single slope when the omitted coefficient and
+the correlation are both positive.
+\end{exercise}
+
+\begin{solution}
+Substituting the true $\bY$ into $\hat\bb_1=(\bX_1'\bX_1)^{-1}\bX_1'\bY$,
+\[
+\hat\bb_1 = \bb_1+(\bX_1'\bX_1)^{-1}\bX_1'\bX_2\bb_2+(\bX_1'\bX_1)^{-1}\bX_1'\be ,
+\]
+and the last term has expectation zero by \Aref{2}. The extra term is the coefficient
+matrix from regressing $\bX_2$ on $\bX_1$, times $\bb_2$; it vanishes iff $\bb_2=\bzero$ or
+$\bX_1'\bX_2=\bzero$, which with an intercept means the two are uncorrelated in the sample.
+
+With one included and one omitted variable the term is $\delta\beta_2$, and $\delta$ has
+the sign of $\cor(x_1,x_2)$ by Corollary~\ref{cor:slr-ls}. Both positive means the fitted
+slope is biased \emph{upward}: it carries its own effect plus the part of $x_2$'s effect
+travelling with $x_1$. This is why a coefficient can change sign when a control is added.
+\end{solution}
+
+\begin{exercise}\label{ex:invariance}
+Show that centering every non-intercept column leaves the slopes, residuals, $\SSE$ and
+$R^2$ unchanged and sets the intercept to $\bar Y$; and that multiplying one column by
+$c\neq0$ divides its coefficient and standard error by $c$, leaving $t$, $\SSE$ and $R^2$
+unchanged. Verify on the fit of §\ref{sec:2.8.1}.
+\end{exercise}
+
+\begin{solution}
+Both follow from Theorem~\ref{thm:ols-proj}: the fit depends on $\bX$ only through
+$\calC(\bX)$. Centering replaces column $j$ by $\bx_j-\bar x_j\bone$, a combination of
+$\bx_j$ and the intercept column already present; scaling replaces $\bx_j$ by $c\bx_j$. In
+both cases $\bX_{\text{new}}=\bX\bA$ with $\bA$ invertible, so
+$\calC(\bX_{\text{new}})=\calC(\bX)$ and $\hat\bY$, $\mathbf{e}$, $\SSE$, $\SST$, $R^2$ are
+identical. The coefficients transform as $\hat\bb_{\text{new}}=\bA^{-1}\hat\bb$ and their
+covariance as $\bA^{-1}\{\sigma^2(\bX'\bX)^{-1}\}\bA^{-\prime}$, so for diagonal $\bA$ with
+$j$-th entry $c$ both the coefficient and its standard error divide by $c$ and $t$ is
+unchanged. Under centering $\bA^{-1}$ leaves the slopes and sends the intercept to
+$\bar Y-\sum_j\hat\beta_j\bar x_j+\sum_j\hat\beta_j\bar x_j=\bar Y$.
+<<s2-invariance>>=
+Bc <- transform(Boston, lstat = lstat - mean(lstat),
+                        age = age - mean(age), rm = rm - mean(rm))
+mc <- lm(medv ~ lstat + age + rm, data = Bc)
+Bs <- transform(Boston, lstat = 10*lstat)
+ms <- lm(medv ~ lstat + age + rm, data = Bs)
+c(slopes_moved   = max(abs(coef(mc)[-1] - coef(fit)[-1])),
+  intercept_new  = coef(mc)[[1]], ybar = mean(y),
+  coef_ratio     = coef(fit)[["lstat"]]/coef(ms)[["lstat"]],
+  t_moved        = coef(summary(ms))["lstat", 3] -
+                   coef(summary(fit))["lstat", 3],
+  R2_moved       = summary(ms)$r.squared - summary(fit)$r.squared)
+@
+A coefficient has units and its size means nothing until they are stated, while $t$, $R^2$
+and $\SSE$ are unit-free. Standardising the predictors is therefore a presentational choice
+for least squares, and, since it changes $\|\bb\|$, is not one for a penalised method.
+\end{solution}
+
+\begin{exercise}\label{ex:normality-sim}
+Simulate $y_i=1+2x_i+\varepsilon_i$ at $n=20$ and record the coverage of the nominal $95\%$
+$t$ interval for the slope, for two designs and two error laws: $x$ equally spaced on
+$[-1,1]$ against $x=(0,\ldots,0,10)$, and standard normal errors against centred
+exponential ones. Predict the pattern first.
+\end{exercise}
+
+\begin{solution}
+$\hat\beta_1-\beta_1=\sum_iw_i\varepsilon_i$ with $w_i=(x_i-\bar x)/S_{xx}$, a weighted sum
+of the errors. Under \Aref{5} it is exactly normal whatever the weights, so the interval is
+exact. Without \Aref{5} it is approximately normal only if no single weight dominates,
+which is a condition on the design. The balanced design spreads the weights; the second
+concentrates almost all of the weight on one observation, whose leverage is $1$
+(Exercise~\ref{ex:leverage-one}), so $\hat\beta_1$ inherits that error's law, skew and all.
+<<s2-normality-sim>>=
+cover <- function(xx, gen, R = 8000, seed = 9) {
+  set.seed(seed); nn <- length(xx); b1 <- 2
+  ok <- lo <- hi <- logical(R)
+  for (r in seq_len(R)) {
+    yy <- 1 + b1*xx + gen(nn)
+    ci <- confint(lm(yy ~ xx))["xx", ]
+    ok[r] <- ci[1] <= b1 && b1 <= ci[2]
+    lo[r] <- b1 > ci[2]; hi[r] <- b1 < ci[1]
+  }
+  c(cover = mean(ok), miss_below = mean(lo), miss_above = mean(hi))
+}
+bal <- seq(-1, 1, length.out = 20); lev <- c(rep(0, 19), 10)
+rbind(normal_balanced = cover(bal, function(m) rnorm(m)),
+      normal_leverage = cover(lev, function(m) rnorm(m)),
+      expon_balanced  = cover(bal, function(m) rexp(m) - 1),
+      expon_leverage  = cover(lev, function(m) rexp(m) - 1))
+c(max_lev_balanced = max(hatvalues(lm(rnorm(20) ~ bal))),
+  max_lev_unbalanced = max(hatvalues(lm(rnorm(20) ~ lev))))
+@
+Three of the four rows are at nominal coverage: with a balanced design the $t$ interval
+survives badly skewed errors, the weighted sum being close to normal. The fourth loses a
+point of coverage but misses \emph{entirely on one side}, so the interval is not merely
+short but systematically displaced. A symmetric error law would not do this at any
+leverage, and a balanced design would not do it under any error law. The quantity to
+inspect before dropping \Aref{5} is the maximum leverage, not a histogram of the residuals.
+\end{solution}
+
+\begin{exercise}\label{ex:computational}
+On the fit of §\ref{sec:2.8.1}: (a) show $\hat\bY'\mathbf{e}=0$ holds to machine precision
+but that $\cor(\hat\bY,\mathbf{e})$ prints as a much smaller number, and explain;
+(b) construct a fit whose $\bar R^2$ is negative and say what that means.
+\end{exercise}
+
+\begin{solution}
+<<s2-numerics>>=
+c(inner_product = sum(fitted(fit)*e), correlation = cor(fitted(fit), e),
+  scale = sqrt(sum(fitted(fit)^2))*sqrt(sum(e^2)),
+  ratio = sum(fitted(fit)*e)/(sqrt(sum(fitted(fit)^2))*sqrt(sum(e^2))))
+@
+(a) Both are zero in exact arithmetic and differ only in scale. Since $\bar e=0$ the
+correlation has the same numerator, divided by $\|\hat\bY\|\,\|\mathbf{e}\|=533\times124
+=6.6\times10^4$. So the raw inner product carries that factor times the machine epsilon and
+prints at $10^{-12}$, while the correlation prints at $10^{-17}$. A numerical check must be
+read against the scale of the quantities forming it, which is why the checks of
+§\ref{sec:2.8} print differences of $O(1)$ quantities.
+<<s2-negadj>>=
+set.seed(21)
+dsub <- Boston[1:30, ]
+rep500 <- replicate(500, {
+  Nz <- matrix(rnorm(30*10), 30, 10)
+  sm <- summary(lm(dsub$medv ~ Nz))
+  c(R2 = sm$r.squared, adjR2 = sm$adj.r.squared)
+})
+c(mean_R2 = mean(rep500["R2", ]), threshold = 10/29,
+  mean_adjR2 = mean(rep500["adjR2", ]),
+  frac_adjR2_negative = mean(rep500["adjR2", ] < 0))
+@
+(b) $\bar R^2=1-\frac{n-1}{n-k-1}(1-R^2)$ is negative iff $R^2<k/(n-1)$. Ten columns of
+pure noise on $n=30$ give $R^2$ averaging $k/(n-1)=0.345$ by chance alone, so $\bar R^2$
+straddles zero and is negative in half the draws. A negative $\bar R^2$ means the fitted
+model has a larger residual mean square than the intercept-only model, that is, it predicts
+worse than $\bar Y$ once the parameter count is charged. It cannot happen to $R^2$
+(Proposition~\ref{prop:R2-bounds}).
+\end{solution}
+
+\begin{exercise}[FREES exercise 2.9]\label{ex:frees-binary}
+Suppose $x_i$ takes only the values $0$ and $1$: $n_1$ observations have $x=0$ with mean
+response $\bar y_1$, and $n_2=n-n_1$ have $x=1$ with mean $\bar y_2$. Show
+$b_1=\bar y_2-\bar y_1$ and $b_0=\bar y_1$, and give $\SE(b_1)$ in terms of $n_1$, $n_2$
+and $s$. What familiar test is $t(b_1)$?
+\end{exercise}
+
+\begin{solution}
+Here $\bar x=n_2/n$ and $\sum_i(x_i-\bar x)^2 = n_2(1-\bar x)^2+n_1\bar x^2
+= n_1n_2/n$, since $x_i^2=x_i$. Also
+$\sum_i(x_i-\bar x)(y_i-\bar y) = \sum_i x_iy_i-n\bar x\bar y
+= n_2\bar y_2-\frac{n_2}{n}(n_1\bar y_1+n_2\bar y_2)
+= \frac{n_1n_2}{n}(\bar y_2-\bar y_1)$. By Corollary~\ref{cor:slr-ls} the ratio is
+\[
+b_1 = \bar y_2-\bar y_1 ,
+\qquad
+b_0 = \bar y - b_1\bar x = \bar y_1 .
+\]
+Fitted values are the two group means, so $\SSE$ is the within-group sum of squares and
+$s^2$ is the pooled variance on $n-2$ degrees of freedom. By
+Corollary~\ref{cor:slr-var},
+\[
+\SE(b_1) = \frac{s}{\sqrt{\sum_i(x_i-\bar x)^2}}
+= s\sqrt{\frac{n}{n_1n_2}} = s\sqrt{\frac{1}{n_1}+\frac{1}{n_2}} ,
+\]
+the last step because $n/(n_1n_2)=1/n_1+1/n_2$. So
+$t(b_1)=(\bar y_2-\bar y_1)/\{s\sqrt{1/n_1+1/n_2}\}$ is exactly the pooled two-sample $t$
+statistic: regression on a single indicator \emph{is} the two-sample comparison, with
+\Aref{3} playing the role of the equal-variance assumption and $n-2$ the pooled degrees of
+freedom.
+\end{solution}
+
+\begin{exercise}[FREES exercise 2.6]\label{ex:frees-geomean}
+Let $b_{y|x}$ be the slope from regressing $y$ on $x$ and $b_{x|y}$ that from regressing
+$x$ on $y$, both with intercepts. Show $|r|=\sqrt{b_{y|x}\,b_{x|y}}$, that the two lines
+coincide only when $|r|=1$, and deduce the regression-to-the-mean statement.
+\end{exercise}
+
+\begin{solution}
+By Corollary~\ref{cor:slr-ls}, $b_{y|x}=r\,s_y/s_x$ and, exchanging roles,
+$b_{x|y}=r\,s_x/s_y$. Their product is $r^2$, so $|r|=\sqrt{b_{y|x}b_{x|y}}$: the
+correlation is the geometric mean of the two slopes, and the two have the same sign, that
+of $r$.
+
+Drawn on the same axes, the second line has slope $1/b_{x|y}=s_y/(r\,s_x)$ against the
+first's $r\,s_y/s_x$; the ratio is $r^2$, so they coincide iff $r^2=1$, that is iff the
+points are collinear (Proposition~\ref{prop:corr-bounds}). Otherwise the regression of $y$
+on $x$ is always the flatter of the two, and which line one draws depends on which variable
+is being predicted.
+
+Standardising both variables gives $s_x=s_y=1$, hence $b_{y|x}=r$ and $b_0=0$: the fitted
+line is $\hat y=rx$ in standard units, so a point one standard deviation above average in
+$x$ is predicted only $r\leqslant1$ standard deviations above average in $y$. Nothing is
+changing over time and no force is acting: a conditional mean is less extreme than the
+conditioning value whenever $|r|<1$. Selecting the extreme cases of one variable and
+measuring them on another therefore always shows movement toward the average.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 11]\label{ex:islr-t-symmetry}
+Generate $x_i$ standard normal and $y_i=2x_i+\varepsilon_i$ with $n=100$.
+(a) Regress $y$ on $x$ without an intercept and then $x$ on $y$ without an intercept, and
+compare the two $t$ statistics.
+(b) Show algebraically that for regression through the origin
+\[
+t = \frac{\sqrt{n-1}\,\sum_i x_iy_i}
+        {\sqrt{(\sum_i x_i^2)(\sum_i y_i^2)-(\sum_i x_iy_i)^2}} ,
+\]
+and use it to explain (a).
+(c) Check that the same symmetry holds with an intercept.
+\end{exercise}
+
+\begin{solution}
+(b) With $\hat\beta=\sum_ix_iy_i/\sum_ix_i^2$ and, for a model with one parameter and no
+intercept, $\SE(\hat\beta)=\sqrt{\sum_i(y_i-x_i\hat\beta)^2/\{(n-1)\sum_ix_i^2\}}$,
+\[
+t = \frac{\hat\beta}{\SE(\hat\beta)}
+  = \frac{\sum_ix_iy_i}{\sum_ix_i^2}\cdot
+    \frac{\sqrt{n-1}\,\sqrt{\sum_ix_i^2}}{\sqrt{\sum_i(y_i-x_i\hat\beta)^2}} .
+\]
+Expanding the residual sum of squares,
+\[
+\sum_i(y_i-x_i\hat\beta)^2 = \sum_iy_i^2-2\hat\beta\sum_ix_iy_i+\hat\beta^2\sum_ix_i^2
+= \sum_iy_i^2-\frac{(\sum_ix_iy_i)^2}{\sum_ix_i^2} ,
+\]
+so multiplying numerator and denominator by $\sqrt{\sum_ix_i^2}$ gives the display. The
+expression is symmetric in $x$ and $y$, so exchanging their roles cannot change it: the
+$t$ statistic for $H_0\colon\beta=0$ is the same in both regressions, even though the two
+coefficients differ.
+<<s2-islr-t>>=
+set.seed(1); xa <- rnorm(100); ya <- 2*xa + rnorm(100)
+tf <- sqrt(99)*sum(xa*ya) /
+      sqrt(sum(xa^2)*sum(ya^2) - sum(xa*ya)^2)
+c(t_y_on_x = coef(summary(lm(ya ~ xa + 0)))[1, 3],
+  t_x_on_y = coef(summary(lm(xa ~ ya + 0)))[1, 3],
+  closed_form = tf,
+  coef_y_on_x = coef(lm(ya ~ xa + 0))[[1]],
+  coef_x_on_y = coef(lm(xa ~ ya + 0))[[1]],
+  with_intercept_y_on_x = coef(summary(lm(ya ~ xa)))[2, 3],
+  with_intercept_x_on_y = coef(summary(lm(xa ~ ya)))[2, 3])
+@
+(a) and (c) The two $t$ statistics agree exactly, with and without an intercept, while the
+coefficients $1.994$ and $0.391$ do not. The symmetry with an intercept is
+Exercise~\ref{ex:frees-geomean}: $t=b_{y|x}/\SE(b_{y|x})$ reduces to
+$r\sqrt{n-2}/\sqrt{1-r^2}$, a function of $r$ alone, and $r$ is symmetric. Testing
+$\beta_1=0$ is testing $r=0$, a statement about the pair and not about a direction.
+\end{solution}
+
+\begin{exercise}\label{ex:slr-num}
+A regression on $n=50$ observations has $s=3792$, $s_x=11{,}098$ and $b_1=0.647$. Compute
+$\SE(b_1)$, test $H_0\colon\beta_1=0$, and give a $95\%$ confidence interval. If
+$R^2=0.785$, what is $r$, and what is the overall $F$?
+\end{exercise}
+
+\begin{solution}
+$\SE(b_1)=3792/(11{,}098\sqrt{49})=0.0488$, so $t=0.647/0.0488=13.3$ on $n-2=48$ degrees of
+freedom. Since $t_{0.975,48}=2.011$, reject $H_0$; the interval is
+$0.647\pm2.011(0.0488)=(0.549,\,0.745)$.
+
+By Corollary~\ref{cor:R2-r2}, $r=\pm\sqrt{0.785}=0.886$, positive because $b_1>0$. With
+$k=1$ the overall $F$ is $t^2=177$, equivalently
+$F=R^2/\{(1-R^2)/(n-2)\}=0.785/(0.215/48)=175$, the difference being rounding.
+\end{solution}
+
+\begin{exercise}[SOA sample question 23]\label{ex:soa-coffee}
+A cafeteria sells coffee at $1.00$ for $12$ ounces, $1.20$ for $16$ and $1.40$ for $20$,
+and announces that any size will be priced at the value predicted by the least-squares
+regression of price on size. Toby and Karen each buy a $24$-ounce coffee. Calculate what
+they save by buying one $48$-ounce coffee instead. What are $R^2$, $\SSE$ and $s$ here, and
+what does that do to $t(b_1)$?
+\end{exercise}
+
+\begin{solution}
+The three points are collinear, so by Proposition~\ref{prop:corr-bounds} the least-squares
+line passes through all three and no arithmetic is needed: the slope is
+$(1.40-1.00)/(20-12)=0.05$ per ounce and the intercept is $1.00-0.05(12)=0.40$. The price
+of $s$ ounces is $0.40+0.05s$: a fixed $0.40$ per cup plus $5$ cents an ounce.
+
+Two $24$-ounce cups cost $2(0.40+1.20)=3.20$; one $48$-ounce cup costs
+$0.40+2.40=2.80$. The saving is $0.40$, exactly the one cup charge avoided, and would be
+zero if the regression were forced through the origin.
+
+Collinearity gives $\SSE=0$, $R^2=r^2=1$ by Corollary~\ref{cor:R2-r2}, and
+$s=\sqrt{0/(n-2)}=0$. The statistic $t(b_1)=0.05/0$ is undefined. This is the correct
+reading of \Aref{3} and \Aref{5} with $\sigma^2$ estimated as zero: three points and two
+parameters leave one residual degree of freedom, spent on a perfect fit, so the model
+carries no information about $\sigma^2$. A regression can be perfectly determined and
+completely untestable at once.
+\end{solution}
+
+\end{document}
