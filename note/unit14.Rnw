@@ -45,9 +45,7 @@ knitr::opts_chunk$set(fig.path = "figs/unit14-")
 Prerequisites §§P.3 and P.3b (convexity and separation; convex programming and duality).
 \end{reading}
 
-This unit is outside the examination syllabus. It is here because the prerequisites already
-contain the convex programming that Units 6 and 7 used piecemeal, and one more application
-turns it into a classifier whose every property is a corollary of results already proved.
+This unit is outside the examination syllabus.
 
 \subsection{Margins}\label{sec:14.1.1}
 
@@ -279,8 +277,7 @@ $|\bw|^2$ is convex.
 
 \begin{remark}
 So $C$ is a regularisation parameter read backwards. Large $C$ penalises violations heavily,
-gives a narrow margin and few support vectors; small $C$ gives a wide margin, many support
-vectors at the bound, and a smaller $|\bw|$. §\ref{sec:14.4.2} prints all three as $C$ moves.
+gives a narrow margin and few support vectors; small $C$ gives a wide margin, many support vectors at the bound, and a smaller $|\bw|$.
 \end{remark}
 
 \subsection{Kernels}\label{sec:14.2.3}
@@ -321,12 +318,10 @@ the two give the same $\balpha$.
 \end{example}
 
 \begin{remark}
-The dual~\eqref{eq:dual} and the classifier~\eqref{eq:decision} involve the data only
-through inner products, which is what makes the substitution legitimate. For the radial
+The dual~\eqref{eq:dual} and the classifier~\eqref{eq:decision} involve the data only through inner products, which makes the substitution legitimate. For the radial
 kernel $K(\bx,\bz)=\exp(-\sigma|\bx-\bz|^2)$ the corresponding $\varphi$ is
 infinite-dimensional, so the primal~\eqref{eq:primal} cannot be written down at all while
-the dual is an ordinary finite quadratic programme in $n$ variables. That asymmetry is the
-reason the dual is the object one solves.
+the dual is an ordinary finite quadratic programme in $n$ variables, so the dual is the object one solves.
 \end{remark}
 
 %==============================================================================
@@ -354,7 +349,7 @@ minimises $L(\btheta)=\tfrac1{2n}\sum_i\{y_i-f(\bx_i)\}^2$.
 \end{definition}
 
 \begin{remark}
-Two special cases fix the scale. With $H$ arbitrary and $g$ the identity, $f$ is linear in
+With $H$ arbitrary and $g$ the identity, $f$ is linear in
 $\bx$ and~\eqref{eq:mlp} is the model of Unit 2 with a redundant parametrisation: nothing is
 gained, and the composition of linear maps is linear however many layers are stacked. The
 activation is the whole of the difference.
@@ -405,10 +400,9 @@ which are the last two identities in matrix form.
 \begin{remark}
 The name records the shape of the computation: $\bd_2$ is formed at the output and pushed
 back through $\bw_2$ and $g'$ to give $\bD_1$, and each layer's two derivatives are then one
-matrix product. The cost is that of one forward pass, whatever the number of parameters,
-which is why~\eqref{eq:backprop} and not a difference quotient is what is computed.
-§\ref{sec:14.4.4} checks all twenty-six partial derivatives of a small network against
-central differences and agrees to $10^{-10}$.
+matrix product. The cost is that of one forward pass, whatever the number of parameters, so~\eqref{eq:backprop}
+and not a difference quotient is what is computed. All twenty-six partial derivatives of a
+small network agree with central differences to $10^{-10}$.
 \end{remark}
 
 \subsection{What one hidden layer can represent}\label{sec:14.3.3}
@@ -465,13 +459,10 @@ different hidden units into one, generally giving a different and larger $L$.
 \end{proof}
 
 \begin{remark}
-That is the contrast the unit is built around. The support vector machine
-of~\eqref{eq:primal} is a convex programme, so its solution is unique
+The support vector machine of~\eqref{eq:primal} is a convex programme, so its solution is unique
 (Theorem~\ref{thm:exist}), the duality theory of the prerequisites applies exactly, and any
 algorithm that stops at a stationary point has found the answer. Nothing of this survives
-for~\eqref{eq:mlp}: there are at least $H!$ global minima, no duality, and gradient descent
-returns whatever basin it started in. §\ref{sec:14.4.5} fits the same network from ten
-starts and reports the spread.
+for~\eqref{eq:mlp}: there are at least $H!$ global minima, no duality, and gradient descent returns whatever basin it started in.
 \end{remark}
 
 \begin{definition}[Gradient descent and its stochastic form]\label{def:sgd}
@@ -527,8 +518,6 @@ c(n = n, positives = sum(y == 1), separable = TRUE)
 
 \subsection{The dual and the support vectors (§\ref{sec:14.2.1})}\label{sec:14.4.1}
 
-Theorem~\ref{thm:dual} and Corollary~\ref{cor:sv}, every claim in turn.
-
 <<hard-margin>>=
 Kl <- X %*% t(X); Cbig <- 1e6
 al <- dualfit(Kl, y, Cbig)
@@ -553,7 +542,7 @@ c(max_deviation_from_one_at_SV = max(abs(fm[sv] - 1)),
   largest_alpha_off_the_margin = max(al[abs(fm - 1) > 1e-4]))
 @
 
-Against the package. \texttt{e1071} orders the two classes the other way, so its
+\texttt{e1071} orders the two classes the other way, so its
 $(\bw,b)$ is the negative of the one above and the hyperplane is the same; the row of sums
 is what should vanish, and does, to the four decimal places its own solver works to.
 
@@ -567,8 +556,7 @@ c(support_vectors_manual = length(sv), e1071 = nrow(m1$SV))
 
 \subsection{The soft margin (§\ref{sec:14.2.2})}\label{sec:14.4.2}
 
-Theorem~\ref{thm:soft-dual}: the box constraint, and the three cases
-of~\eqref{eq:soft-cs}. The data are made non-separable by flipping six labels.
+The data are made non-separable by flipping six labels.
 
 <<soft-margin>>=
 set.seed(5); n2 <- 60
@@ -594,9 +582,6 @@ every support vector with $0<\alpha_i<C$ sits exactly on the margin, as the midd
 of~\eqref{eq:soft-cs} requires.
 
 \subsection{Kernels (§\ref{sec:14.2.3})}\label{sec:14.4.3}
-
-Example~\ref{ex:quad}: the explicit six-dimensional map against the kernel, and the two
-duals against each other.
 
 <<kernel>>=
 phi <- function(Z) cbind(1, sqrt(2)*Z[, 1], sqrt(2)*Z[, 2],
@@ -645,9 +630,6 @@ machine is linear in the six features of Example~\ref{ex:quad}.}\label{fig:svm}
 
 \subsection{Backpropagation (§\ref{sec:14.3.2})}\label{sec:14.4.4}
 
-The four equations of Theorem~\ref{thm:backprop} against central differences. A gradient is
-right or it is not, and a difference quotient settles it.
-
 <<backprop>>=
 set.seed(2); nn <- 30; pp <- 3; H <- 5
 Xn <- matrix(rnorm(nn*pp), nn, pp); yn <- rnorm(nn)
@@ -669,9 +651,8 @@ c(parameters = length(th), largest_absolute_gap = max(abs(grad(th) - num)),
   largest_relative_gap = max(abs(grad(th) - num)/(abs(num) + 1e-10)))
 @
 
-The derivative of the logistic activation is $g'=g(1-g)$, which is why \texttt{o\$A * (1 -
-o\$A)} appears in place of $g'(\bZ)$ in~\eqref{eq:delta1}. Theorem~\ref{thm:relu} is checked
-by counting kinks.
+The derivative of the logistic activation is $g'=g(1-g)$, so \texttt{o\$A * (1 - o\$A)}
+appears in place of $g'(\bZ)$ in~\eqref{eq:delta1}.
 
 <<relu-pieces>>=
 set.seed(4); Hr <- 6
@@ -686,9 +667,6 @@ c(units = Hr, breakpoints = length(unique(round(brk, 8))),
 @
 
 \subsection{Convex against non-convex (§\ref{sec:14.3.4})}\label{sec:14.4.5}
-
-The support vector machine has one solution (Theorem~\ref{thm:exist}); the network has at
-least $H!$ (Proposition~\ref{prop:perm-sym}). Ten runs of each on the same data.
 
 <<convex-vs-not>>=
 suppressMessages(library(nnet))
@@ -710,8 +688,7 @@ unconstrained hinge form of Proposition~\ref{prop:hinge}, and the network. The f
 the same value from every start, to within one part in a thousand, which is the optimiser's
 tolerance on an objective that is convex but not differentiable at the kinks. The second
 returns a range of a factor of six. That is the difference between a convex programme, whose
-solution Theorem~\ref{thm:exist} makes unique, and a non-convex one, and it is why the two
-objects are taught together.
+solution Theorem~\ref{thm:exist} makes unique, and a non-convex one.
 
 %==============================================================================
 \section{Pitfalls}\label{sec:14.5}
@@ -734,8 +711,7 @@ c(unscaled = err(FALSE), scaled = err(TRUE))
 
 \textbf{Diagnostic.} A radial or polynomial kernel whose fit changes when a column is
 re-expressed in different units.
-\textbf{Fix.} Standardise. \texttt{svm} does so by default, which is why the failure here
-had to be provoked with \texttt{scale = FALSE}: the second column has a hundred times the
+\textbf{Fix.} Standardise. \texttt{svm} does so by default, so the failure here had to be provoked with \texttt{scale = FALSE}: the second column has a hundred times the
 spread of the first, so $|\bx-\bz|^2$ is essentially its squared difference alone and the
 first column is invisible to the kernel.
 

@@ -1,0 +1,128 @@
+#  FILENAME IS Chap3RCode.txt ;
+#  THIS CODE USES THE DATASET TERMLIFE.CSV
+#  THIS CODE ALSO USES THE DATASET REFRIGERATOR.CSV
+
+Term <- read.table(choose.files(), header=TRUE, sep=",")
+
+#  PICK THE SUBSET OF THE DATA CORRESPONDING TO TERM PURCHASE
+Term2 <- subset(Term, subset=FACE > 0)
+names(Term2)
+str(Term2)
+fix(Term2)
+attach(Term2)
+Term2$LNFACE <- with(Term2, log(FACE))
+Term2$LNINCOME <- with (Term2, log(INCOME))
+
+#  TABLE 3.1 SUMMARY STATISTICS
+library(Rcmdr)
+library(abind)
+summvar <-numSummary(Term2[, c("EDUCATION", "FACE", "INCOME", "LNFACE", "LNINCOME", "NUMHH")], statistic=c("mean", "sd", "quantiles"), quantiles=c(0, .5, 1))
+str(summvar)
+setwd("C://")
+write.csv(summvar$table, file = "Chap3summvar.csv")
+
+#  Alternatively, you can use the following codes without opening the Rcmdr library, and write it out to a word processor:
+#  Xymat <- data.frame(FACE, INCOME, EDUCATION,NUMHH, Term2$LNFACE, Term2$LNINCOME) 
+#  meanSummary <- sapply(Xymat, mean,  na.rm=TRUE) 
+#  sdSummary   <- sapply(Xymat, sd,    na.rm=TRUE) 
+#  minSummary  <- sapply(Xymat, min,   na.rm=TRUE) 
+#  maxSummary  <- sapply(Xymat, max,   na.rm=TRUE) 
+#  medSummary  <- sapply(Xymat, median,na.rm=TRUE) 
+#  summvar = cbind(meanSummary, medSummary, sdSummary, minSummary, maxSummary)
+#  summvar
+#  setwd("C://")
+#  write.csv(summvar, file = "Chap3summvar.csv")
+
+
+#  FIGURE 3.1
+par(mfrow=c(1, 2))
+plot(INCOME, FACE)
+plot(Term2$LNINCOME, Term2$LNFACE)
+dev.off()
+
+#  TABLE 3.1 TABLE OF CORRELATIONS
+cor(Term2[, c("EDUCATION", "FACE", "INCOME", "LNFACE", "LNINCOME", "NUMHH")], use="complete.obs")
+
+#  FIGURE 3.2 SCATTERPLOT MATRIX
+scatterplot.matrix (~EDUCATION+LNFACE+LNINCOME+NUMHH, reg.line=FALSE, smooth=FALSE, diagonal='none', data=Term2)
+#  "scatterplot.matrix" is only available in Rcmdr library, alternatively, you can use the following codes without opening the Rcmdr library:
+#  Term1=data.frame(NUMHH, EDUCATION, Term2$LNINCOME, Term2$LNFACE)
+#  pairs(Term1,upper.panel=NULL, gap=0,cex.labels=1.25)
+
+Term1 <- subset (Term2, select=c(EDUCATION, LNFACE, LNINCOME, NUMHH))
+#  PRINT OUT BEGINNING AND END OF THE ELEMENTS
+Term1[1:2,];Term1[275,]
+
+#  SECTION 3.1 MULTIPLE LINEAR REGRESSSION SUMMARY OUTPUT
+modelMLR <- lm(LNFACE ~ EDUCATION+NUMHH+LNINCOME, data=Term1)
+modelsum <-summary(modelMLR)
+
+
+#  SECTION 3.3 MULTIPLE LINEAR REGRESSSION ANOVA OUTPUT
+aov(modelMLR)
+anova(modelMLR)
+
+#  XPRIMEX INVERSE MATRIX
+modelsum$cov.unscaled
+round(modelsum$cov.unscaled,digits=8)
+write.csv(modelsum$cov.unscaled, file = "Chap3Cov.csv")
+
+#  FIGURE 3.3 THREE DIMENSIONAL PLANE
+EDUCATION = seq(3, 16, length=15)
+LNINCOME = seq(5, 15, length=15)
+f = function(EDUCATION,LNINCOME) 
+  {r = 5 + 0.221*EDUCATION + 0.354*LNINCOME}
+LNFACE = outer(EDUCATION, LNINCOME, f)
+persp(EDUCATION, LNINCOME, LNFACE, theta = 30, 
+      phi = 30, expand = 0.5, ticktype="detailed")
+rm(EDUCATION,LNINCOME,LNFACE)
+#  In Rcmdr, there's an option of creating 3D graphs, which will give you the "scatter 3d" function. However, we won't discuss that function here.
+
+#  FIGURE 3.4  ADDED VARIABLE PLOT
+detach(Term2)
+#  DATASET REFRIGERATOR.CSV
+Refrig <- read.table(choose.files(), header=TRUE, sep=",")
+attach(Refrig)
+str(Refrig)
+model.refrig1 <- lm(PRICE ~ RSIZE + FSIZE + SHELVES + FEATURES, data=Refrig)
+summary(model.refrig1)
+Refrig$residuals.model.refrig1 <- residuals(model.refrig1)
+model.refrig2 <- lm(ECOST ~ RSIZE + FSIZE + SHELVES + FEATURES, data=Refrig)
+summary(model.refrig2)
+Refrig$residuals.model.refrig2 <- residuals(model.refrig2)
+plot(Refrig$residuals.model.refrig1, Refrig$residuals.model.refrig2)
+dev.off()
+
+#  Alternatively, within the Rcmdr library, you can fit only one linear model to the data, and use the codes below:
+#  model.refrig3 <- lm(PRICE ~ RSIZE + FSIZE + SHELVES + FEATURES + ECOST, data=Refrig)
+#  summary(model.refrig3)
+#  av.plots (model.refrig3, ask=FALSE, identity.points=FALSE)
+#  When the above graphic device is running, click on the "stop" botton located on the top left of the R menu and click "stop locator", then you'll get all the plots you want one by one. 
+
+#  BINARY VARIABLES
+detach(Refrig)
+attach(Term2)
+Term2$LNFACE <- with(Term2, log(FACE))
+Term2$LNINCOME <- with(Term2, log(INCOME))
+Term2$MARSTAT <- as.factor(Term2$MARSTAT)
+table(Term2$MARSTAT)
+Term2$MAR0 <- with(Term2, 1*(MARSTAT == 0))
+Term2$MAR1 <- with(Term2, 1*(MARSTAT == 1))
+Term2$MAR2 <- with(Term2, 1*(MARSTAT == 2))
+
+#  ADDITIVE MODEL
+modelM0 <- lm(LNFACE ~ LNINCOME+MAR0, data=Term2)
+summary(modelM0)
+modelM1 <- lm(LNFACE ~ LNINCOME+MAR1, data=Term2)
+summary(modelM1)
+modelM2 <- lm(LNFACE ~ LNINCOME+MAR2, data=Term2)
+summary(modelM2)
+summary(lm(LNFACE ~ LNINCOME+MAR0+EDUCATION+NUMHH, data=Term2))
+
+#  INTERACTION MODEL
+summary(lm(LNFACE ~ LNINCOME+MAR0+MAR0*LNINCOME, data=Term2))
+
+#  MULTIPLE LINEAR REGRESSION WITH INTERACTIONS
+summary(lm(LNFACE ~ LNINCOME+MAR0+MAR0*LNINCOME+EDUCATION+NUMHH, data=Term2))
+
+

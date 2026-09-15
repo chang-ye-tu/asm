@@ -1,0 +1,410 @@
+#  FILENAME IS Chap16.txt  ;
+#  THIS CODE USES THE FOLLOWING DATASETS: 
+  # HealthExpend.csv
+  # Health
+
+#  MEPS DATA
+Hexpend = read.csv(choose.files(),  quote = "",header=TRUE)  # READ IN DATA "HealthExpend";
+
+#  CHECK THE NAMES, DIMENSION IN THE FILE AND LIST THE FIRST 8 OBSERVATIONS  ;
+names(Hexpend)
+dim(Hexpend)
+Hexpend[1:8,]
+attach(Hexpend)
+
+#  RECODE A FEW VARIABLES ;
+ASIAN=1*(RACE1==1)
+BLACK=1*(RACE1==2)
+NATIVE=1*(RACE1==3)
+WHITE=1-ASIAN-BLACK-NATIVE   # combind other and white
+
+NORTHEAST=1*(REGION1==1)
+MIDWEST=1*(REGION1==2)
+SOUTH=1*(REGION1==3)
+WEST=1-NORTHEAST-MIDWEST-SOUTH
+
+HIGHSCHOOL=1*(EDUC1==1)
+COLLEGE=1*(EDUC1==2)
+LOWERHS=1-HIGHSCHOOL-COLLEGE
+
+POOR=1*(PHSTAT1==4)
+FAIR=1*(PHSTAT1==3)
+GOOD=1*(PHSTAT1==2)
+VGOOD=1*(PHSTAT1==1)
+EXCELLNT=1-POOR-FAIR-GOOD-VGOOD
+
+NPOOR=1*(INCOME1==1)
+LINCOME=1*(INCOME1==2)
+MINCOME=1*(INCOME1==3)
+HINCOME=1*(INCOME1==4)
+POORNEG=1-NPOOR-LINCOME-MINCOME-HINCOME
+
+COUNT=COUNTIP
+EXP=EXPENDIP
+
+POSEXP=1*(EXP>0)
+LNEXP=ifelse(EXP>0,log(EXP),0)
+LOWERBOUND=ifelse(EXP>0, LNEXP,'')  
+
+RaceFactor=cbind(ASIAN,BLACK,NATIVE,WHITE)
+RegionFactor=cbind(NORTHEAST,MIDWEST,SOUTH,WEST)
+EducFactor=cbind(HIGHSCHOOL,COLLEGE,LOWERHS)
+PhstatFactor=cbind(POOR,FAIR,GOOD,VGOOD,EXCELLNT)
+IncomeFactor=cbind(NPOOR,LINCOME,MINCOME,HINCOME,POORNEG)
+PersonLevel=cbind(Hexpend,RaceFactor,RegionFactor,EducFactor,
+PhstatFactor,IncomeFactor,COUNT,EXP,POSEXP,LNEXP,LOWERBOUND)
+names(PersonLevel)
+dim(PersonLevel)
+
+# POSITIVE EXPENDITURES ;
+PersonLevelPOSEXP=subset(PersonLevel,POSEXP==1)
+names(PersonLevelPOSEXP)
+dim(PersonLevelPOSEXP)
+PersonLevelPOSEXP[1:8,]
+
+#  TABLE 16.1 SUMMARY STATISTICS;
+#  FIRST DO GENDER;
+#install.packages("Hmisc")    # INSTALL THIS PACKAGE ONCE ;
+library(Hmisc)
+attach(PersonLevel)
+count=as.data.frame(table(GENDER))
+colnames(count)=c("GENDER","TotalCount")
+count
+meanPOS=summarize(POSEXP, GENDER, mean)
+meanPOS
+meanLNEXP=summarize(LNEXP,GENDER,mean)
+meanLNEXP                                        
+detach(PersonLevel)
+attach(PersonLevelPOSEXP)
+POScount=as.data.frame(table(GENDER))
+POScount
+POSmeanLNEXP=summarize(PersonLevelPOSEXP$LNEXP,GENDER,mean)      
+POSmeanLNEXP
+Table161Gender1=cbind(count,meanPOS,meanLNEXP,POScount,POSmeanLNEXP)
+Table161Gender1$GENDER=NULL
+Table161Gender1$GENDER=NULL
+Table161Gender1$GENDER=NULL
+Table161Gender1$GENDER=NULL
+attach(Table161Gender1)
+Percent=Table161Gender1$TotalCount/2000
+  #need number of total observation;
+Variable=Table161Gender1$GENDER
+Label=c("MALE","FEMALE")
+Table161Gender1$GENDER=NULL
+Table161Gender1$TotalCount=NULL
+Table161Gender1$Freq=NULL
+Table161Gender=cbind(Percent,Table161Gender1,Variable,Label)
+colnames(Table161Gender)=c("Percent","MeanPosExp","MeanLnExp","PosMean","Variable","Label")
+Table161Gender
+
+# NOW, AUTOMATE THE PROCESS ;
+SumStat<-function(x,y)
+{
+attach(PersonLevel)
+count=as.data.frame(table(x))
+colnames(count)=c("Vari","TotalCount")
+count
+meanPOS=summarize(PersonLevel$POSEXP,x,mean)
+colnames(meanPOS)=c("Vari","meanPOS")
+meanPOS
+meanLNEXP=summarize(LNEXP,x,mean)
+colnames(meanLNEXP)=c("Vari","LNEXP")
+POScount=as.data.frame(table(y))
+colnames(POScount)=c("Vari","Freq")
+POSmeanLNEXP=summarize(PersonLevelPOSEXP$LNEXP,y,mean)
+colnames(POSmeanLNEXP)=c("Vari","PersonLevelPOSEXP$LNEXP")      
+Table161y1=cbind(count,meanPOS,meanLNEXP,POScount,POSmeanLNEXP)
+Table161y1$Vari=NULL
+Table161y1$Vari=NULL
+Table161y1$Vari=NULL
+Table161y1$Vari=NULL
+Percent=Table161y1$TotalCount/2000   #need number of total observation;
+Variable=Table161y1$Vari                        
+Table161y1$Vari=NULL
+Table161y1$TotalCount=NULL
+Table161y1$Freq=NULL
+Table161y=cbind(Percent,Table161y1,Variable)
+colnames(Table161y)=c("Percent","MeanPosExp","MeanLnExp","PosMean","Variable")
+Table161y
+}
+
+TabGender=SumStat(GENDER,PersonLevelPOSEXP$GENDER)
+Label=c("MALE","FEMALE")
+Table161Gender=cbind(TabGender,Label)
+Table161Gender
+
+TabRace=SumStat(RACE1,PersonLevelPOSEXP$RACE1)
+Label=c("OTHERS","ASIAN","BLACK","NATIVE","WHITE")
+Table161Race=cbind(TabRace,Label)
+Table161Race
+
+TabRegion=SumStat(REGION1,PersonLevelPOSEXP$REGION1)
+Label=c("WEST","NORTHEAST","MIDWEST","SOUTH")
+Table161Region=cbind(TabRegion,Label)
+Table161Region
+
+TabEduc=SumStat(EDUC1,PersonLevelPOSEXP$EDUC1)
+Label=c("LOWERHS","HIGHSCHOOL","COLLEGE")
+Table161Educ=cbind(TabEduc,Label)
+Table161Educ
+
+TabPhstat=SumStat(PHSTAT1,PersonLevelPOSEXP$PHSTAT1)
+Label=c("EXCELLENT","VGOOD","GOOD","FAIR","POOR")
+Table161Phstat=cbind(TabPhstat,Label)
+Table161Phstat
+
+TabMnh=SumStat(MNHPOOR,PersonLevelPOSEXP$MNHPOOR)
+Label=c("GOOD","POOR")
+Table161Mnh=cbind(TabMnh,Label)
+Table161Mnh
+
+TabAnylimit=SumStat(ANYLIMIT,PersonLevelPOSEXP$ANYLIMIT)
+Label=c("NO","YES")
+Table161Anylimit=cbind(TabAnylimit,Label)
+Table161Anylimit
+
+TabIncome=SumStat(INCOME1,PersonLevelPOSEXP$INCOME1)
+Label=c("POOR","NPOOR","LINCOME","MINCOME","HINCOME")
+Table161Income=cbind(TabIncome,Label)
+Table161Income
+
+TabInsure=SumStat(insure,PersonLevelPOSEXP$insure)
+Label=c("UNINSURED","INSURED")
+Table161Insure=cbind(TabInsure,Label)
+Table161Insure
+
+# CREATE TABLE 16.1
+Table161n=rbind(Table161Gender,Table161Race,Table161Region,Table161Educ,
+Table161Phstat,Table161Mnh,Table161Anylimit,Table161Income,Table161Insure)
+Category=c("GENDER"," ","RACE"," "," "," "," ","REGION"," "," "," ",
+"EDUCATION"," "," ","PHSTAT"," "," "," "," ", "MNHEALTH"," ",
+"ANYLIMIT"," ", "INCOME"," "," "," "," ", "INSURED", " ")
+Category
+Table161=cbind(Table161n,Category)
+Table161
+write.csv(Table161,file="Chap16Table1")
+
+#  TABLE 16.2 OLS REGRESSION ;
+
+install.packages("glmmML")    # 	INSTALL THIS PACKAGE ONCE;
+  # comment: do not understand. and glmmML is of no use
+library(glmmML)
+modelOLS<-glm(LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,gaussian,data=PersonLevel)
+OLSSum=summary(modelOLS);OLSSum
+
+modelOLS$coef/sqrt(diag(OLSSum$cov.unscaled))
+
+
+# The above result replicates the parameter estimates given in Table 16.2
+# But the standard errors and t ratios are slightly different
+# That's because glm model in R uses "reml" to compute the standard errors
+# while the result given by Table 16.2 is based on a "ml" method
+# To replicate the result, run the following function
+
+SummaryML<-function(coefficients,n,k)  
+# coefficients=result given by glm, n=number of observations, k=number of regressors including intercept;
+{
+Estimate=coefficients[,1]
+Std_Error=coefficients[,2]*sqrt((n-k)/n)
+t_Ratio=coefficients[,3]*sqrt(n/(n-k))
+coeffML=cbind(Estimate,Std_Error,t_Ratio)
+coeffML}
+
+modelOlsML=SummaryML(OLSSum$coefficients,2000,22)
+modelOlsML
+
+#  TABLE 16.2 TOBIT REGRESSION ;
+library(survival)
+modelTobit<-survreg(Surv(LNEXP,LNEXP>0,type="left") ~ AGE+GENDER+ASIAN+BLACK
++NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,dist="gaussian")
+TobitSum=summary(modelTobit);TobitSum
+
+# TABLE 16.2 HECKMAN TWO-STAGE ALGORITHM ; 
+# STAGE 1 - PROBIT MODEL
+model1S<-glm(POSEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,binomial(link=probit),data=PersonLevel)
+model1SSum=summary(model1S);model1SSum
+
+# COMPUTE INVERSE MILL'S RATIO
+invMillRatio=dnorm(model1S$fitted.values)/pnorm(model1S$fitted.values)
+ordernum=seq(1,2000)
+PLnew=cbind(PersonLevel,invMillRatio,ordernum)
+
+  # Question: two stage method,scaled coefficients, 
+  # is it consistent? advantage over tobit model
+# STAGE 2 
+model2S<-lm(LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure+invMillRatio,data=PLnew)
+model2SSum=summary(model2S);model2SSum
+
+# COMPUTE Heteroscedasticity-Corrected Covariance Matrix; 
+install.packages("car")
+library(car)
+?hccm
+cov_corrected=hccm(model2S,"hc1")
+var_corrected=diag(cov_corrected)
+StdErr_corrected=sqrt(var_corrected)
+tRatio_corrected=model2S$coefficients/StdErr_corrected
+summary_corrected=
+  cbind(model2S$coefficients,StdErr_corrected,tRatio_corrected)
+summary_corrected
+
+# REPLICATE RESULT GIVEN BY TABLE 16.2 ;
+model2SML=SummaryML(summary_corrected,2000,23)
+model2SML
+
+# CREATE TABLE 16.2 ;
+Table162OLS=modelOlsML
+Table162Tobit=TobitSum$table[-c(23),]
+Table1622S=model2SML[-c(23),]
+Table162=cbind(Table162OLS,Table162Tobit,Table1622S)
+Table162
+write.cvs(Table162,file="Chap16Table2")
+
+#  TWO-PART MODEL - PART ONE;
+modelPart1<-glm(POSEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,binomial(link=probit),data=PersonLevel,na.action=na.pass)
+modelPart1Sum=summary(modelPart1);modelPart1Sum
+
+#  TWO-PART MODEL - PART TWO;
+modelPart2<-glm(LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,family=gaussian(link="identity"),data=PersonLevelPOSEXP)
+modelPart2Sum=summary(modelPart2);modelPart2Sum
+modelPart2ML=SummaryML(modelPart2Sum$coefficients,157,22)
+modelPart2ML
+
+# TWO-PART MODEL - PART ONE - INCLUDING ONLY IMPORTANT VARIABLES;
+reducedPart1<-glm(POSEXP ~ GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure,binomial(link=probit),data=PersonLevel)
+reducedPart1Sum=summary(reducedPart1);reducedPart1Sum
+
+# TWO-PART MODEL - PART TWO - INCLUDING ONLY IMPORTANT VARIABLES;
+reducedPart2<-glm(LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+MNHPOOR+ANYLIMIT+insure,gaussian,data=PersonLevelPOSEXP)
+reducedPart2Sum=summary(reducedPart2);reducedPart2Sum
+modelPart2ML=SummaryML(reducedPart2Sum$coefficients,157,14)
+modelPart2ML
+
+# AGGREGATE LOSS MODEL ;
+# EXAMINE THE DISTRIBUTION OF COUNTS
+table(PersonLevel$COUNT)
+summarize(PersonLevel$LNEXP,PersonLevel$COUNT,mean)
+
+# FREQUENCY PART - NEGATIVE BINOMIAL
+library(MASS)
+modelNegbin<-glm.nb(COUNT ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+insure, data=PersonLevel)
+modelNegbinSum=summary(modelNegbin);modelNegbinSum
+
+# THE EVENT-LEVEL FILE ;
+EventLevel= read.csv(choose.files(),  quote = "",header=TRUE) 
+# READ IN THE FILE "HealthExpendEvent.csv" ;
+names(EventLevel)
+dim(EventLevel)
+attach(EventLevel)
+
+ASIAN=1*(RACE1==1)
+BLACK=1*(RACE1==2)
+NATIVE=1*(RACE1==3)
+WHITE=1-ASIAN-BLACK-NATIVE
+
+NORTHEAST=1*(REGION1==1)
+MIDWEST=1*(REGION1==2)
+SOUTH=1*(REGION1==3)
+WEST=1-NORTHEAST-MIDWEST-SOUTH
+
+HIGHSCHOOL=1*(EDUC1==1)
+COLLEGE=1*(EDUC1==2)
+LOWERHS=1-HIGHSCHOOL-COLLEGE
+
+POOR=1*(PHSTAT1==4)
+FAIR=1*(PHSTAT1==3)
+GOOD=1*(PHSTAT1==2)
+VGOOD=1*(PHSTAT1==1)
+EXCELLNT=1-POOR-FAIR-GOOD-VGOOD
+
+NPOOR=1*(INCOME1==1)
+LINCOME=1*(INCOME1==2)
+MINCOME=1*(INCOME1==3)
+HINCOME=1*(INCOME1==4)
+POORNEG=1-NPOOR-LINCOME-MINCOME-HINCOME
+
+COUNT=COUNTIP
+EXP=EXPENDIP
+
+RaceFactor1=cbind(ASIAN,BLACK,NATIVE,WHITE)
+RegionFactor1=cbind(NORTHEAST,MIDWEST,SOUTH,WEST)
+EducFactor1=cbind(HIGHSCHOOL,COLLEGE,LOWERHS)
+PhstatFactor1=cbind(POOR,FAIR,GOOD,VGOOD,EXCELLNT)
+IncomeFactor1=cbind(NPOOR,LINCOME,MINCOME,HINCOME,POORNEG)
+EventLevel1=cbind(EventLevel,RaceFactor1,RegionFactor1,EducFactor1,
+PhstatFactor1,IncomeFactor1,COUNT,EXP)
+
+EventLevelPOS1=subset(EventLevel1,EXP>0)
+LNEXP=log(EventLevelPOS1$EXP)
+
+EventLevelPOS=cbind(EventLevelPOS1,LNEXP)
+names(EventLevelPOS)
+dim(EventLevelPOS)
+attach(EventLevelPOS)
+write.csv(EventLevelPOS, file="EventLevelPOS")
+
+# AGGREGATE LOSS MODEL - SEVERITY ORDINARY REGRESSION;
+modelOrdSev<-glm(EventLevelPOS$LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE,gaussian,data=EventLevelPOS)
+OrdSevSum=summary(modelOrdSev);OrdSevSum
+modelOrdSevML=SummaryML(OrdSevSum$coefficients,203,22)
+modelOrdSevML
+
+# AGGREGATE LOSS MODEL - SEVERITY GAMMA REGRESSION;
+modelGamma<-glm(EventLevelPOS$EXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE,control=glm.control(maxit=1000), data=EventLevelPOS,
+family=Gamma(link="log"))
+GammaSum=summary(modelGamma);GammaSum
+# It did not converge even if 10000 iterations were performed;
+# A possible reason is the number of observations is small 
+# while the number of explanatory variables is large;
+
+# Now, only include the highly significant explanatory variables ;
+modelGamma<-glm(EventLevelPOS$EXP ~ GENDER
++COLLEGE+HIGHSCHOOL+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE,control=glm.control(maxit=1000), data=EventLevelPOS,family=Gamma(link="log"))
+GammaSum=summary(modelGamma);GammaSum
+# It converged ;
+
+# An alternative way is to use the estimates given by ordinary regression as the start values of gammar regression;
+modelStart<-glm(EventLevelPOS$EXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE,control=glm.control(maxit=100),gaussian (link="log"),data=EventLevelPOS)
+start=modelStart$coefficients
+
+modelGamma<-glm(EventLevelPOS$EXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE,start.=start,control=glm.control(maxit=1000), 
+data=EventLevelPOS,family=Gamma(link="log"))
+GammaSum=summary(modelGamma);GammaSum
+# The model still did not converge ;
+
+# JUST FOR FUN - TRY A MIXED EFFECTS MODEL WITH COUNT AS AN EXPLANATORY VARIABLE;
+install.packages("lme4")               # INSTALL THIS PACKAGE ONCE ;
+library(lme4)
+library(nlme)
+modelMixed<-lme(LNEXP ~ AGE+GENDER+ASIAN+BLACK+NATIVE+NORTHEAST+MIDWEST+SOUTH
++COLLEGE+HIGHSCHOOL+POOR+FAIR+GOOD+VGOOD+MNHPOOR+ANYLIMIT+HINCOME+MINCOME
++LINCOME+NPOOR+INSURE+COUNT,data=EventLevelPOS,random=~1|DUPERSID, method="REML")
+MixedSum=summary(modelMixed);MixedSum$tTable
+
+
+

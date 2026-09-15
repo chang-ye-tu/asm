@@ -45,11 +45,6 @@ knitr::opts_chunk$set(fig.path = "figs/unit12-")
 ISLR §8.2.1.
 \end{reading}
 
-Unit 11 ended with a measurement: two trees grown on disjoint halves of \texttt{Boston}
-agree on the root variable under a fifth of the time and their predictions differ by
-about $45\%$ of the response's own standard deviation. That is variance, and Unit 1's
-decomposition says variance is the part of the error that averaging can remove.
-
 \subsection{Averaging}\label{sec:12.1.1}
 
 \begin{theorem}[Variance of an average of equicorrelated predictors]\label{thm:avg}
@@ -77,12 +72,9 @@ $\rho\geqslant0$ only the second term of~\eqref{eq:avg} depends on $B$ and it de
 \end{proof}
 
 \begin{remark}
-Everything in this unit is a comment on~\eqref{eq:avg}. The second term is what averaging
-removes and it vanishes at rate $1/B$, so the number of members is not a tuning parameter:
-more is never worse. The first term is what averaging cannot touch. Bagging accepts
-$\rho\sigma^2$ and drives $B$ up; a random forest attacks $\rho$ itself
-(§\ref{sec:12.2}); boosting abandons the averaging picture entirely
-(§\ref{sec:12.3}).
+The second term of~\eqref{eq:avg} is what averaging removes and it vanishes at rate $1/B$,
+so the number of members is not a tuning parameter: more is never worse. The first term is
+what averaging cannot touch.
 \end{remark}
 
 \begin{corollary}[The same identity for sample moments]\label{cor:avg-sample}
@@ -103,8 +95,7 @@ c_{ab}=B\overline{\hat s^2}+B(B-1)\hat c$.
 \end{proof}
 
 \begin{remark}
-Corollary~\ref{cor:avg-sample} is an algebraic identity, not an approximation, which is
-why §\ref{sec:12.4.1} can check it to machine precision. Theorem~\ref{thm:avg} is the same
+Corollary~\ref{cor:avg-sample} is an algebraic identity, not an approximation. Theorem~\ref{thm:avg} is the same
 statement about population moments and needs the equicorrelation hypothesis; for an
 ensemble that hypothesis holds by symmetry, the members being built by identical
 independent randomisations of one procedure.
@@ -138,7 +129,7 @@ when $\rho<1$ and $B>1$.
 \end{proof}
 
 \begin{remark}
-This is why the trees are left unpruned. Pruning trades variance for bias (Unit 11), and
+The trees are left unpruned. Pruning trades variance for bias (Unit 11), and
 the averaging in~\eqref{eq:bagging} already removes variance at no cost in bias, so the
 member to feed it is the one with the least bias available. The two devices would
 otherwise be paying twice for the same thing.
@@ -147,8 +138,7 @@ otherwise be paying twice for the same thing.
 \begin{remark}
 The bias is that of a tree fitted to a \emph{bootstrap} sample, not to the original data.
 Proposition~\ref{prop:bag-bias} says the averaging introduces no bias; it does not say the
-bagged predictor has the bias of a tree fitted to $\calD$. Resampling is what makes the
-members differ, and paying a little bias for that is the trade bagging makes.
+bagged predictor has the bias of a tree fitted to $\calD$. Resampling makes the members differ, and paying a little bias for that is the trade bagging makes.
 \end{remark}
 
 \begin{proposition}[Majority vote under independence]\label{prop:vote}
@@ -215,11 +205,9 @@ gives $(1-\rho)\sigma^2(e-1)/B$.
 
 \begin{remark}
 So the out-of-bag error is honest about being out of sample and is biased \emph{upward} as
-an estimate of the full ensemble's error, by an amount that vanishes like $1/B$. At
-$B=500$ that correction is negligible beside the variability of the estimate itself, which
-is what §\ref{sec:12.4.2} measures: on one split of \texttt{Boston} the out-of-bag and
-test errors differ by a factor of $1.8$, and averaged over twenty-five splits they differ
-by $12\%$.
+an estimate of the full ensemble's error, by an amount that vanishes like $1/B$. At $B=500$ that correction is negligible beside the variability of the estimate itself: on
+one split of \texttt{Boston} the out-of-bag and test errors differ by a factor of $1.8$, and
+averaged over twenty-five splits by $12\%$.
 \end{remark}
 
 \subsection{Variable importance}\label{sec:12.1.4}
@@ -275,8 +263,7 @@ in~\eqref{eq:perm} have the same expectation.
 No such statement holds for Definition~\ref{def:mdi}. A predictor independent of the
 response still offers cutpoints, and the best of many cutpoints reduces the training cost
 by a positive amount; a predictor offering more distinct cutpoints reduces it by more.
-So impurity importance is positive for pure noise and increases with the number of values
-the predictor takes, which §\ref{sec:12.5.2} exhibits with four noise variables whose
+So impurity importance is positive for pure noise and increases with the number of values the predictor takes; on four noise variables the
 impurity importances differ elevenfold.
 \end{remark}
 
@@ -325,10 +312,9 @@ Both quantities in Theorem~\ref{thm:avg} depend on $m$. Lowering $m$ lowers $\rh
 lowers the floor $\rho\sigma^2$; it also removes candidates from every split, which can
 only raise the training cost of each tree and generally raises $\sigma^2$. The ensemble's
 limiting variance is the product $\rho(m)\sigma^2(m)$ of a term that increases in $m$ and
-one that decreases, and nothing here says which effect wins. Nor is variance the whole
-error: restricting the candidates also changes the bias. §\ref{sec:12.4.3} measures all of
-it and finds the variance smallest at $m=1$, the squared bias smallest at $m=p$, and their
-sum smallest in between. The choice of $m$ is made by the out-of-bag error.
+one that decreases, and nothing here says which effect wins. Nor is variance the whole error: restricting the candidates also changes the bias. Measured
+on a simulated design, the variance is smallest at $m=1$, the squared bias smallest at
+$m=p$, and their sum smallest in between. The choice of $m$ is made by the out-of-bag error.
 \end{remark}
 
 \subsection{What decorrelation costs}\label{sec:12.2.2}
@@ -337,9 +323,7 @@ sum smallest in between. The choice of $m$ is made by the out-of-bag error.
 Restricting the candidate set is not free, and the case where it hurts is the one Unit 11
 used to show greedy growing fail. For the exclusive-or truth every single split has zero
 population gain, and the structure appears only when a split on $x_1$ is followed by one on
-$x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. The
-measurement in §\ref{sec:12.4.5} is that on a box truth in two of six coordinates, bagging
-reaches a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
+$x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. On a box truth in two of six coordinates, bagging reaches a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
 truth the two are indistinguishable. Decorrelation helps when the members are similar for a
 bad reason and hurts when they are similar because the problem requires it.
 \end{remark}
@@ -348,9 +332,7 @@ bad reason and hurts when they are similar because the problem requires it.
 Two properties of a single tree survive the averaging and one does not. Monotone
 invariance of the predictors and the direct handling of categorical variables (Unit 11)
 hold for every member, hence for the ensemble. Interpretability does not: the object is
-now several hundred trees and the only summaries left are the importance measures of
-§\ref{sec:12.1.4}, which is why those measures carry the weight they do and why their
-biases matter.
+now several hundred trees and the only summaries left are the importance measures of §\ref{sec:12.1.4}.
 \end{remark}
 
 %==============================================================================
@@ -499,9 +481,8 @@ pairs; $g_1(a)$ appears once with each sign, as does $g_1(a')$, $g_2(b)$ and $g_
 
 \begin{remark}
 So $d$ is not a smoothness knob but a statement about which interactions the model is
-allowed to represent, and Corollary~\ref{cor:additive} turns it into something checkable:
-§\ref{sec:12.4.6} computes~\eqref{eq:mixed} for depth one and depth two and gets
-$7\times10^{-15}$ and $0.79$.
+allowed to represent, and Corollary~\ref{cor:additive} turns it into something checkable: computed for depth one
+and depth two, \eqref{eq:mixed} is $7\times10^{-15}$ and $0.79$.
 \end{remark}
 
 %==============================================================================
@@ -514,8 +495,7 @@ ISLR §8.3.3--8.3.4.
 
 \texttt{Boston} from \texttt{ISLR2} again, and a simulated design in which the truth is
 known: $p=10$ predictors, one with coefficient $4$, four with coefficient $1$, five with
-coefficient $0$. Simulation is what makes $\sigma^2$ and $\rho$ of Theorem~\ref{thm:avg}
-measurable, since both are variances over the draw of the training set and a single data
+coefficient $0$. Simulation makes $\sigma^2$ and $\rho$ of Theorem~\ref{thm:avg} measurable, since both are variances over the draw of the training set and a single data
 set supplies only one draw.
 
 <<setup-data>>=
@@ -530,9 +510,8 @@ c(p = p, n_train = ntr, strong = beta[1], moderate = beta[2],
 
 \subsection{The variance identity (§\ref{sec:12.1.1})}\label{sec:12.4.1}
 
-Corollary~\ref{cor:avg-sample} is exact, so it should hold to machine precision. The matrix
-$\bQ$ has one row per simulated training set and one column per tree of a forest fitted to
-it, evaluated at a fixed test point.
+The matrix $\bQ$ has one row per simulated training set and one column per tree of a forest
+fitted to it, evaluated at a fixed test point.
 
 <<variance-identity>>=
 set.seed(1); B <- 60; M <- 150; nte <- 25
@@ -552,9 +531,6 @@ c(identity_max_gap = max(abs(per[1, ] - per[2, ])),
 @
 
 \subsection{Out-of-bag error (§\ref{sec:12.1.3})}\label{sec:12.4.2}
-
-Theorem~\ref{thm:oob}\ref{oob:i} on \texttt{Boston}, and the out-of-bag error against a
-held-out test error on one split.
 
 <<oob-one>>=
 set.seed(1); n <- nrow(Boston); tr <- sample(n, n/2)
@@ -583,9 +559,6 @@ Theorem~\ref{thm:oob}\ref{oob:iii} predicts, and the standard deviation of the t
 across splits is large enough to explain the single-split discrepancy on its own.
 
 \subsection{Decorrelation (§\ref{sec:12.2.1})}\label{sec:12.4.3}
-
-The two quantities of Theorem~\ref{thm:avg} measured separately as $m$ varies, on the
-simulated design where independent training sets are available.
 
 <<decorrelation>>=
 summ <- function(mt) { A <- fitall(mt)
@@ -639,8 +612,6 @@ $m$.}\label{fig:decorr}
 
 \subsection{Variable importance (§\ref{sec:12.1.4})}\label{sec:12.4.4}
 
-Proposition~\ref{prop:mdi}: the impurity gains of one tree add to what the tree explains.
-
 <<mdi-telescope>>=
 suppressMessages(library(tree))
 t1 <- tree(medv ~ ., Boston); fr <- t1$frame
@@ -663,9 +634,8 @@ round(head(im[order(-im[, 2]), ], 5), 1)
 \subsection{Bagging, forests and boosting compared (§\ref{sec:12.2.2})}
 \label{sec:12.4.5}
 
-Two truths in six coordinates: one linear, one the exclusive-or of two boxes that Unit 11
-showed greedy splitting cannot see at the first split. The comparison is against the noise
-free truth, so what is measured is approximation error and not the irreducible part.
+The comparison is against the noise-free truth, so what is measured is approximation error
+and not the irreducible part.
 
 <<compare>>=
 sim <- function(kind, m) { X <- data.frame(matrix(runif(m*6), m, 6))
@@ -695,8 +665,7 @@ a split on $x_1$ with a split on $x_2$ rarer.
 
 \subsection{Boosting (§\ref{sec:12.3})}\label{sec:12.4.6}
 
-Theorem~\ref{thm:boost-op} with $\bS$ the projection on a fixed six-cell partition, which
-is a legitimate linear smoother by Unit 11.
+The projection on a fixed six-cell partition is a linear smoother.
 
 <<boost-operator>>=
 set.seed(3); m <- 120; xb <- runif(m); yb <- sin(6*xb) + rnorm(m, 0, .3)
@@ -737,8 +706,6 @@ t(sapply(c(0.01, 0.02, 0.05), function(lam) {
 The products are $17$, $16$ and $15$ and the three minima agree to three decimal places:
 a fivefold change in the shrinkage buys nothing except a fivefold change in the running
 time.
-
-Corollary~\ref{cor:additive} is an exact test, so a depth-one ensemble must return zero.
 
 <<interaction-depth>>=
 fitg <- function(dep) gbm(y ~ ., data = gtr, distribution = "gaussian",
@@ -810,7 +777,7 @@ rbind(trees = Bv, bagging = bg, rounds = 5*Bv,
 @
 
 The bagging row falls and flattens; the boosting row falls, reaches its minimum at $500$
-rounds, and then climbs. Averaging over ten forests is what makes the first row monotone:
+rounds, and then climbs. Averaging over ten forests makes the first row monotone:
 a single forest at $B=5$ is too variable to read.
 
 \textbf{Diagnostic.} A cross-validation loop over the number of trees in a random forest, or

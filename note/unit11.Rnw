@@ -45,11 +45,10 @@ knitr::opts_chunk$set(fig.path = "figs/unit11-")
 ISLR §8.1.1.
 \end{reading}
 
-Unit 10 built a regression tree by recursive binary splitting and stopped when a node became
-small. Nothing in that construction says when to stop, and growing until every leaf is
-nearly pure fits the training data exactly. A threshold on the split gain is not the repair:
-a split worth little on its own can be the one that makes the next split worth a great deal,
-so a greedy stopping rule discards it before its value appears.
+Growing until every leaf is nearly pure fits the training data exactly. A threshold on the
+split gain is not the repair: a split worth little on its own can be the one that makes the
+next split worth a great deal, so a greedy stopping rule discards it before its value
+appears.
 
 \subsection{The pruning family}\label{sec:11.1.1}
 
@@ -112,8 +111,7 @@ The number of pruned subtrees grows faster than any polynomial in the size of $T
 complete binary tree of depth $d$ has $N_d$ pruned subtrees with $N_0=1$ and
 $N_{d}=1+N_{d-1}^2$, since such a subtree is either the root alone or a pair of pruned
 subtrees of the two branches. That gives $N_5=458{,}330$ and $N_6>2\times10^{11}$ on a tree
-of $127$ nodes. Minimising~\eqref{eq:Ralpha} by enumeration is not available, and what
-follows replaces it by a sweep of the tree.
+of $127$ nodes. Minimising~\eqref{eq:Ralpha} by enumeration is not available.
 \end{remark}
 
 \subsection{The minimising subtree}\label{sec:11.1.2}
@@ -262,8 +260,7 @@ for $\alpha_t$.
 Equation~\eqref{eq:weakest} is the quantity every implementation reports: the cost saved by
 keeping the branch, per extra leaf. \texttt{tree} prints it as the vector \texttt{k} of a
 pruning sequence; \texttt{rpart} prints \texttt{cp}, which is~\eqref{eq:weakest} divided by
-the cost of the root, so that \texttt{cp} is a fraction of the total. §\ref{sec:11.4.1}
-recomputes both from Theorem~\ref{thm:threshold}.
+the cost of the root, so that \texttt{cp} is a fraction of the total.
 \end{remark}
 
 \begin{remark}
@@ -290,8 +287,7 @@ subtree a fold contributes at a given $\alpha$ need not have the number of leave
 full-data tree has at that $\alpha$, so the size axis of a cross-validation plot is a label
 from the full data and not a property of what was scored; and the whole tree, not only its
 pruning, must be regrown inside each fold, since choosing the splits on all the data and
-cross-validating only the pruning would evaluate a rule that has already seen the held-out
-observations. §\ref{sec:11.4.2} exhibits the first and §\ref{sec:11.5.4} the second.
+cross-validating only the pruning would evaluate a rule that has already seen the held-out observations.
 \end{remark}
 
 \begin{definition}[One standard error rule]\label{def:1se}
@@ -304,11 +300,10 @@ with
 \end{definition}
 
 \begin{remark}
-Corollary~\ref{cor:sequence} is what makes Definition~\ref{def:cvtree} feasible: the
+Corollary~\ref{cor:sequence} makes Definition~\ref{def:cvtree} feasible: the
 candidate set is a nested sequence of fewer than $|T_{\max}|$ trees, not the collection of
 all pruned subtrees. Nothing here shows that $\hat\alpha$ estimates the minimiser of the
-test error well; that is the cross-validation question of Unit 1, and §\ref{sec:11.4.2}
-measures the variability of $\hat\alpha$ across folds directly.
+test error well; that is the cross-validation question of Unit 1.
 \end{remark}
 
 %==============================================================================
@@ -417,12 +412,11 @@ counts add: $n_LM(\bp_L)+n_RM(\bp_R)=(n_L-n_{Lk^\ast})+(n_R-n_{Rk^\ast})
 \end{proof}
 
 \begin{remark}
-This is the whole reason trees are not grown on the error count. A split that leaves both
+Trees are therefore not grown on the error count. A split that leaves both
 children with the same modal class scores exactly zero on $M$ however differently the two
 children are composed, so a greedy search on $M$ has no gradient to follow and stops. Under
 $G$ or $H$ the same split has strictly positive gain unless the two child distributions
-coincide (Theorem~\ref{thm:gain}), and the search continues. §\ref{sec:11.4.3} exhibits two
-splits with identical $M$ gain that $G$ and $H$ rank strictly.
+coincide (Theorem~\ref{thm:gain}), and the search continues.
 \end{remark}
 
 \begin{theorem}[Ordering]\label{thm:ordering}
@@ -475,9 +469,8 @@ one, with log likelihood $0$.
 The three quantities therefore serve different roles. $G$ or $H$ grows the tree, because
 Theorem~\ref{thm:Mblind} says $M$ cannot. $M$ prunes it, because
 Corollary~\ref{cor:sequence} needs a cost and the cost one actually cares about is the error
-count. Both are legitimate node costs by Proposition~\ref{prop:refine}, and
-§\ref{sec:11.5.2} shows that the two choices can select trees differing by twenty leaves on
-the same data.
+count. Both are legitimate node costs by Proposition~\ref{prop:refine}, and the two choices can
+select trees differing by twenty leaves on the same data.
 \end{remark}
 
 \subsection{Two classes}\label{sec:11.2.3}
@@ -561,8 +554,7 @@ values it is closer to. Sorting the levels once and scanning the $L-1$ cutpoints
 finds an optimal split at the cost of Unit 10's continuous case.
 Theorem~\ref{thm:ordered-levels} needs a scalar $\bar y_l$ to sort by, so it covers
 regression and two-class classification; with $K>2$ classes there is no such ordering and
-implementations fall back on heuristics. §\ref{sec:11.4.4} checks the two-class claim
-against an exhaustive search over all $2^{L-1}-1$ subsets.
+implementations fall back on heuristics.
 \end{remark}
 
 %==============================================================================
@@ -574,8 +566,7 @@ ISLR §8.1.3--8.1.4.
 \end{reading}
 
 A linear model fits $f(\bx)=\beta_0+\sum_j\beta_jx_j$ and a tree fits
-$f(\bx)=\sum_mc_m\indc\{\bx\in R_m\}$. Neither contains the other, and the three results
-below say what each pays where the other is right.
+$f(\bx)=\sum_mc_m\indc\{\bx\in R_m\}$. Neither contains the other.
 
 \subsection{The cost of a staircase}\label{sec:11.3.1}
 
@@ -610,10 +601,8 @@ which box. With $J=m^p$, $m^2=J^{2/p}$.
 
 \begin{remark}
 Halving the error of a linear truth costs $\sqrt2$ times as many leaves in one dimension and
-$2^{p/2}$ times as many in $p$: at $p=10$ a factor of $32$. A linear model has no such
-error at all. This is the precise version of the statement that trees do not exploit linear
-structure, and it also says that the difficulty is dimensional and not a matter of sample
-size.
+$2^{p/2}$ times as many in $p$: at $p=10$ a factor of $32$. A linear model has no such error at all. The difficulty is dimensional, not a matter of
+sample size.
 \end{remark}
 
 \subsection{Where a tree is exactly right}\label{sec:11.3.2}
@@ -685,10 +674,7 @@ cases $s>\tfrac12$ and splits on $X_2$ are the same computation.
 Part~\ref{cb:iii} is the limitation that matters and it is not the one usually stated. The
 target is a partition predictor with four boxes, exactly the class a tree fits, and the
 tree still fails: the greedy criterion of Unit 10 sees nothing at the first split, so
-whatever the algorithm does next is driven by sampling noise. What a tree can represent and
-what growing it finds are different questions. §\ref{sec:11.4.5} shows the sample gains on
-$400$ observations, where the largest is $1.7\%$ of the total sum of squares and does not
-occur at $\tfrac12$.
+whatever the algorithm does next is driven by sampling noise. What a tree can represent and what growing it finds are different questions.
 \end{remark}
 
 \subsection{Instability}\label{sec:11.3.3}
@@ -696,26 +682,14 @@ occur at $\tfrac12$.
 \begin{remark}
 A tree is a discontinuous function of the data. The split chosen at a node is the
 $\argmax$ of finitely many gains, so an arbitrarily small perturbation that reverses the
-order of the top two changes the split, and every box below it. Nothing above bounds the
-resulting change in the fitted function, and §\ref{sec:11.4.6} measures it: on
-\texttt{Boston}, two trees grown on disjoint halves agree on the root variable about a fifth
+order of the top two changes the split, and every box below it. Nothing above bounds the resulting change in the fitted function. On \texttt{Boston}, two trees grown on disjoint halves agree on the root variable about a fifth
 of the time, and their predictions differ by roughly $45\%$ of the response's own standard
 deviation.
 \end{remark}
 
 \begin{remark}
 Instability is a variance, and Unit 1's decomposition says variance can be reduced by
-averaging. That is the whole content of Unit 12: bagging averages trees grown on bootstrap
-samples, random forests decorrelate them first, and boosting adds them in sequence. The
-weakness identified here is the reason those methods exist.
-\end{remark}
-
-\begin{remark}
-The properties that survive averaging and the properties that do not are worth separating.
-Monotone invariance of the predictors (Unit 10) and the handling of categorical variables
-without dummy coding survive, since they hold for every tree in the average. Interpretability
-does not: a single tree can be drawn, five hundred cannot. Exact reproduction of a box truth
-does not either, since an average of trees is no longer piecewise constant on the same boxes.
+averaging.
 \end{remark}
 
 %==============================================================================
@@ -742,10 +716,6 @@ c(n_boston = nrow(Boston), leaves_boston = sum(tb$frame$var == "<leaf>"),
 
 \subsection{The pruning sequence (§\ref{sec:11.1.2})}\label{sec:11.4.1}
 
-Theorem~\ref{thm:threshold} says each internal node has one threshold $\alpha_t$, the zero
-of $h_t$. The recursion~\eqref{eq:dp} is coded directly and the thresholds are compared with
-the sequence \texttt{prune.tree} reports.
-
 <<pruning-thresholds>>=
 fr <- tb$frame; id <- as.integer(rownames(fr))
 Rn <- setNames(fr$dev, id); lf <- setNames(fr$var == "<leaf>", id)
@@ -760,10 +730,6 @@ pk <- prune.tree(tb)$k[-1]
 signif(rbind(manual_thresholds = manual, package_k = pk,
              difference = manual - pk), 5)
 @
-
-Definition~\ref{def:Talpha} builds the minimising subtree by comparing the two arms
-of~\eqref{eq:dp} at each node. Evaluated between consecutive thresholds it reproduces what
-the package returns.
 
 <<canonical-subtree>>=
 leafset <- function(a, t) { k <- as.character(t)
@@ -865,9 +831,6 @@ c(minimising_nsplit = ct[j, "nsplit"], min_xerror = ct[j, "xerror"],
 
 \subsection{Impurity (§\ref{sec:11.2.2})}\label{sec:11.4.3}
 
-Theorem~\ref{thm:ordering}, checked on four thousand random points of the four-class
-simplex and on a grid for two classes.
-
 <<impurity-ordering>>=
 Mf <- function(p) 1 - max(p); Gf <- function(p) 1 - sum(p^2)
 Hf <- function(p) { p <- p[p > 0]; -sum(p*log(p)) }
@@ -878,9 +841,8 @@ c(smallest_G_minus_M = min(apply(P, 1, Gf) - apply(P, 1, Mf)),
     function(p) Gf(c(p, 1 - p)) - 2*Mf(c(p, 1 - p)))))
 @
 
-Theorem~\ref{thm:Mblind}: two splits of a node holding $400$ of each class, one into
-$(300,100)$ and $(100,300)$, the other into $(200,400)$ and $(200,0)$. Every child keeps the
-modal class in the first and the second child of split B is pure.
+Two splits of a node holding $400$ of each class: A into $(300,100)$ and $(100,300)$, B into
+$(200,400)$ and $(200,0)$.
 
 <<impurity-tie>>=
 wt <- function(nL, nR, f) { N <- sum(nL) + sum(nR)
@@ -929,9 +891,6 @@ Theorem~\ref{thm:Mblind} in one picture.}\label{fig:impurity}
 
 \subsection{Categorical predictors (§\ref{sec:11.2.4})}\label{sec:11.4.4}
 
-Theorem~\ref{thm:ordered-levels} against an exhaustive search: eight levels, so $127$
-non-trivial subsets against $7$ ordered candidates.
-
 <<categorical>>=
 set.seed(4); m <- 300; L <- 8
 lv <- factor(sample(letters[1:L], m, TRUE))
@@ -952,7 +911,7 @@ c(subsets_tried = length(subs), ordered_tried = L - 1,
 \subsection{Trees against linear models (§\ref{sec:11.3.1}--§\ref{sec:11.3.2})}
 \label{sec:11.4.5}
 
-Theorem~\ref{thm:staircase}, with $\beta_1=3$ so the predicted error is $9/(12J^2)$.
+With $\beta_1=3$ the predicted error is $9/(12J^2)$.
 
 <<staircase>>=
 set.seed(8); N <- 2e5; xu <- runif(N)
@@ -961,8 +920,6 @@ t(sapply(c(2, 4, 8, 16), function(J) {
   c(J = J, mse = mean((3*xu - ave(3*xu, b))^2), theory = 9/(12*J^2)) }))
 @
 
-Theorem~\ref{thm:step}, the case a tree gets exactly right.
-
 <<step>>=
 fs <- as.numeric(xu > 0.5)
 c(linear_mse = mean(residuals(lm(fs ~ xu))^2),
@@ -970,8 +927,7 @@ c(linear_mse = mean(residuals(lm(fs ~ xu))^2),
   two_leaf_tree_mse = mean((fs - ave(fs, xu > 0.5))^2))
 @
 
-Theorem~\ref{thm:checkerboard}\ref{cb:iii} says every first split has population gain zero.
-On a sample of $400$ the gains are noise.
+On a sample of $400$ the first-split gains are noise.
 
 <<checkerboard>>=
 set.seed(11); q <- 400; z1 <- runif(q); z2 <- runif(q)
@@ -1014,8 +970,6 @@ which no single split improves at all.}\label{fig:compare}
 \end{figure}
 
 \subsection{Instability (§\ref{sec:11.3.3})}\label{sec:11.4.6}
-
-Two trees grown on disjoint halves of the same data, two hundred times.
 
 <<instability>>=
 set.seed(9); Rt <- replicate(200, {
@@ -1112,7 +1066,7 @@ a fit that improves sharply the moment the stopping rule is loosened.
 $0.2500$ the default stopping rule delivers, a factor of $123$, and against $0.0372$ for the
 fully grown tree that was pruned. Both halves are needed: growing finds the structure,
 pruning removes what the growing added afterwards. Note also that \texttt{best} requests a
-size and returns the nearest one the sequence contains, which is why $2$ and $4$ both return
+size and returns the nearest one the sequence contains, so $2$ and $4$ both return
 five leaves.
 
 \subsection{Pruning with the criterion used for growing}\label{sec:11.5.2}
@@ -1193,8 +1147,8 @@ round(sort(prop.table(table(imp)), decreasing = TRUE), 3)
 predictor.
 \textbf{Fix.} Resample and look at the distribution. Here two variables share the root
 almost equally, and which one appears is a property of the sample and not of the population.
-Unit 12 replaces this with importance measures averaged over many trees, which is the only
-form in which the question has a stable answer.
+Importance measures averaged over many trees are the only form in which the question has a
+stable answer.
 
 %==============================================================================
 \section{Exercises}\label{sec:11.6}

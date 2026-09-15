@@ -45,11 +45,6 @@ knitr::opts_chunk$set(fig.path = "figs/unit10-")
 FREES §8.2, §8.5.1.
 \end{reading}
 
-Unit 9 left the dependence between $y_t$ and its past as a diagnostic finding: the
-correlogram of a regression's residuals was read for departures from white noise, and the
-remedy offered was differencing. Modelling that dependence directly means putting the past
-of the series on the right of the equation.
-
 \subsection{The first-order process}\label{sec:10.1.1}
 
 \begin{definition}[White noise and the innovations]\label{def:innov}
@@ -332,9 +327,7 @@ Two sample versions of $\hat\alpha_{k,k}$ are in use and they are not the same n
 Substituting the sample autocorrelations $r_k$ into~\eqref{eq:yw} and solving, which is what
 \texttt{pacf} does, forms every inner product from all $T$ observations; regressing $y_t$ on
 an intercept and $y_{t-1},\ldots,y_{t-k}$ forms them from the $T-k$ dates at which every
-regressor exists. The difference is an end effect of order $T^{-1}$, and
-§\ref{sec:10.5.1} both reproduces the package exactly from~\eqref{eq:yw} and measures the
-gap between the two.
+regressor exists. The difference is an end effect of order $T^{-1}$.
 \end{remark}
 
 %==============================================================================
@@ -458,25 +451,23 @@ $\sigma^2/\gamma(0)=1-\beta_1^2$.
 \end{proof}
 
 \begin{remark}
-Two facts are worth separating. The reported standard error is asymptotically correct, so
+The reported standard error is asymptotically correct, so
 the usual $t$ ratio may be used: the dependence in the design does not invalidate the
 regression output the way Unit 9's random walk did. But it is correct only asymptotically,
 and $\hat\beta_1$ is biased downwards in finite samples, the more so as $\beta_1$ approaches
-$1$; §\ref{sec:10.5.2} measures both.
+$1$.
 \end{remark}
 
 \begin{remark}
 The precision of $\hat\beta_1$ improves as $|\beta_1|$ grows: the asymptotic variance
-$(1-\beta_1^2)/T$ vanishes at the boundary. That is the first sign that the boundary is a
-different regime, and §\ref{sec:10.3.4} shows the whole distribution changes there.
+$(1-\beta_1^2)/T$ vanishes at the boundary. That is the first sign that the boundary is a different regime.
 \end{remark}
 
 \subsection{Residual diagnostics}\label{sec:10.2.3}
 
-Unit 9 measured the coverage of the $\pm2/\sqrt T$ correlogram band by simulation, because
-the summands $\varepsilon_t\varepsilon_{t-k}$ of the numerator of $r_k$ are dependent and
-no central limit theorem then available reached them. Writing them as $u_{t-1}\varepsilon_t$
-with $u_{t-1}=\varepsilon_{t-k}$ puts them in the form the prerequisites cover.
+The summands $\varepsilon_t\varepsilon_{t-k}$ of the numerator of $r_k$, written as $u_{t-1}\varepsilon_t$
+with $u_{t-1}=\varepsilon_{t-k}$, are of the form the prerequisites' central limit theorem for
+autoregressive scores covers.
 
 \begin{theorem}[Joint limit of the sample autocorrelations]\label{thm:acf-clt}
 Let $y_1,\ldots,y_T$ be white noise with mean $\mu$ and variance $\sigma^2$, and fix
@@ -519,9 +510,8 @@ of the normal distribution function.
 \end{proof}
 
 \begin{remark}
-Unit 9 could prove only the Chebyshev bound $\tfrac14$ and measured $95.6\%$ and $95.8\%$
-coverage by simulation. Those two numbers are now explained: the band is a $95.45\%$ band
-in the limit.
+The band is a $95.45\%$ band in the limit, which is the $95.6\%$ and $95.8\%$ that Unit 9
+measured by simulation.
 \end{remark}
 
 \begin{definition}[Portmanteau statistics]\label{def:portmanteau}
@@ -555,10 +545,9 @@ probability and each factor $O(1/T)$; Slutsky's theorem finishes.
 When the $r_k$ are computed from the residuals of a fitted $ARMA(p,q)$, the limit is
 $\chi^2_{K-p-q}$ rather than $\chi^2_K$: fitting removes exactly $p+q$ directions from the
 residual correlogram. That statement is \emph{not} proved here. It needs the joint limit of
-the residual autocorrelations, which involves the estimation error and is beyond the
-prerequisites as they stand. §\ref{sec:10.5.3} measures it instead, and finds the mean of
-$Q_{LB}$ at $K-1$ and the size at the nominal $5\%$ only when the degrees of freedom are
-reduced.
+the residual autocorrelations, which involves the estimation error and is beyond the prerequisites as they stand. It is measured by simulation instead: the mean of
+$Q_{LB}$ sits at $K-1$, and the size is the nominal $5\%$ only when the degrees of freedom
+are reduced.
 \end{remark}
 
 \begin{remark}
@@ -637,8 +626,7 @@ $\sum_{k<l}\psi_k\varepsilon_{T+l-k}$, a sum of uncorrelated terms.
 \end{proof}
 
 \begin{remark}
-Three forecast-interval shapes have now been derived, and they differ in what the width does
-with the horizon. A linear trend with white noise errors (Unit 9) gives almost constant
+The three forecast-interval widths behave differently with the horizon. A linear trend with white noise errors (Unit 9) gives almost constant
 width; a random walk gives width growing like $\sqrt l$; a stationary $AR(1)$ gives width
 increasing to the finite limit $\sqrt{\gamma(0)}$, which is the standard deviation of the
 series itself. The last is the statement that beyond a few multiples of the correlation
@@ -880,8 +868,8 @@ limit of the numerator and the denominator, and the denominator's limit is a fun
 Brownian path, which the prerequisites do not construct. What Theorem~\ref{thm:df}
 establishes is the two facts that matter for using the test: the estimator converges at rate
 $T$ rather than $\sqrt T$, so the usual standard error is the wrong scale, and the limit is
-not normal, so normal critical values are wrong. §\ref{sec:10.5.5} obtains the critical
-values by simulation and compares them with the ones the package uses.
+not normal, so normal critical values are wrong. The critical values are obtained by simulation
+instead.
 \end{remark}
 
 \begin{remark}
@@ -975,8 +963,8 @@ $3(1+\alpha)(1-\alpha)/(1-3\alpha^2)$, and $1-\alpha^2>1-3\alpha^2>0$ for $\alph
 
 \begin{remark}
 The innovations are conditionally normal at every date, and the series is nonetheless
-leptokurtic: at $\alpha=0.5$ the kurtosis is $9$. Mixing normals of different variances
-produces heavy tails, which is what a plot of daily returns shows.
+leptokurtic: at $\alpha=0.5$ the kurtosis is $9$. Mixing normals of different variances produces heavy tails, as a plot of daily returns
+shows.
 \end{remark}
 
 \begin{definition}[Conditional likelihood]\label{def:garch-lik}
@@ -992,9 +980,8 @@ estimated by maximising
 \begin{remark}
 The likelihood~\eqref{eq:garch-lik} is not concave in $(\omega,\alpha,\delta)$, so the
 maximum likelihood theorem of the prerequisites does not apply and the standard errors it
-would supply are not available here. §\ref{sec:10.5.6} maximises~\eqref{eq:garch-lik}
-directly and checks the estimates against a package, which is what can be verified; the
-asymptotic theory of GARCH estimation is not developed in this course.
+would supply are not available here. The likelihood is maximised directly and checked against a package;
+the asymptotic theory of GARCH estimation is not developed here.
 \end{remark}
 
 %==============================================================================
@@ -1044,8 +1031,8 @@ projection.
 
 \begin{remark}
 The columns of $\bD$ are the seasonal dummies of Unit 9 with the calendar replaced by a
-partition of the predictor space; the identifiability discussion there applies verbatim,
-which is why~\eqref{eq:tree} carries no separate intercept. What makes a tree different from
+partition of the predictor space; the identifiability discussion there applies verbatim, so~\eqref{eq:tree} carries no
+separate intercept. What makes a tree different from
 an ordinary dummy regression is not the fit given the regions, which is a projection, but
 that the regions are chosen from the same data.
 \end{remark}
@@ -1132,12 +1119,12 @@ values, all of which change a linear fit. It pays for that with the two weakness
 piecewise-constant predictor: the fitted surface is a step function, so a genuinely linear
 relation is approximated by a staircase that needs many splits, and the prediction at any
 $\bx$ outside the range of the training data equals the prediction at the nearest corner of
-the box, so a tree cannot extrapolate at all. §\ref{sec:10.6.4} exhibits both.
+the box, so a tree cannot extrapolate at all.
 \end{remark}
 
 \begin{remark}
-Nothing above says when to stop. Growing until each leaf is small overfits, and the repair,
-cost-complexity pruning with the penalty chosen by cross-validation, is Unit 11.
+Growing until each leaf is small overfits; the repair is cost-complexity pruning with the
+penalty chosen by cross-validation.
 \end{remark}
 
 %==============================================================================
@@ -1162,9 +1149,6 @@ c(T_huron = T, mean = mean(y), sd = sd(y),
 @
 
 \subsection{Identification (§\ref{sec:10.1.1}, §\ref{sec:10.1.3})}\label{sec:10.5.1}
-
-Theorem~\ref{thm:ar1} predicts $\rho_k=\beta_1^k$ and Theorem~\ref{thm:pacf} predicts
-$\alpha_{k,k}=0$ beyond the order. Both are read off the same series.
 
 <<identify>>=
 r <- acf(y,  plot = FALSE, lag.max = 5)$acf[2:6]
@@ -1225,9 +1209,6 @@ negligible thereafter.}\label{fig:huron}
 \subsection{Conditional least squares and its asymptotics
 (§\ref{sec:10.2.1}--§\ref{sec:10.2.2})}\label{sec:10.5.2}
 
-Proposition~\ref{prop:b1-r1} four ways: the closed form, \texttt{lm}, \texttt{arima} with
-the conditional sum of squares method, and $r_1$.
-
 <<cls>>=
 m1 <- lm(y[-1] ~ y[-T]); b1 <- unname(coef(m1)[2]); e <- residuals(m1)
 num <- sum((y[-T] - mean(y[-T])) * (y[-1] - mean(y[-1])))
@@ -1238,9 +1219,6 @@ c(b1_closed_form = num/den, b1_lm = b1,
   s_lm = summary(m1)$sigma,
   s_formula = sqrt(sum((e - mean(e))^2)/(T - 3)))
 @
-
-Theorem~\ref{thm:ar1-asym} says $\sqrt T(\hat\beta_1-\beta_1)\convd N(0,1-\beta_1^2)$, and
-Corollary~\ref{cor:ar1-se} says the regression standard error already estimates that.
 
 <<se-check>>=
 c(se_reported = summary(m1)$coef[2, 2],
@@ -1268,10 +1246,6 @@ $\sqrt2$, so the ratio of the two shrinks and the bias becomes irrelevant.
 
 \subsection{Correlograms and portmanteau tests (§\ref{sec:10.2.3})}\label{sec:10.5.3}
 
-Theorem~\ref{thm:acf-clt} gives $\sqrt T\,r_k\convd N(0,1)$, so
-Corollary~\ref{cor:acf-band2} makes the $\pm2/\sqrt T$ band a $95.45\%$ band. Unit 9
-measured $95.6\%$ and $95.8\%$ without being able to prove it.
-
 <<acf-band>>=
 set.seed(3); B <- 5000
 t(sapply(c(50, 200), function(n) {
@@ -1279,10 +1253,6 @@ t(sapply(c(50, 200), function(n) {
   c(T = n, sd_r1 = sd(rk), one_over_sqrt_T = 1/sqrt(n),
     inside_band = mean(abs(rk) < 2/sqrt(n)), limit = 1 - 2*pnorm(-2)) }))
 @
-
-Theorem~\ref{thm:portmanteau} gives $Q_{LB}\convd\chi^2_K$ for an unfitted series. The
-degrees-of-freedom reduction for residuals of a fitted model was stated but not proved; it
-is measured here.
 
 <<ljung-box>>=
 set.seed(11); B <- 3000; n <- 200; K <- 10
@@ -1319,10 +1289,6 @@ round(summary(m2)$coef, 4)
 @
 
 \subsection{Forecasting (§\ref{sec:10.2.4})}\label{sec:10.5.4}
-
-The chain rule of Definition~\ref{def:chain} against the closed
-form~\eqref{eq:ar1-fc}, and the error variance~\eqref{eq:ar1-fcvar} against its limit
-$\gamma(0)$.
 
 <<forecast>>=
 b0 <- unname(coef(m1)[1]); s <- summary(m1)$sigma; mu <- b0/(1 - b1)
@@ -1366,8 +1332,6 @@ stays at the last observation with an interval widening like $\sqrt l$ without b
 \end{figure}
 
 \subsection{Unit roots (§\ref{sec:10.3.4})}\label{sec:10.5.5}
-
-The algebraic identity behind~\eqref{eq:df-num}, and its limit law.
 
 <<df-numerator>>=
 set.seed(3); B <- 8000; n <- 250
@@ -1454,9 +1418,6 @@ recentred $\chi^2_1$, which puts most of its mass below zero.}\label{fig:df}
 
 \subsection{Volatility (§\ref{sec:10.3.5})}\label{sec:10.5.6}
 
-Theorem~\ref{thm:garch-moments} says the returns are uncorrelated while the squares are
-not, and Theorem~\ref{thm:arch-kurt} says the kurtosis exceeds $3$.
-
 <<dax-vol>>=
 ed <- dl - mean(dl)
 c(n = length(ed), kurtosis = mean(ed^4)/mean(ed^2)^2,
@@ -1467,8 +1428,8 @@ c(n = length(ed), kurtosis = mean(ed^4)/mean(ed^2)^2,
   LB_squares_p = Box.test(ed^2, 10, "Ljung-Box")$p.value)
 @
 
-The conditional likelihood~\eqref{eq:garch-lik} is maximised directly and compared with
-\texttt{garch} from \texttt{tseries}. Both condition on the first observation.
+Both the direct maximisation of~\eqref{eq:garch-lik} and \texttt{garch} from \texttt{tseries}
+condition on the first observation.
 
 <<garch-fit>>=
 nll <- function(p, x) {
@@ -1487,9 +1448,6 @@ round(rbind(manual = c(omega = mn[1], alpha = mn[2], delta = mn[3]),
 c(loglik_manual = -op$value, loglik_tseries = c(logLik(pk)),
   difference = -op$value - c(logLik(pk)))
 @
-
-Theorem~\ref{thm:garch-moments} then gives the unconditional variance, which is compared
-with the sample one.
 
 <<garch-uncond>>=
 c(persistence = mn[2] + mn[3],
@@ -1523,9 +1481,6 @@ top.}\label{fig:garch}
 
 \subsection{Smoothing (§\ref{sec:10.3.1}--§\ref{sec:10.3.2})}\label{sec:10.5.7}
 
-Proposition~\ref{prop:runavg-lag}: a running average of length $k$ lags a linear trend by
-$(k-1)/2$ and a doubly smoothed one by $k-1$.
-
 <<runavg>>=
 set.seed(9); n <- 200; tv <- 1:n; yt <- 5 + 0.3*tv + rnorm(n)
 ma <- function(x, k) as.numeric(stats::filter(x, rep(1/k, k), sides = 1))
@@ -1534,10 +1489,6 @@ c(k = k, lag_single = mean((yt - s1)[ok])/0.3, theory = (k - 1)/2,
   lag_double = mean((yt - s2)[ok])/0.3, theory_double = k - 1,
   trend_estimate = 2*(s1[n] - s2[n])/(k - 1), truth = 0.3)
 @
-
-Theorem~\ref{thm:ima11}: exponential smoothing is the optimal one-step forecast of an
-$ARIMA(0,1,1)$, with $w$ equal to the moving average coefficient. Three quantities that
-should agree are computed independently.
 
 <<ima11>>=
 ew <- function(x, w) { z <- numeric(length(x)); z[1] <- x[1]
@@ -1554,8 +1505,7 @@ c(theta_true = 0.7, theta_hat = th,
 @
 
 The smoothed series reproduces \texttt{arima}'s one-step forecasts to machine precision.
-On real data, Proposition~\ref{prop:expsmooth}(ii) is checked against
-\texttt{HoltWinters}, which minimises the same criterion.
+\texttt{HoltWinters} minimises the same criterion as Proposition~\ref{prop:expsmooth}(ii).
 
 <<expsmooth-real>>=
 t(sapply(list(Nile = as.numeric(Nile), LakeHuron = y), function(x) {
@@ -1571,9 +1521,6 @@ both push $w$ to the boundary: the series is an autoregression, not an $ARIMA(0,
 the criterion prefers no smoothing at all.
 
 \subsection{Regression trees (§\ref{sec:10.4})}\label{sec:10.5.8}
-
-Theorem~\ref{thm:split-gain} makes the best split of a node computable by one sweep of a
-sorted predictor. The result is compared with the split \texttt{tree} chooses.
 
 <<tree-split>>=
 suppressMessages({library(ISLR2); library(tree)})
@@ -1593,8 +1540,6 @@ tr <- tree(medv ~ ., data = Boston)
 head(tr$frame[, c("var", "n", "dev", "yval")], 3)
 @
 
-The identity~\eqref{eq:anova} is verified at that split.
-
 <<tree-anova>>=
 yv <- Boston$medv; L <- Boston$rm < 6.941; m <- length(yv)
 d <- c(total = sum((yv - mean(yv))^2),
@@ -1603,9 +1548,6 @@ d <- c(total = sum((yv - mean(yv))^2),
        between = sum(L)*sum(!L)/m*(mean(yv[L]) - mean(yv[!L]))^2)
 c(d, identity_gap = unname(d[1] - d[2] - d[3] - d[4]))
 @
-
-Proposition~\ref{prop:tree-monotone}: monotone transformations of the predictors change
-nothing.
 
 <<tree-monotone>>=
 B2 <- Boston; B2$rm <- exp(B2$rm/2); B2$lstat <- log(B2$lstat)
@@ -1785,7 +1727,7 @@ $1/\sqrt{1-\beta_1^2}=1.25$.
 
 The correlations are $\rho_k=0.6^k$: $0.6$, $0.36$ and $0.0778$. The correlogram decays
 geometrically and is inside a $\pm2/\sqrt T$ band by lag $5$ for any $T$ below about $660$,
-which is why an $AR(1)$ with a moderate coefficient looks like white noise after a few lags.
+so an $AR(1)$ with a moderate coefficient looks like white noise after a few lags.
 \end{solution}
 
 \begin{exercise}\label{ex:se}
@@ -1871,7 +1813,7 @@ $5\%$: something remains, and a higher order or a moving average term is worth t
 
 With no model fitted the reference is $\chi^2_{12}$ by Theorem~\ref{thm:portmanteau}, whose
 $95\%$ point is $21.03$, and the same number would not be rejected. The two conclusions are
-opposite, which is why the degrees of freedom must be reduced by the number of fitted
+opposite, so the degrees of freedom must be reduced by the number of fitted
 autoregressive and moving average coefficients; §\ref{sec:10.5.3} and §\ref{sec:10.6.3}
 measure the size of the error.
 \end{solution}

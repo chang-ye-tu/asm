@@ -1,24 +1,16 @@
 # 精算統計模型
 
-研究所層級之迴歸與統計學習課程，14 週授課、每週 3 節（50 分鐘 × 3），共 42 節；
-另加期中、期末考各一次。
-
-課程以線性模型的矩陣理論為骨幹：一律先以 $k$ 個解釋變數推導，簡單線性迴歸（$k = 1$）
-作為特例處理，不另立單元。SOA **Exam SRM** 指定閱讀範圍為本課程的主要參考來源之一，
-其全部指定章節均涵蓋於課程中（對照見文末附錄）；此外另加授 SRM 範圍外但學理上必要的
-主題：拔靴法、凸規劃與支持向量機、類神經網路。
+涵蓋 SOA Exam SRM 與 PA 之機器學習 / 資料分析。  
 
 ## 教科書
 
 - [James, G., Witten, D., Hastie, T., Tibshirani, R., 2021. An Introduction to Statistical Learning: With Applications in R. 2nd ed., Springer. (ISLR)](https://www.statlearning.com/)
-- Frees, E. W., 2010. Regression Modeling with Actuarial and Financial Applications. Cambridge University Press, New York, 2010. (FREES)
+- [Frees, E. W., 2010. Regression Modeling with Actuarial and Financial Applications. Cambridge University Press, New York, 2010. (FREES)](https://users.ssc.wisc.edu/~ewfrees/ActuarialRegression2009/)
+  - [Data & Scripts](https://instruction.bus.wisc.edu/jfrees/jfreesbooks/Regression%20Modeling/BookWebDec2010/home.html)
 - Lander, J. P., 2017. R for Everyone. Addison-Wesley, Boston, 2nd ed.
 - Healy, K., 2019. Data Visualization: A Practical Introduction. Princeton University Press, Princeton, NJ.
-- 教師編纂講義。
 
-### 課程講義
-
-| &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit01.pdf">01</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit02.pdf">02</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit03.pdf">03</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit04.pdf">04</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit05.pdf">05</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit06.pdf">06</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit07.pdf">07</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit08.pdf">08</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit09.pdf">09</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit10.pdf">10</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit11.pdf">11</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit12.pdf">12</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit13.pdf">13</a>&nbsp; | &nbsp;<a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit14.pdf">14</a>&nbsp; |
+<!--
 
 ### 數學先備知識
 
@@ -48,62 +40,36 @@ Fubini–Tonelli）；其餘一律推導。
 Unit 2、3 的定理與證明取自 **CLM**；Unit 2 用到的微分工具取自 **MC**。
 **MLM** 為非漸近高維理論，供延伸閱讀。
 
-### 考題演練
-
-<a href="https://github.com/chang-ye-tu/asm/blob/master/srm/srm.pdf">SOA Exam SRM 官方範例試題與詳解（重排版）</a>（71 題，每題後緊接該題解答）。
+-->
 
 ## 評分標準
 
-- 期中考（40%）11/04 — 範圍 Unit 1–8
-- 期末考（40%）12/23 — 範圍 Unit 9–14
+- 期中考（40%）11/04
+- 期末考（40%）12/23
 - 平時成績（20%）
-
-兩次考試均分兩部分：第一部分為五選一單選題（60 分），
-第二部分為計算與證明題，須交代過程（40 分）。
 
 ## 授課時程
 
-| 週次 | 上課時間 | 課程進度 | 指定閱讀 |
-|:--:|:--|:--|:--|
-| 1 | 09/09 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit01.pdf">**Unit 1** 統計學習</a><br>1.1 何謂統計學習：迴歸函數、可化約與不可化約誤差<br>1.2 模型準確度；貝氏分類器與 KNN<br>1.3 偏誤—變異數分解；重抽樣：LOOCV、*k*-fold CV、拔靴法 | ISLR 2、5.1–5.3<br>FREES 1 |
-| 2 | 09/16 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit02.pdf">**Unit 2** 多元迴歸（一）：矩陣理論</a><br>2.1 正規方程式、帽子矩陣、正交投影、槓桿值<br>2.2 不偏性、var(**b**)、Gauss–Markov 定理、σ² 之估計<br>2.3 常態下的精確推論；配適度；**特例 *k*=1**：*r*、*R*²=*r*²、CAPM | FREES 2、3.1–3.3<br>ISLR 3.1–3.2<br>CLM 1–6 |
-| 3 | 09/23 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit03.pdf">**Unit 3** 多元迴歸（二）：推論與詮釋</a><br>3.1 單一與多個係數之推論：*t*、一般線性假設、額外平方和<br>3.2 信賴區間與預測區間；特殊解釋變數：二元、類別、交互作用<br>3.3 FWL 定理、遺漏變數偏誤、迴歸結果的詮釋 | FREES 3.4–3.5、6.1<br>ISLR 3.3<br>CLM 7–9 |
-| 4 | 09/30 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit04.pdf">**Unit 4** 迴歸診斷</a><br>4.1 迭代式建模；殘差分析、標準化與學生化殘差<br>4.2 具影響力的點：槓桿值、Cook's D、DFFITS／DFBETAS<br>4.3 共線性與 VIF；異質變異數、穩健標準誤與加權最小平方 | FREES 5.1、5.3–5.5、5.7<br>ISLR 3.3.3 |
-| 5 | 10/07 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit05.pdf">**Unit 5** 變數選擇與維度縮減</a><br>5.1 最佳子集、前向／後向／逐步選擇<br>5.2 選擇準則：*C*<sub>p</sub>、AIC、BIC、調整 *R*²、概似比檢定<br>5.3 主成分分析初探；主成分迴歸（PCR）與偏最小平方（PLS） | FREES 5.2、5.6、6.2–6.3<br>ISLR 6.1、6.3、12.2 |
-| 6 | 10/14 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit06.pdf">**Unit 6** 收縮法、高維度與 KNN</a><br>6.1 脊迴歸：閉式解、主成分收縮、有效自由度<br>6.2 Lasso 與彈性網；以 CV 選 λ<br>6.3 高維度下的迴歸；KNN 與 OLS 之比較；線性模型 R 實作 | ISLR 6.2、6.4–6.5、3.5–3.6 |
-| 7 | 10/21 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit07.pdf">**Unit 7** 廣義線性模型（一）：類別反應變數</a><br>7.1 二元反應：線性機率模型、logistic 與 probit、勝算比<br>7.2 概似推論：MLE、Wald 與概似比檢定；分類指標與 ROC<br>7.3 名目反應（廣義 logit）；次序反應（累積 logit） | FREES 11 |
-| 8 | 10/28 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit08.pdf">**Unit 8** 廣義線性模型（二）：計數與指數族</a><br>8.1 Poisson 迴歸、曝險量與 offset<br>8.2 過度離散、負二項、零膨脹與 hurdle 模型<br>8.3 線性指數族與連結函數；IRLS、偏差殘差、Tweedie 分布 | FREES 12、13 |
-| 9 | **11/04** | **期中考**（Unit 1–8） | |
-| 10 | 11/11 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit09.pdf">**Unit 9** 時間趨勢模型</a><br>9.1 時間趨勢的配適；以迴歸處理季節效應<br>9.2 定態性與隨機漫步；隨機漫步下的推論；差分濾波<br>9.3 預測績效評估；自我相關係數 | FREES 7、8.1 |
-| 11 | 11/18 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit10.pdf">**Unit 10** 自迴歸模型與預測</a><br>10.1 AR(1) 與 AR(p)／MA(q)／ARIMA；偏自我相關；條件最小平方之大樣本性質、殘差診斷與 Ljung–Box、預測<br>10.2 移動平均與指數平滑；季節模型；單根檢定；ARCH／GARCH<br>10.3 決策樹入門：遞迴二元切割、迴歸樹 | FREES 8.2–8.6、9<br>ISLR 8.1.1 |
-| 12 | 11/25 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit11.pdf">**Unit 11** 決策樹</a><br>11.1 成本複雜度剪枝；以 CV 選 α<br>11.2 分類樹：Gini 指標、熵、誤分類率<br>11.3 樹與線性模型之比較；決策樹 R 實作 | ISLR 8.1、8.3.1–8.3.2 |
-| 13 | 12/02 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit12.pdf">**Unit 12** 集成方法</a><br>12.1 Bagging 與袋外誤差；變數重要性<br>12.2 隨機森林：去相關與 mtry<br>12.3 Boosting；集成方法 R 實作 | ISLR 8.2、8.3.3–8.3.4 |
-| 14 | 12/09 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit13.pdf">**Unit 13** 非監督式學習</a><br>13.1 主成分分析：載荷、分數、解釋變異比例、陡坡圖<br>13.2 *K*-means 分群<br>13.3 階層式分群：樹狀圖、連結方式；非監督式學習 R 實作 | ISLR 12.1–12.2、12.4–12.5 |
-| 15 | 12/16 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit14.pdf">**Unit 14** 凸規劃、支持向量機與類神經網路</a><br>14.1 Lagrange 對偶與 KKT 條件；最大間隔分類器<br>14.2 對偶 SVM 與支持向量；軟間隔與核方法<br>14.3 多層感知器與反向傳播；R 實作 | 教師編纂講義 |
-| 16 | **12/23** | **期末考**（Unit 9–14） | |
+| 日期 | 課程進度 |
+|:--|:--|
+| 09/09 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit01.pdf">**Unit 1** Statistical Learning</a><br>1.1 What statistical learning is: the regression function, reducible and irreducible error; parametric and non-parametric methods; summary statistics, power transforms, sampling and study design<br>1.2 Assessing model accuracy: training and test error, the bias–variance decomposition, the Bayes classifier and KNN<br>1.3 Resampling: the validation set approach, LOOCV and its shortcut, *k*-fold CV; the bootstrap (beyond the syllabus) |
+| 09/16 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit02.pdf">**Unit 2** Multiple Regression I: Matrix Theory</a><br>2.1 Normal equations, the hat matrix, orthogonal projection, leverage<br>2.2 Unbiasedness, var(**b**), the Gauss–Markov theorem, estimation of σ²<br>2.3 Exact inference under normality; goodness of fit; **the case *k*=1**: *r*, *R*²=*r*², CAPM |
+| 09/23 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit03.pdf">**Unit 3** Multiple Regression II: Inference and Interpretation</a><br>3.1 Inference on one and several coefficients: *t*, the general linear hypothesis, extra sum of squares<br>3.2 Confidence and prediction intervals; special explanatory variables: binary, categorical, interactions<br>3.3 The FWL theorem, omitted-variable bias, interpreting regression output |
+| 09/30 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit04.pdf">**Unit 4** Regression Diagnostics</a><br>4.1 Iterative modelling; residual analysis, standardised and studentised residuals<br>4.2 Influential points: leverage, Cook's D, DFFITS/DFBETAS<br>4.3 Collinearity and VIF; heteroscedasticity, robust standard errors and weighted least squares |
+| 10/07 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit05.pdf">**Unit 5** Variable Selection and Dimension Reduction</a><br>5.1 Best subset, forward, backward and stepwise selection<br>5.2 Selection criteria: *C*<sub>p</sub>, AIC, BIC, adjusted *R*², the likelihood ratio test<br>5.3 Principal components; principal components regression (PCR) and partial least squares (PLS) |
+| 10/14 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit06.pdf">**Unit 6** Shrinkage, High Dimensions and KNN</a><br>6.1 Ridge regression: closed form, shrinkage along principal components, effective degrees of freedom<br>6.2 The lasso and the elastic net; choosing λ by CV<br>6.3 Regression in high dimensions; KNN against OLS; linear models in R |
+| 10/21 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit07.pdf">**Unit 7** Generalized Linear Models I: Categorical Responses</a><br>7.1 Binary responses: the linear probability model, logistic and probit regression, odds ratios<br>7.2 Likelihood inference: MLE, Wald and likelihood ratio tests; classification metrics and ROC<br>7.3 Nominal responses (generalized logit); ordinal responses (cumulative logit) |
+| 10/28 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit08.pdf">**Unit 8** Generalized Linear Models II: Counts and the Exponential Family</a><br>8.1 Poisson regression, exposure and offsets<br>8.2 Overdispersion; negative binomial, zero-inflated and hurdle models<br>8.3 The linear exponential family and link functions; IRLS, deviance residuals, the Tweedie distribution |
+| **11/04** | **Midterm exam** |
+| 11/11 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit09.pdf">**Unit 9** Modeling Trends</a><br>9.1 Fitting time trends; seasonal effects by regression<br>9.2 Stationarity and random walks; inference under a random walk; differencing<br>9.3 Evaluating forecasts; autocorrelations |
+| 11/18 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit10.pdf">**Unit 10** Autoregressive Models and Forecasting</a><br>10.1 AR(1), AR(p), MA(q) and ARIMA; partial autocorrelations; large-sample properties of conditional least squares, residual diagnostics and Ljung–Box, forecasting<br>10.2 Moving averages and exponential smoothing; seasonal models; unit-root tests; ARCH/GARCH<br>10.3 Introduction to decision trees: recursive binary splitting, regression trees |
+| 11/25 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit11.pdf">**Unit 11** Decision Trees</a><br>11.1 Cost-complexity pruning; choosing α by CV<br>11.2 Classification trees: the Gini index, entropy, the misclassification rate<br>11.3 Trees against linear models; trees in R |
+| 12/02 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit12.pdf">**Unit 12** Ensemble Methods</a><br>12.1 Bagging and out-of-bag error; variable importance<br>12.2 Random forests: decorrelation and mtry<br>12.3 Boosting; ensembles in R |
+| 12/09 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit13.pdf">**Unit 13** Unsupervised Learning</a><br>13.1 Principal components analysis: loadings, scores, proportion of variance explained, scree plots<br>13.2 *K*-means clustering<br>13.3 Hierarchical clustering: dendrograms, linkages; unsupervised learning in R |
+| 12/16 | <a href="https://github.com/chang-ye-tu/asm/blob/master/note/unit14.pdf">**Unit 14** Convex Optimization, Support Vector Machines and Neural Networks</a><br>14.1 Lagrangian duality and the KKT conditions; the maximal margin classifier<br>14.2 The dual SVM and support vectors; soft margins and kernels<br>14.3 Multilayer perceptrons and backpropagation; R implementation |
+| **12/23** | **Final exam** |
 
-## 講義編譯
-
-```bash
-cd note
-python build.py            # 編譯全部 14 個單元與附錄
-python build.py 03         # 只編譯 Unit 3
-python build.py prereq     # 只編譯數學先備知識
-python build.py --pkg-check # 只檢查 R 套件是否齊備
-```
-
-需要 `Rscript`、`xelatex`、`bibtex`、`pygmentize`。
-講義為 knitr `.Rnw`，17pt／16:9 版面，投影與列印共用同一份 PDF。
-
-`unit01.Rnw` 至 `unit14.Rnw` 與 `prereq.Rnw` 是權威來源；同名 `.tex`、`figs/`、
-`Sweave.sty` 與 LaTeX 輔助檔均為可重建產物。README 直接連結的 PDF 刻意納入版本控制，
-讓學生不必安裝完整工具鏈即可閱讀草稿。完整建置要求所有十五份來源存在、檢查每個
-子程序的退出碼，並持續執行 XeLaTeX 至交叉引用收斂；請勿在同一工作目錄平行執行 build。
-
-撰寫講義前請先閱讀 [`note/CONVENTIONS.md`](note/CONVENTIONS.md)：
-體例原則、資料來源對照，以及已知的陷阱。
-
-## 附錄：SRM 指定閱讀範圍對照
+## SRM 指定閱讀範圍對照
 
 SOA Exam SRM 之全部指定章節均涵蓋於本課程，對照如下。
 
@@ -145,10 +111,9 @@ SOA Exam SRM 之全部指定章節均涵蓋於本課程，對照如下。
 | 5. Unsupervised Learning Techniques | Unit 5、13 |
 | （SRM 範圍外） | Unit 1（拔靴法）、Unit 4（穩健標準誤）、Unit 14 |
 
-兩項容易誤讀之處：ISLR 第 5 章 SRM 僅指定 5.1 與 5.3，**§5.2 拔靴法不在其範圍內**，
-本課程仍納入（bagging 需要）；第 8 章排除 8.2.4（BART）與 8.2.5，但 **8.2.3 boosting
-在範圍內**。AIC、BIC 採 ISLR §6.1.3 之定義：
-AIC = (RSS + 2d·σ̂²)/n，BIC = (RSS + ln(n)·d·σ̂²)/n。
+- ISLR 第 5 章 SRM 僅指定 5.1 與 5.3，**§5.2 拔靴法不在其範圍內**，本課程仍納入（bagging 需要）。
+- 第 8 章排除 8.2.4（BART）與 8.2.5，但 **8.2.3 boosting 在範圍內**。
+- AIC、BIC 採 ISLR §6.1.3 之定義：AIC = (RSS + 2d·σ̂²)/n，BIC = (RSS + ln(n)·d·σ̂²)/n。
 
 ## 授課教師
 

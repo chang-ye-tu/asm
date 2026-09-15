@@ -1,26 +1,15 @@
-# knitr output: unitNN.tex is generated from unitNN.Rnw, never edited by hand.
-unit*.tex
-prereq.tex
-figs/
-
-# LaTeX intermediates
-*.aux
-*.log
-*.out
-*.toc
-*.bbl
-*.blg
-*.fdb_latexmk
-*.fls
-*.nav
-*.snm
-*.synctex.gz
-*.vrb
-*.xdv
-_minted*/
-
-# Sweave.sty is copied in by knitr::render_sweave() at knit time.
-Sweave.sty
-
-# The student edition is a build artefact of the instructor edition.
-unit*-student.pdf
+# Versioned in note/: the notes' compilable sources (*.Rnw), the two headers they
+# need (asm_preamble.tex, asm_knitr_setup.R), the build script, the data the chunks
+# read, the handoff documents, and the built PDFs. Everything else here is a build
+# product (unitNN.tex, figs/, _minted*/, LaTeX intermediates) or a local tool.
+*
+!.gitignore
+!*.Rnw
+!*.pdf
+!asm_preamble.tex
+!asm_knitr_setup.R
+!build.py
+!CONVENTIONS.md
+!REVISION.md
+!data/
+!data/**

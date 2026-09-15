@@ -1,12 +1,8 @@
 % Compile:  python build.py 01
-% or by hand:
-%   Rscript -e "knitr::knit('unit01.Rnw')"
-%   xelatex -shell-escape unit01.tex        # run twice to settle the toc
 \documentclass[17pt]{extarticle}
 
 \input{asm_preamble.tex}
 
-% Unit 1 specific
 \fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 1\ \ Statistical Learning}}
 
 \setcounter{theorem}{0}\setcounter{example}{0}
@@ -46,1014 +42,1121 @@ library(ISLR2)
 %==============================================================================
 
 \begin{reading}
-ISLR §2.1 · FREES §1.1, §1.4--1.6.
+ISLR §2.1 · FREES §1.1--1.6. \ SRM learning outcome 1(a).
 \end{reading}
 
-\subsection{The model and the regression function}\label{sec:1.1.1}
+\subsection{The model and its two uses}\label{sec:1.1.1}
 
 \begin{definition}[Statistical learning model]\label{def:model}
-Let $(X,Y)$ be a random pair, $X$ taking values in $\Real^d$ and $Y$ in $\Real$. The
-\emph{statistical learning model} writes
+For a quantitative response $Y$ and $p$ predictors $X=(X_1,\ldots,X_p)$,
 \begin{equation}\label{eq:model}
-Y = f(X) + \varepsilon ,
+Y = f(X)+\varepsilon ,
 \end{equation}
-where $f$ is a fixed unknown function and $\varepsilon$ is independent of $X$ with
-$\expc[\varepsilon] = 0$. \emph{Statistical learning} is the estimation of $f$ from a
-training sample $\calD = \{(X_i,Y_i)\}_{i=1}^n$.
+where $f$ is a fixed unknown function and $\varepsilon$ is a random error, independent
+of $X$ with mean zero. $f$ is the \emph{systematic} information $X$ carries about $Y$;
+\emph{statistical learning} is the set of methods for estimating $f$ from training data
+$\{(x_1,y_1),\ldots,(x_n,y_n)\}$, $x_i=(x_{i1},\ldots,x_{ip})'$.
 \end{definition}
 
-\begin{theorem}[The regression function is the optimal predictor]\label{thm:regfn}
-Let $\expc[Y^2]<\infty$ and set $f^\ast(x) = \expc[Y\mid X=x]$. Then for every measurable
-$g:\Real^d\to\Real$,
-\begin{equation}\label{eq:regfn}
-\expc\bigl[(Y - f^\ast(X))^2\bigr] \;\leqslant\; \expc\bigl[(Y - g(X))^2\bigr] ,
-\end{equation}
-with equality iff $g(X) = f^\ast(X)$ almost surely.
-\end{theorem}
+\begin{remark}[Terminology; FREES Table 1.3, ISLR §2.1]
+$Y$ is the response, output, dependent, explained or left-hand-side variable, the
+regressand; the $X_j$ are predictors, inputs, features, independent, explanatory or
+right-hand-side variables, regressors, covariates, treatments (FREES Table 1.3, ISLR §2.1).
+The pairs are used interchangeably in both texts and on the examination.
+\end{remark}
+
+\begin{proposition}[The regression function]\label{prop:regfn}
+Let $\expc[Y^2]<\infty$ and $f^\ast(x)=\expc[Y\mid X=x]$. For every function $g$,
+\[
+\expc\bigl[(Y-f^\ast(X))^2\bigr]\;\leqslant\;\expc\bigl[(Y-g(X))^2\bigr] ,
+\]
+with equality iff $g(X)=f^\ast(X)$ almost surely. The $f$ of~\eqref{eq:model} is
+therefore $f^\ast$, and $\varepsilon=Y-f^\ast(X)$ has conditional mean zero.
+\end{proposition}
 
 \begin{proof}
-Condition on $X=x$ and insert $\pm f^\ast(x)$:
-\begin{align*}
-\expc\bigl[(g(X)-Y)^2 \mid X=x\bigr]
-&= \expc\bigl[\bigl(g(x)-f^\ast(x) + f^\ast(x)-Y\bigr)^2 \mid X=x\bigr]\\
-&= (g(x)-f^\ast(x))^2
- + 2(g(x)-f^\ast(x))\,\expc\bigl[f^\ast(x)-Y \mid X=x\bigr]\\
-&\quad + \expc\bigl[(f^\ast(X)-Y)^2 \mid X=x\bigr] .
-\end{align*}
-The middle term vanishes, since $\expc[Y\mid X=x] = f^\ast(x)$ by definition. Hence
+Let $g$ be any function with $\expc[g(X)^2]<\infty$, so that every expectation below is
+finite; $f^\ast$ itself qualifies, since by Jensen's inequality
+$\expc[f^\ast(X)^2]=\expc\bigl[(\expc[Y\mid X])^2\bigr]\leqslant\expc\bigl[\expc[Y^2\mid X]\bigr]
+=\expc[Y^2]$. The properties of conditional expectation used are those of the
+prerequisites: linearity, the tower property $\expc[Z]=\expc[\expc[Z\mid X]]$, and
+$\expc[h(X)Z\mid X]=h(X)\expc[Z\mid X]$ for a function $h$ of $X$.
+
+\textbf{Step 1: condition on $X=x$.} Write $Y-g(x)=\{Y-f^\ast(x)\}+\{f^\ast(x)-g(x)\}$ and
+expand the square:
+\[
+(Y-g(x))^2 = (Y-f^\ast(x))^2 + 2\{f^\ast(x)-g(x)\}\{Y-f^\ast(x)\} + \{f^\ast(x)-g(x)\}^2 .
+\]
+Take $\expc[\,\cdot\mid X=x]$ of each term. The last is a constant given $X=x$. In the
+middle term $f^\ast(x)-g(x)$ is a constant given $X=x$ and factors out, leaving
+\[
+2\{f^\ast(x)-g(x)\}\,\expc[Y-f^\ast(x)\mid X=x]
+= 2\{f^\ast(x)-g(x)\}\bigl(\expc[Y\mid X=x]-f^\ast(x)\bigr) = 0 ,
+\]
+because $\expc[Y\mid X=x]=f^\ast(x)$ by definition. Hence, writing
+$v(x)=\expc[(Y-f^\ast(x))^2\mid X=x]$,
 \begin{equation}\label{eq:regfn-pointwise}
-\expc\bigl[(g(X)-Y)^2 \mid X=x\bigr]
-= (g(x)-f^\ast(x))^2 + \expc\bigl[(f^\ast(X)-Y)^2 \mid X=x\bigr]
+\expc[(Y-g(X))^2\mid X=x] = v(x) + \{f^\ast(x)-g(x)\}^2 .
 \end{equation}
-and the first term is non-negative. Taking expectations over $X$
-gives~\eqref{eq:regfn}, with equality iff $\expc[(g(X)-f^\ast(X))^2] = 0$.
+
+\textbf{Step 2: average over $X$.} By the tower property,
+\[
+\expc[(Y-g(X))^2] = \expc[v(X)] + \expc\bigl[\{f^\ast(X)-g(X)\}^2\bigr]
+\;\geqslant\;\expc[v(X)] ,
+\]
+and taking $g=f^\ast$ in the same display gives $\expc[(Y-f^\ast(X))^2]=\expc[v(X)]$. So
+$\expc[(Y-f^\ast(X))^2]\leqslant\expc[(Y-g(X))^2]$, with equality iff
+$\expc[\{f^\ast(X)-g(X)\}^2]=0$, that is iff $g(X)=f^\ast(X)$ almost surely.
+
+\textbf{Step 3: the error.} With $\varepsilon=Y-f^\ast(X)$,
+$\expc[\varepsilon\mid X]=\expc[Y\mid X]-f^\ast(X)=0$, and by the tower property
+$\expc[\varepsilon]=\expc[\expc[\varepsilon\mid X]]=0$. So the $f$ of~\eqref{eq:model} is
+$f^\ast$ and its error has conditional mean zero.
 \end{proof}
 
-\begin{remark}
-The $f$ of~\eqref{eq:model} is therefore $f^\ast$, and $\varepsilon = Y - f^\ast(X)$ has
-conditional mean zero by construction.
-\end{remark}
+\begin{example}[Galton's 1885 data; FREES §1.1]\label{ex:galton}
+Galton classified $928$ adult children by their own height and by an index of their
+parents' height, the average of the father's height and $1.08$ times the mother's, both
+in inches (FREES Table 1.1). With $Y$ the child's height and $X$ the parents' index, the
+mean of $Y$ within each class of $X$ estimates the $f^\ast$ of
+Proposition~\ref{prop:regfn}.
+<<galton>>=
+galton <- read.csv("data/frees/csv/Galton.csv")
+sum(galton$NUMBER)
+class_means <- sapply(split(galton, galton$PARENTC),
+                      function(s) weighted.mean(s$CHILDC, s$NUMBER))
+round(class_means, 2)
+c(rise_children = diff(range(class_means)),
+  rise_parents  = diff(range(as.numeric(names(class_means)))))
+@
+The class means rise with the parents' index, but by $7.7$ inches over its $11$-inch
+range: the children of tall parents are tall, and their excess over the average is smaller
+than their parents' own, the \emph{regression} toward the mean from which the method takes
+its name.
+\end{example}
 
-\begin{definition}[Reducible and irreducible error]\label{def:reducible}
-With $\hat f$ an estimate of $f$ and $\hat Y = \hat f(X)$,
+\begin{definition}[Prediction and inference]\label{def:goals}
+In \emph{prediction} the inputs $X$ are available, $Y$ is not, and $\hat Y=\hat f(X)$ is
+reported; $\hat f$ is a black box and only its accuracy matters. In \emph{inference} the
+object is $f$ itself: which predictors are associated with the response, whether each
+relationship is positive or negative, and whether it is adequately summarised by a linear
+equation.
+\end{definition}
+
+\begin{proposition}[Reducible and irreducible error]\label{prop:reducible}
+Fix $\hat f$ and $X$, so that the only randomness is in $\varepsilon$. Then
 \begin{equation}\label{eq:reducible}
-\expc\bigl[(Y-\hat Y)^2 \mid X = x\bigr]
-= \underbrace{\bigl(f(x)-\hat f(x)\bigr)^2}_{\text{reducible}}
+\expc(Y-\hat Y)^2
+= \underbrace{\bigl[f(X)-\hat f(X)\bigr]^2}_{\text{reducible}}
 + \underbrace{\var(\varepsilon)}_{\text{irreducible}} .
 \end{equation}
+\end{proposition}
+
+\begin{proof}
+By~\eqref{eq:model}, $Y-\hat Y = f(X)+\varepsilon-\hat f(X) = a+\varepsilon$ with
+$a=f(X)-\hat f(X)$, which is a constant because $\hat f$ and $X$ are fixed. Then
+\[
+(Y-\hat Y)^2 = (a+\varepsilon)^2 = a^2+2a\varepsilon+\varepsilon^2 ,
+\]
+and taking expectations term by term,
+\[
+\expc(Y-\hat Y)^2 = a^2 + 2a\,\expc[\varepsilon] + \expc[\varepsilon^2]
+= a^2 + 0 + \var(\varepsilon) ,
+\]
+since $\expc[\varepsilon]=0$ gives $\expc[\varepsilon^2]=\var(\varepsilon)+(\expc\varepsilon)^2
+=\var(\varepsilon)$. Substituting $a$ gives~\eqref{eq:reducible}.
+\end{proof}
+
+\begin{remark}[ISLR §2.1.1]
+The reducible error can be lowered by a better estimate of $f$; the irreducible error
+cannot, because $\varepsilon$ carries unmeasured variables and unmeasurable variation.
+$\var(\varepsilon)$ is an upper bound on prediction accuracy and is almost always unknown in
+practice.
+\end{remark}
+
+\begin{example}[Which goal; ISLR §2.1.1]\label{ex:goals}
+A direct-marketing campaign that wants only to identify likely responders is prediction.
+Asking which advertising media are associated with sales, and how large an increase in
+sales accompanies a given increase in TV advertising, is inference. Relating house values
+to crime rate, air quality, schools and size serves both: the premium attached to a river
+view is inference, whether a given house is over- or under-valued is prediction.
+\end{example}
+
+\subsection{Estimating \texorpdfstring{$f$}{f}: parametric and non-parametric methods}\label{sec:1.1.2}
+
+\begin{definition}[Parametric method]\label{def:parametric}
+A \emph{parametric} method (i) assumes a functional form for $f$, for example the linear
+model
+\begin{equation}\label{eq:linear}
+f(X) = \beta_0+\beta_1X_1+\cdots+\beta_pX_p ,
+\end{equation}
+and (ii) fits the parameters from the training data, most often by least squares.
+Estimating $f$ is reduced to estimating $p+1$ numbers.
 \end{definition}
 
-\begin{remark}
-$\var(\varepsilon)>0$ whenever $\varepsilon$ carries variables that were not measured, or
-variation that is unmeasurable. It is unknown in practice, since computing it requires the
-$f$ that is being estimated.
-\end{remark}
-
-\subsection{Prediction and inference}\label{sec:1.1.2}
-
-\begin{remark}[Two purposes]
-In \emph{prediction} only the accuracy of $\hat Y$ matters and $\hat f$ may be a black box.
-In \emph{inference} the object of interest is $f$ itself: which coordinates of $X$ enter,
-with what sign and magnitude, and whether a linear summary is adequate.
-\end{remark}
-
-\subsection{Parametric and non-parametric methods}\label{sec:1.1.3}
-
-\begin{definition}[Parametric, non-parametric]\label{def:parametric}
-A \emph{parametric} method assumes a functional form for $f$ indexed by finitely many
-parameters, for example $f(X) = \beta_0 + \beta_1X_1 + \cdots + \beta_dX_d$, and estimates
-those parameters. A \emph{non-parametric} method assumes no such form, seeking only an
-$\hat f$ close to the data subject to a smoothness or complexity restriction.
+\begin{definition}[Non-parametric method]\label{def:nonparametric}
+A \emph{non-parametric} method assumes no functional form and seeks an $\hat f$ as close
+to the training points as possible subject to a smoothness restriction, for example a
+thin-plate spline with a chosen level of smoothness.
 \end{definition}
 
-\begin{remark}
-A parametric method replaces estimation of a function by estimation of $d+1$ numbers, at
-the risk that the assumed form excludes the truth. A non-parametric method carries no such
-risk and needs far more data, nothing being borrowed from an assumed shape. Flexibility and
-interpretability move in opposite directions along the same axis: least squares is the
-least flexible and the most interpretable, boosting and neural networks the reverse.
+\begin{remark}[The trade; ISLR §2.1.2]
+A parametric form may be far from the true $f$, in which case the estimate is poor
+whatever the sample size. A non-parametric method avoids that risk and needs far more
+observations, nothing being borrowed from an assumed shape; and its smoothness has to be
+chosen, since a fit that follows every training point has \emph{overfit} the data and
+predicts new observations badly.
 \end{remark}
 
-\subsection{Classes of problem}\label{sec:1.1.4}
-
-\begin{remark}[Terminology]
-Learning is \emph{supervised} when a response $Y$ is observed alongside the predictors and
-\emph{unsupervised} when it is not; principal components and clustering (Unit 13) are the
-unsupervised methods on the syllabus. A supervised problem is a \emph{regression} problem
-when $Y$ is quantitative and a \emph{classification} problem when $Y$ is qualitative. The
-distinction is in the response, not the predictors: qualitative predictors are handled by
-binary coding in a regression (Unit 3), and logistic regression is a classification method
-despite its name (Unit 7).
-\end{remark}
-
-\subsection{Sampling assumptions and study design}\label{sec:1.1.5}
-
-\begin{definition}[Basic sampling assumptions]\label{def:sampling}
-For a sample $\{y_1,\ldots,y_n\}$ drawn from a population:
-\begin{enumerate}[label=\textup{(S\arabic*)}]
-\item $\expc[y_i] = \mu$;
-\item $\var(y_i) = \sigma^2$;
-\item the $y_i$ are independent;
-\item the $y_i$ are normally distributed.
-\end{enumerate}
+\begin{definition}[Flexibility and interpretability; ISLR §2.1.3]\label{def:flexibility}
+A method is more \emph{flexible} the wider the range of shapes it can produce for $\hat f$.
+Ordered from least to most flexible (ISLR Figure 2.7): subset selection and the lasso;
+least squares; generalised additive models; bagging, boosting, support vector machines
+and neural networks. Interpretability runs the other way: the lasso is more interpretable
+than least squares because it sets coefficients to zero, and the fully non-linear methods
+are the hardest to interpret.
 \end{definition}
 
-\begin{remark}
-(S4) is not needed for most inference, because central limit theorems give approximate
-normality of averages; it is needed for exact small-sample statements such as the $t$
-distribution. Regression coefficients are weighted averages (Unit 2), so the same central
-limit results apply to them. Where the response is badly skewed, a power transform, most
-often the logarithm, brings it closer to symmetry before the normal approximation is
-invoked.
+\begin{remark}[ISLR §2.1.3]
+When inference is the goal, a restrictive model is preferred for its interpretability. When
+prediction is the sole goal, the most flexible method is not necessarily the most accurate:
+flexible methods can overfit, and a less flexible method often predicts better.
 \end{remark}
 
-\begin{remark}[Designed and observational data]
-In a \emph{designed} study the analyst controls the assignment of treatments, and
-randomisation licenses causal conclusions. In an \emph{observational} study the data are
-not under the analyst's control; a confounding variable related to both $y$ and $x$ can
-generate association without causation, and only \emph{statistical} control, meaning
-inclusion of the confounder as an explanatory variable, is available. Actuarial data are almost
-always observational, so the output of a regression is an association, adjusted for
-whatever was measured. Unit 3 returns to this when interpreting coefficients.
+\subsection{Classes of problem}\label{sec:1.1.3}
+
+\begin{definition}[Supervised and unsupervised learning]\label{def:supervised}
+Learning is \emph{supervised} when each predictor vector $x_i$ comes with a response $y_i$
+and the aim is prediction or inference about their relationship. It is \emph{unsupervised}
+when there is no response: the aim is then to find structure among the variables or the
+observations, as in \emph{cluster analysis}, which asks whether the observations fall into
+distinct groups.
+\end{definition}
+
+\begin{definition}[Regression and classification]\label{def:regression}
+A variable is \emph{quantitative} if it takes numerical values and \emph{qualitative}
+(categorical) if it takes values in one of $K$ classes. A supervised problem is a
+\emph{regression} problem when the response is quantitative and a \emph{classification}
+problem when it is qualitative.
+\end{definition}
+
+\begin{remark}[ISLR §2.1.5]
+The distinction rests on the response, not the predictors: qualitative predictors are
+handled by coding. Logistic regression is a classification method despite its name, since
+its response is a binary class, though as it estimates class probabilities it can also be
+viewed as regression. $K$-nearest neighbours and boosting serve both kinds of response.
 \end{remark}
+
+\subsection{Data, sampling and study design}\label{sec:1.1.4}
+
+\begin{definition}[Summary statistics; FREES §1.2]\label{def:summary}
+For a sample $y_1,\ldots,y_n$: the mean $\bar y=n^{-1}\sum_iy_i$; the median, the middle
+value when the observations are ordered; the standard deviation
+$s_y=\{(n-1)^{-1}\sum_i(y_i-\bar y)^2\}^{1/2}$; and the $p$-th percentile, the value below
+which a fraction $p$ of the observations lie. A histogram, a box plot (the box is the
+middle 50\%, the whiskers extend $1.5$ interquartile ranges beyond the quartiles, points
+outside them are plotted individually) and a normal quantile--quantile plot (sample
+quantiles against standard normal quantiles; a straight line means agreement in shape)
+display the distribution.
+\end{definition}
+
+\begin{example}[Massachusetts bodily injury claims; FREES §1.2]\label{ex:massbi}
+Rempala and Derrig (2005) sampled $348$ automobile bodily injury claims closed in
+Massachusetts in 2001, the amounts of outpatient medical treatment after accidents. The
+claims from provider ``A'', suspected of fraud, are set aside, and the others are analysed
+in logarithms of thousands of dollars, the scale of FREES Table 1.2.
+<<massbi>>=
+injury <- read.csv("data/frees/csv/MassBodilyInjury.csv")
+names(injury) <- trimws(names(injury))
+table(injury$provider)
+claims  <- subset(injury, provider == "Other")$claims
+lclaims <- log(claims)
+c(n = length(lclaims), mean = mean(lclaims), median = median(lclaims), sd = sd(lclaims),
+  min = min(lclaims), max = max(lclaims),
+  q25 = unname(quantile(lclaims, 0.25)), q75 = unname(quantile(lclaims, 0.75)))
+c(mean_in_dollars = 1000 * exp(mean(lclaims)),
+  normal_q75 = mean(lclaims) + qnorm(0.75) * sd(lclaims))
+@
+The mean logarithmic claim, $0.48$, is $\$1{,}617$. The normal curve with $\mu=\bar y$
+and $\sigma=s_y$ summarises the distribution by two numbers; its 75th percentile,
+$\bar y+0.675\,s_y=1.22$, is close to the sample's $1.17$.
+<<massbi-fig, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(lclaims, breaks = 32, freq = FALSE, main = "log claims, 32 bins", col = "grey85",
+     border = "white")
+curve(dnorm(x, mean(lclaims), sd(lclaims)), add = TRUE)
+boxplot(lclaims, main = "box plot of log claims")
+qqnorm(lclaims, main = "normal qq plot of log claims"); qqline(lclaims)
+hist(claims[claims < max(claims)], breaks = 25, main = "claims in $1,000, largest omitted",
+     col = "grey85", border = "white")
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{The $272$ claims of the other providers: histogram of the logarithms with the
+fitted normal curve, box plot, normal quantile--quantile plot, and the histogram in
+thousands of dollars with the largest claim omitted (FREES Figures 1.3--1.6).}
+\end{figure}
+The quantile plot falls below the line in the lower tail and the box plot has its outliers
+mostly below the lower whisker: the logarithms are skewed to the left, with a point beyond
+the whiskers at each end. On the dollar scale the distribution is lopsided to the right.
+\end{example}
+
+\begin{definition}[Skewness and power transforms; FREES §1.3]\label{def:boxcox}
+A distribution with the longer tail on the right is \emph{skewed to the right}, or
+positively skewed, and one with the longer tail on the left is skewed to the left; the
+sample skewness
+\[
+\frac{n^{-1}\sum_i(y_i-\bar y)^3}{\{n^{-1}\sum_i(y_i-\bar y)^2\}^{3/2}}
+\]
+is positive in the first case and negative in the second. Insurance claim distributions
+are typically skewed to the right. The Box--Cox family of \emph{power transforms}
+replaces a positive response $y$ by
+\[
+y^{(\lambda)} = \begin{cases}(y^\lambda-1)/\lambda, & \lambda\neq0,\\ \ln y, & \lambda=0,\end{cases}
+\]
+with $\lambda=1,\tfrac12,0,-1$ the usual choices; in practice $y^\lambda$ or $\ln y$ is
+used directly, with the sign reversed for $\lambda<0$ so that large values stay large.
+$y^{(\lambda)}\to\ln y$ as $\lambda\to0$, since
+$y^\lambda=e^{\lambda\ln y}=1+\lambda\ln y+O(\lambda^2)$.
+\end{definition}
+
+<<massbi-skew>>=
+skew <- function(v) mean((v - mean(v))^3) / mean((v - mean(v))^2)^1.5
+c(dollars = skew(claims), log = skew(lclaims))
+@
+The logarithm takes the claims from a skewness of $7.6$ on the dollar scale to $-0.8$: it
+compresses the upper tail of a right-skewed distribution and can overshoot into left skew.
+
+\begin{example}[Transforms of simulated chi-square data; FREES §1.3]\label{ex:chisq-transforms}
+FREES Figure 1.7 draws $500$ observations from a $\chi^2_2$ distribution and rescales
+them by the square root, the logarithm and the negative reciprocal; the chapter's script
+fixes the seed.
+<<chisq-transforms>>=
+set.seed(1237)
+x1 <- 10000 * rchisq(500, df = 2)
+tr <- list(original = x1, sqrt = sqrt(x1), log = log(x1), neg_reciprocal = -1 / x1)
+round(sapply(tr, skew), 3)
+@
+<<chisq-transforms-fig, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+for (nm in names(tr)) hist(tr[[nm]], breaks = 16, main = nm, col = "grey85", border = "white")
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{The $500$ simulated $\chi^2_2$ observations, raw and under the three transforms
+(FREES Figure 1.7).}
+\end{figure}
+The square root brings the skewness from $1.66$ to $0.64$ and the logarithm reverses its
+sign, to $-1.12$; by the coefficient the square root is the most nearly symmetric of the
+four, while FREES reads the logarithm as the best from the histograms. The negative
+reciprocal is dominated by the smallest draws and is far more skewed than the original.
+\end{example}
+
+\begin{definition}[Basic sampling assumptions; FREES §1.4]\label{def:sampling}
+The data $\{y_i\}$ are drawn from a population with (1) $\expc[y_i]=\mu$, (2)
+$\var(y_i)=\sigma^2$, (3) the $y_i$ independent, (4) the $y_i$ normally distributed.
+$\mu$ and $\sigma^2$ are the location and scale parameters of the population, estimated
+by $\bar y$ and $s_y^2$.
+\end{definition}
+
+\begin{remark}[FREES §1.4]
+Assumption (4) is not required for most inference, because the central limit theorem of
+the prerequisites makes $\bar y$, and the weighted averages that regression coefficients
+are, approximately normal; it is required for the exact justification of $t$ statistics.
+\end{remark}
+
+\begin{definition}[Designed and observational studies; FREES §1.5]\label{def:design}
+In a \emph{designed study} the analyst controls the data: treatments are assigned to
+units by \emph{randomisation}, and a treatment effect can then be read as \emph{causal}.
+In an \emph{observational study} the data are not under the analyst's control. A
+\emph{confounding variable} is one related to both the response and an explanatory
+variable; it can produce association without causation. \emph{Statistical control}
+compares $y$ and $x$ ``controlling for'' other explanatory variables by including them in
+the regression, which is the essence of the regression method and the only control
+available in observational data.
+\end{definition}
+
+\begin{example}[Rand Health Insurance Experiment; FREES §1.5]\label{ex:rand}
+Medical expenditure and demand for insurance are positively associated in observational
+data, but people in poor health both spend more and buy more insurance. The Rand experiment
+randomly assigned households to fourteen plans differing in co-insurance and deductible,
+and found that more generous plans caused greater expenditure even after controlling for
+health status. Actuarial data are almost always observational: a smoking study cannot
+randomise people into smokers, so its output is an association adjusted for what was
+measured.
+\end{example}
+
+\begin{remark}[Actuarial applications; FREES §1.6]
+Pricing: expected claims vary with sex, age, location and vehicle use; a classification
+system built by regression lets each insured pay a fair share, and a flat rate loses good
+risks to competitors while retaining bad ones, which is \emph{adverse selection}. Reserving
+and solvency testing: regression forecasts future obligations and compares healthy with
+distressed firms.
+\end{remark}
+
+\periodmark{End of period 1 of 3.}
 
 %==============================================================================
 \section{Assessing Model Accuracy}\label{sec:1.2}
 %==============================================================================
 
 \begin{reading}
-ISLR §2.2.
+ISLR §2.2. \ SRM learning outcomes 1(b), 1(c).
 \end{reading}
 
-\subsection{Quality of fit}\label{sec:1.2.1}
+\subsection{Training and test error}\label{sec:1.2.1}
 
-\begin{definition}[Training and test error]\label{def:mse}
-For a fit $\hat f$ obtained from $\calD = \{(x_i,y_i)\}_{i=1}^n$,
+\begin{definition}[Mean squared error]\label{def:mse}
+For a fit $\hat f$ obtained from the training data,
 \begin{equation}\label{eq:trainmse}
-\MSE_{\mathrm{tr}} = \frac1n\sum_{i=1}^n \bigl(y_i - \hat f(x_i)\bigr)^2 ,
+\MSE = \frac1n\sum_{i=1}^n\bigl(y_i-\hat f(x_i)\bigr)^2
 \end{equation}
-while the \emph{test} (or generalisation) error is
-$\expc\bigl[(Y_0 - \hat f(X_0))^2\bigr]$ for a pair $(X_0,Y_0)$ drawn from the same
-population and independent of $\calD$.
+is the \emph{training MSE}. The \emph{test MSE} is the average
+$\mathrm{Ave}\,(y_0-\hat f(x_0))^2$ over previously unseen test observations $(x_0,y_0)$
+not used to train the method.
 \end{definition}
 
-\begin{remark}
-$\hat f$ was chosen to make~\eqref{eq:trainmse} small, so $\MSE_{\mathrm{tr}}$ is a
-downward-biased estimate of test error; the gap is the \emph{optimism} of the training
-error and it widens with flexibility. The method with the smallest training error need not
-have the smallest test error.
+\begin{remark}[ISLR §2.2.1]
+The method with the lowest training MSE need not have the lowest test MSE: most methods
+choose $\hat f$ to make the training MSE small, so it understates the test MSE. As
+flexibility increases the training MSE decreases monotonically while the test MSE is
+\emph{U-shaped}, and this holds whatever the data and whatever the method. A method with
+small training MSE and large test MSE is \emph{overfitting}: it has followed patterns
+caused by chance in the training data that are absent from the test data. Overfitting
+refers to the case in which a less flexible model would have given a smaller test MSE.
 \end{remark}
 
-\subsection{The classification setting}\label{sec:1.2.2}
-
-Let $Y\in\{0,1\}$ and write
-\begin{equation}\label{eq:eta}
-\eta(x) = \prb\{Y=1 \mid X=x\} = \expc[Y\mid X=x] .
-\end{equation}
-
-\begin{definition}[Classifier, error rate]\label{def:classifier}
-A \emph{classifier} is a function $g:\Real^d\to\{0,1\}$; its \emph{error probability} is
-$L(g) = \prb\{g(X)\neq Y\}$. On a sample the error rate is
-$n^{-1}\sum_i \indc_{\{y_i \neq g(x_i)\}}$.
-\end{definition}
-
-\begin{definition}[Bayes classifier]\label{def:bayes}
-The \emph{Bayes classifier} is
-\begin{equation}\label{eq:bayes}
-g^\ast(x) = \begin{cases} 1 & \eta(x) > 1/2,\\ 0 & \text{otherwise,}\end{cases}
-\end{equation}
-and $L^\ast = \prb\{g^\ast(X)\neq Y\}$ is the \emph{Bayes error}.
-\end{definition}
-
-\begin{theorem}[Optimality of the Bayes classifier]\label{thm:bayes}
-For every classifier $g:\Real^d\to\{0,1\}$,
-\[
-\prb\{g^\ast(X)\neq Y\} \;\leqslant\; \prb\{g(X)\neq Y\} .
-\]
-\end{theorem}
-
-\begin{proof}
-Conditionally on $X=x$, for any $g$,
-\begin{align*}
-\prb\{g(X)\neq Y \mid X=x\}
-&= 1 - \prb\{Y = g(X)\mid X=x\}\\
-&= 1 - \bigl(\indc_{\{g(x)=1\}}\,\eta(x) + \indc_{\{g(x)=0\}}\,(1-\eta(x))\bigr) .
-\end{align*}
-Subtracting the same expression for $g^\ast$,
-\begin{align*}
-&\prb\{g(X)\neq Y \mid X=x\} - \prb\{g^\ast(X)\neq Y \mid X=x\}\\
-&\quad= \eta(x)\bigl(\indc_{\{g^\ast(x)=1\}} - \indc_{\{g(x)=1\}}\bigr)
-      + (1-\eta(x))\bigl(\indc_{\{g^\ast(x)=0\}} - \indc_{\{g(x)=0\}}\bigr)\\
-&\quad= \bigl(2\eta(x)-1\bigr)\bigl(\indc_{\{g^\ast(x)=1\}} - \indc_{\{g(x)=1\}}\bigr)
- \;\geqslant\; 0 ,
-\end{align*}
-because $g^\ast(x)=1$ exactly when $2\eta(x)-1>0$, so the two factors carry the same sign.
-Integrating over the distribution of $X$ gives the claim.
-\end{proof}
-
-\begin{corollary}\label{cor:bayes-error}
-$L^\ast = \expc\bigl[\min\{\eta(X),\,1-\eta(X)\}\bigr]$.
-\end{corollary}
-
-\begin{proof}
-The display in the proof gives
-$\prb\{g^\ast(X)\neq Y\mid X=x\} = 1 - \max\{\eta(x), 1-\eta(x)\}
-= \min\{\eta(x), 1-\eta(x)\}$; integrate.
-\end{proof}
-
-\begin{remark}
-$L^\ast>0$ whenever $0<\eta(x)<1$ on a set of positive probability, that is, whenever the
-classes overlap. It is the classification counterpart of the irreducible error
-of~\eqref{eq:reducible}, and like it unknown in practice: $\eta$ is exactly what is being
-estimated.
-\end{remark}
-
-\subsection{The \texorpdfstring{$K$}{K}-nearest neighbour classifier}\label{sec:1.2.3}
-
-\begin{definition}[KNN]\label{def:knn}
-Given $K$ and a point $x_0$, let $\calN_0$ be the set of indices of the $K$ training
-points nearest $x_0$. The \emph{KNN classifier} estimates
-\begin{equation}\label{eq:knn}
-\hat\prb\{Y = j\mid X = x_0\} = \frac1K \sum_{i\in\calN_0} \indc_{\{y_i = j\}}
-\end{equation}
-and assigns $x_0$ to the class with the largest estimated probability.
-\end{definition}
-
-\begin{remark}
-KNN estimates $\eta$ by a local average and then applies the Bayes rule
-to the estimate. $1/K$ measures flexibility: $K=1$ gives a partition with zero training
-error and high variance, and large $K$ gives an almost constant, low-variance, high-bias
-rule.
-\end{remark}
-
-\periodmark{End of period 1 of 3.}
-
-%==============================================================================
-\section{The Bias--Variance Decomposition}\label{sec:1.3}
-%==============================================================================
-
-\begin{reading}
-ISLR §2.2.2.
-\end{reading}
-
-Throughout, $\calD$ is the training sample, $\hat f = \hat f_{\calD}$ the predictor fitted
-on it, and $(X_0,Y_0)$ a test pair independent of $\calD$. Subscripts on $\expc$ name the
-source averaged over.
-
-\begin{definition}[Pointwise bias and variance]\label{def:bias-var}
-At a fixed $x$,
-\[
-\mathrm{bias}(\hat f, x) = \expc_{\calD}\bigl[\hat f(x)\bigr] - f(x),
-\qquad
-\mathrm{var}(\hat f, x) = \var_{\calD}\bigl(\hat f(x)\bigr) .
-\]
-\end{definition}
-
-\begin{theorem}[Bias--variance decomposition]\label{thm:bias-var}
-With $\var(\varepsilon)=\sigma^2$, for a fixed $x_0$,
-\begin{equation}\label{eq:bias-var}
-\boxed{\;
-\expc\bigl[(Y_0 - \hat f(x_0))^2\bigr]
-= \mathrm{var}(\hat f, x_0) + \bigl[\mathrm{bias}(\hat f, x_0)\bigr]^2 + \sigma^2 \; }
-\end{equation}
-where the expectation is over both $\calD$ and $Y_0$.
-\end{theorem}
-
-\begin{proof}
-\textbf{Step 1: separate the noise.} Write
-$Y_0 - \hat f(x_0) = \bigl(Y_0 - f(x_0)\bigr) + \bigl(f(x_0) - \hat f(x_0)\bigr)$, square,
-and take expectations. The first square is $\sigma^2$. The cross term vanishes: $\calD$ is
-independent of $Y_0$, so the expectation factors, and $\expc[Y_0 - f(x_0)] = 0$. Hence
-\[
-\expc\bigl[(Y_0-\hat f(x_0))^2\bigr]
-= \sigma^2 + \expc_{\calD}\bigl[(f(x_0) - \hat f(x_0))^2\bigr] .
-\]
-
-\textbf{Step 2: split the remaining term.} Insert
-$\pm\,\expc_{\calD}[\hat f(x_0)]$:
-\[
-f(x_0) - \hat f(x_0)
-= \underbrace{\bigl(f(x_0) - \expc_{\calD}\hat f(x_0)\bigr)}_{=\,-\mathrm{bias},\ \text{constant}}
-+ \underbrace{\bigl(\expc_{\calD}\hat f(x_0) - \hat f(x_0)\bigr)}_{\text{mean zero}} .
-\]
-Squaring and taking $\expc_{\calD}$, the cross term vanishes (a constant times a mean-zero
-variable), leaving $[\mathrm{bias}(\hat f,x_0)]^2 + \mathrm{var}(\hat f,x_0)$.
-\end{proof}
-
-\begin{corollary}\label{cor:floor}
-$\expc\bigl[(Y_0 - \hat f(x_0))^2\bigr] \geqslant \sigma^2$ for every $\hat f$.
-\end{corollary}
-
-\begin{proof}
-Variance and squared bias are non-negative.
-\end{proof}
-
-\begin{remark}
-Increasing flexibility lowers bias and raises variance, so the sum
-in~\eqref{eq:bias-var} is typically U-shaped in flexibility and the best method is
-neither the most nor the least flexible. Which term dominates depends on the truth: if $f$
-is nearly linear, a flexible method buys almost no bias reduction and pays the variance
-anyway.
-\end{remark}
-
-%==============================================================================
-\section{Resampling}\label{sec:1.4}
-%==============================================================================
-
-\begin{reading}
-ISLR §5.1--5.3. \ §5.2 (the bootstrap) is outside the SRM reading list; it is taken
-here because bagging needs it.
-\end{reading}
-
-Resampling holds part of the training data out, fits on the remainder, and predicts the
-held-out part; it is how test error is estimated when no test set is held in reserve.
-
-\subsection{The validation-set approach}\label{sec:1.4.1}
-
-\begin{definition}[Validation set]\label{def:validation}
-Split the $n$ observations at random into a training half and a validation half; fit on
-the first and report the mean squared error on the second.
-\end{definition}
-
-\begin{remark}
-Two defects. The estimate is highly variable, since it depends on which observations
-happened to fall in the validation set; and it is fitted on roughly $n/2$ observations, so
-it \emph{overstates} the test error of the model that would be fitted to all $n$.
-\end{remark}
-
-\subsection{Leave-one-out cross-validation}\label{sec:1.4.2}
-
-\begin{definition}[LOOCV]\label{def:loocv}
-Let $\hat f^{(-i)}$ be the fit obtained with observation $i$ omitted. Then
-\begin{equation}\label{eq:loocv}
-\mathrm{CV}_{(n)} = \frac1n\sum_{i=1}^n \MSE_i ,
-\qquad \MSE_i = \bigl(y_i - \hat f^{(-i)}(x_i)\bigr)^2 .
-\end{equation}
-\end{definition}
-
-\begin{remark}
-LOOCV has almost no bias, each fit using $n-1$ observations, and it is deterministic:
-there is no random split, so repeating it gives the same number. Its cost is $n$ fits,
-except for least squares, where one fit suffices.
-\end{remark}
-
-\begin{lemma}[Sherman--Morrison]\label{lem:sherman}
-Let $\bA$ be invertible and $\bu,\bv$ vectors with $1 - \bv'\bA^{-1}\bu \neq 0$. Then
-\begin{equation}\label{eq:sherman}
-(\bA - \bu\bv')^{-1} = \bA^{-1}
-+ \frac{\bA^{-1}\bu\,\bv'\bA^{-1}}{1 - \bv'\bA^{-1}\bu} .
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-Multiply the right-hand side by $\bA-\bu\bv'$ and write $c = 1-\bv'\bA^{-1}\bu$:
-\[
-\bI - \bA^{-1}\bu\bv' + \frac{\bA^{-1}\bu\bv' - \bA^{-1}\bu(\bv'\bA^{-1}\bu)\bv'}{c}
-= \bI - \bA^{-1}\bu\bv' + \frac{\bA^{-1}\bu\bv'(1 - \bv'\bA^{-1}\bu)}{c} = \bI ,
-\]
-using that $\bv'\bA^{-1}\bu$ is a scalar.
-\end{proof}
-
-\begin{theorem}[LOOCV for least squares]\label{thm:loocv}
-For the linear model fitted by least squares, with $\hat y_i$ the $i$-th fitted value from
-the fit on all $n$ observations and $h_{ii} = \bx_i'(\bX'\bX)^{-1}\bx_i$ the $i$-th
-leverage,
-\begin{equation}\label{eq:loocv-shortcut}
-\boxed{\;\mathrm{CV}_{(n)}
-= \frac1n\sum_{i=1}^n \left(\frac{y_i - \hat y_i}{1 - h_{ii}}\right)^{\!2} . \;}
-\end{equation}
-A single fit therefore delivers the $n$-fold cross-validated error.
-\end{theorem}
-
-\begin{proof}
-Deleting observation $i$ replaces $\bX'\bX$ by $\bX'\bX - \bx_i\bx_i'$ and $\bX'\by$ by
-$\bX'\by - \bx_i y_i$. By Lemma~\ref{lem:sherman} with $\bA = \bX'\bX$ and
-$\bu=\bv=\bx_i$, so that $\bv'\bA^{-1}\bu = h_{ii}$,
-\[
-(\bX'\bX - \bx_i\bx_i')^{-1}
-= (\bX'\bX)^{-1} + \frac{(\bX'\bX)^{-1}\bx_i\bx_i'(\bX'\bX)^{-1}}{1-h_{ii}} .
-\]
-Write $\hat\bb$ for the full-sample estimate and $\hat\bb^{(-i)}$ for the deleted one.
-Multiplying the display by $\bX'\by - \bx_i y_i$ and collecting terms,
-\[
-\hat\bb^{(-i)}
-= \hat\bb - (\bX'\bX)^{-1}\bx_i\!\left[
-   y_i - \frac{\hat y_i - h_{ii}y_i}{1-h_{ii}}\right]
-= \hat\bb - (\bX'\bX)^{-1}\bx_i\,\frac{y_i-\hat y_i}{1-h_{ii}} ,
-\]
-the bracket simplifying because
-$y_i(1-h_{ii}) - \hat y_i + h_{ii}y_i = y_i - \hat y_i$. Premultiplying by $\bx_i'$,
-\[
-\hat f^{(-i)}(x_i) = \bx_i'\hat\bb^{(-i)}
-= \hat y_i - h_{ii}\,\frac{y_i-\hat y_i}{1-h_{ii}} ,
-\]
-so that
-\[
-y_i - \hat f^{(-i)}(x_i)
-= (y_i-\hat y_i)\left(1 + \frac{h_{ii}}{1-h_{ii}}\right)
-= \frac{y_i-\hat y_i}{1-h_{ii}} .
-\]
-Squaring and averaging gives~\eqref{eq:loocv-shortcut}.
-\end{proof}
-
-\begin{remark}
-The formula is the ordinary training residual with the $i$-th residual inflated by
-$1/(1-h_{ii})$. High-leverage points pull the fitted surface toward themselves, so their
-training residuals understate their true prediction error by exactly this factor, the
-same $h_{ii}$ that Unit 2 shows satisfies $\var(e_i) = \sigma^2(1-h_{ii})$. Since
-$1-h_{ii}\leqslant 1$, $\mathrm{CV}_{(n)} \geqslant \MSE_{\mathrm{tr}}$ term by term.
-\end{remark}
-
-\subsection{\texorpdfstring{$k$}{k}-fold cross-validation}\label{sec:1.4.3}
-
-\begin{definition}[$k$-fold CV]\label{def:kfold}
-Partition the observations at random into $k$ folds of roughly equal size. For
-$j=1,\ldots,k$, fit on all folds but the $j$-th and compute $\MSE_j$ on the $j$-th. Then
-\begin{equation}\label{eq:kfold}
-\mathrm{CV}_{(k)} = \frac1k\sum_{j=1}^{k} \MSE_j .
-\end{equation}
-\end{definition}
-
-\begin{remark}[Choosing $k$]
-$k$-fold costs $k$ fits rather than $n$. It is also often \emph{more accurate} than LOOCV,
-for a bias--variance reason of its own. Each of the $n$ LOOCV fits uses almost the same
-$n-1$ observations, so the $n$ quantities averaged are highly positively correlated, and
-the mean of highly correlated quantities has high variance; the $k$ fits in $k$-fold
-overlap less. Against that, each $k$-fold fit uses only $(k-1)n/k$ observations, so
-$\mathrm{CV}_{(k)}$ is biased upward more than $\mathrm{CV}_{(n)}$. Taking $k=5$ or $k=10$
-is the usual compromise. Unlike LOOCV, $k$-fold depends on the random split, so it varies
-from run to run.
-\end{remark}
-
-\begin{remark}[Classification]
-For a qualitative response, replace $\MSE_i$ in~\eqref{eq:loocv} by the misclassification
-indicator $\indc_{\{y_i \neq \hat y^{(-i)}_i\}}$; everything else is unchanged. The
-shortcut of Theorem~\ref{thm:loocv} is specific to least squares and does not carry over.
-\end{remark}
-
-\periodmark{End of period 2 of 3.}
-
-\subsection{The bootstrap}\label{sec:1.4.4}
-
-\begin{definition}[Bootstrap sample]\label{def:bootstrap}
-Given data $\calD = \{(x_i,y_i)\}_{i=1}^n$, a \emph{bootstrap sample} $\calD^\ast$ is
-obtained by drawing $n$ indices independently and uniformly with replacement from
-$\{1,\ldots,n\}$. An index may be drawn several times or not at all.
-\end{definition}
-
-\begin{definition}[Bootstrap standard error]\label{def:boot-se}
-Let $\hat\theta$ be a statistic computed from $\calD$, and $\hat\theta^{\ast b}$ its value
-on the $b$-th of $B$ bootstrap samples. The \emph{bootstrap standard error} is
-\begin{equation}\label{eq:boot-se}
-\SE_B(\hat\theta) = \sqrt{\frac{1}{B-1}\sum_{b=1}^B
-  \Bigl(\hat\theta^{\ast b} - \frac1B\sum_{c=1}^B\hat\theta^{\ast c}\Bigr)^2} .
-\end{equation}
-\end{definition}
-
-\begin{proposition}[Out-of-bag fraction]\label{prop:oob}
-The probability that a given observation does not appear in a bootstrap sample is
-$(1-1/n)^n$, which increases to $e^{-1} \approx 0.368$ as $n\to\infty$.
-\end{proposition}
-
-\begin{proof}
-Each of the $n$ independent draws misses observation $i$ with probability $1-1/n$, so all
-$n$ draws miss it with probability $(1-1/n)^n$. Writing
-$(1-1/n)^n = \exp\{n\ln(1-1/n)\}$ and $\ln(1-u) = -u-u^2/2-\cdots$ gives
-$n\ln(1-1/n) \to -1$.
-\end{proof}
-
-\begin{remark}
-Those \emph{out-of-bag} observations, roughly a third of the sample, are what make
-bagging's free error estimate possible (Unit 12).
-\end{remark}
-
-\begin{remark}[Bootstrap against cross-validation]
-Cross-validation estimates \emph{test error}; the bootstrap estimates the \emph{sampling
-variability of a statistic}. The bootstrap is the tool when a standard error is wanted and
-no formula exists, as for a median, a ratio of coefficients or a tuning parameter selected
-by CV, and when a formula exists but rests on assumptions in doubt: the regression standard
-error $s\sqrt{[(\bX'\bX)^{-1}]_{jj}}$ assumes a correctly specified model with constant
-variance, resampling the observed pairs assumes neither, and a gap between the two is
-itself a diagnostic.
-\end{remark}
-
-%==============================================================================
-\section{Computation: Formulas Against Package Output}\label{sec:1.5}
-%==============================================================================
-
-\begin{reading}
-ISLR §2.3, §5.3 (excluding §5.3.4).
-\end{reading}
-
-Several quantities here, namely $f$, $\sigma^2$, $\eta$ and $L^\ast$, are unknowable from data,
-so the checks that involve them are run on simulations where the truth is set by us.
-
-<<setup-sim>>=
-f     <- function(x) sin(2 * x) + 0.5 * x     # the true regression function
-sigma <- 0.5                                   # sd of the noise
-eta   <- function(x) plogis(2 * x)             # true P(Y = 1 | X = x)
+<<setup-sim, include=FALSE>>=
+f     <- function(x) sin(2 * x) + 0.5 * x      # a known truth
+sigma <- 0.5
 @
 
-\subsection{The regression function and the irreducible error (§\ref{sec:1.1.1})}\label{sec:1.5.1}
-
-Theorem~\ref{thm:regfn} says no predictor beats $f$, and~\eqref{eq:reducible} says its
-error is exactly $\var(\varepsilon)$. Both are checkable when $f$ is known.
-
-<<regfn-check>>=
-set.seed(1)
-N  <- 200000
-x  <- runif(N, -3, 3)
-y  <- f(x) + rnorm(N, sd = sigma)
-c(mse_of_true_f = mean((y - f(x))^2),          # attains the irreducible error
-  sigma_squared = sigma^2,
-  mse_of_linear = mean((y - predict(lm(y ~ x)))^2),   # any other g does worse
-  mse_of_mean   = mean((y - mean(y))^2))
-@
-
-A power transform (FREES §1.3) is judged by how much closer to symmetry it brings the
-response; on a strongly right-skewed variable the logarithm removes most of the skew.
-
-<<transform-check>>=
-skew <- function(v) mean((v - mean(v))^3) / sd(v)^3
-c(raw_medv = skew(Boston$medv),  log_medv = skew(log(Boston$medv)),
-  raw_crim = skew(Boston$crim),  log_crim = skew(log(Boston$crim)))
-@
-
-\subsection{The Bayes classifier and the Bayes error (§\ref{sec:1.2.2})}\label{sec:1.5.2}
-
-With $X\sim\mathrm{U}(-3,3)$ and $\eta(x) = (1+e^{-2x})^{-1}$, Corollary~\ref{cor:bayes-error}
-can be evaluated in closed form: by symmetry
-\[
-L^\ast = \frac26\int_0^3 \frac{e^{-2x}}{1+e^{-2x}}\,\dd x
-       = \frac16\Bigl[\ln 2 - \ln\bigl(1+e^{-6}\bigr)\Bigr] .
-\]
-Four routes to the same number: the closed form, numerical integration, the plug-in
-formula on a sample, and the realised error rate of $g^\ast$.
-
-<<bayes-check>>=
-set.seed(2)
-xb <- runif(N, -3, 3)
-yb <- rbinom(N, 1, eta(xb))
-g_star <- as.integer(eta(xb) > 0.5)            # the Bayes rule
-L_star <- (log(2) - log(1 + exp(-6))) / 6      # closed form
-c(closed_form = L_star,
-  integrate   = integrate(function(x) pmin(eta(x), 1 - eta(x))/6, -3, 3)$value,
-  plug_in     = mean(pmin(eta(xb), 1 - eta(xb))),   # E[min(eta,1-eta)]
-  realised    = mean(g_star != yb))                 # error rate of g*
-@
-
-Theorem~\ref{thm:bayes} says no rule does better. Three competitors, none of which beats
-$g^\ast$:
-
-<<bayes-competitors>>=
-c(bayes         = mean(g_star != yb),
-  threshold_1   = mean(as.integer(xb >  1) != yb),
-  threshold_m1  = mean(as.integer(xb > -1) != yb),
-  always_one    = mean(1 != yb))
-@
-
-\subsection{KNN and the role of \texorpdfstring{$K$}{K} (§\ref{sec:1.2.3})}\label{sec:1.5.3}
-
-<<knn-check>>=
-set.seed(3)
-ntr <- 200; nte <- 50000
-tr <- data.frame(x = runif(ntr, -3, 3));  tr$y <- rbinom(ntr, 1, eta(tr$x))
-te <- data.frame(x = runif(nte, -3, 3));  te$y <- rbinom(nte, 1, eta(te$x))
-Ks  <- c(1, 3, 5, 15, 45, 105)
-err <- t(sapply(Ks, function(K) {
-  ktr <- class::knn(tr["x"], tr["x"], tr$y, k = K)
-  kte <- class::knn(tr["x"], te["x"], tr$y, k = K)
-  c(train = mean(ktr != tr$y), test = mean(kte != te$y))
-}))
-mc_se <- sqrt(L_star * (1 - L_star) / nte)
-cbind(K = Ks, round(err, 4), bayes = round(L_star, 4),
-      mc_se = round(mc_se, 4), z = round((err[, "test"] - L_star)/mc_se, 2))
-@
-
-At $K=1$ the training error is zero and the test error is the worst in the table; the test
-error is smallest at an intermediate $K$.
-
-\begin{remark}
-Theorem~\ref{thm:bayes} bounds the \emph{population} error probability, not the error rate
-realised on a finite test sample. The latter averages $n_{\mathrm{te}}$ indicators and has
-standard error $\sqrt{L^\ast(1-L^\ast)/n_{\mathrm{te}}}$, printed as \texttt{mc\_se}; the
-\texttt{z} column reports how many of those standard errors separate each row from
-$L^\ast$, and the rows below $L^\ast$ are within sampling error of it. An empirical rate
-that appears to beat a theoretical bound should be compared with this quantity before
-anything else.
-\end{remark}
-
-\subsection{Training error versus test error (§\ref{sec:1.2.1})}\label{sec:1.5.4}
-
-<<train-test-check>>=
+<<train-test>>=
 set.seed(4)
-dtr <- data.frame(x = runif(80, -3, 3));   dtr$y <- f(dtr$x) + rnorm(80, sd = sigma)
+dtr <- data.frame(x = runif(80, -3, 3));    dtr$y <- f(dtr$x) + rnorm(80, sd = sigma)
 dte <- data.frame(x = runif(20000, -3, 3)); dte$y <- f(dte$x) + rnorm(20000, sd = sigma)
-degs <- c(1, 2, 4, 6, 8, 12, 16)
+degs <- 1:16
 tt <- t(sapply(degs, function(dg) {
   m <- lm(y ~ poly(x, dg), data = dtr)
   c(train = mean(residuals(m)^2),
     test  = mean((dte$y - predict(m, newdata = dte))^2))
 }))
-cbind(degree = degs, round(tt, 4), irreducible = sigma^2)
+round(t(tt), 3)[, c(1, 2, 4, 8, 12, 16)]
 @
 
-The training error falls monotonically in flexibility. The test error reaches its minimum
-at degree $8$ and rises after it, and stays above $\sigma^2$ throughout, as
-Corollary~\ref{cor:floor} requires.
+<<train-test-fig, fig.height=2.8, fig.width=6.4, echo=FALSE>>=
+op <- par(mar = c(3.4, 3.4, 1, 0.6), mgp = c(1.9, 0.6, 0))
+matplot(degs, tt, type = "b", pch = c(1, 16), lty = 1, col = c("grey40", "#B45309"),
+        xlab = "flexibility (polynomial degree)", ylab = "MSE", ylim = c(0, 0.8))
+abline(h = sigma^2, lty = 2); legend("topright", c("training", "test"), pch = c(1, 16),
+        col = c("grey40", "#B45309"), bty = "n")
+par(op)
+@
 
-\subsection{The bias--variance decomposition (§\ref{sec:1.3})}\label{sec:1.5.5}
+\begin{figure}[H]\centering
+\caption{Training and test MSE for polynomial fits of increasing degree to $80$
+observations from $y=\sin 2x+x/2+\varepsilon$, $\varepsilon\sim N(0,0.5^2)$. The dashed
+line is $\var(\varepsilon)$, the irreducible error and the lowest achievable test MSE.}
+\end{figure}
 
-Equation~\eqref{eq:bias-var} is an identity between a quantity that can be simulated
-directly and three that must be assembled separately. Both sides are computed below at the
-fixed point $x_0 = 1$, for a range of polynomial degrees.
+\subsection{The bias--variance trade-off}\label{sec:1.2.2}
 
-<<bias-var-check>>=
+\begin{proposition}[Bias--variance decomposition]\label{prop:bias-var}
+At a fixed test point $x_0$, the expected test MSE over repeated training sets and a new
+$y_0$ is
+\begin{equation}\label{eq:bias-var}
+\expc\bigl(y_0-\hat f(x_0)\bigr)^2
+= \var\bigl(\hat f(x_0)\bigr)+\bigl[\mathrm{Bias}\bigl(\hat f(x_0)\bigr)\bigr]^2+\var(\varepsilon),
+\end{equation}
+where $\var(\hat f(x_0))$ is the variance of the estimate over training sets and
+$\mathrm{Bias}(\hat f(x_0))=\expc[\hat f(x_0)]-f(x_0)$. The overall expected test MSE
+averages~\eqref{eq:bias-var} over the test points $x_0$.
+\end{proposition}
+
+\begin{proof}
+Let $\calD$ denote the training set, $\hat f=\hat f_{\calD}$ the estimate fitted on it, and
+$y_0=f(x_0)+\varepsilon_0$ a new response at the fixed point $x_0$, with $\varepsilon_0$
+independent of $\calD$, $\expc[\varepsilon_0]=0$ and $\var(\varepsilon_0)=\var(\varepsilon)$.
+Write $m=\expc_{\calD}[\hat f(x_0)]$, a number. Then
+\[
+y_0-\hat f(x_0) = \underbrace{\varepsilon_0}_{A}
++ \underbrace{\{f(x_0)-m\}}_{B}
++ \underbrace{\{m-\hat f(x_0)\}}_{C} ,
+\]
+where $A$ has mean zero, $B=-\mathrm{Bias}(\hat f(x_0))$ is a constant, and $C$ depends
+on $\calD$ alone with $\expc[C]=m-\expc_{\calD}[\hat f(x_0)]=0$. Squaring,
+\[
+(A+B+C)^2 = A^2+B^2+C^2+2AB+2AC+2BC .
+\]
+Take expectations term by term. $\expc[A^2]=\var(\varepsilon_0)=\var(\varepsilon)$;
+$B^2=[\mathrm{Bias}(\hat f(x_0))]^2$; $\expc[C^2]=\expc_{\calD}[(\hat f(x_0)-m)^2]
+=\var(\hat f(x_0))$. The cross terms vanish: $\expc[AB]=B\,\expc[A]=0$ and
+$\expc[BC]=B\,\expc[C]=0$ because $B$ is a constant, and
+$\expc[AC]=\expc[A]\,\expc[C]=0$ because $A$ is a function of $\varepsilon_0$, $C$ a
+function of $\calD$, and the two are independent. Adding the six terms
+gives~\eqref{eq:bias-var}. The overall expected test MSE follows by averaging the identity
+over the distribution of $x_0$.
+\end{proof}
+
+\begin{remark}[ISLR §2.2.2]
+\emph{Variance} is the amount by which $\hat f$ would change if estimated from a different
+training set; flexible methods have high variance. \emph{Bias} is the error from
+approximating a complicated $f$ by a simpler model; flexible methods have low bias. As
+flexibility increases the bias at first falls faster than the variance rises and the test
+MSE falls; beyond some point the bias has little further to fall while the variance keeps
+rising, and the test MSE rises. Both terms are non-negative, so the expected test MSE
+never lies below $\var(\varepsilon)$. If the true $f$ is linear, least squares has no bias
+and a flexible method cannot compete; if $f$ is highly non-linear and $n$ is large, the
+flexible method wins.
+\end{remark}
+
+<<bias-var>>=
 set.seed(5)
-x0 <- 1.0; B <- 1500; nsim <- 60
-bv <- t(sapply(degs[1:6], function(dg) {
+x0 <- 1.0; B <- 1000; nsim <- 60
+bv <- t(sapply(c(1, 2, 4, 6, 8, 12), function(dg) {
   fh <- y0 <- numeric(B)
   for (b in seq_len(B)) {
-    d <- data.frame(x = runif(nsim, -3, 3))
-    d$y   <- f(d$x) + rnorm(nsim, sd = sigma)
+    d <- data.frame(x = runif(nsim, -3, 3)); d$y <- f(d$x) + rnorm(nsim, sd = sigma)
     fh[b] <- predict(lm(y ~ poly(x, dg), data = d), newdata = data.frame(x = x0))
     y0[b] <- f(x0) + rnorm(1, sd = sigma)
   }
-  b2 <- (mean(fh) - f(x0))^2; v <- var(fh)
-  c(bias2 = b2, variance = v, irreducible = sigma^2,
-    sum = b2 + v + sigma^2, direct = mean((y0 - fh)^2))
+  c(degree = dg, bias2 = (mean(fh) - f(x0))^2, variance = var(fh),
+    irreducible = sigma^2, sum = (mean(fh) - f(x0))^2 + var(fh) + sigma^2,
+    direct = mean((y0 - fh)^2))
 }))
-cbind(degree = degs[1:6], round(bv, 4))
+round(bv, 4)
 @
 
-\texttt{sum} and \texttt{direct} agree to Monte-Carlo error at every degree, which is
-Theorem~\ref{thm:bias-var}; reading down the columns, the squared bias falls to zero by
-degree $8$ while the variance grows from $0.014$ to $0.044$, which is the trade-off.
+\texttt{sum} and \texttt{direct} agree to Monte-Carlo error at every degree,
+which is~\eqref{eq:bias-var}; the squared bias falls to zero by degree $8$ while the
+variance is smallest at degree $1$ and largest at degree $12$, and their sum is smallest in
+between.
 
-\subsection{LOOCV: the shortcut against the definition (§\ref{sec:1.4.2})}\label{sec:1.5.6}
+\subsection{The classification setting}\label{sec:1.2.3}
 
-Theorem~\ref{thm:loocv} claims that one fit reproduces $n$ fits. Both are computed, on the
-same model Unit 2 uses, and compared with \texttt{boot::cv.glm}.
+\begin{definition}[Error rate]\label{def:error-rate}
+For a qualitative response, the \emph{training error rate} is
+\begin{equation}\label{eq:train-err}
+\frac1n\sum_{i=1}^n I(y_i\neq\hat y_i) ,
+\end{equation}
+with $\hat y_i$ the predicted class and $I$ the indicator; the \emph{test error rate} is
+$\mathrm{Ave}\,I(y_0\neq\hat y_0)$ over test observations. A good classifier has the
+smallest test error rate.
+\end{definition}
 
-<<loocv-check>>=
-fit <- lm(medv ~ lstat + age + rm, data = Boston)
-n   <- nobs(fit); h <- hatvalues(fit); e <- residuals(fit)
+\begin{definition}[Bayes classifier]\label{def:bayes}
+The \emph{Bayes classifier} assigns a test observation $x_0$ to the class $j$ for which
+the conditional probability $\prb(Y=j\mid X=x_0)$ is largest. With two classes it predicts
+class one when $\prb(Y=1\mid X=x_0)>0.5$; the set where the probability equals $0.5$ is the
+\emph{Bayes decision boundary}. Its error rate at $x_0$ is $1-\max_j\prb(Y=j\mid X=x_0)$
+and overall
+\begin{equation}\label{eq:bayes-error}
+1-\expc\Bigl[\max_j\prb(Y=j\mid X)\Bigr] ,
+\end{equation}
+the \emph{Bayes error rate}, the classification analogue of the irreducible error.
+\end{definition}
 
-cv_shortcut <- mean((e / (1 - h))^2)                   # one fit
-loo_pred    <- sapply(seq_len(n), function(i)          # n fits
-  predict(lm(medv ~ lstat + age + rm, data = Boston[-i, ]), Boston[i, ]))
-cv_brute    <- mean((Boston$medv - loo_pred)^2)
+\begin{proposition}[Optimality of the Bayes classifier]\label{prop:bayes}
+Let $g^\ast$ be the Bayes classifier. For every classifier $g$,
+$\prb(g^\ast(X)\neq Y)\leqslant\prb(g(X)\neq Y)$: the Bayes error
+rate~\eqref{eq:bayes-error} is the lowest test error rate any classifier can achieve.
+\end{proposition}
 
-suppressMessages(library(boot))
-cv_pkg <- cv.glm(Boston, glm(medv ~ lstat + age + rm, data = Boston))$delta[1]
-c(shortcut = cv_shortcut, brute_force = cv_brute, cv.glm = cv_pkg)
+\begin{proof}
+Write $p_j(x)=\prb(Y=j\mid X=x)$ for $j=1,\ldots,K$, so that $\sum_jp_j(x)=1$ and
+$g^\ast(x)$ is an index attaining $\max_jp_j(x)$.
+
+\textbf{Step 1: the conditional error of any classifier.} A classifier $g$ predicts the
+fixed label $g(x)$ at $X=x$, so it is correct exactly when $Y=g(x)$:
+\[
+\prb(g(X)\neq Y\mid X=x) = 1-\prb(Y=g(x)\mid X=x) = 1-p_{g(x)}(x) .
+\]
+
+\textbf{Step 2: pointwise comparison.} Since $p_{g(x)}(x)$ is one of the numbers
+$p_1(x),\ldots,p_K(x)$ and $p_{g^\ast(x)}(x)$ is the largest of them,
+$p_{g(x)}(x)\leqslant p_{g^\ast(x)}(x)=\max_jp_j(x)$, hence
+\[
+\prb(g^\ast(X)\neq Y\mid X=x) = 1-\max_jp_j(x) \;\leqslant\; 1-p_{g(x)}(x)
+= \prb(g(X)\neq Y\mid X=x)
+\qquad\text{for every } x .
+\]
+
+\textbf{Step 3: integrate.} By the tower property,
+$\prb(g(X)\neq Y)=\expc[\prb(g(X)\neq Y\mid X)]$, and expectation preserves the pointwise
+inequality of Step 2, so
+\[
+\prb(g^\ast(X)\neq Y) = \expc\Bigl[1-\max_jp_j(X)\Bigr] \;\leqslant\; \prb(g(X)\neq Y) .
+\]
+The left side is~\eqref{eq:bayes-error}. In the two-class case $p_2=1-p_1$, so
+$\max\{p_1,1-p_1\}$ is $p_1$ iff $p_1>\tfrac12$, which is the threshold rule of
+Definition~\ref{def:bayes}, and $1-\max\{p_1,1-p_1\}=\min\{p_1,1-p_1\}$.
+\end{proof}
+
+\begin{definition}[$K$-nearest neighbours]\label{def:knn}
+Given $K$ and a test point $x_0$, let $\calN_0$ be the $K$ training points nearest $x_0$.
+The KNN classifier estimates
+\begin{equation}\label{eq:knn}
+\prb(Y=j\mid X=x_0) = \frac1K\sum_{i\in\calN_0}I(y_i=j)
+\end{equation}
+and assigns $x_0$ to the class with the largest estimate.
+\end{definition}
+
+\begin{remark}[ISLR §2.2.3]
+The Bayes classifier is an unattainable standard, since the conditional distribution of
+$Y$ given $X$ is unknown; KNN estimates it locally and then applies the Bayes rule. $K$
+controls flexibility through $1/K$: $K=1$ gives an overly flexible boundary with zero
+training error, low bias and high variance; large $K$ gives a nearly linear boundary with
+low variance and high bias. The training error rate falls as $1/K$ grows and the test
+error rate is U-shaped, so the training error cannot choose $K$.
+\end{remark}
+
+<<knn>>=
+eta <- function(x) plogis(2 * x)               # true P(Y = 1 | X = x)
+set.seed(3)
+ntr <- 200; nte <- 20000
+tr <- data.frame(x = runif(ntr, -3, 3)); tr$y <- rbinom(ntr, 1, eta(tr$x))
+te <- data.frame(x = runif(nte, -3, 3)); te$y <- rbinom(nte, 1, eta(te$x))
+bayes <- mean(pmin(eta(te$x), 1 - eta(te$x)))   # Bayes error rate, test sample
+Ks  <- c(1, 3, 5, 15, 45, 105)
+err <- t(sapply(Ks, function(K) c(
+  K = K,
+  train = mean(class::knn(tr["x"], tr["x"], tr$y, k = K) != tr$y),
+  test  = mean(class::knn(tr["x"], te["x"], tr$y, k = K) != te$y))))
+cbind(round(err, 4), bayes = round(bayes, 4))
 @
 
-The per-observation identity behind the theorem, not merely its average:
-
-<<loocv-identity>>=
-c(max_abs_diff = max(abs((Boston$medv - loo_pred) - e / (1 - h))),
-  training_MSE = mean(e^2), LOOCV = cv_shortcut,
-  ratio        = cv_shortcut / mean(e^2))
-@
-
-$\mathrm{CV}_{(n)} > \MSE_{\mathrm{tr}}$, as the remark after Theorem~\ref{thm:loocv}
-predicts from $1-h_{ii}\leqslant1$.
-
-\subsection{\texorpdfstring{$k$}{k}-fold cross-validation (§\ref{sec:1.4.3})}\label{sec:1.5.7}
-
-<<kfold-check>>=
-cv_kfold <- function(K) {
-  folds <- sample(rep(seq_len(K), length.out = n))
-  mean(vapply(seq_len(K), function(j) {
-    m <- lm(medv ~ lstat + age + rm, data = Boston[folds != j, ])
-    mean((Boston$medv[folds == j] - predict(m, Boston[folds == j, ]))^2)
-  }, numeric(1)))
-}
-set.seed(6)
-r5  <- replicate(30, cv_kfold(5))
-r10 <- replicate(30, cv_kfold(10))
-rbind(fivefold = c(mean = mean(r5),  sd = sd(r5)),
-      tenfold  = c(mean = mean(r10), sd = sd(r10)),
-      loocv    = c(mean = cv_shortcut, sd = 0))
-@
-
-\subsection{The bootstrap (§\ref{sec:1.4.4})}\label{sec:1.5.8}
-
-<<boot-oob>>=
-nB <- nobs(fit)
-set.seed(7)
-oob <- mean(replicate(2000, {
-  idx <- sample(nB, nB, replace = TRUE); mean(!(seq_len(nB) %in% idx))
-}))
-c(empirical = oob, formula = (1 - 1/nB)^nB, limit = exp(-1))
-@
-
-The bootstrap standard error of each coefficient, against the formula
-$s\sqrt{[(\bX'\bX)^{-1}]_{jj}}$:
-
-<<boot-se>>=
-boot_coef <- function(d, i) coef(lm(medv ~ lstat + age + rm, data = d[i, ]))
-set.seed(7)
-bo <- boot(Boston, boot_coef, R = 1000)
-round(rbind(formula   = coef(summary(fit))[, "Std. Error"],
-            bootstrap = apply(bo$t, 2, sd),
-            ratio     = apply(bo$t, 2, sd) / coef(summary(fit))[, "Std. Error"]), 4)
-@
-
-The bootstrap standard errors are the larger, by factors of $1.5$ to $1.8$. The formula
-assumes a correctly specified model with constant variance; resampling pairs assumes
-neither. The gap is evidence against those assumptions, not against the bootstrap, and
-Unit 4 measures the same thing a second way, through heteroscedasticity-consistent
-standard errors.
+\periodmark{End of period 2 of 3.}
 
 %==============================================================================
-\section{Pitfalls}\label{sec:1.6}
+\section{Resampling Methods}\label{sec:1.3}
 %==============================================================================
 
-\subsection{Reporting the training error as performance}\label{sec:1.6.1}
+\begin{reading}
+ISLR §5.1. \ SRM learning outcome 1(d).
+\end{reading}
 
-The training error can be driven to zero by flexibility alone and says nothing about test
-error. A $1$-nearest-neighbour classifier is the extreme case.
+\subsection{The validation set approach}\label{sec:1.3.1}
 
-<<pitfall-train>>=
-k1_train <- class::knn(tr["x"], tr["x"], tr$y, k = 1)
-k1_test  <- class::knn(tr["x"], te["x"], tr$y, k = 1)
-c(train_error = mean(k1_train != tr$y),        # exactly zero
-  test_error  = mean(k1_test  != te$y),
-  bayes_error = mean(pmin(eta(te$x), 1 - eta(te$x))))
-@
+\begin{definition}[Validation set approach]\label{def:validation}
+Randomly divide the observations into a \emph{training set} and a \emph{validation set}
+(hold-out set). Fit on the training set; the MSE of the fitted model on the validation set
+estimates the test MSE.
+\end{definition}
 
-\textbf{Diagnostic.} A training error far below any plausible irreducible error.
-\textbf{Fix.} Report cross-validated or held-out error.
+\begin{remark}[Two drawbacks; ISLR §5.1.1]
+(1) The estimate is highly variable: a different random split gives a different estimate,
+and different splits may disagree about which model is best. (2) Only the training subset,
+typically half the data, is used to fit, and methods perform worse with fewer observations,
+so the validation error tends to \emph{overestimate} the test error of the model fitted to
+all the data.
+\end{remark}
 
-\subsection{Selecting predictors before cross-validating}\label{sec:1.6.2}
+\subsection{Leave-one-out cross-validation}\label{sec:1.3.2}
 
-If predictors are screened on the full data and cross-validation is applied afterwards,
-the held-out fold has already influenced the selection, and the resulting estimate is
-badly optimistic. Below, the response is independent of all $500$ predictors, so the
-honest error rate is that of guessing.
+\begin{definition}[LOOCV]\label{def:loocv}
+For $i=1,\ldots,n$, fit on the $n-1$ observations other than $(x_i,y_i)$, predict
+$\hat y_i$ for the excluded one, and set $\MSE_i=(y_i-\hat y_i)^2$. The LOOCV estimate is
+\begin{equation}\label{eq:loocv}
+\CV_{(n)} = \frac1n\sum_{i=1}^n\MSE_i .
+\end{equation}
+\end{definition}
 
-<<pitfall-leakage>>=
-set.seed(7)
-nL <- 100; pL <- 500
-Xl <- matrix(rnorm(nL * pL), nL, pL)
-yl <- rnorm(nL)                                # independent of every column
+\begin{remark}[ISLR §5.1.2]
+Each $\MSE_i$ is exactly unbiased for the test error of the method trained on $n-1$
+observations, since $(x_i,y_i)$ is independent of that fit, and highly variable, being one
+squared error; the average has far less bias than the validation set estimate, each fit
+using $n-1$ rather than $n/2$ observations; and there is no randomness in the splits, so
+repeating LOOCV gives the same number. Its cost is $n$ fits.
+\end{remark}
 
-best <- order(abs(cor(Xl, yl)), decreasing = TRUE)[1:5]   # screened on ALL the data
+\begin{definition}[Least squares and leverage]\label{def:leverage}
+For a linear or polynomial regression with $n\times(p+1)$ design matrix $\bX$ whose $i$-th
+row is $\bx_i'$, least squares gives $\hat\bb=(\bX'\bX)^{-1}\bX'\by$, fitted values
+$\hat\by=\bH\by$ with $\bH=\bX(\bX'\bX)^{-1}\bX'$, residuals $e_i=y_i-\hat y_i$, and the
+\emph{leverage} of observation $i$ is $h_i=\bx_i'(\bX'\bX)^{-1}\bx_i$, the $i$-th
+diagonal entry of $\bH$.
+\end{definition}
 
-cv_fixed <- function(cols, K = 10) {           # columns chosen once, outside
-  folds <- sample(rep(seq_len(K), length.out = nL))
-  mean(vapply(seq_len(K), function(j) {
-    d  <- data.frame(y = yl[folds != j], Xl[folds != j, cols, drop = FALSE])
-    nd <- data.frame(Xl[folds == j, cols, drop = FALSE])
-    mean((yl[folds == j] - predict(lm(y ~ ., data = d), newdata = nd))^2)
-  }, numeric(1)))
-}
-cv_inside <- function(K = 10) {                # screening repeated per fold
-  folds <- sample(rep(seq_len(K), length.out = nL))
-  mean(vapply(seq_len(K), function(j) {
-    trn <- folds != j
-    sel <- order(abs(cor(Xl[trn, ], yl[trn])), decreasing = TRUE)[1:5]
-    d   <- data.frame(y = yl[trn], Xl[trn, sel, drop = FALSE])
-    nd  <- data.frame(Xl[!trn, sel, drop = FALSE])
-    mean((yl[!trn] - predict(lm(y ~ ., data = d), newdata = nd))^2)
-  }, numeric(1)))
-}
-set.seed(8)
-c(screened_on_all_data     = cv_fixed(best),
-  screened_inside_the_fold = cv_inside(),
-  variance_of_y            = var(yl))
-@
+\begin{lemma}[Leverage bounds]\label{lem:leverage}
+$0\leqslant h_i\leqslant1$, and $\partial\hat y_i/\partial y_i=h_i$.
+\end{lemma}
 
-Screening outside the fold reports an error \emph{below} the variance of the response, on
-data with no signal at all. Screening inside reports one \emph{above} it, correctly, since
-fitting five noise predictors costs something.
+\begin{proof}
+$\bH$ is symmetric, $\bH'=\bX[(\bX'\bX)^{-1}]'\bX'=\bH$ because $(\bX'\bX)^{-1}$ is
+symmetric, and idempotent,
+$\bH^2=\bX(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1}\bX'=\bX(\bX'\bX)^{-1}\bX'=\bH$. Comparing the
+$(i,i)$ entries of $\bH=\bH^2=\bH'\bH$,
+\[
+h_i = \sum_{j=1}^n h_{ji}h_{ji} = \sum_{j=1}^n h_{ij}^2 = h_i^2+\sum_{j\neq i}h_{ij}^2 .
+\]
+The middle expression is a sum of squares, so $h_i\geqslant0$; dropping the non-negative
+tail of the right side gives $h_i\geqslant h_i^2$, that is $h_i(1-h_i)\geqslant0$, so
+$h_i\leqslant1$. Finally $\hat y_i=\sum_jh_{ij}y_j$, whose derivative in $y_i$ is $h_{ii}=h_i$.
+\end{proof}
 
-\textbf{Diagnostic.} A cross-validated error below $\var(y)$ when no predictor plausibly
-carries signal.
-\textbf{Fix.} As above: the object being cross-validated must be the whole procedure,
-screening included. Unit 5 does this for variable selection and Unit 6 for the choice of
-$\lambda$.
+\begin{proposition}[LOOCV shortcut for least squares]\label{prop:shortcut}
+For a linear or polynomial regression fitted by least squares,
+\begin{equation}\label{eq:shortcut}
+\CV_{(n)} = \frac1n\sum_{i=1}^n\left(\frac{y_i-\hat y_i}{1-h_i}\right)^2 ,
+\end{equation}
+where $\hat y_i$ and $h_i<1$ are the fitted value and leverage of observation $i$ in the
+single fit on all $n$ observations. The cost of LOOCV is then that of one fit.
+\end{proposition}
 
-\subsection{Cross-validating the wrong unit}\label{sec:1.6.3}
+\begin{proof}
+\textbf{Step 1: a rank-one inverse update (Sherman--Morrison).} Let $\bA$ be invertible
+and $\bu$ a vector with $c:=1-\bu'\bA^{-1}\bu\neq0$. Then
+\begin{equation}\label{eq:sherman}
+(\bA-\bu\bu')^{-1} = \bA^{-1}+\frac{\bA^{-1}\bu\bu'\bA^{-1}}{c} .
+\end{equation}
+To verify, multiply the right side by $\bA-\bu\bu'$ on the right and use that
+$\bu'\bA^{-1}\bu$ is a scalar:
+\begin{align*}
+\Bigl(\bA^{-1}+\tfrac1c\bA^{-1}\bu\bu'\bA^{-1}\Bigr)(\bA-\bu\bu')
+&= \bI-\bA^{-1}\bu\bu' + \tfrac1c\bA^{-1}\bu\bu' - \tfrac1c\bA^{-1}\bu\,(\bu'\bA^{-1}\bu)\,\bu'\\
+&= \bI-\bA^{-1}\bu\bu' + \tfrac1c\bA^{-1}\bu\bu'\,(1-\bu'\bA^{-1}\bu)\\
+&= \bI-\bA^{-1}\bu\bu' + \bA^{-1}\bu\bu' = \bI .
+\end{align*}
 
-Cross-validation assumes the held-out fold is independent of the training folds. When
-observations are grouped, with several claims from one policyholder or several years from
-one company, a random split puts members of the same group on both sides and the estimate
-is optimistic. The same applies to time series, where a random split lets the model train
-on the future.
+\textbf{Step 2: the deleted estimate.} Deleting observation $i$ removes the term
+$\bx_i\bx_i'$ from $\bX'\bX=\sum_j\bx_j\bx_j'$ and the term $\bx_iy_i$ from
+$\bX'\by=\sum_j\bx_jy_j$, so
+$\hat\bb^{(-i)}=(\bX'\bX-\bx_i\bx_i')^{-1}(\bX'\by-\bx_iy_i)$. Apply~\eqref{eq:sherman}
+with $\bA=\bX'\bX$ and $\bu=\bx_i$, for which $\bu'\bA^{-1}\bu=h_i$ and $c=1-h_i>0$:
+\begin{align*}
+\hat\bb^{(-i)}
+&= \Bigl[(\bX'\bX)^{-1}+\frac{(\bX'\bX)^{-1}\bx_i\bx_i'(\bX'\bX)^{-1}}{1-h_i}\Bigr]
+   (\bX'\by-\bx_iy_i)\\
+&= \hat\bb-(\bX'\bX)^{-1}\bx_iy_i
+   +\frac{(\bX'\bX)^{-1}\bx_i\bigl[\bx_i'(\bX'\bX)^{-1}\bX'\by-\bx_i'(\bX'\bX)^{-1}\bx_i\,y_i\bigr]}{1-h_i}\\
+&= \hat\bb-(\bX'\bX)^{-1}\bx_iy_i+\frac{(\bX'\bX)^{-1}\bx_i(\hat y_i-h_iy_i)}{1-h_i} ,
+\end{align*}
+using $\bx_i'(\bX'\bX)^{-1}\bX'\by=\bx_i'\hat\bb=\hat y_i$. Putting the two terms in
+$(\bX'\bX)^{-1}\bx_i$ over the common denominator $1-h_i$,
+\[
+-y_i+\frac{\hat y_i-h_iy_i}{1-h_i}
+= \frac{-y_i(1-h_i)+\hat y_i-h_iy_i}{1-h_i}
+= \frac{-y_i+\hat y_i}{1-h_i} ,
+\]
+so
+\begin{equation}\label{eq:deleted-beta}
+\hat\bb^{(-i)} = \hat\bb-(\bX'\bX)^{-1}\bx_i\,\frac{y_i-\hat y_i}{1-h_i} .
+\end{equation}
 
-\textbf{Diagnostic.} Ask what unit is independent; if it is not the row, a random split is
-wrong.
-\textbf{Fix.} Split by group, or, for time series, use only past observations to predict
-future ones (Unit 9).
+\textbf{Step 3: the deleted prediction.} Premultiply~\eqref{eq:deleted-beta} by
+$\bx_i'$ and use $\bx_i'(\bX'\bX)^{-1}\bx_i=h_i$:
+\[
+\hat y_i^{(-i)} = \bx_i'\hat\bb^{(-i)} = \hat y_i-h_i\,\frac{y_i-\hat y_i}{1-h_i} ,
+\qquad\text{so}\qquad
+y_i-\hat y_i^{(-i)} = (y_i-\hat y_i)\Bigl(1+\frac{h_i}{1-h_i}\Bigr) = \frac{y_i-\hat y_i}{1-h_i} .
+\]
+
+\textbf{Step 4: average.} $\MSE_i=(y_i-\hat y_i^{(-i)})^2=\{(y_i-\hat y_i)/(1-h_i)\}^2$;
+averaging over $i$ in~\eqref{eq:loocv} gives~\eqref{eq:shortcut}.
+\end{proof}
+
+\begin{remark}[ISLR §5.1.2]
+By Lemma~\ref{lem:leverage} the leverage measures how much an observation influences its
+own fit, and the formula inflates the residual of a high-leverage point by exactly the
+amount that makes the identity hold; since $1-h_i\leqslant1$, $\CV_{(n)}\geqslant\MSE$ term
+by term. The shortcut holds only for least squares; for logistic regression, discriminant
+analysis or a tree the $n$ fits must be performed.
+\end{remark}
+
+\subsection{\texorpdfstring{$k$}{k}-fold cross-validation}\label{sec:1.3.3}
+
+\begin{definition}[$k$-fold CV]\label{def:kfold}
+Randomly divide the observations into $k$ folds of approximately equal size. For each fold
+in turn, fit on the other $k-1$ folds and compute $\MSE_j$ on the held-out fold. Then
+\begin{equation}\label{eq:kfold}
+\CV_{(k)} = \frac1k\sum_{j=1}^k\MSE_j .
+\end{equation}
+LOOCV is the case $k=n$; in practice $k=5$ or $k=10$.
+\end{definition}
+
+\begin{proposition}[Mean of correlated estimates]\label{prop:corr-mean}
+If $Z_1,\ldots,Z_k$ have common variance $\sigma^2$ and common pairwise correlation
+$\rho\geqslant0$, then
+\[
+\var\Bigl(\frac1k\sum_{j=1}^kZ_j\Bigr) = \rho\sigma^2+\frac{1-\rho}{k}\sigma^2 ,
+\]
+which decreases in $k$ to the floor $\rho\sigma^2$ and increases in $\rho$.
+\end{proposition}
+
+\begin{proof}
+By bilinearity of the covariance,
+\[
+\var\Bigl(\sum_{j=1}^kZ_j\Bigr)=\sum_{j=1}^k\var(Z_j)+\sum_{j\neq l}\cov(Z_j,Z_l)
+= k\sigma^2+k(k-1)\rho\sigma^2 ,
+\]
+there being $k$ variances equal to $\sigma^2$ and $k(k-1)$ ordered pairs $j\neq l$ with
+covariance $\rho\sigma^2$. Dividing by $k^2$,
+\[
+\var\Bigl(\frac1k\sum_jZ_j\Bigr)=\frac{\sigma^2}{k}+\frac{k-1}{k}\rho\sigma^2
+= \rho\sigma^2+\frac{(1-\rho)\sigma^2}{k} .
+\]
+For $\rho<1$ the second term is positive and decreasing in $k$, with limit $0$, so the
+whole decreases to the floor $\rho\sigma^2$; and the expression equals
+$\sigma^2\{1/k+(1-1/k)\rho\}$, whose coefficient of $\rho$ is non-negative, so it increases
+in $\rho$.
+\end{proof}
+
+\begin{remark}[Choosing $k$; ISLR §5.1.3--5.1.4]
+Computationally, $k$-fold needs $k$ fits instead of $n$. There is also a bias--variance
+trade-off. Bias: LOOCV trains on $n-1$ observations and is nearly unbiased; $k$-fold trains
+on $(k-1)n/k$ and has intermediate bias; the validation set approach has the most.
+Variance: the $n$ LOOCV fits use almost identical training sets, so their $\MSE_i$ are
+highly positively correlated, and by Proposition~\ref{prop:corr-mean} averaging many
+highly correlated quantities leaves the variance near the floor $\rho\sigma^2$; the $k$
+fits of $k$-fold overlap less, so their $\rho$ is smaller. So LOOCV has
+lower bias but higher variance than $k$-fold with $k<n$, and $k=5$ or $10$ is the empirical
+compromise. Split-to-split variability of $k$-fold is much smaller than that of the
+validation set approach.
+\end{remark}
+
+\begin{remark}[What cross-validation is used for; ISLR §5.1.3]
+Sometimes the estimate of the test MSE itself is wanted. More often only the \emph{location
+of the minimum} of the estimated curve matters, because cross-validation is being used to
+choose among methods or among levels of flexibility. The CV curves may under- or
+overestimate the true test MSE and still locate its minimum well.
+\end{remark}
+
+\begin{definition}[Cross-validation for classification]\label{def:cv-class}
+Replace $\MSE_i$ by $\mathrm{Err}_i=I(y_i\neq\hat y_i)$:
+\begin{equation}\label{eq:cv-class}
+\CV_{(n)} = \frac1n\sum_{i=1}^n\mathrm{Err}_i ,
+\end{equation}
+and analogously for $k$-fold and the validation set approach.
+\end{definition}
+
+\begin{example}[Choosing flexibility by CV; ISLR §5.1.5]\label{ex:cv-class}
+ISLR Figure 5.8 reports, for its two-class simulated data, that logistic regressions with
+polynomial terms of degrees $1$ to $10$ have test error rates U-shaped in the degree with
+minimum at degree $3$, and that the $10$-fold CV error underestimates them but attains its
+minimum at degree $4$, where the true test error is nearly at its minimum; and that for
+KNN the CV curve likewise locates a good $K$ while the training error rate declines in
+$1/K$ throughout. The same behaviour is measured on this unit's own simulation in
+§\ref{sec:1.2.3} for the training and test rates.
+\end{example}
+
+\subsection{The bootstrap (beyond the syllabus)}\label{sec:1.3.4}
+
+\begin{reading}
+ISLR §5.2. \ Not on the SRM or PA reading lists; kept because bagging (ISLR §8.2) is
+built on it.
+\end{reading}
+
+\begin{definition}[Bootstrap sample and bootstrap standard error; ISLR §5.2]\label{def:bootstrap}
+Given data $Z=\{z_1,\ldots,z_n\}$, a \emph{bootstrap sample} $Z^{\ast}$ consists of $n$
+observations drawn from $Z$ independently and uniformly \emph{with replacement}, so an
+observation may appear several times or not at all. For a statistic $\hat\alpha$ computed
+from $Z$, let $\hat\alpha^{\ast b}$ be its value on the $b$-th of $B$ bootstrap samples. The
+\emph{bootstrap standard error} is
+\begin{equation}\label{eq:boot-se}
+\SE_B(\hat\alpha) = \sqrt{\frac{1}{B-1}\sum_{b=1}^B\Bigl(\hat\alpha^{\ast b}
+-\frac1B\sum_{c=1}^B\hat\alpha^{\ast c}\Bigr)^2} ,
+\end{equation}
+which estimates the standard deviation of $\hat\alpha$ over repeated samples from the
+population without any formula for it.
+\end{definition}
+
+\begin{proposition}[Out-of-bag fraction]\label{prop:oob}
+The probability that a given observation does not appear in a bootstrap sample is
+$q_n=(1-1/n)^n$, which increases in $n$ to $e^{-1}=0.3679$.
+\end{proposition}
+
+\begin{proof}
+\textbf{Step 1: the probability.} Each of the $n$ draws is uniform on $\{1,\ldots,n\}$, so
+the probability that one draw is not observation $j$ is $1-1/n$. The draws are
+independent, so the probability that all $n$ miss $j$ is the product $(1-1/n)^n$.
+
+\textbf{Step 2: the limit.} For $|u|<1$, $\ln(1-u)=-\sum_{m\geqslant1}u^m/m$, so with
+$u=1/n$,
+\[
+\ln q_n = n\ln\Bigl(1-\frac1n\Bigr) = -n\sum_{m\geqslant1}\frac{1}{m\,n^m}
+= -\sum_{m\geqslant1}\frac{1}{m\,n^{m-1}}
+= -1-\frac{1}{2n}-\frac{1}{3n^2}-\cdots .
+\]
+Every term after $-1$ is negative and increases towards $0$ as $n$ grows, so $\ln q_n$
+increases in $n$ and tends to $-1$; hence $q_n$ increases to $e^{-1}$.
+\end{proof}
+
+\begin{remark}[ISLR §5.2]
+Roughly a third of the observations are left out of each bootstrap sample; they are the
+\emph{out-of-bag} observations on which bagging's free error estimate rests. The
+bootstrap and cross-validation estimate different things: cross-validation estimates a
+\emph{test error}, the bootstrap the \emph{variability of a statistic}, and it is used
+when no standard-error formula exists or when the formula's assumptions are in doubt.
+\end{remark}
 
 %==============================================================================
-\section{Exercises}\label{sec:1.7}
+\section{Computation in R}\label{sec:1.4}
 %==============================================================================
 
-\begin{exercise}\label{ex:regfn}
-Let $\expc[Y^2]<\infty$.
-(a) Show that $f^\ast(x)=\expc[Y\mid X=x]$ is the nearest point to $Y$, in the $L^2$ norm,
-of the space of square-integrable functions of $X$, and name the result of the
-prerequisites this is.
-(b) Assuming only $\expc\,|Y|<\infty$, prove that $\expc\,|Y-g(X)|$ is minimised by any
-conditional median of $Y$ given $X=x$, without differentiating.
-\end{exercise}
+\begin{reading}
+ISLR §2.3, §5.3.1--5.3.3.
+\end{reading}
 
-\begin{solution}
-(a) Theorem~\ref{thm:regfn} states
-$\expc[(Y-f^\ast(X))^2]\leqslant\expc[(Y-g(X))^2]$ for every square-integrable $g$, so
-$f^\ast(X)$ is nearest to $Y$ in $\|Z\|^2=\expc[Z^2]$. That set is a closed subspace, so
-the nearest point is the orthogonal projection, characterised by
-$\expc[(Y-f^\ast(X))g(X)]=0$ for all such $g$. This is the prerequisites' theorem on
-conditional expectation as an $L^2$ projection; Theorem~\ref{thm:regfn} is that theorem for
-squared error.
+\subsection{Data in R}\label{sec:1.4.1}
 
-(b) Fix $x$ and let $m$ be a median of the conditional law, so
-$\prb\{Y\leqslant m\mid X=x\}\geqslant 1/2$ and $\prb\{Y\geqslant m\mid X=x\}\geqslant 1/2$.
-For $a>m$,
-\[
-|y-a|-|y-m| =
-\begin{cases}
-a-m, & y\leqslant m,\\
-a+m-2y, & m<y<a,\\
-m-a, & y\geqslant a,
-\end{cases}
-\]
-and $a+m-2y\geqslant-(a-m)$ in the middle case because $y\leqslant a$. So in every case
-\[
-|y-a|-|y-m| \;\geqslant\; (a-m)\bigl(2\,\indc_{\{y\leqslant m\}}-1\bigr) ,
-\]
-and taking conditional expectations,
-\[
-\expc\bigl[\,|Y-a|-|Y-m| \mid X=x\bigr]
-\geqslant (a-m)\bigl(2\prb\{Y\leqslant m\mid X=x\}-1\bigr)\geqslant0 .
-\]
-The case $a<m$ is the mirror image. Integrating over $X$ gives the claim; the expectations
-are finite because $|Y-a|\leqslant|Y|+|a|$.
+The \texttt{Auto} data of \texttt{ISLR2}: nine variables on $392$ cars after the five rows
+with missing values are removed.
 
-Squared error is estimated by a conditional mean, absolute error by a conditional median:
-the optimal predictor is a property of the loss, not of the data.
-\end{solution}
-
-\begin{exercise}\label{ex:condvar}
-Under Definition~\ref{def:model} with $\var(\varepsilon)=\sigma^2$, use the prerequisites'
-conditional variance decomposition to split $\var(Y)$, and deduce the largest $R^2$ any
-predictor can achieve. Evaluate it for the simulation of §\ref{sec:1.5}, where
-$f(x)=\sin 2x+x/2$, $X\sim\mathrm{U}(-3,3)$ and $\sigma=0.5$.
-\end{exercise}
-
-\begin{solution}
-$\var(Y)=\expc[\var(Y\mid X)]+\var(\expc[Y\mid X]) = \sigma^2 + \var(f(X))$. Since
-$R^2 = 1-\expc[(Y-g(X))^2]/\var(Y)$ and the numerator is at least $\sigma^2$ by
-Theorem~\ref{thm:regfn},
-\[
-R^2 \;\leqslant\; 1-\frac{\sigma^2}{\var(Y)} = \frac{\var(f(X))}{\var(f(X))+\sigma^2} .
-\]
-$f$ is odd and the law of $X$ symmetric, so $\expc[f(X)]=0$ and
-$\var(f(X))=\tfrac16\int_{-3}^{3}(\sin 2x+x/2)^2\dd x$. The three integrals are
-$\tfrac13\int_0^3\sin^2 2x\,\dd x=\tfrac12-\tfrac1{24}\sin 12$,
-$\tfrac13\int_0^3 x\sin 2x\,\dd x=\tfrac1{12}\sin 6-\tfrac12\cos 6$ and
-$\tfrac1{24}\int_{-3}^{3}x^2\dd x=\tfrac34$, so
-\[
-\var(f(X)) = \tfrac54-\tfrac1{24}\sin 12+\tfrac1{12}\sin 6-\tfrac12\cos 6 .
-\]
-<<s1-condvar>>=
-vf <- 5/4 - sin(12)/24 + sin(6)/12 - cos(6)/2
-c(var_f = vf, numeric = integrate(function(x) f(x)^2/6, -3, 3)$value,
-  var_Y = vf + sigma^2, R2_max = vf/(vf + sigma^2))
+<<auto-data>>=
+library(ISLR2)
+dim(Auto); names(Auto)
+Auto <- na.omit(Auto)
+summary(Auto[, c("mpg", "cylinders", "horsepower", "weight", "origin")])
 @
-A reported $R^2$ of $0.85$ on data generated this way is impossible, and points to a
-training-set figure or a leaking split.
-\end{solution}
 
-\begin{exercise}\label{ex:irreducible}
-Explain why the irreducible error is strictly positive in almost every application, and
-why it is unknown. If a colleague reports a test $\MSE$ of $0.10$ on data you know to have
-$\var(\varepsilon)=0.25$, what do you conclude?
-\end{exercise}
+\texttt{cylinders} is stored as a number but takes few values, so
+\texttt{as.factor(Auto\$cylinders)} makes it qualitative and \texttt{plot} then draws box
+plots instead of a scatterplot; \texttt{hist} and \texttt{pairs} give a histogram and a
+scatterplot matrix.
 
-\begin{solution}
-$\varepsilon$ collects everything affecting $Y$ that is not a function of the measured
-$X$: variables not recorded, and genuinely unpredictable variation. It is unknown because
-estimating it requires $f$, which is the problem being solved.
-
-By Corollary~\ref{cor:floor} no method attains an \emph{expected} test $\MSE$ below
-$0.25$. A reported $0.10$ is therefore not an honest test error: most likely a training
-error, a leaking split, or a split that ignores dependence in the data (§\ref{sec:1.6}).
-The one innocent explanation is a very small test set: a realised average of squared errors
-falls below its own expectation about half the time, so ask how many test points the
-$0.10$ came from before concluding anything.
-\end{solution}
-
-\begin{exercise}\label{ex:floor-realised}
-Corollary~\ref{cor:floor} bounds an expectation. Suppose $\hat f = f$ exactly and the
-analyst reports $m^{-1}\sum_{i=1}^m (Y_i-f(X_i))^2$ on $m$ independent test points with
-$\varepsilon\sim N(0,\sigma^2)$. Give the exact distribution of the reported figure, the
-probability that it falls below $\sigma^2$ at $m=20$ and $m=20{,}000$, and its standard
-deviation. Then judge a reported $0.10$ against $\sigma^2=0.25$.
-\end{exercise}
-
-\begin{solution}
-$Y_i-f(X_i)=\varepsilon_i$ are independent $N(0,\sigma^2)$, so
-$\sum_i\varepsilon_i^2/\sigma^2\sim\chi^2_m$ and the reported figure is
-$(\sigma^2/m)\chi^2_m$, with mean $\sigma^2$ and standard deviation
-$\sigma^2\sqrt{2/m}$. Hence
-$\prb\{\text{reported}<\sigma^2\}=\prb\{\chi^2_m<m\}$, which exceeds $1/2$ for every $m$
-because the $\chi^2_m$ density is right-skewed and its median lies below its mean.
-<<s1-floor>>=
-m <- c(20, 20000)
-rbind(P_below_sigma2 = pchisq(m, m),
-      sd_of_report   = 0.25 * sqrt(2/m),
-      z_of_0.10      = (0.25 - 0.10) / (0.25 * sqrt(2/m)),
-      P_at_or_below  = pchisq(0.10/0.25 * m, m))
+<<auto-plots, fig.height=2.8, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 1.6, 0.6), mgp = c(1.9, 0.6, 0))
+plot(as.factor(Auto$cylinders), Auto$mpg, col = "grey85", varwidth = TRUE,
+     xlab = "cylinders", ylab = "mpg")
+hist(Auto$mpg, col = "grey85", border = "white", breaks = 15, main = "", xlab = "mpg")
+plot(Auto$horsepower, Auto$mpg, xlab = "horsepower", ylab = "mpg", pch = 16, cex = 0.5)
+par(op)
 @
-A realised average sits below the floor about half the time however large $m$ is; what
-shrinks is the size of the shortfall. At $m=20$ the report is $1.9$ standard deviations
-low, an event of probability $0.008$; at $m=20{,}000$ it is $60$ standard deviations low.
-Only the first is conceivably chance, and the way to tell is to ask how large the test set
-was.
-\end{solution}
 
-\begin{exercise}\label{ex:bayes-num}
-For a binary response, $\eta(x)$ equals $0.8$ on a quarter of the population, $0.3$ on a
-half and $0.55$ on the remaining quarter. Give the Bayes classifier and compute the Bayes
-error, the error of the rule that always predicts $1$, and the error of the rule that
-predicts $1$ only where $\eta=0.8$.
+<<auto-pairs, fig.height=3.6, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
+pairs(~ mpg + displacement + horsepower + weight + acceleration, data = Auto,
+      pch = 16, cex = 0.35, gap = 0.3)
+@
+
+\subsection{The validation set approach}\label{sec:1.4.2}
+
+The $392$ observations are split into two halves; \texttt{mpg} is regressed on polynomials
+in \texttt{horsepower} on the training half and the MSE is computed on the other.
+
+<<validation>>=
+set.seed(1)
+train <- sample(392, 196)
+val_mse <- function(deg, train)
+  mean((Auto$mpg - predict(lm(mpg ~ poly(horsepower, deg), data = Auto,
+                              subset = train), Auto))[-train]^2)
+c(linear = val_mse(1, train), quadratic = val_mse(2, train), cubic = val_mse(3, train))
+set.seed(2)
+train2 <- sample(392, 196)
+c(linear = val_mse(1, train2), quadratic = val_mse(2, train2), cubic = val_mse(3, train2))
+@
+
+Both splits put the quadratic fit well below the linear one and show no gain from the
+cubic, and the two splits give different numbers for every model, which is drawback (1) of
+§\ref{sec:1.3.1}.
+
+\subsection{Leave-one-out cross-validation}\label{sec:1.4.3}
+
+\texttt{glm} without a \texttt{family} argument fits by least squares, exactly as
+\texttt{lm}, and \texttt{cv.glm} from \texttt{boot} cross-validates it.
+
+<<loocv>>=
+library(boot)
+glm.fit <- glm(mpg ~ horsepower, data = Auto)
+c(glm = coef(glm.fit), lm = coef(lm(mpg ~ horsepower, data = Auto)))
+cv.glm(Auto, glm.fit)$delta                     # LOOCV: both components agree
+cv.error <- sapply(1:10, function(i)
+  cv.glm(Auto, glm(mpg ~ poly(horsepower, i), data = Auto))$delta[1])
+round(cv.error, 3)
+@
+
+The sharp drop from the linear to the quadratic fit and the absence of improvement beyond
+it are the same conclusion as the validation set approach reached, now with no random
+split.
+
+\subsection{\texorpdfstring{$k$}{k}-fold cross-validation}\label{sec:1.4.4}
+
+<<kfold>>=
+set.seed(17)
+cv.error.10 <- sapply(1:10, function(i)
+  cv.glm(Auto, glm(mpg ~ poly(horsepower, i), data = Auto), K = 10)$delta[1])
+round(cv.error.10, 3)
+cv.glm(Auto, glm(mpg ~ poly(horsepower, 2), data = Auto), K = 10)$delta
+@
+
+With $K=10$ the two components of \texttt{delta} differ slightly: the first is the
+$k$-fold estimate~\eqref{eq:kfold}, the second a bias-corrected version.
+
+\subsection{The shortcut formula}\label{sec:1.4.5}
+
+Equation~\eqref{eq:shortcut} from one fit, against the $n$ explicit refits of
+\texttt{cv.glm}. \texttt{cv.glm} does not use the shortcut, so the agreement is a check
+of the formula rather than of the software.
+
+<<shortcut>>=
+fit <- lm(mpg ~ poly(horsepower, 2), data = Auto)
+h <- hatvalues(fit); e <- residuals(fit)
+c(shortcut = mean((e / (1 - h))^2), cv.glm = cv.error[2],
+  training_MSE = mean(e^2), min_h = min(h), max_h = max(h))
+@
+
+\subsection{The bootstrap (beyond the syllabus)}\label{sec:1.4.6}
+
+\texttt{boot(data, statistic, R)} draws \texttt{R} bootstrap samples and applies
+\texttt{statistic(data, index)} to each; the function must take the row indices as its
+second argument. Here the statistic is the pair of least squares coefficients of
+\texttt{mpg} on \texttt{horsepower}.
+
+<<boot-lab>>=
+boot.fn <- function(data, index)
+  coef(lm(mpg ~ horsepower, data = data, subset = index))
+boot.fn(Auto, 1:392)
+set.seed(1)
+bo <- boot(Auto, boot.fn, R = 1000)
+rbind(bootstrap_SE = apply(bo$t, 2, sd),
+      formula_SE   = summary(lm(mpg ~ horsepower, data = Auto))$coef[, "Std. Error"])
+@
+
+The formula standard errors of Unit 2 assume the linear model is correct with constant
+error variance; the bootstrap assumes neither, and the two disagree here because the true
+relationship is not linear, so the residual variance varies with \texttt{horsepower}.
+Bootstrapping the quadratic fit, which is closer to the truth, brings them closer:
+
+<<boot-lab-2>>=
+boot.fn2 <- function(data, index)
+  coef(lm(mpg ~ horsepower + I(horsepower^2), data = data, subset = index))
+set.seed(1)
+bo2 <- boot(Auto, boot.fn2, R = 1000)
+rbind(bootstrap_SE = apply(bo2$t, 2, sd),
+      formula_SE = summary(lm(mpg ~ horsepower + I(horsepower^2), data = Auto))$coef[, 2])
+@
+
+\periodmark{End of period 3 of 3.}
+
+%==============================================================================
+\section{Exercises}\label{sec:1.5}
+%==============================================================================
+
+\begin{exercise}[ISLR §2.4, exercise 1]\label{ex:islr-2-1}
+For each scenario, say whether a flexible method is expected to perform better or worse
+than an inflexible one, and why. (a) $n$ extremely large and $p$ small. (b) $p$ extremely
+large and $n$ small. (c) The relationship between predictors and response is highly
+non-linear. (d) $\var(\varepsilon)$ is extremely high.
 \end{exercise}
 
 \begin{solution}
-By~\eqref{eq:bayes}, $g^\ast$ predicts $1$ where $\eta>1/2$: on the $\eta=0.8$ quarter and
-the $\eta=0.55$ quarter. By Corollary~\ref{cor:bayes-error},
-\[
-L^\ast = \tfrac14(0.2)+\tfrac12(0.3)+\tfrac14(0.45) = 0.3125 .
-\]
-Always predicting $1$: $\tfrac14(0.2)+\tfrac12(0.7)+\tfrac14(0.45)=0.5125$. Predicting $1$
-only where $\eta=0.8$: $\tfrac14(0.2)+\tfrac12(0.3)+\tfrac14(0.55)=0.3375$. Both exceed
-$L^\ast$, as Theorem~\ref{thm:bayes} requires.
-
-The third rule differs from $g^\ast$ only on the quarter with $\eta=0.55$, and its penalty
-there is $\tfrac14(0.55-0.45)=0.025$. The cost of misclassifying a region is proportional
-to $|2\eta-1|$, the factor in the proof of Theorem~\ref{thm:bayes}.
+Read each through~\eqref{eq:bias-var}. (a) Better. A flexible method lowers the bias, and
+with $n$ large its variance is small, so the sum falls. (b) Worse. With few observations
+and many predictors the flexible method's variance is large; it fits the noise and
+overfits. (c) Better. An inflexible method cannot represent the non-linearity and carries
+a large squared bias that no sample size removes. (d) Worse. The noise dominates the
+signal, and a flexible method follows the noise; its variance is high while the bias
+reduction it buys is worth little.
 \end{solution}
 
-\begin{exercise}\label{ex:bayes-cost}
-A false negative costs $c_{10}$ and a false positive $c_{01}$, both positive. Find the
-rule minimising expected cost and the minimum cost. Evaluate for $c_{10}=5$, $c_{01}=1$ on
-a population where $\eta$ is $0.8$ on half and $0.3$ on the other half, and compare with
-the cost incurred by the Bayes classifier.
+\begin{exercise}[ISLR §2.4, exercise 2]\label{ex:islr-2-2}
+For each scenario, say whether it is a classification or a regression problem, whether the
+interest is inference or prediction, and give $n$ and $p$.
+(a) Data on the top $500$ US firms: profit, number of employees, industry and CEO salary;
+the aim is to understand which factors affect CEO salary.
+(b) Twenty similar products previously launched, each recorded as a success or failure
+together with price, marketing budget, competition price and ten other variables; the aim
+is to predict whether a new product will succeed.
+(c) Weekly data for $2012$ on the \% change in the USD/Euro exchange rate and the \%
+changes in the US, British and German markets; the aim is to predict the exchange rate
+change.
 \end{exercise}
 
 \begin{solution}
-$R(g)=c_{10}\prb\{g(X)=0,Y=1\}+c_{01}\prb\{g(X)=1,Y=0\}$. Conditionally on $X=x$ the two
-available costs are $c_{10}\eta(x)$ for $g(x)=0$ and $c_{01}(1-\eta(x))$ for $g(x)=1$, and
-the choice can be made separately at each $x$. So the minimiser predicts $1$ exactly when
-$c_{01}(1-\eta(x))<c_{10}\eta(x)$, that is
-\[
-\eta(x) > \frac{c_{01}}{c_{01}+c_{10}} ,
-\qquad
-\min_g R(g) = \expc\bigl[\min\{c_{10}\eta(X),\,c_{01}(1-\eta(X))\}\bigr] .
-\]
-At $c_{10}=c_{01}$ the threshold is $1/2$ and both reduce to Definition~\ref{def:bayes} and
-Corollary~\ref{cor:bayes-error}.
-
-With $c_{10}=5$, $c_{01}=1$ the threshold is $1/6$. Both $0.8$ and $0.3$ exceed it, so the
-cost-optimal rule predicts $1$ everywhere at cost
-$\tfrac12(1)(0.2)+\tfrac12(1)(0.7)=0.45$. The Bayes classifier predicts $1$ on the $0.8$
-half and $0$ on the $0.3$ half, at cost $\tfrac12(1)(0.2)+\tfrac12(5)(0.3)=0.85$. Its
-error \emph{rate} is $0.25$ against the cost rule's $0.45$: the two minimise different
-criteria.
+(a) Regression, since salary is quantitative; inference, since the question is which
+factors affect it; $n=500$, $p=3$ (profit, employees, industry). (b) Classification, the
+response being success or failure; prediction; $n=20$, $p=13$. (c) Regression, the
+response being a percentage change; prediction; $n=52$ weeks, $p=3$.
 \end{solution}
 
-\begin{exercise}\label{ex:bayes-multi}
-Extend Theorem~\ref{thm:bayes} to $Y\in\{1,\ldots,c\}$: with
-$\eta_j(x)=\prb\{Y=j\mid X=x\}$, show $g^\ast(x)=\argmax_j \eta_j(x)$ minimises
-$\prb\{g(X)\neq Y\}$ and give $L^\ast$. Recover Corollary~\ref{cor:bayes-error} at $c=2$,
-compute $L^\ast$ for $\eta=(0.5,0.3,0.2)$ on half the population and $(0.2,0.2,0.6)$ on
-the other half, and give the sharp upper bound on $L^\ast$ for general $c$.
+\begin{exercise}[ISLR §2.4, exercise 3]\label{ex:islr-2-3}
+Sketch, on one plot against flexibility, the typical squared bias, variance, training
+error, test error and Bayes (irreducible) error curves, and explain the shape of each.
 \end{exercise}
 
 \begin{solution}
-Conditionally on $X=x$,
-$\prb\{g(X)\neq Y\mid X=x\} = 1-\eta_{g(x)}(x)$, minimised over the $c$ available values by
-any index attaining $\max_j\eta_j(x)$. The choice is separate at each $x$, so
-\[
-L^\ast = \expc\Bigl[1-\max_{j}\eta_j(X)\Bigr] .
-\]
-At $c=2$ with $\eta_2=\eta$, $1-\max\{\eta,1-\eta\}=\min\{\eta,1-\eta\}$, which is
-Corollary~\ref{cor:bayes-error}.
-
-For the example, $\max_j\eta_j$ is $0.5$ then $0.6$, so
-$L^\ast = 1-\tfrac12(0.5)-\tfrac12(0.6)=0.45$.
-
-Since $\max_j\eta_j(x)\geqslant1/c$ always, $L^\ast\leqslant 1-1/c$, attained when every
-$\eta_j\equiv1/c$. The familiar bound $L^\ast\leqslant1/2$ is the case $c=2$ and does not
-survive: $\eta=(0.4,0.35,0.25)$ everywhere gives $L^\ast=0.6$.
+The five curves of the simulation in §\ref{sec:1.2.2}, drawn as functions of the
+polynomial degree:
+<<ex-curves, fig.height=2.8, fig.width=6.4, echo=FALSE>>=
+op <- par(mar = c(3.4, 3.4, 1, 0.6), mgp = c(1.9, 0.6, 0))
+matplot(bv[, "degree"], cbind(bv[, c("bias2", "variance", "sum")], sigma^2),
+        type = "b", pch = 16, lty = 1, col = c("#1D4ED8", "#B45309", "#B91C1C", "grey40"),
+        xlab = "flexibility (polynomial degree)", ylab = "", ylim = c(0, 1.5))
+lines(degs[degs <= 12], tt[degs <= 12, "train"], type = "b", pch = 1, col = "grey40")
+legend("topright", c("squared bias", "variance", "test MSE", "irreducible", "training MSE"),
+       col = c("#1D4ED8", "#B45309", "#B91C1C", "grey40", "grey40"),
+       pch = c(16, 16, 16, 16, 1), bty = "n", cex = 0.8)
+par(op)
+@
+Squared bias decreases: a more flexible method can approximate $f$ more closely.
+Variance increases: a more flexible fit changes more from one training set to another.
+Training MSE decreases monotonically, since flexibility lets the fit follow the training
+points. Test MSE is the sum of squared bias, variance and the irreducible error
+by~\eqref{eq:bias-var}, so it falls while the bias falls faster than the variance rises
+and then rises: a U. The irreducible error $\var(\varepsilon)$ is a horizontal line, the
+floor under the test MSE.
 \end{solution}
 
-\begin{exercise}[ISLR §2.4, exercise 7]\label{ex:islr-knn}
+\begin{exercise}[ISLR §2.4, exercise 4]\label{ex:islr-2-4}
+Describe three real-life applications each of classification, regression and cluster
+analysis, giving the response and the predictors and saying whether the goal is inference
+or prediction.
+\end{exercise}
+
+\begin{solution}
+Classification. (i) Claim fraud: response fraudulent or not; predictors claim size,
+delay in reporting, provider, prior claims; prediction, to route claims for
+investigation. (ii) Policy lapse: response lapse in the next year or not; predictors age,
+premium change, tenure, payment method; both, since the insurer wants to predict lapses
+and to know which factors drive them. (iii) Credit default: response default or not;
+predictors balance, income, student status; prediction.
+
+Regression. (i) Claim severity: response amount paid; predictors driver age, vehicle use,
+region; inference, since the rating factors are the object (FREES §1.6). (ii) House
+value: response price; predictors size, location, crime rate; prediction of value, or
+inference about the river-view premium. (iii) Reserving: response ultimate loss;
+predictors accident year, development year, exposure; prediction.
+
+Clustering. (i) Market segmentation of policyholders by income, age, coverage and
+claims history, with no response, to identify groups for product design. (ii) Grouping
+territories by loss experience and demographics before rating. (iii) Grouping firms by
+financial ratios to find distressed profiles.
+\end{solution}
+
+\begin{exercise}[ISLR §2.4, exercise 5]\label{ex:islr-2-5}
+What are the advantages and disadvantages of a very flexible approach for regression or
+classification, relative to a less flexible one? When is each preferred?
+\end{exercise}
+
+\begin{solution}
+A flexible method can represent a wide range of shapes, so it has low bias and can fit a
+non-linear $f$ that an inflexible method cannot; its disadvantages are high variance, the
+need to choose a tuning level such as smoothness or $K$, a larger sample requirement, and
+low interpretability. By~\eqref{eq:bias-var} it is preferred when the truth is far from
+the inflexible form and $n$ is large enough for the variance to be small, and when the
+goal is prediction alone. An inflexible method is preferred when the goal is inference,
+when $n$ is small or $p$ large relative to $n$, when the noise is large, or when the truth
+is close to the assumed form, in which case the flexible method pays variance for no bias
+reduction.
+\end{solution}
+
+\begin{exercise}[ISLR §2.4, exercise 6]\label{ex:islr-2-6}
+Describe the difference between a parametric and a non-parametric approach, and the
+advantages and disadvantages of the parametric one.
+\end{exercise}
+
+\begin{solution}
+A parametric approach assumes a functional form for $f$ and reduces estimation to a finite
+set of parameters; a non-parametric approach assumes no form and estimates $f$ directly
+subject to a smoothness constraint (Definitions~\ref{def:parametric}
+and~\ref{def:nonparametric}). The parametric approach needs fewer observations, is easy to
+fit and to interpret, and yields the inferential machinery of Units 2 and 3; its
+disadvantage is that the assumed form may be far from the true $f$, in which case the
+estimate is biased however large the sample. The non-parametric approach removes that
+risk at the cost of far more data, a smoothness choice that can overfit, and a fit that is
+hard to summarise.
+\end{solution}
+
+\begin{exercise}[ISLR §2.4, exercise 7]\label{ex:islr-2-7}
 The training set below has three predictors and a qualitative response.
 \begin{center}
 \begin{tabular}{lrrrl}
@@ -1070,612 +1173,682 @@ Obs. & $X_1$ & $X_2$ & $X_3$ & $Y$ \\
 \end{tabular}
 \end{center}
 (a) Compute the Euclidean distance from each observation to the test point
-$X_1=X_2=X_3=0$. (b) Predict with $K=1$ and with $K=3$. (c) If the Bayes boundary is
-highly non-linear, should the best $K$ be large or small? (d) Describe the training and
-test error as $K$ runs from $1$ to $n$, and say what $K=n$ produces.
+$X_1=X_2=X_3=0$. (b) Give the prediction with $K=1$ and with $K=3$, with reasons. (c) If
+the Bayes decision boundary is highly non-linear, should the best $K$ be large or small?
 \end{exercise}
 
 \begin{solution}
-<<s1-islr-knn>>=
-Xk <- rbind(c(0,3,0), c(2,0,0), c(0,1,3),
-            c(0,1,2), c(-1,0,1), c(1,1,1))
+(a) The distances are $\sqrt{0+9+0}=3$, $\sqrt{4}=2$, $\sqrt{1+9}=\sqrt{10}=3.162$,
+$\sqrt{1+4}=\sqrt5=2.236$, $\sqrt{1+0+1}=\sqrt2=1.414$ and $\sqrt3=1.732$.
+<<ex-knn>>=
+Xk <- rbind(c(0,3,0), c(2,0,0), c(0,1,3), c(0,1,2), c(-1,0,1), c(1,1,1))
 Yk <- c("Red","Red","Red","Green","Green","Red")
-dk <- sqrt(rowSums(Xk^2))                       # distance to the origin
+dk <- sqrt(rowSums(Xk^2))
 cbind(obs = 1:6, dist = round(dk, 4), Y = Yk)[order(dk), ]
 @
-(a) The distances are $3$, $2$, $\sqrt{10}=3.162$, $\sqrt5=2.236$, $\sqrt2=1.414$ and
-$\sqrt3=1.732$.
+(b) $K=1$: the nearest observation is $5$, Green, so predict Green. $K=3$: the three
+nearest are $5$ (Green), $6$ (Red) and $2$ (Red); by~\eqref{eq:knn} the estimated
+probability of Red is $2/3$, so predict Red.
 
-(b) $K=1$: the nearest is observation $5$, so predict \textbf{Green}. $K=3$: observations
-$5$ (Green), $6$ (Red) and $2$ (Red), so $\hat\prb\{\text{Red}\}=2/3$ and the prediction is
-\textbf{Red}. One extra neighbour reverses the answer, which is what makes $K$ the tuning
-parameter.
-
-(c) Small. By Definition~\ref{def:knn} the rule averages $\eta$ over the $K$ nearest
-points, so it can only follow a boundary that is roughly constant over that neighbourhood.
-A highly non-linear boundary needs a small neighbourhood, hence small $K$, at the cost of
-the variance the remark after Definition~\ref{def:knn} describes.
-
-(d) At $K=1$ every training point is its own neighbour, so the training error is zero and
-the variance is maximal. As $K$ grows the rule smooths: training error rises, test error
-falls to a minimum at some intermediate $K$ and then rises. At $K=n$ every point has the
-same neighbourhood, so the rule is constant at the majority class, with maximal bias and
-zero variance, and error probability $\min\{\prb\{Y=1\},\prb\{Y=0\}\}$. At no $K$ can the
-population error fall below $L^\ast$ (Theorem~\ref{thm:bayes}).
+(c) Small. By Definition~\ref{def:knn} the rule averages over the $K$ nearest points, so
+its boundary can bend only on the scale of that neighbourhood; a highly non-linear Bayes
+boundary needs small neighbourhoods, hence small $K$, at the price of higher variance.
 \end{solution}
 
-\begin{exercise}\label{ex:nn-risk}
-Let the training pairs be independent with labels drawn from $\eta$, and let $x'$ be the
-nearest training point to a test point $x$.
-(a) Show the $1$-nearest-neighbour rule errs at $x$ with conditional probability
-$\eta(x)(1-\eta(x'))+(1-\eta(x))\eta(x')$.
-(b) With $\eta$ continuous and $x'\to x$, deduce the limiting risk
-$R_1=\expc[2\eta(X)(1-\eta(X))]$.
-(c) Prove $L^\ast\leqslant R_1\leqslant 2L^\ast(1-L^\ast)\leqslant 2L^\ast$, the middle
-step by Jensen.
-(d) Evaluate the chain for the simulation of §\ref{sec:1.5.3} and compare with its $K=1$
-row.
+\begin{exercise}[ISLR §2.4, exercise 8]\label{ex:islr-2-8}
+Using the \texttt{College} data ($777$ US colleges, $18$ variables): (i) produce a
+numerical summary; (ii) a scatterplot matrix of the first ten columns; (iii) side-by-side
+box plots of \texttt{Outstate} against \texttt{Private}; (iv) create \texttt{Elite} by
+binning \texttt{Top10perc} at $50\%$, count the elite colleges and box-plot
+\texttt{Outstate} against \texttt{Elite}; (v) histograms of some quantitative variables with
+differing numbers of bins; (vi) summarise what you find.
 \end{exercise}
 
 \begin{solution}
-(a) Given $x$ and $x'$, the test label $Y$ and the neighbour's label $Y'$ are independent
-Bernoulli with means $\eta(x)$ and $\eta(x')$. The rule predicts $Y'$, so it errs exactly
-when $Y\neq Y'$.
-
-(b) Continuity gives $\eta(x')\to\eta(x)$, so the conditional probability tends to
-$2\eta(x)(1-\eta(x))$; integrate over the test point.
-
-(c) Put $u=\min\{\eta,1-\eta\}$, so $L^\ast=\expc[u(X)]$ and $2\eta(1-\eta)=2u(1-u)$, the
-product being symmetric in $\eta$ and $1-\eta$. Since $u\leqslant1/2$ we have
-$2(1-u)\geqslant1$, hence $2u(1-u)\geqslant u$ and $R_1\geqslant L^\ast$. The map
-$u\mapsto2u(1-u)$ is concave, so Jensen gives
-$R_1\leqslant 2\expc[u](1-\expc[u])=2L^\ast(1-L^\ast)\leqslant2L^\ast$.
-<<s1-nn-risk>>=
-R1 <- integrate(function(x) 2*eta(x)*(1-eta(x))/6, -3, 3)$value
-c(L_star = L_star, R_1nn = R1, cover_hart = 2*L_star*(1-L_star),
-  twice_L = 2*L_star, observed_K1 = err[1, "test"])
+In \texttt{ISLR2} the college names are already row names, so the \texttt{read.csv} and
+\texttt{rownames} steps of the printed exercise are not needed.
+<<ex-college-1, output.lines=12>>=
+college <- ISLR2::College
+dim(college)
+summary(college[, 1:6])
 @
-(d) The chain holds. The observed $K=1$ error at $n_{\mathrm{tr}}=200$ sits above the
-limiting $R_1$ because the neighbour is not yet at $x$ and the extra term in (a) is
-positive. Note $K=1$ does \emph{not} converge to $L^\ast$: that needs $K\to\infty$ with
-$K/n\to0$.
-\end{solution}
-
-\begin{exercise}\label{ex:bias-var-num}
-At a test point a method has squared bias $0.09$ and variance $0.16$, with
-$\sigma^2 = 0.25$. Give the expected test $\MSE$. A more flexible method halves the
-absolute bias and triples the variance: is it preferable? A third method has bias $0$ and
-variance $v$: for which $v$ does it beat both?
-\end{exercise}
-
-\begin{solution}
-By~\eqref{eq:bias-var} the expected test $\MSE$ is $0.09+0.16+0.25 = 0.50$.
-
-Halving the absolute bias quarters the squared bias to $0.0225$; tripling the variance
-gives $0.48$. The total is $0.7525>0.50$, so the flexible method is worse: the variance
-increase swamps the bias reduction. Only the two changed terms matter, $\sigma^2$ being
-common.
-
-The unbiased method totals $v+0.25$, beating the first when $v<0.25$ and the second when
-$v<0.5025$, hence both when $v<0.25$. Unbiasedness is worth having only when its variance
-cost is below the squared bias plus variance it replaces.
-\end{solution}
-
-\begin{exercise}\label{ex:bias-var-hetero}
-Theorem~\ref{thm:bias-var} assumes constant $\var(\varepsilon)$. Suppose instead
-$\expc[\varepsilon\mid X=x]=0$ and $\var(\varepsilon\mid X=x)=\sigma^2(x)$. State and
-prove what survives, at fixed $x_0$ and after averaging over an independent test point,
-and say what Corollary~\ref{cor:floor} becomes.
-\end{exercise}
-
-\begin{solution}
-At fixed $x_0$ the proof is unchanged with $\sigma^2$ replaced by $\sigma^2(x_0)$: Step 1
-needs only $\expc[\varepsilon_0\mid X_0=x_0]=0$ and independence of $\calD$, so the cross
-term vanishes and the first square contributes $\sigma^2(x_0)$; Step 2 involves $\calD$
-alone. Hence
-\[
-\expc\bigl[(Y_0-\hat f(x_0))^2\mid X_0=x_0\bigr]
-= \mathrm{var}(\hat f,x_0)+[\mathrm{bias}(\hat f,x_0)]^2+\sigma^2(x_0) ,
-\]
-and averaging over $X_0$, independent of $\calD$,
-\[
-\expc\bigl[(Y_0-\hat f(X_0))^2\bigr]
-= \expc_{X_0}\bigl[\mathrm{var}(\hat f,X_0)\bigr]
-+ \expc_{X_0}\bigl[\mathrm{bias}(\hat f,X_0)^2\bigr]
-+ \expc\bigl[\sigma^2(X_0)\bigr] .
-\]
-Corollary~\ref{cor:floor} becomes
-$\expc[(Y_0-\hat f(X_0))^2]\geqslant\expc[\sigma^2(X_0)]$. What is lost is a common
-pointwise floor: a method can be unimprovable in one region and far from it in another.
-Independence of $\varepsilon$ and $X$, assumed in Definition~\ref{def:model}, was never
-used; conditional mean zero suffices.
-\end{solution}
-
-\begin{exercise}\label{ex:optimism}
-Let $\by=\bX\bb+\be$ with $\bX$ fixed of full column rank $k+1$, $\expc[\be]=\bzero$,
-$\var(\be)=\sigma^2\bI$, and $\hat\by=\bH\by$ the least-squares fit.
-(a) Show $\expc[\MSE_{\mathrm{tr}}]=\sigma^2(n-k-1)/n$.
-(b) For a fresh response $\by^{\mathrm{new}}=\bX\bb+\be^{\mathrm{new}}$ at the \emph{same}
-$\bX$, show $\expc\bigl[n^{-1}\|\by^{\mathrm{new}}-\hat\by\|^2\bigr]=\sigma^2(n+k+1)/n$.
-(c) Deduce the optimism and evaluate the ratio of (b) to (a) for the fit of
-§\ref{sec:1.5.6}, which has $n=506$, $k=3$.
-\end{exercise}
-
-\begin{solution}
-(a) $\by-\hat\by=(\bI-\bH)\be$ since $(\bI-\bH)\bX=\bzero$, so
-$\expc\|(\bI-\bH)\be\|^2=\sigma^2\tr(\bI-\bH)$, the expectation of a quadratic form in a
-mean-zero vector of variance $\sigma^2\bI$. The prerequisites' theorem that a symmetric
-idempotent matrix has trace equal to rank gives $\tr(\bI-\bH)=n-k-1$.
-
-(b) $\by^{\mathrm{new}}-\hat\by=\be^{\mathrm{new}}-\bH\be$, two independent mean-zero
-terms, so
-$\expc\|\by^{\mathrm{new}}-\hat\by\|^2 = \sigma^2n+\sigma^2\tr(\bH)=\sigma^2(n+k+1)$.
-
-(c) The optimism is $2\sigma^2(k+1)/n$: proportional to the number of fitted parameters
-and inversely to $n$. The ratio is $(n+k+1)/(n-k-1)=510/502=1.0159$. The printed LOOCV
-against training ratio in §\ref{sec:1.5.6} is $1.0338$, about twice as large; the two are
-not the same quantity, since this calculation holds the design fixed and draws a fresh
-response, while LOOCV refits on $n-1$ points and weights observation $i$ by
-$(1-h_{ii})^{-2}$.
-\end{solution}
-
-\begin{exercise}\label{ex:leverage}
-For the fit of §\ref{sec:1.5.6}, $\sum_i h_{ii}=k+1$.
-(a) Prove it. (b) Show that if every leverage equalled $\bar h=(k+1)/n$ then
-$\mathrm{CV}_{(n)}=\MSE_{\mathrm{tr}}/(1-\bar h)^2$, and that this agrees with the optimism
-ratio of Exercise~\ref{ex:optimism} to first order in $\bar h$. (c) Compare the
-equal-leverage prediction with the printed $\mathrm{CV}_{(n)}$ and account for the gap.
-\end{exercise}
-
-\begin{solution}
-(a) $\sum_i h_{ii}=\tr\{\bX(\bX'\bX)^{-1}\bX'\}=\tr\{(\bX'\bX)^{-1}\bX'\bX\}=\tr(\bI_{k+1})
-=k+1$ by the cyclic property of the trace.
-
-(b) Substituting $h_{ii}=\bar h$ in~\eqref{eq:loocv-shortcut} pulls the constant out. And
-$(1-\bar h)^{-2}=1+2\bar h+O(\bar h^2)$ while
-$(n+k+1)/(n-k-1)=(1+\bar h)/(1-\bar h)=1+2\bar h+O(\bar h^2)$: two different arguments,
-one about refitting and one about a fresh response, agreeing to this order.
-<<s1-leverage>>=
-kp1  <- ncol(model.matrix(fit)); hbar <- kp1 / n
-c(sum_h = sum(h), mean_h = mean(h), min_h = min(h), max_h = max(h),
-  equal_lev_CV = mean(e^2)/(1 - hbar)^2, actual_CV = cv_shortcut,
-  equal_ratio  = 1/(1 - hbar)^2, actual_ratio = cv_shortcut/mean(e^2))
+<<ex-college-2, fig.height=3.6, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
+pairs(college[, 1:10], pch = 16, cex = 0.25, gap = 0.2, cex.labels = 0.9)
 @
-(c) The equal-leverage calculation captures about half the inflation. The rest is the
-spread of the leverages: the largest is nearly ten times the mean, and $(1-h)^{-2}$ is
-convex increasing, so replacing the leverages by their average understates the average of
-$(1-h_{ii})^{-2}$. Cross-validated error is driven by the few high-leverage observations.
-\end{solution}
-
-\begin{exercise}\label{ex:loocv-ridge}
-Fix $\lambda\geqslant0$ and let $\hat\bb(\lambda)$ minimise
-$\|\by-\bX\bb\|^2+\lambda\|\bb\|^2$, with $\bX$ of full column rank including its intercept
-column. Show that the leave-one-out shortcut survives verbatim with
-$\bA_\lambda=\bX'\bX+\lambda\bI$, $h_{ii}(\lambda)=\bx_i'\bA_\lambda^{-1}\bx_i$ and
-$\hat y_i=\bx_i'\hat\bb(\lambda)$. What breaks if $\lambda$ is re-selected for each
-deleted sample? Verify numerically at $\lambda=50$.
-\end{exercise}
-
-\begin{solution}
-The gradient of $\|\by-\bX\bb\|^2+\lambda\|\bb\|^2$ vanishes at
-$\bA_\lambda\hat\bb(\lambda)=\bX'\by$, the least-squares formula with $\bX'\bX$ replaced by
-$\bA_\lambda$. Deleting observation $i$ removes $\bx_i\bx_i'$ from $\bX'\bX$ and
-$\bx_iy_i$ from $\bX'\by$, so it replaces $\bA_\lambda$ by $\bA_\lambda-\bx_i\bx_i'$ and
-leaves $\lambda$ alone. Every line of the proof of Theorem~\ref{thm:loocv} goes through
-with $\bX'\bX$ rewritten as $\bA_\lambda$: Lemma~\ref{lem:sherman} with
-$\bA=\bA_\lambda$, $\bu=\bv=\bx_i$ gives $\bv'\bA^{-1}\bu=h_{ii}(\lambda)$, the deleted
-estimate is
-$\hat\bb(\lambda)-\bA_\lambda^{-1}\bx_i(y_i-\hat y_i)/(1-h_{ii}(\lambda))$, and
-premultiplying by $\bx_i'$ gives
-\[
-y_i-\bx_i'\hat\bb^{(-i)}(\lambda) = \frac{y_i-\hat y_i}{1-h_{ii}(\lambda)} .
-\]
-Nothing used the projection property of $\bH$, only the two rank-one updates.
-<<s1-ridge>>=
-Xr <- model.matrix(fit); yr <- Boston$medv; lam <- 50
-A  <- crossprod(Xr) + lam * diag(ncol(Xr))
-bh <- solve(A, crossprod(Xr, yr)); Ai <- solve(A)
-hl <- rowSums((Xr %*% Ai) * Xr)                 # h_ii(lambda)
-yh <- as.vector(Xr %*% bh)
-brute <- sapply(seq_len(n), function(i) {
-  Ai2 <- crossprod(Xr[-i, ]) + lam * diag(ncol(Xr))
-  as.vector(Xr[i, ] %*% solve(Ai2, crossprod(Xr[-i, ], yr[-i])))
-})
-c(max_abs_diff = max(abs((yr - brute) - (yr - yh)/(1 - hl))),
-  CV_ridge_shortcut = mean(((yr - yh)/(1 - hl))^2),
-  CV_ridge_brute    = mean((yr - brute)^2), CV_ols = cv_shortcut)
+<<ex-college-3>>=
+college$Elite <- factor(ifelse(college$Top10perc > 50, "Yes", "No"))
+table(college$Elite)
 @
-If $\lambda$ is re-chosen on each deleted sample then $\bA_\lambda$ itself changes with $i$
-and the update is no longer rank one. This is §\ref{sec:1.6.2} again: the object being
-cross-validated must be the whole procedure, and once tuning is part of it there is no
-shortcut.
-\end{solution}
-
-\begin{exercise}\label{ex:kfold-count}
-State how many models the validation-set approach, LOOCV and $k$-fold cross-validation fit
-on $n$ observations, and what Theorem~\ref{thm:loocv} changes for least squares. Then count
-the fits for the honest procedure of §\ref{sec:1.6.2} when a tuning parameter with $m$
-candidate values is selected by $V$-fold cross-validation inside each of $K$ outer folds,
-and evaluate at $K=V=10$, $m=20$.
-\end{exercise}
-
-\begin{solution}
-One, $n$ and $k$. For least squares, Theorem~\ref{thm:loocv} reduces LOOCV to \emph{one}
-fit, $\mathrm{CV}_{(n)}$ being a function of the full-sample residuals and leverages alone.
-The saving does not extend to logistic regression or a tree.
-
-Each outer fold runs an inner $V$-fold selection over $m$ candidates at $Vm$ fits, then
-refits once on the outer training set: $K(Vm+1)$, plus a final fit on all $n$, so
-$K(Vm+1)+1$. At $K=V=10$, $m=20$ that is $10(200+1)+1=2011$ fits for one honest error
-estimate.
-\end{solution}
-
-\begin{exercise}\label{ex:kfold-tradeoff}
-LOOCV uses $n-1$ observations per fit and $10$-fold uses $0.9n$, so LOOCV is the less
-biased. Why is $10$-fold nonetheless often the more accurate estimate of test error?
-\end{exercise}
-
-\begin{solution}
-Bias is not the only component of the error of the \emph{estimate}. The $n$ quantities
-LOOCV averages come from training sets overlapping in $n-2$ observations, so they are
-highly positively correlated, and the variance of a mean of highly correlated terms does
-not fall like $1/n$. The $10$ quantities in $10$-fold come from fits overlapping much less,
-so their average has lower variance. The slightly larger upward bias of $10$-fold is
-usually the better trade.
-
-The variance here is over the draw of the \emph{training sample}, not over the choice of
-split with the sample held fixed. The two behave differently in $k$ and must not be
-confused: the second vanishes at $k=n$, where only one partition exists, while the first
-does not.
-\end{solution}
-
-\begin{exercise}\label{ex:kfold-spread}
-Repeat the experiment of §\ref{sec:1.5.7} at $k=2,5,10,25$, thirty times each on the fixed
-\texttt{Boston} sample, and report the mean and standard deviation with the LOOCV value.
-Explain the pattern in the standard deviations and why it does not contradict
-Exercise~\ref{ex:kfold-tradeoff}.
-\end{exercise}
-
-\begin{solution}
-<<s1-kfold-spread>>=
-set.seed(11)
-tab <- t(sapply(c(2, 5, 10, 25), function(K) {
-  r <- replicate(30, cv_kfold(K)); c(k = K, mean = mean(r), sd = sd(r))
-}))
-rbind(round(tab, 4), c(k = n, mean = round(cv_shortcut, 4), sd = 0))
+<<ex-college-3-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
+plot(college$Private, college$Outstate, xlab = "Private", ylab = "Outstate", col = "grey85")
+plot(college$Elite, college$Outstate, xlab = "Elite", ylab = "Outstate", col = "grey85")
+par(op)
 @
-The standard deviation falls monotonically to zero and the mean at $k=2$ is the largest:
-each $2$-fold fit uses only $253$ observations, so the upward bias from training on less
-data is worst there, as §\ref{sec:1.4.3} predicts.
-
-These standard deviations measure variability over the random \emph{split} with the sample
-fixed. As $k$ grows the number of admissible partitions falls, and at $k=n$ there is only
-one, so this variability must vanish. It says nothing about how the estimate would move
-under a new sample of $506$ houses, which is the variance
-Exercise~\ref{ex:kfold-tradeoff} concerns and which is not zero for LOOCV. A
-cross-validated figure quoted with a standard deviation of $0$ is not a precise estimate of
-test error.
-\end{solution}
-
-\begin{exercise}\label{ex:bv-boundary}
-Repeat the bias--variance computation of §\ref{sec:1.5.5} at $x_0=2.9$ instead of $x_0=1$.
-Report the four columns, check the identity, and explain the difference.
-\end{exercise}
-
-\begin{solution}
-<<s1-bv-boundary>>=
-set.seed(5)
-bv29 <- t(sapply(degs[1:6], function(dg) {
-  fh <- y0 <- numeric(B)
-  for (b in seq_len(B)) {
-    d <- data.frame(x = runif(nsim, -3, 3))
-    d$y   <- f(d$x) + rnorm(nsim, sd = sigma)
-    fh[b] <- predict(lm(y ~ poly(x, dg), data = d),
-                     newdata = data.frame(x = 2.9))
-    y0[b] <- f(2.9) + rnorm(1, sd = sigma)
-  }
-  b2 <- (mean(fh) - f(2.9))^2; v <- var(fh)
-  c(bias2 = b2, variance = v, sum = b2 + v + sigma^2,
-    direct = mean((y0 - fh)^2))
-}))
-cbind(degree = degs[1:6], round(bv29, 4))
+<<ex-college-4, fig.height=3.2, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(college$Apps, breaks = 10, main = "Apps, 10 bins", col = "grey85", border = "white")
+hist(college$Apps, breaks = 60, main = "Apps, 60 bins", col = "grey85", border = "white")
+hist(college$Grad.Rate, breaks = 10, main = "Grad.Rate, 10 bins", col = "grey85", border = "white")
+hist(college$Grad.Rate, breaks = 40, main = "Grad.Rate, 40 bins", col = "grey85", border = "white")
+par(op)
 @
-\texttt{sum} and \texttt{direct} still agree to Monte-Carlo error, so
-Theorem~\ref{thm:bias-var} is an identity at every $x_0$ and not a statement about typical
-points. What changes is scale: the degree-$12$ variance is $0.044$ at the interior point
-$x_0=1$ and is $730$ times larger at $x_0=2.9$, a distance $0.1$ from the edge of the
-support. A least-squares polynomial is determined by the whole sample, and near
-the boundary there are training points on one side only, so the fit extrapolates and
-coefficient errors are amplified. Consequences: the U-shape in flexibility is much sharper
-at the boundary, with the best degree $1$ or $2$ rather than $8$; and a method compared at
-interior points only will be flattered.
+<<ex-college-5>>=
+c(private_share = mean(college$Private == "Yes"),
+  grad_rate_over_100 = sum(college$Grad.Rate > 100),
+  cor_outstate_top10 = cor(college$Outstate, college$Top10perc),
+  cor_accept_rate_outstate = cor(college$Accept/college$Apps, college$Outstate))
+@
+(vi) Private colleges charge more out-of-state tuition than public ones and the elite
+colleges more still, with the box plots barely overlapping. \texttt{Apps} is heavily
+right-skewed, a few universities receiving tens of thousands of applications, and the
+finer histogram shows that; the coarse one hides it. One graduation rate exceeds $100\%$,
+a data error to be treated before any modelling. Out-of-state tuition rises with the
+share of top-decile students and falls with the acceptance rate, so selectivity and
+price move together.
 \end{solution}
 
-\begin{exercise}[ISLR §5.4, exercise 8]\label{ex:islr-cv-poly}
-Generate $n=100$ observations from $y = x-2x^2+\varepsilon$ with $x,\varepsilon$ standard
-normal, and compute the LOOCV error for polynomials of degree $1$ to $4$.
-(a) Which degree minimises it, and is that expected? (b) Repeat with a different seed and
-explain the result. (c) Compare with the $t$ statistics of the degree-$4$ fit.
+\begin{exercise}[ISLR §2.4, exercise 9]\label{ex:islr-2-9}
+For the \texttt{Auto} data with missing values removed: (a) which predictors are
+quantitative and which qualitative; (b) the range of each quantitative predictor; (c) the
+mean and standard deviation of each; (d) the same after removing observations $10$ to
+$85$; (e) investigate the predictors graphically; (f) which variables might predict
+\texttt{mpg}?
 \end{exercise}
 
 \begin{solution}
-<<s1-islr-cv>>=
+(a) \texttt{mpg}, \texttt{displacement}, \texttt{horsepower}, \texttt{weight},
+\texttt{acceleration} and \texttt{year} are quantitative; \texttt{origin} is qualitative
+though coded $1$, $2$, $3$ (American, European, Japanese), \texttt{cylinders} takes five
+values and is best treated as qualitative, and \texttt{name} is a label.
+<<ex-auto-1>>=
+quant <- c("mpg", "displacement", "horsepower", "weight", "acceleration", "year")
+stats <- function(d) rbind(min = sapply(d, min), max = sapply(d, max),
+                           mean = round(sapply(d, mean), 2), sd = round(sapply(d, sd), 2))
+stats(Auto[, quant])                                     # (b), (c)
+stats(Auto[-(10:85), quant])                             # (d)
+@
+<<ex-auto-2, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
+plot(Auto$weight, Auto$mpg, pch = 16, cex = 0.4, xlab = "weight", ylab = "mpg")
+plot(Auto$year, Auto$mpg, pch = 16, cex = 0.4, xlab = "year", ylab = "mpg")
+plot(as.factor(Auto$origin), Auto$mpg, xlab = "origin", ylab = "mpg", col = "grey85")
+par(op)
+@
+<<ex-auto-3>>=
+round(cor(Auto[, quant])["mpg", ], 3)
+@
+(e), (f) Fuel economy falls steeply and non-linearly with weight, displacement and
+horsepower, which are strongly correlated with one another; it rises with model year, by
+about a mile per gallon a year over the period; and Japanese and European cars have
+higher \texttt{mpg} than American ones, largely because they are lighter. Weight, or one
+of its correlates, together with year and origin would predict \texttt{mpg} well; the
+curvature in the weight plot says a transformation or a non-linear method is needed for
+the best fit.
+\end{solution}
+
+\begin{exercise}[ISLR §2.4, exercise 10]\label{ex:islr-2-10}
+For the \texttt{Boston} housing data: (a) how many rows and columns, and what do they
+represent; (b) pairwise scatterplots and what they show; (c) which predictors are
+associated with per-capita crime rate; (d) do some suburbs have particularly high crime,
+tax rates or pupil--teacher ratios; (e) how many suburbs bound the Charles river; (f) the
+median pupil--teacher ratio; (g) the suburb with the lowest median home value, and how its
+other predictors compare with the overall ranges; (h) how many suburbs average more than
+seven rooms per dwelling, more than eight, and what characterises the latter.
+\end{exercise}
+
+\begin{solution}
+<<ex-boston-1>>=
+B <- ISLR2::Boston
+dim(B)                                                   # (a)
+round(sort(cor(B)["crim", -1], decreasing = TRUE), 3)     # (c)
+@
+(a) $506$ rows, one per census tract in the Boston area, and $13$ columns: the per-capita
+crime rate \texttt{crim}, eleven tract characteristics (zoning, industry, the Charles
+river indicator, nitrogen oxides, rooms, age, distance to employment centres, highway
+access, tax rate, pupil--teacher ratio, lower-status share) and the median home value
+\texttt{medv}.
+<<ex-boston-2, fig.height=3.4, fig.width=6.4, out.width="0.7\\linewidth", echo=FALSE>>=
+pairs(B[, c("crim", "rad", "tax", "lstat", "medv", "dis")], pch = 16, cex = 0.25, gap = 0.2)
+@
+(b), (c) Crime is highest in tracts with high highway accessibility, high tax rates,
+high lower-status share and low home values, and low in tracts far from employment
+centres; all the crime relationships are non-linear, most tracts having near-zero crime
+and a few very high values.
+<<ex-boston-3>>=
+rbind(crim = quantile(B$crim, c(0, .5, .9, .99, 1)),
+      tax = quantile(B$tax, c(0, .5, .9, .99, 1)),
+      ptratio = quantile(B$ptratio, c(0, .5, .9, .99, 1)))     # (d)
+c(chas = sum(B$chas == 1), median_ptratio = median(B$ptratio))  # (e), (f)
+@
+(d) Crime is extremely right-skewed: the median tract has a rate near zero and the upper
+tail runs to several times the ninetieth percentile. Tax rates and
+pupil--teacher ratios show a cluster of tracts at the top of the range rather than
+isolated extremes. (e), (f) The counts print above.
+<<ex-boston-4>>=
+low <- which.min(B$medv)
+rbind(lowest = B[low, ], min = sapply(B, min), median = sapply(B, median), max = sapply(B, max))
+@
+(g) The lowest-value tract has the maximum \texttt{age} and \texttt{rad}, tax and
+pupil--teacher ratios at the top of their ranges, a high crime rate and lower-status share,
+few rooms and is close to the employment centres: every predictor points the same way.
+<<ex-boston-5>>=
+c(rooms_over_7 = sum(B$rm > 7), rooms_over_8 = sum(B$rm > 8))
+round(rbind(over_8 = colMeans(B[B$rm > 8, ]), all = colMeans(B)), 2)
+@
+(h) The tracts averaging more than eight rooms have far higher median home values, lower
+crime and lower-status shares, and lower pupil--teacher ratios than the average tract.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.1]\label{ex:frees-1-1}
+The file \texttt{HealthExpend} holds $2{,}000$ individuals aged 18 to 65 from panels 7 and
+8 of the 2003 Medical Expenditure Panel Survey, with their inpatient (\texttt{EXPENDIP})
+and outpatient (\texttt{EXPENDOP}) expenditures. Part 1, on the $157$ individuals with
+positive inpatient expenditure: (a) descriptive statistics of \texttt{EXPENDIP}: the
+typical (mean and median) expenditure, the standard deviation against the mean, and
+whether the data appear skewed; (b) a box plot, a histogram and a normal $qq$ plot; (c) the
+square-root and the logarithmic transform, each summarised by a histogram and a $qq$
+plot: is either approximately normal? Part 2, on the $1{,}352$ individuals with positive
+outpatient expenditure: (d) repeat (a), and compare histograms of the expenditures and of
+their logarithms.
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-1a>>=
+meps <- read.csv("data/frees/csv/HealthExpend.csv")
+inp  <- meps$EXPENDIP[meps$EXPENDIP > 0]
+outp <- meps$EXPENDOP[meps$EXPENDOP > 0]
+descr <- function(v) c(n = length(v), mean = mean(v), median = median(v), sd = sd(v),
+                       min = min(v), max = max(v), skew = skew(v))
+round(rbind(inpatient = descr(inp), outpatient = descr(outp)), 2)
+round(rbind(inpatient  = c(raw = skew(inp),  sqrt = skew(sqrt(inp)),  log = skew(log(inp))),
+            outpatient = c(raw = skew(outp), sqrt = skew(sqrt(outp)), log = skew(log(outp)))), 3)
+@
+<<ex-frees-1-1b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(inp, breaks = 30, main = "EXPENDIP", col = "grey85", border = "white")
+boxplot(inp, main = "box plot, EXPENDIP")
+qqnorm(inp, main = "qq plot, EXPENDIP"); qqline(inp)
+par(op)
+@
+<<ex-frees-1-1c, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(sqrt(inp), breaks = 30, main = "square root of EXPENDIP", col = "grey85", border = "white")
+qqnorm(sqrt(inp), main = "qq plot, square root"); qqline(sqrt(inp))
+hist(log(inp), breaks = 30, main = "log EXPENDIP", col = "grey85", border = "white")
+qqnorm(log(inp), main = "qq plot, log"); qqline(log(inp))
+par(op)
+@
+<<ex-frees-1-1d, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(outp, breaks = 40, main = "EXPENDOP", col = "grey85", border = "white")
+hist(log(outp), breaks = 40, main = "log EXPENDOP", col = "grey85", border = "white")
+par(op)
+@
+(a) The mean inpatient expenditure, $\$12{,}844$, is more than twice the median,
+$\$5{,}695$, and the standard deviation is nearly four times the mean: the distribution
+is strongly skewed to the right (skewness $11.6$). (b)--(c) The histogram is a spike at
+small amounts with a tail to $\$607{,}801$, and the $qq$ plot rises far above the line on
+the right. The square root leaves a skewness of $6.0$; the logarithm brings it to $-0.8$,
+and its $qq$ plot is close to the line except in the lower tail. (d) Outpatient
+expenditures: mean $\$1{,}854$, median $\$626$, skewness $6.5$; their logarithm, with
+skewness $-0.07$, has the most nearly symmetric histogram of all six distributions.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.2]\label{ex:frees-1-2}
+The file \texttt{WiscNursingHome} holds the annual cost reports of Wisconsin
+Medicaid-certified nursing homes for 2000 ($362$ facilities) and 2001 ($355$). The
+outcome is total patient years \texttt{TPY}, patient days divided by operating days; the
+number of beds \texttt{NUMBED} and the square footage \texttt{SQRFOOT} measure the size
+of a facility. Part 1, on 2000: (a) descriptive statistics of \texttt{TPY},
+\texttt{NUMBED} and \texttt{SQRFOOT}; (b) a histogram and a $qq$ plot of \texttt{TPY}:
+approximately normal? (c) the same for $\ln\texttt{TPY}$. Part 2: repeat (a) and (c) for
+2001.
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-2a>>=
+nh <- read.csv("data/frees/csv/WiscNursingHome.csv")
+nh2000 <- subset(nh, CRYEAR == 2000)
+nh2001 <- subset(nh, CRYEAR == 2001)
+descr_na <- function(v) descr(v[!is.na(v)])
+round(sapply(nh2000[, c("TPY", "NUMBED", "SQRFOOT")], descr_na), 2)
+round(sapply(nh2001[, c("TPY", "NUMBED", "SQRFOOT")], descr_na), 2)
+c(log_TPY_2000 = skew(log(nh2000$TPY)), log_TPY_2001 = skew(log(nh2001$TPY)))
+@
+<<ex-frees-1-2b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(nh2000$TPY, breaks = 30, main = "TPY, 2000", col = "grey85", border = "white")
+qqnorm(nh2000$TPY, main = "qq plot, TPY 2000"); qqline(nh2000$TPY)
+hist(log(nh2000$TPY), breaks = 30, main = "log TPY, 2000", col = "grey85", border = "white")
+qqnorm(log(nh2000$TPY), main = "qq plot, log TPY 2000"); qqline(log(nh2000$TPY))
+hist(log(nh2001$TPY), breaks = 30, main = "log TPY, 2001", col = "grey85", border = "white")
+qqnorm(log(nh2001$TPY), main = "qq plot, log TPY 2001"); qqline(log(nh2001$TPY))
+par(op)
+@
+(a) In 2000 the median facility had $80.5$ patient years and $90$ beds; \texttt{SQRFOOT}
+is missing for five facilities. All three size measures are skewed to the right
+(skewness $1.4$, $1.35$ and $2.2$). (b) The histogram of \texttt{TPY} has a long right
+tail and its $qq$ plot curves upward at the right. (c) $\ln\texttt{TPY}$ has skewness
+$-0.24$ and a nearly straight $qq$ plot: approximately normal. Part 2: 2001 shows the
+same pattern with a larger maximum ($440.7$ patient years, $457$ beds), which raises the
+skewness of \texttt{TPY} to $2.1$; its logarithm has skewness $-0.14$.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.3]\label{ex:frees-1-3}
+The file \texttt{AutoClaims} holds $n=6{,}773$ private passenger automobile claims of
+drivers aged $50$ and over, with the state code, rating class, sex, age and the amount
+\texttt{PAID} to settle the claim. Examine the histogram of \texttt{PAID} and comment on
+its symmetry; create $\texttt{LNPAID}=\ln\texttt{PAID}$ and comment on the symmetry of its
+histogram and $qq$ plot.
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-3a>>=
+auto_claims <- read.csv("data/frees/csv/AutoClaims.csv")
+paid <- auto_claims$PAID
+round(rbind(PAID = descr(paid), LNPAID = descr(log(paid))), 3)
+@
+<<ex-frees-1-3b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(paid, breaks = 40, main = "PAID", col = "grey85", border = "white")
+hist(log(paid), breaks = 40, main = "LNPAID", col = "grey85", border = "white")
+qqnorm(log(paid), main = "qq plot, LNPAID"); qqline(log(paid))
+par(op)
+@
+The mean amount paid, $\$1{,}853$, is nearly twice the median, $\$1{,}002$, and the
+largest claim is $\$60{,}000$: the histogram is a spike at small amounts with a long
+right tail (skewness $6.2$). The logarithm is nearly symmetric (skewness $-0.09$), with a
+bell-shaped histogram and a $qq$ plot close to the line through the middle of the
+distribution.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.4]\label{ex:frees-1-4}
+The file \texttt{HospitalCosts} holds a random sample of $n=500$ Wisconsin hospital
+discharges of patients aged $0$ to $17$ from the 2003 Nationwide Inpatient Sample, with
+the total charge \texttt{TOTCHG}, age and sex; the aim is to model the severity of
+charges by age and sex. (a) Examine the distribution of \texttt{TOTCHG} by a histogram
+and a normal $qq$ plot. (b) Do the same for $\texttt{LNTOTCHG}=\ln\texttt{TOTCHG}$, and
+plot \texttt{LNTOTCHG} against \texttt{TOTCHG}.
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-4a>>=
+hosp <- read.csv("data/frees/csv/HospitalCosts.csv")
+round(rbind(TOTCHG = descr(hosp$TOTCHG), LNTOTCHG = descr(log(hosp$TOTCHG))), 3)
+@
+<<ex-frees-1-4b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(hosp$TOTCHG, breaks = 40, main = "TOTCHG", col = "grey85", border = "white")
+qqnorm(hosp$TOTCHG, main = "qq plot, TOTCHG"); qqline(hosp$TOTCHG)
+plot(hosp$TOTCHG, log(hosp$TOTCHG), pch = 16, cex = 0.4, main = "LNTOTCHG against TOTCHG",
+     xlab = "TOTCHG", ylab = "LNTOTCHG")
+hist(log(hosp$TOTCHG), breaks = 40, main = "LNTOTCHG", col = "grey85", border = "white")
+qqnorm(log(hosp$TOTCHG), main = "qq plot, LNTOTCHG"); qqline(log(hosp$TOTCHG))
+boxplot(log(hosp$TOTCHG), main = "box plot, LNTOTCHG")
+par(op)
+@
+(a) The mean charge, $\$2{,}774$, is nearly twice the median, $\$1{,}537$, with a tail
+to $\$48{,}388$ (skewness $5.5$). (b) The logarithm reduces the skewness to $1.3$ but
+does not remove it: the transformed histogram is still skewed to the right and its $qq$
+plot still bends upward at the right. The plot of \texttt{LNTOTCHG} against
+\texttt{TOTCHG} is the concave logarithm, steep over the many small charges and flat over
+the few large ones.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.5]\label{ex:frees-1-5}
+The Insurance Research Council's 2002 study of automobile injury claims: $n=1{,}340$
+closed claims from one state, with the economic loss \texttt{LOSS} in thousands, attorney
+involvement (\texttt{ATTORNEY}: $1$ involved, $2$ not) and claimant characteristics. The
+original file was withdrawn at the request of the survey's conductor;
+\texttt{AUTOBIsim}, the simulated substitute distributed in its place, is used. (a)
+Descriptive statistics of \texttt{LOSS}: what is the typical loss? (b) A histogram and a
+normal $qq$ plot of \texttt{LOSS}. (c) Split the claims by attorney involvement: the
+typical loss in each group, a box plot by group, and a histogram and a $qq$ plot for
+each group.
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-5a>>=
+bi <- read.csv("data/frees/csv/AUTOBIsim.csv")
+round(descr(bi$LOSS), 3)
+round(rbind(n        = tapply(bi$LOSS, bi$ATTORNEY, length),
+            mean     = tapply(bi$LOSS, bi$ATTORNEY, mean),
+            median   = tapply(bi$LOSS, bi$ATTORNEY, median),
+            skew     = tapply(bi$LOSS, bi$ATTORNEY, skew),
+            skew_log = tapply(log(bi$LOSS), bi$ATTORNEY, skew)), 3)
+@
+<<ex-frees-1-5b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(bi$LOSS, breaks = 40, main = "LOSS", col = "grey85", border = "white")
+qqnorm(bi$LOSS, main = "qq plot, LOSS"); qqline(bi$LOSS)
+boxplot(log(LOSS) ~ ATTORNEY, data = bi, main = "log LOSS by ATTORNEY", col = "grey85")
+par(op)
+@
+<<ex-frees-1-5c, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+for (a in 1:2) {
+  v <- log(bi$LOSS[bi$ATTORNEY == a])
+  hist(v, breaks = 30, main = paste("log LOSS, ATTORNEY =", a), col = "grey85", border = "white")
+  qqnorm(v, main = paste("qq plot, log LOSS, ATTORNEY =", a)); qqline(v)
+}
+par(op)
+@
+(a) The median loss is $\$2{,}000$ and the mean $\$5{,}682$, pulled up by losses of up
+to $\$341{,}720$ (skewness $12.1$); the median is the typical loss. (b) The histogram is
+a spike near zero with a long right tail, and the $qq$ plot lies far above the line on
+the right. (c) With an attorney the median loss is $\$3{,}890$ against $\$900$ without,
+and the means are $\$8{,}468$ against $\$2{,}786$. Both groups are heavily skewed in
+dollars (skewness $10.1$ and $7.5$) and nearly symmetric in logarithms ($0.05$ and
+$0.08$), so the box plot and the per-group histograms and $qq$ plots are drawn on the
+logarithmic scale: both groups are close to normal there, with similar spreads, and the
+attorney group is shifted upward.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.6]\label{ex:frees-1-6}
+The file \texttt{NAICExpense} holds a sample of the property and casualty insurers in the
+NAIC database of 2005 annual statements, with each company's non-claim \texttt{EXPENSES}
+(unallocated loss adjustment, underwriting and investment expenses) in millions of
+dollars. (a) Examine the distribution of \texttt{EXPENSES} by a histogram and a normal
+$qq$ plot. (b) Take the natural logarithm: has it symmetrised the distribution?
+\end{exercise}
+
+\begin{solution}
+The distributed file holds $384$ companies rather than the $500$ of FREES's description,
+and four of them report non-positive expenses, which the logarithm excludes.
+<<ex-frees-1-6a>>=
+naic <- read.csv("data/frees/csv/NAICExpense.csv")
+c(companies = nrow(naic), nonpositive = sum(naic$EXPENSES <= 0))
+expenses <- naic$EXPENSES[naic$EXPENSES > 0]
+round(rbind(EXPENSES = descr(expenses), log = descr(log(expenses))), 3)
+@
+<<ex-frees-1-6b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(expenses, breaks = 40, main = "EXPENSES", col = "grey85", border = "white")
+qqnorm(expenses, main = "qq plot, EXPENSES"); qqline(expenses)
+hist(log(expenses), breaks = 40, main = "log EXPENSES", col = "grey85", border = "white")
+qqnorm(log(expenses), main = "qq plot, log EXPENSES"); qqline(log(expenses))
+par(op)
+@
+(a) The mean, $0.044$, is five times the median, $0.009$, and the maximum, $1.237$, is ten
+times the standard deviation: a spike at small values with a long right tail (skewness
+$6.5$), and the $qq$ plot bends upward at the right.
+(b) In logarithms the skewness is $-0.24$ and the $qq$ plot is close to the line: the
+transformation has symmetrised the distribution.
+\end{solution}
+
+\begin{exercise}[FREES exercise 1.7]\label{ex:frees-1-7}
+The file \texttt{UNLifeExpectancy} holds the life expectancy at birth \texttt{LIFEEXP} of
+$n=185$ countries from the UN Human Development Report, with economic and demographic
+characteristics (FREES Table 1.4). (a) Examine the distribution of \texttt{LIFEEXP} by a
+histogram and a normal $qq$ plot. (b) Take the natural logarithm: has it symmetrised the
+distribution?
+\end{exercise}
+
+\begin{solution}
+<<ex-frees-1-7a>>=
+un <- read.csv("data/frees/csv/UNLifeExpectancy.csv")
+le <- un$LIFEEXP
+round(rbind(LIFEEXP = descr(le), log = descr(log(le)), squared = descr(le^2)), 3)
+@
+<<ex-frees-1-7b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+hist(le, breaks = 25, main = "LIFEEXP", col = "grey85", border = "white")
+qqnorm(le, main = "qq plot, LIFEEXP"); qqline(le)
+hist(log(le), breaks = 25, main = "log LIFEEXP", col = "grey85", border = "white")
+qqnorm(log(le), main = "qq plot, log LIFEEXP"); qqline(log(le))
+par(op)
+@
+(a) Life expectancy is skewed to the \emph{left}: the mean, $67.1$ years, is below the
+median, $71.0$, the skewness is $-0.84$, and the $qq$ plot falls below the line on the
+left, where the countries with life expectancies in the forties and fifties form the
+lower tail. (b) The logarithm stretches the lower tail further and moves the skewness to
+$-1.10$: it symmetrises right skew only. A power above one works in the other direction;
+the square has skewness $-0.59$.
+\end{solution}
+
+\begin{exercise}[SOA sample question 12]\label{ex:soa-12}
+Determine which of the following statements is true.
+(A) Linear regression is a flexible approach.
+(B) Lasso is more flexible than a linear regression approach.
+(C) Bagging is a low flexibility approach.
+(D) There are methods that have high flexibility and are also easy to interpret.
+(E) None of (A), (B), (C) or (D) is true.
+\end{exercise}
+
+\begin{solution}
+Flexibility is the range of shapes a method can produce for $\hat f$
+(Definition~\ref{def:flexibility}), and the ordering of the methods is the one ISLR
+Figure 2.7 records.
+
+(A) is false: least squares produces only the functions~\eqref{eq:linear}, a
+$(p+1)$-parameter family, and is the least flexible method on the list after subset
+selection and the lasso.
+
+(B) is false. The lasso fits the same linear form~\eqref{eq:linear} but by a procedure that
+shrinks the coefficients and sets some of them exactly to zero, so every lasso fit is a
+linear fit while some linear fits are unavailable to it; its range of shapes is smaller
+and it is \emph{less} flexible, and more interpretable, than least squares.
+
+(C) is false: bagging averages many trees, each a step function with arbitrarily many
+pieces, and sits at the flexible end of the ordering with boosting, support vector
+machines and neural networks.
+
+(D) is false for the methods on the reading list: by Definition~\ref{def:flexibility}
+flexibility and interpretability run in opposite directions, and a fit chosen from a very
+large class of functions cannot be summarised by a few coefficients.
+
+Hence (E): none of the four statements is true.
+\end{solution}
+
+\begin{exercise}[SOA sample question 50]\label{ex:soa-50}
+Determine which of the following statements regarding statistical learning methods is or
+are true.
+(I) Methods that are highly interpretable are more likely to be highly flexible.
+(II) When inference is the goal, there are clear advantages to using a lasso method versus a
+bagging method.
+(III) Using a more flexible method will produce a more accurate prediction against unseen
+data.
+\end{exercise}
+
+\begin{solution}
+(I) is false: it reverses Definition~\ref{def:flexibility}, under which interpretability
+falls as flexibility rises; a ninth-degree polynomial is harder to read than a line.
+
+(II) is true. Inference (Definition~\ref{def:goals}) asks which predictors matter and with
+what sign and size. A lasso fit is the linear form~\eqref{eq:linear} with most coefficients
+exactly zero, from which those answers can be read; a bagged model is an average of
+hundreds of trees from which no such statement can be extracted. The comparison concerns
+what the fitted object says, not which predicts better.
+
+(III) is false. By Proposition~\ref{prop:bias-var} the expected test MSE is squared bias
+plus variance plus $\var(\varepsilon)$; added flexibility lowers the bias and raises the
+variance, and once the bias is small the sum rises. The simulation of §\ref{sec:1.2.1}
+shows it: the test MSE of the polynomial fits falls to a minimum and then rises with the
+degree while the training MSE keeps falling.
+
+So statement II only is true.
+\end{solution}
+
+\begin{exercise}[ISLR §5.4, exercise 3]\label{ex:islr-5-3}
+(a) Explain how $k$-fold cross-validation is implemented. (b) State its advantages and
+disadvantages relative to (i) the validation set approach and (ii) LOOCV.
+\end{exercise}
+
+\begin{solution}
+(a) Definition~\ref{def:kfold}: partition the observations at random into $k$ folds of
+about $n/k$ observations; for $j=1,\ldots,k$ fit on the other $k-1$ folds and compute the
+error on fold $j$; average the $k$ errors.
+
+(b)(i) Against the validation set approach: each observation is used for training in
+$k-1$ of the fits and for validation once, so the estimate is far less variable across
+random splits, and each fit uses $(k-1)n/k$ rather than $n/2$ observations, so the upward
+bias is smaller. The cost is $k$ fits instead of one.
+
+(ii) Against LOOCV: $k$-fold costs $k$ fits instead of $n$ (except for least squares,
+where~\eqref{eq:shortcut} makes LOOCV one fit); its estimate has lower variance, since the
+$k$ fits overlap less than the $n$ nearly identical LOOCV fits and
+Proposition~\ref{prop:corr-mean} applies with a smaller $\rho$; and it has somewhat higher
+bias, each fit using $(k-1)n/k$ rather than $n-1$ observations. It also depends on the
+random partition, whereas LOOCV does not.
+\end{solution}
+
+\begin{exercise}[ISLR §5.4, exercise 8]\label{ex:islr-5-8}
+Generate $n=100$ observations by \texttt{x <- rnorm(100); y <- x - 2*x\^{}2 + rnorm(100)}
+after \texttt{set.seed(1)}. (a) What are $n$ and $p$, and what is the model in equation
+form? (b) Plot $y$ against $x$. (c) Compute the LOOCV errors of the least squares fits of
+degrees $1$ to $4$. (d) Repeat with another seed and explain. (e) Which model has the
+smallest LOOCV error, and is that expected? (f) Compare with the significance of the
+coefficients in the degree-$4$ fit.
+\end{exercise}
+
+\begin{solution}
+(a) $n=100$ and $p=1$; the model is $Y=X-2X^2+\varepsilon$ with $X$ and $\varepsilon$
+standard normal, a quadratic truth.
+<<ex-cv-1>>=
 set.seed(1)
 xs <- rnorm(100); ys <- xs - 2*xs^2 + rnorm(100)
 ds <- data.frame(x = xs, y = ys)
-cvp <- sapply(1:4, function(dg)
-  cv.glm(ds, glm(y ~ poly(x, dg), data = ds))$delta[1])
-set.seed(99)
-cvp2 <- sapply(1:4, function(dg)
-  cv.glm(ds, glm(y ~ poly(x, dg), data = ds))$delta[1])
-rbind(degree = 1:4, seed_1 = round(cvp, 4), seed_99 = round(cvp2, 4))
 @
-(a) Degree $2$, and that is expected: the truth is quadratic, so degree $1$ carries a large
-squared bias and degrees $3$ and $4$ add variance without removing bias. The drop from
-degree $1$ to $2$ is by a factor of about eight; from $2$ to $4$ the estimate moves by less
-than $2\%$.
-
-(b) The two rows are identical. LOOCV involves no random split, the $n$ training sets being
-determined by the data, so the seed cannot matter. Only $k$-fold with $k<n$ has split
-variability (Exercise~\ref{ex:kfold-spread}).
-<<s1-islr-cv-t>>=
+<<ex-cv-1-fig, fig.height=2.6, fig.width=5, echo=FALSE>>=
+op <- par(mar = c(3.2, 3.2, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+plot(xs, ys, pch = 16, cex = 0.5, xlab = "x", ylab = "y"); par(op)
+@
+(b) The scatter is an inverted parabola with noise: a straight line cannot fit it.
+<<ex-cv-2>>=
+loocv <- function(seed) { set.seed(seed)
+  sapply(1:4, function(dg) cv.glm(ds, glm(y ~ poly(x, dg), data = ds))$delta[1]) }
+rbind(degree = 1:4, seed_1 = round(loocv(1), 4), seed_99 = round(loocv(99), 4))
 round(coef(summary(lm(y ~ poly(x, 4), data = ds))), 4)
 @
-(c) The linear and quadratic terms are overwhelmingly significant and the cubic and quartic
-are not, which is the same conclusion the cross-validation reached. The two agree here
-because the candidate models are nested and the design is orthogonal in
-\texttt{poly}; they need not agree in general, since a $t$ statistic tests a coefficient
-and cross-validation estimates prediction error.
+(c), (d) The two rows are identical: LOOCV involves no random split, the $n$ training
+sets being fixed by the data, so the seed cannot matter. (e) Degree $2$ has the smallest
+error, as expected since the truth is quadratic; degrees $3$ and $4$ add variance and
+remove no bias, and their errors are slightly larger. (f) The linear and quadratic
+coefficients are overwhelmingly significant and the cubic and quartic are not, which
+agrees with the cross-validation. The agreement is not automatic: the $t$ tests judge
+coefficients on the training data under the model's assumptions, while cross-validation
+estimates prediction error on held-out data without them.
 \end{solution}
 
-\begin{exercise}\label{ex:leakage}
-A colleague screens $10{,}000$ candidate predictors on the full data, keeps the $20$ most
-correlated with the response, then reports a $10$-fold cross-validated error for a model
-using those $20$. What is wrong, and what would you do instead? With $n=100$ and no signal,
-how large a correlation should the best of the $10{,}000$ show?
+\begin{exercise}[ISLR §5.4, exercise 1; beyond the syllabus]\label{ex:islr-5-1}
+Two assets have returns $X$ and $Y$ with variances $\sigma_X^2$, $\sigma_Y^2$ and
+covariance $\sigma_{XY}$. Show that $\var(\alpha X+(1-\alpha)Y)$ is minimised by
+\[
+\alpha = \frac{\sigma_Y^2-\sigma_{XY}}{\sigma_X^2+\sigma_Y^2-2\sigma_{XY}} ,
+\]
+then estimate $\alpha$ on \texttt{ISLR2::Portfolio} and give its bootstrap standard error.
 \end{exercise}
 
 \begin{solution}
-The screening used every observation, including those in each held-out fold, so the folds
-are not independent of the fitting procedure and the reported error is optimistic
-(§\ref{sec:1.6.2}). The whole procedure must be repeated inside each fold: for each $j$,
-screen using only the other $k-1$ folds, fit on those, and predict fold $j$. The quantity
-cross-validated is the \emph{procedure}, not the final model;
-Exercise~\ref{ex:kfold-count} counts the cost.
-
-Each sample correlation of an independent pair is approximately $N(0,1/(n-1))$, and the
-maximum of $p$ roughly independent standard normals is close to $\sqrt{2\ln p}$, so
-$\max_j|r_j|\approx\sqrt{2\ln p}/\sqrt{n-1}$.
-<<s1-maxcor>>=
-set.seed(13)
-mx <- replicate(20, max(abs(cor(matrix(rnorm(100*10000), 100, 10000),
-                                rnorm(100)))))
-c(mean_max_abs_r = mean(mx), sd = sd(mx),
-  extreme_value_approx = sqrt(2*log(10000))/sqrt(99))
-@
-The approximation overstates it slightly, the extreme-value limit being approached slowly.
-Either way the colleague finds predictors correlating around $0.4$ with the response on
-pure noise, which is why the screened model looks convincing and why §\ref{sec:1.6.2}
-reports a cross-validated error below $\var(y)$.
-\end{solution}
-
-\begin{exercise}\label{ex:group-cv}
-Simulate $100$ groups of $10$ observations with $y_{gi}=a_g+\varepsilon_{gi}$, the group
-effects $a_g$ independent $N(0,4)$ and $\varepsilon_{gi}$ independent $N(0,1)$, and let the
-single predictor be the group label, $x_{gi}=g/100$ jittered by $N(0,0.001^2)$. Estimate
-the error of a $1$-nearest-neighbour rule by $10$-fold cross-validation splitting on rows
-and again splitting on groups. Predict both numbers first.
-\end{exercise}
-
-\begin{solution}
-Under a row split, nine members of a held-out observation's group are in the training set
-at essentially the same $x$, so the neighbour is a sibling: the prediction is
-$a_g+\varepsilon_{gj}$ against a truth of $a_g+\varepsilon_{gi}$ and the expected squared
-error is $2\sigma_\varepsilon^2=2$, with the group effect never tested. Under a group split
-the neighbour comes from an adjacent group with an independent $a_{g'}$, giving
-$2\var(a)+2\sigma_\varepsilon^2\approx10$.
-<<s1-groupcv>>=
-set.seed(41)
-G <- 100; mg <- 10; ng <- G*mg; grp <- rep(1:G, each = mg)
-a  <- rnorm(G, sd = 2)
-xg <- grp/G + rnorm(ng, sd = 0.001)
-yg <- a[grp] + rnorm(ng, sd = 1)
-nn1 <- function(xtr, ytr, xte)
-  ytr[max.col(-abs(outer(xte, xtr, "-")), "first")]
-cvg <- function(byGroup, K = 10) {
-  fo <- if (byGroup) sample(rep(seq_len(K), length.out = G))[grp]
-        else         sample(rep(seq_len(K), length.out = ng))
-  mean(vapply(seq_len(K), function(j)
-    mean((yg[fo == j] - nn1(xg[fo != j], yg[fo != j], xg[fo == j]))^2),
-    numeric(1)))
+By bilinearity of the covariance,
+\[
+v(\alpha)=\var(\alpha X+(1-\alpha)Y)
+= \alpha^2\sigma_X^2+(1-\alpha)^2\sigma_Y^2+2\alpha(1-\alpha)\sigma_{XY} .
+\]
+Differentiate in $\alpha$:
+\[
+v'(\alpha)=2\alpha\sigma_X^2-2(1-\alpha)\sigma_Y^2+2(1-2\alpha)\sigma_{XY}
+= 2\alpha(\sigma_X^2+\sigma_Y^2-2\sigma_{XY})-2(\sigma_Y^2-\sigma_{XY}) .
+\]
+Setting $v'(\alpha)=0$ gives the stated $\alpha$. It is a minimum because
+$v''(\alpha)=2(\sigma_X^2+\sigma_Y^2-2\sigma_{XY})=2\var(X-Y)>0$ unless $X-Y$ is
+constant; the same quantity is the denominator, so $\alpha$ is well defined exactly when
+$v$ is not flat.
+<<ex-alpha>>=
+alpha.fn <- function(data, index) {
+  X <- data$X[index]; Y <- data$Y[index]
+  (var(Y) - cov(X, Y)) / (var(X) + var(Y) - 2 * cov(X, Y))
 }
-c(row_split   = mean(replicate(20, cvg(FALSE))),
-  group_split = mean(replicate(20, cvg(TRUE))),
-  var_a = var(a), var_y = var(yg))
-@
-Both predictions hold. The row split reports an error well \emph{below} $\var(y)$ and would
-be read as a good model; the group split reports twice that variance, so on a new group the
-rule is worse than predicting the overall mean. The predictor carries no information about
-$a_g$: it is an identifier, and a random row split lets the rule look it up. Ask what unit
-is independent (§\ref{sec:1.6.3}); here it is the group, so the fold must be the group.
-\end{solution}
-
-\begin{exercise}\label{ex:oob}
-Let $q_n=(1-1/n)^n$ be the out-of-bag probability of Proposition~\ref{prop:oob}.
-(a) Prove $q_n$ increases in $n$, using the series for $\ln(1-u)$.
-(b) Show $e^{-1}-q_n\approx e^{-1}/(2n)$ and tabulate both at $n=5,10,100,506$.
-(c) §\ref{sec:1.5.8} reports an empirical fraction of $0.3677$ at $n=506$ from $2000$
-bootstrap samples. Is that consistent with $q_{506}$?
-\end{exercise}
-
-\begin{solution}
-(a) For $n\geqslant2$,
-\[
-\ln q_n = n\ln\Bigl(1-\frac1n\Bigr) = -n\sum_{j\geqslant1}\frac{1}{j\,n^{j}}
-= -1-\frac{1}{2n}-\frac{1}{3n^2}-\cdots ,
-\]
-every term after the first being positive and decreasing in $n$. So $\ln q_n$ increases and
-tends to $-1$, which is Proposition~\ref{prop:oob}.
-
-(b) From the display, $q_n=e^{-1}\{1-1/(2n)+O(n^{-2})\}$.
-<<s1-oob>>=
-nn <- c(5, 10, 100, 506); qn <- (1 - 1/nn)^nn
-rbind(n = nn, q_n = qn, gap = exp(-1) - qn, approx = exp(-1)/(2*nn))
-@
-The approximation is within $9\%$ at $n=5$ and $0.1\%$ by $n=506$: the convergence is of
-order $1/n$, so ``roughly a third'' is already accurate at $n=10$.
-
-(c) Each replicate averages $506$ indicators. Its mean has standard deviation at most
-$0.0214$, since $\sqrt{q(1-q)/506}=0.0214$; averaging $2000$ replicates reduces this bound
-to $0.00048$. Within one replicate the indicators are negatively correlated because
-$(1-2/n)^n<(1-1/n)^{2n}$, which only reduces the variance. The gap
-$0.3677-0.36752=0.00018$ is well inside that bound.
-\end{solution}
-
-\begin{exercise}\label{ex:boot-mean}
-Let $\hat\theta$ be the sample mean.
-(a) Show the \emph{ideal} bootstrap standard error, the exact standard deviation of
-$\hat\theta^\ast$ under resampling, is $\hat\sigma/\sqrt n$ with
-$\hat\sigma^2=n^{-1}\sum_i(x_i-\bar x)^2$, and compare with $s/\sqrt n$.
-(b) Verify by exhaustive enumeration on $\{2,5,8\}$.
-(c) How many distinct resamples are there, and why can they not be enumerated with equal
-weights?
-\end{exercise}
-
-\begin{solution}
-(a) A bootstrap sample draws $n$ values independently from the empirical distribution,
-which has mean $\bar x$ and variance $\hat\sigma^2$ (divisor $n$: it is the variance of a
-law putting mass $1/n$ at each $x_i$). The mean of $n$ independent draws therefore has
-variance $\hat\sigma^2/n$ exactly, so
-\[
-\SE_\infty(\hat\theta)=\frac{\hat\sigma}{\sqrt n}
-=\sqrt{\frac{n-1}{n}}\cdot\frac{s}{\sqrt n} ,
-\]
-smaller than the textbook standard error by $\sqrt{(n-1)/n}$, and requiring no simulation.
-$\SE_B$ of~\eqref{eq:boot-se} estimates this with a Monte-Carlo error that vanishes as
-$B\to\infty$ and has nothing to do with the sampling error of $\hat\theta$.
-<<s1-boot-mean>>=
-dv <- c(2, 5, 8); nb <- 3
-mns <- rowMeans(as.matrix(expand.grid(rep(list(dv), nb))))
-c(n_ordered = length(mns), n_multisets = choose(2*nb - 1, nb),
-  E_star = mean(mns), sd_star = sqrt(mean((mns - mean(mns))^2)),
-  sigmahat_over_sqrt_n = sqrt(mean((dv - mean(dv))^2))/sqrt(nb),
-  s_over_sqrt_n = sd(dv)/sqrt(nb), ratio = sqrt((nb - 1)/nb))
-@
-(b) With $n=3$ there are $3^3=27$ equally likely ordered resamples, whose means average to
-$\bar x=5$ with standard deviation $\sqrt2$; and $\hat\sigma^2=6$ gives
-$\hat\sigma/\sqrt3=\sqrt2$ exactly, against $s/\sqrt3=\sqrt3$.
-
-(c) The distinct \emph{multisets} number $\binom{2n-1}{n}=10$, but they are not equally
-likely: $\{2,5,8\}$ arises in $3!=6$ of the $27$ orderings and $\{2,2,2\}$ in one.
-Enumerating the ten with equal weights gives the wrong answer. The $n^n$ ordered draws are
-the equally likely objects, which is why enumeration is abandoned for $B$ random draws at
-any realistic $n$.
-\end{solution}
-
-\begin{exercise}[ISLR §5.4, exercise 1]\label{ex:islr-alpha}
-Two assets have returns $X$ and $Y$. Investing a fraction $\alpha$ in $X$ and $1-\alpha$ in
-$Y$ gives variance $\var(\alpha X+(1-\alpha)Y)$.
-(a) Derive the minimising $\alpha$.
-(b) Estimate it on \texttt{ISLR2::Portfolio} and give a bootstrap standard error.
-(c) The plug-in $\hat\alpha$ is a ratio of estimated variances and covariances, so no
-standard-error formula is elementary. Say why the bootstrap is the right tool here.
-\end{exercise}
-
-\begin{solution}
-(a) Writing $\sigma_X^2,\sigma_Y^2,\sigma_{XY}$ for the two variances and the covariance,
-\[
-v(\alpha) = \alpha^2\sigma_X^2+(1-\alpha)^2\sigma_Y^2+2\alpha(1-\alpha)\sigma_{XY} .
-\]
-Then $v'(\alpha)=2\alpha\sigma_X^2-2(1-\alpha)\sigma_Y^2+2(1-2\alpha)\sigma_{XY}$, and
-setting it to zero,
-\[
-\alpha^\ast = \frac{\sigma_Y^2-\sigma_{XY}}{\sigma_X^2+\sigma_Y^2-2\sigma_{XY}} .
-\]
-The denominator is $\var(X-Y)>0$ unless $X-Y$ is degenerate, and
-$v''(\alpha)=2\var(X-Y)>0$, so this is the unique minimum.
-<<s1-alpha>>=
-P <- ISLR2::Portfolio
-alpha_hat <- function(d, i) {
-  vx <- var(d$X[i]); vy <- var(d$Y[i]); cxy <- cov(d$X[i], d$Y[i])
-  (vy - cxy) / (vx + vy - 2*cxy)
-}
+alpha.fn(Portfolio, 1:100)
 set.seed(7)
-ba <- boot(P, alpha_hat, R = 1000)
-c(alpha_hat = alpha_hat(P, seq_len(nrow(P))), boot_se = sd(ba$t),
-  var_at_alpha = with(P, {
-    a <- alpha_hat(P, seq_len(nrow(P)))
-    a^2*var(X) + (1-a)^2*var(Y) + 2*a*(1-a)*cov(X, Y) }),
-  var_at_half = with(P, 0.25*var(X) + 0.25*var(Y) + 0.5*cov(X, Y)))
+ba <- boot(Portfolio, alpha.fn, R = 1000)
+c(alpha_hat = ba$t0, boot_SE = sd(ba$t))
 @
-(c) $\hat\alpha$ is a smooth but non-linear function of three second moments, so its
-sampling distribution has no closed form at finite $n$; a delta-method expansion would
-need fourth moments and would still be an approximation. Resampling the $100$ observed
-pairs assumes only that they are an independent sample, which is the point made in the
-remark following Definition~\ref{def:boot-se}. The gain over the naive $\alpha=1/2$ is
-small here, which the standard error puts in context.
+The plug-in estimate replaces the three population moments by sample moments. It is a
+ratio of estimated variances and covariances, for which no elementary standard-error
+formula exists at finite $n$, which is the case the bootstrap is for.
 \end{solution}
 
-\begin{exercise}[ISLR §5.4, exercise 9]\label{ex:islr-boot-boston}
-For \texttt{medv} in \texttt{Boston}: (a) estimate the population mean and give its
-standard error from the usual formula and from the bootstrap; (b) form a bootstrap
-confidence interval and compare with \texttt{t.test}; (c) estimate the standard errors of
-the median and of the tenth percentile, and say why no formula was used.
+\begin{exercise}[ISLR §5.4, exercise 2; beyond the syllabus]\label{ex:islr-5-2}
+(a) What is the probability that the first bootstrap observation is not the $j$-th
+observation of the original sample? (b) The second? (c) Argue that the probability that
+the $j$-th observation is not in the bootstrap sample is $(1-1/n)^n$. (d), (e), (f) Compute
+the probability that it \emph{is} in the sample for $n=5$, $100$ and $10{,}000$. (g) Plot
+that probability against $n$. (h) Estimate it by simulation for $n=100$, $j=4$.
 \end{exercise}
 
 \begin{solution}
-<<s1-boot-boston>>=
-mv <- Boston$medv; nB2 <- length(mv)
+(a) Each bootstrap draw is uniform on the $n$ observations, so it equals observation $j$
+with probability $1/n$ and is not $j$ with probability $1-1/n$. (b) The same, the draws
+being identically distributed. (c) The $n$ draws are independent, so the probability that
+none of them is $j$ is the product of $n$ factors $1-1/n$, which is Step 1 of
+Proposition~\ref{prop:oob}.
+<<ex-boot-prob, fig.height=2.4, fig.width=5>>=
+nn <- c(5, 100, 10000)
+rbind(n = nn, P_in = 1 - (1 - 1/nn)^nn, limit = 1 - exp(-1))     # (d), (e), (f)
+op <- par(mar = c(3.2, 3.2, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+n_grid <- 1:100000
+plot(n_grid, 1 - (1 - 1/n_grid)^n_grid, log = "x", type = "l", ylim = c(0.6, 1),
+     xlab = "n", ylab = "P(observation j in sample)"); abline(h = 1 - exp(-1), lty = 2)
+par(op)
+set.seed(1)
+store <- replicate(10000, sum(sample(1:100, replace = TRUE) == 4) > 0)
+mean(store)                                                       # (h)
+@
+(g) The curve falls steeply from $1$ at $n=1$ and is within a few thousandths of the limit
+$1-e^{-1}$ by $n=100$: the convergence is of order $1/n$, by the series in the proof of
+Proposition~\ref{prop:oob}. (h) The simulated frequency is within two standard errors of the simulation,
+$\sqrt{p(1-p)/10{,}000}\approx0.005$, of $1-(1-1/100)^{100}$.
+\end{solution}
+
+\begin{exercise}[ISLR §5.4, exercise 4; beyond the syllabus]\label{ex:islr-5-4}
+A statistical learning method is used to predict $Y$ at a particular value of $X$.
+Describe how the standard deviation of that prediction can be estimated.
+\end{exercise}
+
+\begin{solution}
+Draw $B$ bootstrap samples of the training data (Definition~\ref{def:bootstrap}); fit the
+method to each, giving $\hat f^{\ast b}$; evaluate each at the given $X$, giving $B$
+predictions $\hat f^{\ast b}(X)$; and report their standard deviation~\eqref{eq:boot-se}.
+This estimates the standard deviation of $\hat f(X)$ over the draw of the training set, the
+square root of the variance term in Proposition~\ref{prop:bias-var}. It does not include
+$\var(\varepsilon)$, the spread of a new $Y$ about $f(X)$, which no resampling of the
+training data can measure.
+\end{solution}
+
+\begin{exercise}[ISLR §5.4, exercise 9; beyond the syllabus]\label{ex:islr-5-9}
+For \texttt{medv} in \texttt{Boston}: (a) estimate the population mean $\mu$; (b) give the
+standard error of $\hat\mu$ by the formula $s/\sqrt n$; (c) estimate it by the bootstrap and
+compare; (d) give a $95\%$ confidence interval $\hat\mu\pm2\SE(\hat\mu)$ and compare with
+\texttt{t.test}; (e), (f) estimate the population median and its standard error by the
+bootstrap; (g), (h) the same for the tenth percentile.
+\end{exercise}
+
+\begin{solution}
+<<ex-boot-boston>>=
+mv <- Boston$medv
 set.seed(3)
-b_mean <- boot(mv, function(v, i) mean(v[i]),          R = 2000)
-b_med  <- boot(mv, function(v, i) median(v[i]),        R = 2000)
+b_mean <- boot(mv, function(v, i) mean(v[i]), R = 2000)
+b_med  <- boot(mv, function(v, i) median(v[i]), R = 2000)
 b_q10  <- boot(mv, function(v, i) quantile(v[i], 0.1), R = 2000)
-rbind(estimate = c(mean = mean(mv), median = median(mv),
-                   q10 = unname(quantile(mv, 0.1))),
-      boot_se  = c(sd(b_mean$t), sd(b_med$t), sd(b_q10$t)),
-      formula  = c(sd(mv)/sqrt(nB2), NA, NA))
-rbind(boot_CI = mean(mv) + c(-2, 2)*sd(b_mean$t),
+rbind(estimate = c(mean = mean(mv), median = median(mv), q10 = unname(quantile(mv, 0.1))),
+      boot_SE  = c(sd(b_mean$t), sd(b_med$t), sd(b_q10$t)),
+      formula  = c(sd(mv)/sqrt(length(mv)), NA, NA))
+rbind(boot_CI = mean(mv) + c(-2, 2) * sd(b_mean$t),
       t_test  = as.numeric(t.test(mv)$conf.int))
 @
-(a) The bootstrap standard error of the mean is within $1.5\%$ of $s/\sqrt n$. That is the
-expected agreement: Exercise~\ref{ex:boot-mean} shows the two differ in the population only
-by the factor $\sqrt{(n-1)/n}$, which is $0.999$ here, the rest being Monte-Carlo error at
-$B=2000$.
-
-(b) The two intervals agree to about $0.03$ on each end. The bootstrap interval uses the
-normal approximation $\hat\mu\pm2\SE$ while \texttt{t.test} uses $t_{505}$ and $s/\sqrt n$;
-at $n=506$ the two multipliers are $2$ and $1.965$.
-
-(c) The sample median and the tenth percentile are not smooth functions of the data, and
-their standard errors involve the unknown density of the population at those quantiles.
-The bootstrap needs neither. Note the tenth percentile has the largest standard error of
-the three, the density of \texttt{medv} being thinner in the lower tail than at the centre.
-\end{solution}
-
-\begin{exercise}\label{ex:boot-cor}
-For $(x,y)=(\texttt{lstat},\texttt{medv})$ in \texttt{Boston}, bootstrap the sample
-correlation with $B=2000$ and compare with the normal-theory standard error
-$(1-r^2)/\sqrt n$, which the delta method of the prerequisites gives for a bivariate normal
-population. Which do you report?
-\end{exercise}
-
-\begin{solution}
-<<s1-boot-cor>>=
-set.seed(14)
-bc <- boot(Boston[, c("lstat", "medv")],
-           function(d, i) cor(d[i, 1], d[i, 2]), R = 2000)
-r_hat <- cor(Boston$lstat, Boston$medv)
-c(r = r_hat, boot_se = sd(bc$t), delta_se = (1 - r_hat^2)/sqrt(nB2),
-  ratio = ((1 - r_hat^2)/sqrt(nB2))/sd(bc$t),
-  medv_at_50 = sum(Boston$medv == 50), skew_medv = skew(Boston$medv))
-@
-The formula is not wrong; its hypothesis is. It is the delta method applied to a bivariate
-\emph{normal} population, where $\sqrt n(r-\rho)\convd N(0,(1-\rho^2)^2)$. This population
-is not bivariate normal: \texttt{medv} is censored, with $16$ of $506$ values sitting
-exactly at $50$, and its skewness is $1.10$. The bootstrap assumes only that the $506$
-pairs are an independent sample, so it is the figure to report, and the discrepancy
-measures the departure from normality. In §\ref{sec:1.5.8} the disagreement went the other
-way, the formula being the optimistic one because it assumed constant variance.
+(a)--(c) The bootstrap standard error of the mean agrees with $s/\sqrt n$ to about one
+per cent. That is expected: a bootstrap sample is $n$ independent draws from the empirical
+distribution, whose variance is $\hat\sigma^2=n^{-1}\sum_i(x_i-\bar x)^2$, so the exact
+bootstrap standard deviation of the mean is $\hat\sigma/\sqrt n=\sqrt{(n-1)/n}\,s/\sqrt n$,
+and $\sqrt{505/506}=0.999$; the rest is Monte-Carlo error at $B=2000$. (d) The two
+intervals agree to a few hundredths: the bootstrap interval uses the multiplier $2$, the
+$t$ interval $t_{0.975,505}=1.965$. (e)--(h) The median and the tenth percentile are not
+smooth functions of the sample, and their standard errors involve the unknown population
+density at those quantiles; the bootstrap needs neither. The tenth percentile has the
+largest standard error of the three, the data being sparser in the lower tail than at the
+centre.
 \end{solution}
 
 \end{document}

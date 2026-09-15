@@ -244,8 +244,7 @@ likelihood ratio statements of that theorem and its corollaries.
 
 \begin{remark}
 The fourth moment of a centred Poisson variable is used only to make the Lyapunov ratio
-finite; any $\delta>0$ would do. Condition~\ref{P1} keeps the means away from $0$ and
-$\infty$, which is what makes the moment bound uniform: a design in which some $\mu_i$
+finite; any $\delta>0$ would do. Condition~\ref{P1} keeps the means away from $0$ and $\infty$, which makes the moment bound uniform: a design in which some $\mu_i$
 drifts to zero has no such bound, and the asymptotics of a cell with almost no exposure are
 not covered.
 \end{remark}
@@ -324,8 +323,7 @@ $n/(n-p)\to1$ and~\eqref{eq:phi-tilde}, $\hat\phi\convp\phi$.
 
 \begin{remark}
 The residual deviance divided by $n-p$ is a second dispersion estimate. The two are not
-equal and need not be close: the Pearson statistic weights by $\hat\mu_i$ and the deviance
-by a logarithmic discrepancy, and §\ref{sec:8.4.3} prints both on the same fit.
+equal and need not be close: the Pearson statistic weights by $\hat\mu_i$ and the deviance by a logarithmic discrepancy.
 \end{remark}
 
 \subsection{Quasi-Poisson and the sandwich}\label{sec:8.2.2}
@@ -716,8 +714,7 @@ Tweedie, $1<p<2$  & \multicolumn{2}{c}{see §\ref{sec:8.3.4}}          & $\mu^p$
 \end{ctab}
 
 \noindent
-The negative binomial row treats its shape $\theta_\ast$ as known, which is what makes it a
-one-parameter family; the Bernoulli and Poisson rows have $\phi=1$.
+The negative binomial row treats its shape $\theta_\ast$ as known, which makes it a one-parameter family; the Bernoulli and Poisson rows have $\phi=1$.
 
 \subsection{Link functions}\label{sec:8.3.2}
 
@@ -1055,9 +1052,8 @@ c(rows = nrow(ins), observed_claims = sum(ins$Claims),
 round(exp(coef(gi)), 4)
 @
 
-Multiplicative rating in the sense of Proposition~\ref{prop:pois-interp}(iv): the fitted
-claim rate is a base rate times one factor per level. Here the Pearson statistic per degree
-of freedom is close to $1$, so the Poisson variance assumption survives on this data.
+The Pearson statistic per degree of freedom is close to $1$, so the Poisson variance assumption
+survives on this data.
 
 \subsection{Overdispersion (§\ref{sec:8.2.1}--§\ref{sec:8.2.2})}\label{sec:8.4.3}
 
@@ -1078,9 +1074,6 @@ Theorem~\ref{thm:quasipois} is exact arithmetic here: the coefficients agree to 
 bit and every standard error is multiplied by the same $\sqrt{\hat\phi}=5.06$. The two
 dispersion estimates of §\ref{sec:8.2.1} differ, $25.60$ against $26.50$.
 
-The moment test of Proposition~\ref{prop:moment-test} estimates the coefficient $\alpha$ in
-$\var(y)=\mu+\alpha v(\mu)$ by a regression through the origin.
-
 <<moment-test>>=
 Ti <- (y - mu)^2 - y
 c(alpha_v_equals_mu  = unname(coef(lm(Ti ~ mu - 1))),
@@ -1093,9 +1086,6 @@ corresponding maximum likelihood quantity: $1+\hat\alpha=34.9$ against $\hat\phi
 $1/\hat\alpha=10.2$ against $\hat\theta=3.76$. The regressions are unweighted, so
 observations with large $\hat\mu_i$, whose $T_i$ have far the largest variance, dominate
 them; the test is a diagnostic for the null, not an estimator to report.
-
-The sandwich of Proposition~\ref{prop:sandwich-pois} makes no assumption about the shape of
-the variance.
 
 <<sandwich>>=
 G <- t(X) %*% (mu * X); Fm <- t(X) %*% ((y - mu)^2 * X)
@@ -1121,9 +1111,6 @@ c(theta = nb$theta, se_theta = nb$SE.theta,
   negbin_pearson_over_df =
     sum((y - mun)^2/(mun + mun^2/nb$theta))/(n - length(b) - 1))
 @
-
-Theorem~\ref{thm:poisson-gamma} is checked by simulating the mixture and comparing with the
-negative binomial mass function.
 
 <<poisson-gamma>>=
 set.seed(5); N <- 400000; th <- 2.5; mu0 <- 3
@@ -1200,8 +1187,8 @@ c(manual_loglik = ll, zeroinfl_loglik = as.numeric(logLik(zi)), pi_hat = p0,
 @
 
 Theorem~\ref{thm:zip-moments} gives a variance of $2.25$ against a sample variance of
-$3.71$: zero inflation produces overdispersion but not enough of it here, which is why the
-negative binomial has the smaller $\AIC$.
+$3.71$: zero inflation produces overdispersion but not enough of it here, so the negative binomial
+has the smaller $\AIC$.
 
 <<hurdle-manual>>=
 cfh <- coef(hu)
@@ -1215,10 +1202,6 @@ c(manual_loglik = llh, hurdle_loglik = as.numeric(logLik(hu)),
 @
 
 \subsection{The exponential family (§\ref{sec:8.3.1}, §\ref{sec:8.3.3})}\label{sec:8.4.6}
-
-Theorem~\ref{thm:lef-moments} says $b'(\theta)$ is the mean and $b''(\theta)$ the variance
-divided by $\phi$; both are checked here by numerical differentiation of the cumulant
-functions of the table in §\ref{sec:8.3.1}.
 
 <<cumulants>>=
 fam <- list(
@@ -1279,9 +1262,6 @@ table, against $254.90$ and $254.90\times1.6441=419.08$ here.
 
 \subsection{Tweedie (§\ref{sec:8.3.4})}\label{sec:8.4.8}
 
-Theorem~\ref{thm:tweedie} is checked by simulating the compound Poisson--gamma sum from the
-reparametrisation~\eqref{eq:tweedie-param}.
-
 <<tweedie-sim>>=
 set.seed(11); N <- 300000; mu0 <- 4; phi0 <- 2.5; p0 <- 1.6
 lam <- mu0^(2 - p0)/(phi0*(2 - p0))
@@ -1295,8 +1275,6 @@ c(lambda = lam, alpha = al, rate = gam,
   simulated_var = var(S), theory_var = phi0*mu0^p0,
   simulated_P0 = mean(S == 0), theory_P0 = exp(-lam))
 @
-
-The series~\eqref{eq:tweedie-density} against the package density.
 
 <<tweedie-density>>=
 yv <- c(1, 4, 10)
@@ -1574,7 +1552,7 @@ $b'=\phi A'/A=\expc[y]$ and $b''=\phi(A''A-(A')^2)/A^2=\var(y)/\phi$.
 For the gamma, $b(\theta)=-\ln(-\theta)$ on $\theta<0$, so $b'(\theta)=-1/\theta=\mu$ and
 $b''(\theta)=1/\theta^2=\mu^2$: the variance function is $V(\mu)=\mu^2$, and
 $\var(y)=\phi\mu^2$. The coefficient of variation $\sqrt{\var y}/\expc y=\sqrt\phi$ is
-constant, which is why a gamma with a logarithmic link is the standard model for a
+constant, so a gamma with a logarithmic link is the standard model for a
 severity.
 \end{solution}
 
@@ -1593,7 +1571,7 @@ Theorem~\ref{thm:pois-irls}.
 
 Logistic: $\phi=1$, $V(\pi)=\pi(1-\pi)$ and $\dd\pi/\dd\eta=\pi(1-\pi)$, so
 $W_i=\pi_i(1-\pi_i)$ and $z_i=\eta_i+(y_i-\pi_i)/\{\pi_i(1-\pi_i)\}$, which is the
-weighted least squares step of Unit 7. In both the link is canonical, which is why
+weighted least squares step of Unit 7. In both the link is canonical, so
 $\dd\mu/\dd\eta$ equals $V(\mu)$ and the weight collapses to $V(\mu_i)$.
 \end{solution}
 

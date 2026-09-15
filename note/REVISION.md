@@ -1,381 +1,196 @@
-# ASM lecture notes — preliminary revision work order
+# ASM lecture notes — work order for the SRM/PA rebuild
 
-**Read `CONVENTIONS.md` first.** It is the binding handoff: house style, the motto, the
-verification principle, the build, and 53 numbered gotchas. This file is a work order for
-one specific pass over the fourteen units and does not replace it.
-
-Status at the time of writing: all 14 units and `prereq.Rnw` are written and build with
-0 LaTeX errors, 0 undefined references, and no R errors inside chunks.
-
----
-
-## 1. The instruction
-
-From the instructor, verbatim:
-
-> for each Unit, read line-by-line and 1. Remove all non load-bearing lead-ins and fillers
-> (remarks) 2. Remove all forward citations 3. The content of the exercise should not be
-> simple repetition of the materials appeared earlier; for the 50 \* 3 minutes the number
-> and the depths of the exercises should be largely expanded.
-
-**Read line by line** is part of the instruction. Do not do this with a regular expression
-sweep; the counts below are for scheduling, not for scripting the edit.
+Read `CONVENTIONS.md` first: it holds the motto, the house style, the verification
+principle, the source inventory and the gotchas, all of which still bind. This file is the
+current work order and the per-unit procedure. Everything earlier than the 2026-09-15
+redesign has been removed from it; the pre-rebuild sources are in git at `84b0283` and the
+first-principles Unit 1 is kept as `superseded/unit01-first-principles.Rnw`.
 
 ---
 
-## 2. Inventory (measured 2026-08-21, before any revision)
+## 1. Purpose and status
 
-| unit | remarks | exercises | fwd §-refs | fwd Unit refs | pages |
-|------|--------:|----------:|-----------:|--------------:|------:|
-| 01 | 19 | 10 | 4 | 12 † | 43 |
-| 02 | 24 | 13 | 7 | 12 | 59 |
-| 03 | 11 | 10 | 1 | 1 | 35 |
-| 04 | 15 | 9 | 7 | 4 | 47 |
-| 05 | 7 | 10 | 0 | 0 | 29 |
-| 06 | 19 | 13 | 8 | 0 | 77 |
-| 07 | 14 | 12 | 6 | 0 | 68 |
-| 08 | 11 | 12 | 4 | 0 | 71 |
-| 09 | 14 | 11 | 7 | 3 | 52 |
-| 10 | 24 | 14 | 7 | 2 | 91 |
-| 11 | 15 | 12 | 9 | 3 | 63 |
-| 12 | 14 | 10 | 8 | 0 | 46 |
-| 13 | 8 | 9 | 4 | 0 | 42 |
-| 14 | 9 | 9 | 4 | 0 | 41 |
-| **total** | **204** | **154** | **76** | **37** | |
+The course prepares students for SOA Exam SRM and Exam PA. Each unit is to **cover the
+exam's required reading** (the FREES and ISLR sections listed in §3), developed by reading
+those sections in full and rewriting their content into coherent blocks **as rigorous
+accounts of what the two books hand-wave**, with exercises drawn from FREES and ISLR and
+every SOA sample question mapped to the unit, all with detailed solutions.
 
-† Unit 1's twelve forward `Unit M` mentions are **exempt by instructor decision**; see §4.
-The figure to drive to zero is therefore 76 in-unit forward `\ref`s and 25 forward `Unit M`
-mentions in units 2–14.
+* **Unit 1 is rebuilt on this design and is the template** (`unit01.Rnw`, 108 pp, 60 chunks,
+  8 proofs, 25 exercises, 0 errors). Its text reproduces FREES's chapter 1 examples from the
+  book's data and script (Galton's table, the Massachusetts bodily injury claims to the
+  digits of FREES Table 1.2, the chi-square transforms with the script's seed) and its
+  exercises include all seven of FREES chapter 1.
+* **Unit 2 is rebuilt** (`unit02.Rnw`, 168 pp, 84 chunks, 31 proofs, 45 exercises: all
+  22 of FREES chapter 2, FREES 3.1–3.6 as far as §3.1–3.3 allow, 11 of ISLR §3.7, the six
+  SOA questions). Its mathematics follows the instructor's CLM note
+  (`~/usr/work/lectures/mva/note/clm.tex`), cited as CLM §n in the reading boxes; the
+  instructor said Units 2 and 3 may lean on it closely. The pre-rebuild version is
+  `superseded/unit02-first-principles.Rnw`.
+* **Units 3–14 are still the old first-principles versions.** They build clean and are to
+  be rebuilt in order, one unit per pass, starting with Unit 3 (FREES §3.4–3.5, §6.1;
+  ISLR §3.3–3.4; SOA 13, 27, 49, 56, 62, 71; CLM §7–9).
+* `prereq.Rnw` remains the single source of background results and stays in the reading
+  path.
 
-Exercises currently average about 850 characters including the solution, i.e. they are
-short. Regenerate the table at any time with:
+## 2. Rules (all current; fixed by the instructor)
+
+1. **The motto holds: every result is proved.** Background results are cited by name from
+   `prereq.Rnw`; anything a unit needs that is not there is added there with a proof.
+2. **Proofs are complete.** No intermediate step is omitted. A proof with more than one
+   idea is laid out in numbered steps (the LOOCV-shortcut proof in Unit 1 runs a page and
+   is the model).
+3. **Every block names its source.** A remark, definition or example that condenses a
+   passage of ISLR or FREES carries the passage in its title:
+   `\begin{remark}[Two drawbacks; ISLR §5.1.1]`. The blocks are the author's condensation,
+   never verbatim quotation; the tag makes that checkable.
+4. **Scope is the syllabus reading list** (§3). Material outside both reading lists is
+   kept but carries "(beyond the syllabus)" in its title and a reading box saying so:
+   the bootstrap, robust standard errors, Unit 14. Nothing is deleted on that ground.
+5. **Exercises.** Every FREES and ISLR exercise of the unit's sections that is solvable
+   with the material covered so far, titled by source (`[ISLR §5.4, exercise 8]`,
+   `[FREES exercise 3.2]`), with full solutions and live R chunks; plus **every SOA sample
+   question mapped to the unit**, computational and descriptive alike, as the exam's own
+   verifiers, each option derived from the unit's propositions and **never an answer key**.
+   FREES's data files and chapter scripts are on disk (§4), so its data-based exercises are
+   in scope, and the unit's text reproduces the book's own in-chapter computations from the
+   script alongside the ISLR lab. `ISLR2`'s data sets are all installed.
+6. **House style** (`CONVENTIONS.md` §2): definition, proposition/lemma with proof, terse
+   factual remark, example, reading box; concise language, no previews, no forward
+   references of any kind, no em-dashes, no motivation prose. **No lead-ins, no
+   non-load-bearing sentences, no fillers, ever** (the instructor's words, repeated on
+   2026-09-15 after the template): a sentence that is not a definition, a result, a proof
+   step, or a reading of a printed number is deleted.
+7. **Verification** (`CONVENTIONS.md` §3): every number in prose comes from a chunk that
+   prints it, the R sections reproduce the ISLR labs' numbers exactly, and R stays because
+   PA is R-based.
+8. **One unit at a time**, finished, built and checked before the next.
+
+## 3. The syllabus and the unit map
+
+`syllabus/2026-09-exam-srm-syllabus.pdf` (SRM) and `syllabus/2026-10-exam-pa-syllabus.pdf`
+(PA). SRM: 35 multiple-choice questions; R output may be shown for interpretation. PA:
+project-based, assumes SRM, adds data exploration, feature engineering and the R workflow
+of its e-learning modules; R is no longer available at the exam. PA covers the same
+reading except FREES 7–9.
+
+| Unit | ISLR (2nd ed.) | FREES | SRM topic |
+|---|---|---|---|
+| 1 Statistical learning | 2.1–2.3, 5.1, 5.3.1–5.3.3 (5.2, 5.3.4 beyond) | 1 (background) | 1 |
+| 2 Regression I: matrix theory, $k=1$ | 3.1–3.2 | 2.1–2.8, 3.1–3.3 | 2 |
+| 3 Regression II: inference, interpretation | 3.3–3.4 | 3.4–3.5, 6.1 | 2 |
+| 4 Diagnostics | 3.3.3 | 5.1, 5.3–5.5, 5.7 (robust SE beyond) | 2 |
+| 5 Selection and dimension reduction | 6.1, 6.3, 12.2 | 5.2, 5.6, 6.2–6.3 | 2, 5 |
+| 6 Shrinkage, high dimensions, KNN | 6.2, 6.4–6.5, 3.5–3.6 | | 2 |
+| 7 GLM I: categorical responses | | 11.1–11.6 | 2 |
+| 8 GLM II: counts, exponential family | | 12.1–12.4, 13.1–13.6 | 2 |
+| 9 Trends | | 7.1–7.6, 8.1 | 3 |
+| 10 Autoregression, forecasting; trees intro | 8.1.1 | 8.2–8.4, 9.1–9.5 (8.5–8.6 beyond) | 3, 4 |
+| 11 Decision trees | 8.1, 8.3.1–8.3.2 | | 4 |
+| 12 Ensembles | 8.2, 8.3.3–8.3.4 | | 4 |
+| 13 Unsupervised learning | 12.1–12.2, 12.4–12.5 | | 5 |
+| 14 Convex optimisation, SVM, neural networks | beyond the syllabus | | |
+
+Excluded by the syllabus: ISLR 5.3.4, 8.2.4, 8.2.5, 8.3.5, 12.5.2. The syllabus fixes
+AIC and BIC to the ISLR §6.1.3 forms $(\mathrm{RSS}+2d\hat\sigma^2)/n$ and
+$(\mathrm{RSS}+\ln(n)\,d\hat\sigma^2)/n$ for ordinary linear models.
+
+**Schedule.** Fourteen units, one per weekly meeting of 130–140 minutes (the instructor:
+14, not 13; the first meeting of the semester carried no lecture). The `\periodmark`s still
+say "period $k$ of 3" and are left as they are.
+
+## 4. Sources on disk
+
+* ISLR: `~/usr/work/research/llm_proj/books/islr/islr_NN.Rnw`; exercises are the last
+  `\section{Exercises}` of each chapter, Conceptual then Applied, labelled `exer:N.M.k`.
+* FREES: `~/usr/work/research/llm_proj/books/frees/frees_NN.tex`; exercises are the
+  chapter's `\section{Exercises}`, labelled `exer:N.k`; `\dataset{...}` marks the ones
+  that need its data files.
+* SOA sample questions: `srm/srm_body.tex`, `\begin{question}{N}` followed by
+  `\begin{solution}{N}{LETTER}`; questions 17, 28, 47 and 65 are deleted from the syllabus
+  and must not be used.
+* FREES data and scripts, downloaded 2026-09-15 from the "Data & Scripts" link in
+  `README.md` (`instruction.bus.wisc.edu/jfrees/jfreesbooks/Regression Modeling/BookWebDec2010/`):
+  `note/data/frees/csv/*.csv` (41 data sets), `note/data/frees/scripts/ChapNRCode.txt`
+  (the in-chapter R code, chapters 1–8, 10–13, 16, 19, 20, plus `Divorce.csv` and
+  `HealthExpendEvent.csv`), `note/data/frees/doc/DataDescriptions.pdf` (+ `.txt`) and the
+  2019 errata. Chunks read them as `read.csv("data/frees/csv/X.csv")`; knitr runs in
+  `note/`. Known deviations from the book: `AutoBI` was withdrawn at the survey conductor's
+  request and `AUTOBIsim` is the simulated substitute; `NAICExpense` has 384 companies, not
+  the 500 of the text; `MassBodilyInjury.csv` has a trailing space in a header, so
+  `names(x) <- trimws(names(x))`. The scripts use Rcmdr's `numSummary`, `Hist` and
+  `qq.plot`; use base R.
+* Background proofs: `note/prereq.Rnw` (single source), and the texified books it was
+  built from (`CONVENTIONS.md` §5).
+
+## 5. Per-unit procedure
+
+1. Read the unit's syllabus sections in full (§3), both books, their exercise sets, and
+   FREES's chapter script, whose in-chapter computations the text reproduces from the data.
+   For the regression units read the matching sections of the CLM note as well, and take
+   the proofs from it where it has them.
+2. Write the unit: sections mirror the syllabus material, each opening with a reading box
+   naming the sections and the SRM learning outcome; blocks per rule 6, proofs per rules
+   1–2, tags per rule 3; an R section reproducing the relevant ISLR lab; an exercise
+   section per rule 5, off-syllabus items marked per rule 4.
+3. Run the reference scan below, then `python build.py NN`. Never run two builds at once.
+4. After the build, read the printed output: `grep -c -E '^## Error( in|:)' unitNN.tex`
+   must be 0, every prose claim must match what printed, and every figure description must
+   match the rendered figure (convert `figs/unitNN-*.pdf` with `pdftoppm -r 70 -png` and
+   look). Do not edit the `.Rnw` while a build runs.
+5. Tick the checklist and record anything learned as a gotcha in `CONVENTIONS.md` §6.
+
+Reference scan (forward references of every kind, and cross-document `\ref`s, which print
+as undefined):
 
 ```bash
 cd note && python3 - <<'PY'
 import re, pathlib
-for i in range(1, 15):
-    u = f"unit{i:02d}"; s = pathlib.Path(u + ".Rnw").read_text()
-    lab = {m.group(1): m.start() for m in re.finditer(r'\\label\{(sec:[^}]*)\}', s)}
-    fwd = sum(1 for m in re.finditer(r'\\ref\{(sec:[^}]*)\}', s)
-              if m.group(1) in lab and m.start() < lab[m.group(1)])
-    fwdu = sum(1 for m in re.finditer(r'Unit (\d+)', s) if int(m.group(1)) > i)
-    print(u, len(re.findall(r'\\begin\{remark\}', s)),
-          len(re.findall(r'\\begin\{exercise\}', s)), fwd, fwdu)
-PY
-```
-
-**Two facts that make this work safe.** `remark` is declared `\newtheorem*`, so it is
-**unnumbered**: deleting remarks shifts no theorem, definition, lemma or corollary number,
-and no `\ref` breaks. And only units 02, 12 and 14 contain `\ref{ex:...}` at all (3, 1 and
-3 uses), all inside their own exercise sections, so adding exercises is safe too. Do not,
-by contrast, delete or merge whole `\subsection`s: that changes `sec:N.x` labels and is
-gotcha 12 territory.
-
----
-
-## 3. Task 1 — remarks, lead-ins, fillers
-
-`CONVENTIONS.md` §2 already says: *allowed* is definition, theorem, proof, **short factual**
-remark, `reading` box, `derivation` box; and *the test for a sentence* is that if it is not
-a definition, theorem, proof, or one terse factual remark, it goes.
-
-### Keep a remark only if it does one of these
-
-1. states a fact a later proof, definition or computation actually uses;
-2. records that a hypothesis is necessary, ideally with the counterexample when it is
-   dropped;
-3. states what is **not** proved, or the boundary of a result's validity (`CONVENTIONS.md`
-   §8 lists these per unit; they are load-bearing and must survive);
-4. states an empirical or numerical finding that the unit's Computation section establishes.
-
-### Delete it if it
-
-- restates in words the theorem just proved;
-- motivates ("this is why it matters", "the reason we care about");
-- previews or narrates the document (also task 2);
-- gives study advice or rhetorical framing ("this is the whole subject in one line");
-- observes that a printed number is large or small without adding a fact;
-- repeats a remark already made in the same subsection. Two surviving adjacent remarks
-  should usually become one.
-
-### Also in scope
-
-The **unnumbered prose paragraphs** that open sections and subsections. Several units open
-with a scene-setting paragraph ("Unit 11 ended with a measurement…", "There is no
-response…"). Apply the same test: if the paragraph does not define something or state a
-fact used later, it goes. Where it establishes standing notation, keep the notation and cut
-the framing around it.
-
-Expect the remark count to fall substantially. The rule governs, not a quota: a unit that
-legitimately keeps most of its remarks is a correct outcome.
-
----
-
-## 4. Task 2 — forward citations
-
-Two kinds, both to reach zero.
-
-**In-unit** — `\ref{sec:N.x}` appearing textually before `\label{sec:N.x}`. 76 of these.
-Overwhelmingly they are theory sections pointing at the Computation or Pitfalls sections
-that come later, in the pattern "§10.5.2 measures both".
-
-**Cross-unit** — a mention of `Unit M` inside `unitNN.Rnw` with `M > NN`. 37 of these,
-e.g. "which is Unit 10", "that is the whole content of Unit 12", "(Unit 13)".
-
-### Repairs, in order of preference
-
-1. The remark containing it fails task 1 anyway. Delete the remark; nothing else to do.
-2. Delete the clause. "The reported standard errors are too small; §10.5.2 measures both"
-   becomes "The reported standard errors are too small." **The backward link survives**:
-   the Computation section already cites the theory section it verifies, and that is the
-   direction that should exist.
-3. Convert to a statement of fact with no pointer. "Pruning, which is Unit 11" becomes
-   "Growing until each leaf is small overfits, and pruning is the repair" — true, and it
-   does not send the reader forward.
-4. If the mathematics genuinely depends on a later result, restructure so it does not.
-   This should be rare; if it happens, record it.
-
-### What must NOT be removed
-
-- **Backward** references. Unit 12 citing Unit 11, or §12.4 citing §12.1, is correct.
-- Cross-unit references remain **named, never numbered** (gotcha 11): "the
-  Frisch–Waugh–Lovell theorem of Unit 3", "the prerequisites' central limit theorem for
-  autoregressive scores". A cross-document `\ref` is also gotcha 10 and will surface as an
-  undefined reference at build time.
-
-### The one exception, decided by the instructor
-
-**Unit 1's forward `Unit M` mentions stay as they are. Do not touch them.**
-
-Unit 1 carries 12 of them, several being course-map scaffolding ("principal components and
-clustering (Unit 13) are the unsupervised half"). Removing them would obey the letter of the
-instruction and cost Unit 1 its overview of what the course contains. The question was put
-to the instructor, who ruled: leave them.
-
-The exception is **scoped to cross-unit forward references in Unit 1 only**. It does not
-cover:
-
-* Unit 1's 4 in-unit forward `\ref{sec:1.x}`s, which are the ordinary
-  theory-points-at-Computation pattern and are removed like everywhere else;
-* forward `Unit M` mentions in any other unit. Units 2, 3, 4, 9, 10 and 11 carry 25
-  between them (12, 1, 4, 3, 2, 3) and all 25 go.
-
-### Verification
-
-Re-run the script in §2. Every entry in both forward columns must read 0, with the single
-permitted exception of Unit 1's forward-`Unit` column, which stays at 12.
-
-That script only sees `\ref{sec:...}` and `Unit M`. A second scan, run per unit, catches
-forward references to theorems, lemmas, equations and exercises, and catches cross-document
-`\ref`s (gotcha 10) as *undefined* labels before the build reports them. Both lists must
-come back empty:
-
-```bash
-cd note && python3 - <<'PY'
-import re, pathlib
-u = "unit03"                       # the unit being revised
+u = "unit02"
 s = pathlib.Path(u + ".Rnw").read_text()
-for pat in ('thm:', 'lem:', 'cor:', 'prop:', 'def:', 'ex:', 'eq:'):
-    lb = {m.group(1): m.start()
-          for m in re.finditer(r'\\label\{(' + pat + r'[^}]*)\}', s)}
+for pat in ('sec:', 'thm:', 'lem:', 'cor:', 'prop:', 'def:', 'ex:', 'eq:'):
+    lb = {m.group(1): m.start() for m in re.finditer(r'\\label\{(' + pat + r'[^}]*)\}', s)}
     fwd = [m.group(1) for m in re.finditer(r'\\(?:ref|eqref)\{(' + pat + r'[^}]*)\}', s)
            if m.group(1) in lb and m.start() < lb[m.group(1)]]
-    und = sorted({m.group(1)
-                  for m in re.finditer(r'\\(?:ref|eqref)\{(' + pat + r'[^}]*)\}', s)
+    und = sorted({m.group(1) for m in re.finditer(r'\\(?:ref|eqref)\{(' + pat + r'[^}]*)\}', s)
                   if m.group(1) not in lb})
-    if fwd or und:
-        print(pat, "forward:", fwd, " undefined:", und)
+    if fwd or und: print(pat, "forward:", fwd, " undefined:", und)
+print("em-dashes:", s.count('---'))
 PY
 ```
 
----
+`note/prose.py unitNN.Rnw` lists every unnumbered paragraph and remark with its line
+number, for triaging lead-ins.
 
-## 5. Task 3 — exercises
+## 6. SOA sample questions by unit
 
-The instruction has three parts: **not simple repetition** of earlier material, **more of
-them**, and **deeper**, sized against 3 × 50 minutes of teaching per unit.
+All questions mapped to a unit are used (rule 5). Assignments marked ✓ were verified
+against the question text; the rest are a keyword first pass to be checked when the unit
+is rebuilt.
 
-### Target
+| unit | questions |
+|------|-----------|
+| 01 | 12 ✓, 50 ✓ |
+| 02 | 11 ✓, 18 ✓, 23 ✓, 24 ✓, 44 ✓, 53 ✓ |
+| 03 | 13 ✓, 27 ✓, 49 ✓, 56 ✓, 62 ✓, 71 ✓ |
+| 04 | 2, 36, 42, 14 ✓ (response transformation for variance) |
+| 05 | 5, 6, 8, 10, 30, 35, 37, 54 ✓ (sequential removal), 61 ✓ (AIC/BIC), 70 ✓ (AIC from RSS) |
+| 06 | 68, 69, 75 |
+| 07 | 3, 4, 22, 34, 38, 41, 52, 55, 72, 19 ✓ (likelihood ratio; or 08), 67 ✓ (logistic LRT) |
+| 08 | 7, 20, 45 ✓ (GLM, log link) |
+| 09 | 21, 31, 46 |
+| 10 | 64, 58 ✓ (AR(1) conditional least squares) |
+| 11 | 9, 25, 26, 29, 33, 48, 51, 57, 63, 66, 73 |
+| 12 | 39, 74 |
+| 13 | 1, 15, 16, 32, 40, 43, 59, 60 |
 
-Roughly **20–26 exercises per unit**, up from about 11, with solutions substantially longer
-than the present ~850 characters. Numbers are a guide; a unit with less material may carry
-fewer.
+## 7. Checklist
 
-### Three rules added by the instructor after units 1--3 were first revised
-
-1. **Draw exercises from ISLR and FREES.** Their exercise sets are on disk:
-   `books/islr/islr_NN.Rnw` §N.4 (Conceptual, then Applied) and
-   `books/frees/frees_NN.tex` §N.x. Attribute in the exercise title,
-   `\begin{exercise}[ISLR §5.4, exercise 8]` or `\begin{exercise}[FREES exercise 3.2]`.
-   FREES's data-based exercises cannot be used (its datasets are not on disk, §5 of
-   `CONVENTIONS.md`); its algebraic and small-table ones are the best source of derivation
-   drills in the whole reading list. ISLR's Applied exercises port directly, `ISLR2` being
-   installed.
-2. **No pure-descriptive SOA questions.** A question whose solution is "A is false because
-   ..., B is false because ..." with no arithmetic does not go in. Roughly half the bank is
-   of that kind; see the CALC/DESC column added to the map below.
-3. **Solutions detailed, language concise.** Every computational solution carries a live
-   R chunk that prints the numbers rather than a sentence asserting them, and every
-   theoretical one carries the derivation in full. The prose around them is cut to the
-   statement of what the numbers show: no closing flourishes, no "the lesson is", no
-   restating a printed figure.
-
-Chunks inside a `solution` environment work (tcolorbox is `breakable`) and share the
-document's R session, so they can reuse objects from the unit's Computation section. Label
-them `s<unit>-<name>` to keep them unique. Budget for it: units 1--3 went from about
-35 s to about 55--65 s of build time each.
-
-### Composition (a drafting aid, NOT printed structure)
-
-`CONVENTIONS.md` forbids exercise tiers: the printed list stays **flat and unlabelled**.
-Use this only to check a set is varied:
-
-- 3–5 that **extend a theorem**: relax a hypothesis and see what survives, prove a corollary
-  the text states without proof, work a special case in closed form, or construct a
-  counterexample when a hypothesis is dropped.
-- 3–5 **numerical** problems with specific given values, the arithmetic worked in the
-  solution.
-- 2–4 that **connect to an earlier unit**. This is the cheapest source of genuine depth and
-  is automatically non-repetitive. Backward only.
-- 2–4 **SOA sample questions** (see §6), presented as problem and full derivation. Never
-  "(Key: C)" — that is an explicit prohibition in `CONVENTIONS.md` §2.
-- 2–3 **computational**, asking the student to reproduce or extend a check from the unit's
-  Computation section.
-- 1–2 on **what a result does not say**. `CONVENTIONS.md` §8 lists, per unit, exactly what
-  was deliberately left unproved; those are ready-made.
-
-### Banned
-
-- An exercise whose solution is "this is §N.x" and no work. The present
-  `ex:computational` exercises are close to this and should be rewritten or absorbed.
-- An exercise that re-derives, with the same numbers, something the section already
-  derived. Change the setting, the hypothesis, or the direction of the question.
-- Anything whose solution needs machinery outside `prereq.Rnw` and the earlier units. If a
-  good exercise needs a new result, the result goes into `prereq.Rnw` **with a proof**
-  (`CONVENTIONS.md` §1), or the exercise goes.
-
-### Non-negotiable
-
-- **Never state a numerical claim you have not run** (`CONVENTIONS.md` §3). Every number in
-  a new exercise or solution must be computed. Use a scratch R script; if the number belongs
-  in the document, it goes in a chunk.
-- No em-dashes: `grep -c -- '---' *.Rnw` must stay 0.
-- Solutions must not forward-cite either.
-
----
-
-## 6. SOA sample questions
-
-`asm/srm/srm_body.tex` holds the live SOA sample questions in
-`\begin{question}{N}...\end{question}` followed by `\begin{solution}{N}{LETTER}`. Questions
-17, 28, 47 and 65 were **deleted from the syllabus** (see the header notes in that file) and
-must not be used.
-
-**Only computational questions may be used** (rule 2 above). A first pass over the 71 live
-questions splits them as
-
-* **computational** (the official solution does arithmetic or a derivation):
-  1, 3, 4, 11, 15, 18, 19, 21, 22, 23, 24, 30, 33, 35, 44, 45, 46, 48, 51, 55, 57, 58, 59,
-  62, 63, 64, 66, 67, 68, 69, 70, 72, 73;
-* **applied but table-reading** (a decision rule applied to a printed table; usable if the
-  exercise is extended to reproduce the table): 27, 54;
-* **pure descriptive**, and therefore excluded: 2, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 20,
-  25, 26, 29, 31, 32, 34, 36, 37, 38, 39, 40, 41, 42, 43, 49, 50, 52, 53, 56, 60, 61, 71,
-  74, 75.
-
-Only the ones bearing on units 1--3 have been checked against the question text; the rest
-of the split is a first pass. Note that the exclusion is expensive for the early units:
-**Unit 1's entire allocation (12, 50, 61) is descriptive, so Unit 1 now carries no SOA
-exercise at all.** That is the correct outcome under rule 2, and its exercises draw on ISLR
-instead.
-
-Below is the map from question number to unit. Verify each against the question text before
-using it, and correct this table as you go; the README's SRM appendix promises a
-question→unit map as a deliverable.
-
-Verified so far (question text read against the unit):
-
-* **Unit 01 → 12, 50** only. **61 is AIC/BIC and belongs to Unit 5, not Unit 1.**
-* **Unit 02 → 23, 53** as exercises; 11, 18, 24 and 44 were already worked as *examples* in
-  the body of §2.6.3, so the unit uses six in all. **14 (transforming a response to
-  stabilise variance) belongs to Unit 4; 58 (AR(1) conditional least squares) to Unit 10;
-  70 (AIC from residual sums of squares) to Unit 5.**
-* **Unit 03 → 13, 49, 71** as exercises. **45 (GLM with a log link) belongs to Unit 8 (or
-  7); 67 (logistic likelihood ratio) to Unit 7.** 56 (statements about prediction) and 62
-  (a confidence interval from an estimate and its standard error) are correctly placed in
-  Unit 3 but were judged too thin to carry an exercise and were not used.
-* Of the five formerly unassigned, all five were read: 11 (SSE arithmetic) → 02;
-  19 (likelihood ratio test) → 07 or 08; 27 (drop the predictor with p > 0.05) → 03;
-  44 (F for one added regressor from TSS and RSS) → 02, where it is already Example 2.2;
-  54 (remove the largest p-value first, one at a time) → 05.
-
-| unit | questions (unverified) |
-|------|------------------------|
-| 01 | none usable: 12, 50 descriptive; 61 → unit 05 |
-| 02 | 11 18 24 44 (body examples), 23 (exercise); 53 descriptive, dropped; 14 → 04, 58 → 10, 70 → 05 |
-| 03 | 62, 27 (exercises); 13 49 56 71 descriptive, dropped; 45 → 08, 67 → 07 |
-| 04 | 2 36 42; **+14** |
-| 05 | 5 6 8 10 30 35 37; **+54, +61, +70** |
-| 06 | 68 69 75 |
-| 07 | 3 4 22 34 38 41 52 55 72; **+19** (or 08), **+67** |
-| 08 | 7 20; **+45** |
-| 09 | 21 31 46 |
-| 10 | 64; **+58** |
-| 11 | 9 25 26 29 33 48 51 57 63 66 73 |
-| 12 | 39 74 |
-| 13 | 1 15 16 32 40 43 59 60 |
-| unassigned | none: all five placed above |
-
-Units 10 and 12 look under-served by this pass. The unassigned five have now been read
-and none of them belongs to either, so those two units must be served by re-reading
-questions already assigned elsewhere, or they carry no SOA question and their exercise sets
-draw on the other categories instead.
-
----
-
-## 7. Mechanics
-
-```bash
-cd note
-python build.py 07            # one unit
-python build.py               # everything (slow; several minutes)
-```
-
-**Never run two `build.py` invocations at once** (gotcha 6).
-
-After **every** build, gotcha 37 applies: a green `[OK]` means LaTeX compiled, not that the
-R ran. Extract and read the printed output:
-
-```bash
-grep -c '## Error' unit07.tex          # must be 0
-python3 -c "
-import re, pathlib
-t = pathlib.Path('unit07.tex').read_text()
-for b in re.findall(r'\\\\begin\{Verbatim\}\[fontsize=\\\\small,frame=leftline,framesep=2mm\]\n(.*?)\\\\end\{Verbatim\}', t, re.S):
-    print('====='); print(b.rstrip())
-"
-```
-
-That scan already found two defects in units 04 and 05 that had been signed off as built.
-
-### Per-unit checklist
-
-Work one unit at a time and finish it before starting the next.
-
-- [ ] read the `.Rnw` line by line
-- [ ] task 1: remarks and opening paragraphs triaged
-- [ ] task 2: both forward columns at 0
-- [ ] task 3: exercises expanded, every number run
-- [ ] `grep -c -- '---' unitNN.Rnw` = 0
-- [ ] builds with 0 errors, 0 undefined references
-- [ ] printed output read, `## Error` count 0
-- [ ] page count recorded
-
-| unit | 1 | 2 | 3 | built | pages after |
-|------|---|---|---|-------|-------------|
-| 01 | ✓ | ✓ | ✓ | ✓ | 75 (was 43) |
-| 02 | ✓ | ✓ | ✓ | ✓ | 90 (was 59) |
-| 03 | ✓ | ✓ | ✓ | ✓ | 70 (was 35) |
+| unit | read sources | written | built clean | output read | pages |
+|------|:---:|:---:|:---:|:---:|---:|
+| 01 | ✓ | ✓ | ✓ | ✓ | 108 |
+| 02 | ✓ | ✓ | ✓ | ✓ | 168 |
+| 03 | | | | | |
 | 04 | | | | | |
 | 05 | | | | | |
 | 06 | | | | | |
@@ -387,81 +202,3 @@ Work one unit at a time and finish it before starting the next.
 | 12 | | | | | |
 | 13 | | | | | |
 | 14 | | | | | |
-
-### Notes recorded during the pass
-
-* **Unit 1.** No remark failed the §3 test outright, so all 19 survive; eleven were cut back
-  to their factual core and every preview clause inside them is gone. The four in-unit
-  forward `\ref`s are gone; the twelve forward `Unit M` mentions stay by the §4 exception.
-  10 exercises → 25. The KNN table in §1.5.3 gained a `z` column so the remark about
-  Monte-Carlo error points at a printed number instead of asserting one.
-* **Unit 2.** Repair 4 of §4 was needed once. Unit 2 used $F_{1,\nu}=t_\nu^2$ in Example 2.2
-  and in the $k=1$ remark, and the only proof of it in the course was
-  `cor:t2F` in **Unit 3**, i.e. forward. A corollary "The square of a $t$ is an $F$" with a
-  three-line proof was added to `prereq.Rnw` §P.18 (immediately after the definition of the
-  three laws) and Unit 2 now cites it by name. `prereq` rebuilds at 109 pp, 0 errors.
-* **Unit 2, second restructuring.** The proof of the overall $F$ test cited
-  `Exercise~\ref{ex:HH0}` for the properties of $\bH-\bH_0$, so a theorem depended on an
-  exercise stated later. Those properties are now Lemma 2.20 in §2.6.3 with a proof, the
-  $F$-test proof cites the lemma, and the exercise was rewritten to *use* it (SSR as a
-  squared length, and the invariance of $F$ to the origin and scale of the response).
-* **Unit 3.** Repair 4 of §4 was needed a second time, for a different reason. The proof of
-  the extra-sum-of-squares corollary ended "it coincides with (3.4), both being the same
-  $F$ statistic for the same hypothesis", which is not a proof: having the same law does
-  not make two statistics equal. **Proposition 3.4, Restricted least squares**, was added
-  before it, deriving the constrained minimiser in closed form and with it the exact
-  identity `SSE_R - SSE_U = (Rb-r)'[R(X'X)^{-1}R']^{-1}(Rb-r)`. The corollary's proof is
-  now two lines and strictly stronger (the two forms are the same *number*, not two
-  statistics with a common law), and the old projection argument was dropped. Verified
-  numerically: 4053.2563 both ways on the course example. 11 remarks → 10, 10 exercises →
-  23.
-* **All forward references of every kind are now zero in units 1, 2 and 3**, not only the
-  two kinds the §2 script counts: no forward theorem, lemma, equation or exercise reference
-  either. The one exception preserved is Unit 1's twelve `Unit M` mentions.
-* **Cross-unit `\ref` is a live trap when writing new exercises** (gotcha 10). Three
-  attempts to cite Unit 2's results from a Unit 3 exercise as `\ref{thm:ols-proj}` and the
-  like produced undefined references; they are now named in words. Run the second scan in
-  §4 before building, not after.
-
-### Rescan against the instructor's three rules (§5)
-
-Exercise counts after the rescan: **01: 26 · 02: 28 · 03: 26** (from 10, 13, 10). Solution
-chunks that execute at build time: 17, 14, 16.
-
-* **Removed as pure descriptive:** SOA 12 and 50 from Unit 1, 53 from Unit 2, and 13, 49
-  and 71 from Unit 3. Their *mathematics* was kept where it was worth keeping and rewritten
-  without the multiple-choice frame: the CI-versus-PI limits of 13 and 49 are now
-  Exercise 3.9, deriving `u-t = O(n^{-1/2})` and `w-v → 2 z σ` and the degenerate `s=0`
-  case; the omitted-variable consequences of 71 are part (d) of Exercise 3.23.
-* **Added from ISLR:** §2.4 ex 7 (KNN by hand), §5.4 ex 1 (minimum-variance portfolio,
-  with the bootstrap SE), §5.4 ex 8 (LOOCV over polynomial degree), §5.4 ex 9 (bootstrap on
-  `Boston` medv, median and tenth percentile) to Unit 1; §3.7 ex 5 (fitted values as linear
-  combinations) and §3.7 ex 11 (the t-statistic is symmetric in x and y) to Unit 2;
-  §3.7 ex 3 (GPA/IQ interaction), §3.7 ex 10 (`Carseats` with factors) and §3.7 ex 15
-  (`crim`: marginal against partial coefficients) to Unit 3.
-* **Added from FREES:** ex 3.1 (reconstruct an ANOVA table from `s_y` and `s`), ex 3.2
-  (standard errors, covariance and a linear combination from a printed `(X'X)^{-1}`),
-  ex 3.3 (a four-observation design by hand), ex 4.1 (F from R² at two sample sizes),
-  ex 2.6 (|r| as the geometric mean of the two slopes) and ex 2.9 (a binary regressor gives
-  the two-sample t), all to Unit 2. FREES's chapter 1 and the data-based parts of 2--4 are
-  unusable without its datasets.
-* **`Portfolio` and `Carseats` are in `ISLR2`** and now execute in unit 01 and unit 03
-  chunks; no new package is needed.
-* **Two claims failed when the prose was converted to a live chunk**, which is the point of
-  the conversion. Unit 2's negative-`adjR2` exercise asserted "negative about half the
-  time" from a single draw whose `adjR2` was in fact `+0.056`; it now runs 500 draws and
-  reports 51%. Unit 1's boundary bias-variance exercise said "three orders of magnitude",
-  which is 730-fold.
-* **A printed column that looks like a bug and is not.** In Unit 3's simultaneous-coverage
-  exercise the F-region coverage is bit-identical at every predictor correlation, because
-  `z2 = rho*z1 + sqrt(1-rho^2)*w` leaves the column space unchanged and the F statistic is a
-  function of the projection, not of the basis. The exercise now says so.
-
-### When the pass is finished
-
-- update the page counts in `CONVENTIONS.md` §8;
-- record anything learned as a new numbered gotcha in `CONVENTIONS.md` §6;
-- if the SOA map was verified, say so here and consider moving it into `README.md`'s SRM
-  appendix, which promises it;
-- report to the instructor the Unit 1 course-map question from §4 above, and any place
-  where removing a forward citation cost something real.

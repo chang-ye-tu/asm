@@ -1,0 +1,170 @@
+## FILENAME IS Chap5R.txt
+#  THIS CODE USES THE DATASET Liquidity.csv
+#  THIS CODE USES THE DATASET OutlierExample.csv
+
+#  DATA SNOOPING IN STEPWISE REGRESSION
+set.seed(1237)
+X <- as.data.frame(matrix(rnorm(100*50, mean=0, sd=1), ncol=50))
+colnames(X) <- paste("obs", 1:50, sep="")
+X$y <- with(X, matrix(rnorm(100*1, mean=0, sd=1), ncol=1))
+cor(X[,c("obs1","obs2","obs3","obs4","obs5","obs6","obs7","obs8","obs9","obs10","y")], use="complete.obs")
+
+
+modelStep1 <- lm(y ~ obs1, data=X)
+summary(modelStep1)
+
+modelStep2 <- lm(y ~ obs1 + obs2 + obs3, data=X)
+summary(modelStep2)
+anova(modelStep1,modelStep2)
+
+modelStep3 <- lm(y ~ obs1 + obs2 + obs3 + obs4 + obs5 + obs6 + obs7 + obs8 + obs9 + obs10, data=X)
+summary(modelStep3)
+anova(modelStep2,modelStep3)
+
+modelStep4 = lm(y ~ obs1 + obs2 + obs3 + obs4 + obs5 + obs6 + obs7 + obs8 + obs9 + obs10 + obs11 + obs12 + obs13 + obs14 + obs15 + obs16 + obs17 + obs18 + obs19 + obs20 + obs21 + obs22 + obs23 + obs24 + obs25 + obs26 + obs27 + obs28 + obs29 + obs30 + obs31 + obs32 + obs33 + obs34 + obs35 + obs36 + obs37 + obs38 + obs39 + obs40 + obs41 + obs42 + obs43 + obs44 + obs45 + obs46 + obs47 + obs48 + obs49 + obs50, data=X)
+summary(modelStep4)
+anova(modelStep3,modelStep4)
+
+#  STEPWISE REGRESSION, k CONTROLS THE COMPLEXITY OF THE MODEL
+library(Rcmdr)
+stepwise(modelStep4, direction='backward/forward', criterion='BIC')
+#  The function "stepwise" is in the Rcmdr library. Alternatively, you can use "step" function as below:
+#  step(modelStep4, k=log(length(y)))
+#  You can check the model of those three explanatory variables to see whether all of them are significant
+modelStep5 <- lm(y ~ obs27 + obs29 + obs32, data=X)
+summary(modelStep5)
+
+#  SOME ALTERNATIVES
+#  stepwise(modelStep3, direction='backward', criterion='AIC')
+
+#  LIQUIDITY DATA SET
+liqui <- read.table(choose.files(), header=TRUE, sep=",")
+names(liqui)
+attach(liqui)
+fix(liqui) 
+
+#  TABLE 5.2 SUMMARY STATS
+library(abind)
+numSummary(liqui[,c("AVGT", "DEBEQ", "NTRAN", "PRICE", "SHARE", "VALUE", "VOLUME")], statistics=c("mean", "sd", "quantiles"), quantiles=c(0,.5,1))
+
+#  TABLE 5.3 CORRELATIONS
+cor(liqui[,c("AVGT","DEBEQ","NTRAN","PRICE","SHARE","VALUE","VOLUME")], use="complete.obs")
+
+#  FIGURE 5.2
+scatterplot.matrix(~AVGT+DEBEQ+NTRAN+PRICE+SHARE+VALUE+VOLUME, 
+  reg.line=FALSE, smooth=FALSE, diagonal = 'none', upper.panel=NULL,xaxt="n",yaxt="n",gap=0,cex.labels=1, data=liqui)
+#  Alternatively, you can use the code below
+#  Xymat <- data.frame(AVGT,NTRAN,PRICE,SHARE,VALUE,DEBEQ,VOLUME)
+#  pairs(Xymat,upper.panel=NULL,xaxt="n",yaxt="n",gap=0,cex.labels=1)
+
+#  FIRST REGRESSION
+model1 <- lm(VOLUME ~ NTRAN, data=liqui)
+summary(model1)
+
+#  TABLE 5.4 TABLE OF CORRELATIONS
+liqui$residuals.model1 <- residuals(model1)
+cor(liqui[,c("residuals.model1","AVGT","DEBEQ","PRICE","SHARE","VALUE")], use="complete.obs")
+
+#  SECOND REGRESSION
+model2 <- lm(VOLUME ~ NTRAN + AVGT, data=liqui)
+summary(model2)
+
+#  TABLE 5.5 TABLE OF CORRELATIONS
+liqui$residuals.model2 <- residuals(model2)
+cor(liqui[,c("residuals.model2","DEBEQ","PRICE","SHARE","VALUE")], use="complete.obs")
+
+#  FIGURE 5.3
+layout(matrix(c(1,2,3,4,5,6,7,8,9,10),byrow=TRUE,ncol=5))
+par("oma"=c(3,3,3,3),"mai"=c(0,0,0.1,0))
+plot.new()
+Hist(liqui$PRICE,scale="frequency",breaks=18,main="PRICE",xaxt="n",yaxt="n")
+Hist(liqui$SHARE,scale="frequency",breaks=12,main="SHARE",xaxt="n",yaxt="n")
+Hist(liqui$VALUE,scale="frequency",reaks=12,main="VALUE",xaxt="n",yaxt="n")
+Hist(liqui$DEBEQ,scale="frequency",breaks=12,main="DEBEQ",xaxt="n",yaxt="n")
+Hist(liqui$residuals.model2,scale="frequency",breaks=20,main="Residuals",xaxt="n",yaxt="n")
+
+plot(liqui$PRICE,liqui$residuals.model2,xaxt="n",yaxt="n",xlab="",ylab="")
+plot(liqui$SHARE,liqui$residuals.model2,xaxt="n",yaxt="n",xlab="",ylab="")
+plot(liqui$VALUE,liqui$residuals.model2,xaxt="n",yaxt="n",xlab="",ylab="")
+plot(liqui$DEBEQ,liqui$residuals.model2,xaxt="n",yaxt="n",xlab="",ylab="")
+dev.off()
+
+#  INFLUENTIAL POINT EXAMPLE
+#  THIS CODE USES THE DATASET OutlierExample.csv
+detach(liqui)
+OUTLR <- read.table(choose.files(), header=TRUE, sep=",")
+fix(OUTLR)
+
+#  ANALYSIS WITH POINT A
+OUTLR$Tcheck <- with(OUTLR, (CODES==0)+(CODES==1))
+OUTLR20 <- subset(OUTLR, subset=Tcheck==1) 
+modelA <- lm(Y ~ X, data=OUTLR20)
+summary(modelA)
+OUTLR20$hatvalues.modelA <- hatvalues(modelA)
+OUTLR20$cooks.distance.modelA <- cooks.distance(modelA)
+OUTLR20$rstudent.modelA <- rstudent(modelA)
+
+#  ANALYSIS WITH POINT B
+OUTLR$Tcheck <- with(OUTLR, (CODES==0)+(CODES==2))
+OUTLR21 <- subset(OUTLR, subset=Tcheck==1) 
+modelB <- lm(Y ~ X, data=OUTLR21)
+summary(modelB)
+OUTLR21$hatvalues.modelB <- hatvalues(modelB)
+OUTLR21$cooks.distance.modelB <- cooks.distance(modelB)
+OUTLR21$rstudent.modelB <- rstudent(modelB)
+
+#  ANALYSIS WITH POINT C
+OUTLR$Tcheck <- with(OUTLR, (CODES==0)+(CODES==3))
+OUTLR22 <- subset(OUTLR, subset=Tcheck==1) 
+modelC <- lm(Y ~ X, data=OUTLR22)
+summary(modelC)
+OUTLR22$hatvalues.modelC <- hatvalues(modelC)
+OUTLR22$cooks.distance.modelC <- cooks.distance(modelC)
+OUTLR22$rstudent.modelC <- rstudent(modelC)
+
+detach(OUTLR)
+attach(liqui)
+modelVol <- lm(VOLUME ~ PRICE + SHARE + VALUE, data=liqui)
+summary(modelVol)
+vif(modelVol)
+#  Alternatively, if you are not in the Rcmdr library, install the library(faraway) first, then you'll find the "vif" function.
+
+#  CHECK ON VIF'S
+temp <- summary(lm(PRICE ~ SHARE + VALUE))
+1/(1-temp$r.squared)
+
+#  SHOW DIAGNOSTIC FEATURES
+oldpar <- par(oma=c(0,0,3,0), mfrow=c(2,2))
+plot(modelVol)
+par(oldpar)
+dev.off()
+
+# Influence Plot 
+influencePlot(modelVol, labels=FALSE)
+#  Alternatively, if you are not in the Rcmdr library, install the library(car) first, then you'll find the "influenceplot" function.
+hatvalues(modelVol)[60]
+residuals(modelVol)[60]
+#  STANDARDIZED RESIDUAL
+rstandard(modelVol)[60]
+#  you can also check using the following code: 
+#  stdres <-residuals(modelVol)[60]/((summary(modelVol))$sigma*sqrt(1-hatvalues(modelVol)[60]))
+#  stdres
+#  STUDENTIZED RESIDUAL
+rstudent(modelVol)[60]
+#  COOK'S DISTANCE
+cooks.distance(modelVol)[60]
+#  you can also check using the following code: 
+#  cooks<-stdres^2*hatvalues(modelVol)[60]/(4*(1-hatvalues(modelVol)[60]))
+#  cooks
+
+#  Heteroscedasticity-Corrected Covariance Matrices in car Package
+?hccm
+hccm(modelVol, type=c("hc0") )
+anova(modelVol)                    #base stat anova
+                                   #It calculates sequential ("type-I") tests.
+Anova(modelVol, type="III" )     #car Anova, type III sum of squares
+summary(modelVol)		           #note that t^2 = F
+Anova(modelVol, white.adj="hc3")   #car Anova with Hetero-Correction,
+                                  # works under a ealier version
+                                  # does not work in R2.10
+

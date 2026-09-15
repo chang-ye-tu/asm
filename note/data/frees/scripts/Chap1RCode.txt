@@ -1,0 +1,108 @@
+#  FILENAME IS Chap1RCode.txt  ;
+#  LINE ENTRIES AFTER THE POUND SIGN (#) ARE JUST COMMENTS
+#  This file uses datafile "Massachusetts Bodily Injury"
+
+#  READ IN THE DATA AS A TEXT FILE
+injury <- read.table(choose.files(), header=TRUE, sep=",")
+#  Alternatively, you can use the code below as well
+#  injury <- read.csv(choose.files(),header=TRUE)
+
+#  CHECK THE NAMES, DIMENSION IN THE FILE AND LIST THE FIRST 8 OBSERVATIONS  ;
+names (injury)
+dim(injury)
+injury [1:8,]
+
+#  TO LOOK AT THE DATA, OPEN AN EDITOR
+fix(injury)
+
+#  PICK THE SUBSET OF THE DATA CORRESPONDING TO PROVIDER A
+injury2 <- subset(injury, subset=providerA!=0)
+attach(injury2)
+
+#  CREATE LOG TRANSFORM
+injury2$LOGCLAIMS <- with(injury2, log(claims))
+
+#  TABLE 1.2 SUMMARY STATISTICS
+library(Rcmdr)
+library(abind)
+numSummary(injury2[,"LOGCLAIMS"], statistics=c("mean", "sd", "quantiles"), 
+  quantiles=c(0,.5,1))
+
+#  The above "numSummary" function is only available in Rcmdr library, which will bring up the R Commander window, but you don't have to keep the R Commander window open to use its library function. 
+#  Alternatively, you can use the following codes without opening the Rcmdr library:
+summary(injury2$LOGCLAIMS)
+sd(injury2$LOGCLAIMS) 
+
+
+#  BASIC HISTOGRAMS
+Hist(injury2$claims, scale="frequency")
+Hist(injury2$LOGCLAIMS, scale="frequency")
+dev.off()
+
+#  The "Hist" function is only available in the Rcmdr library, alternatively, you can use the following codes without opening the Rcmdr library:
+#  hist(injury2$claims)
+#  hist(injury2$LOGCLAIMS)
+#  Note the difference between "h" and capital "H" in the "hist" and "Hist" sentence here. 
+  
+#  FIGURE 1.2 HISTOGRAM WITH NORMAL CURVE SUPERIMPOSED
+x <- seq(-4, 4, 0.01)
+y <- dnorm(x, mean=mean(injury2$LOGCLAIMS), sd=sqrt(var(injury2$LOGCLAIMS)))
+Hist(injury2$LOGCLAIMS, scale="density", main="")
+lines(x,y, col='blue')
+dev.off()
+
+# BASIC BOXPLOT
+boxplot(injury2$LOGCLAIMS, ylab="LOGCLAIMS")
+
+#  FIGURE 1.3 BOXPLOT WITH ANNOTATION
+boxplot(injury2$LOGCLAIMS, main="Boxplot of LogClaims")
+text(1, 0.7, "median", cex=0.7)
+text(1, -0.35, "25th percentile", cex=0.7)
+text(1, 1.05, "75th percentile", cex=0.7)
+arrows(1.05, -2, 1.05, -3.3, col="blue", code=3, angle=20, length=0.1)
+text(1.1, -2.5, "outliers", cex=0.7)
+text(1.1, 4, "outlier", cex=0.7)
+dev.off()
+
+#  FIGURE 1.4
+Hist(injury2$LOGCLAIMS, scale="density", breaks=32, main="")
+#  Alternatively, you can use the code below as well:
+#  hist(injury2$LOGCLAIMS, freq=FALSE, nclass=32, main="") 
+lines(x,y)
+
+#  FIGURE 1.5 QUANTILE - QUANTILE PLOT
+qq.plot(injury2$LOGCLAIMS, dist= "norm", labels=FALSE)  
+#  The "qq.plot" function is only available in the Rcmdr library, alternatively, you can use the following codes without opening the Rcmdr library:
+#  qqnorm(injury2$LOGCLAIMS)
+#  qqline(injury2$LOGCLAIMS) 
+
+#  AN ALTERNATIVE WAY OF CREATING A REFERENCE LINE (instead of the qqline)
+#  z <- seq(-3, 3, 0.01)
+#  lines(z,z)
+
+#  FIGURE 1.6 - HISTOGRAM WITH LARGEST CLAIM REMOVED
+injury3 <- subset(injury, subset=claims<25)
+Hist(injury3$claims, scale="density", main="")
+dev.off()
+
+#  FIGURE 1.7 - SIMULATE CHI-SQUARE, CREATE 3 TRANSFORMATIONS
+set.seed(1237)
+ChisquareSamples <- as.data.frame(matrix(rchisq(500*1, df=2), ncol=1))
+colnames(ChisquareSamples) <- "obs"
+ChisquareSamples$X1 <- with(ChisquareSamples, 10000*obs)
+ChisquareSamples$X2 <- with(ChisquareSamples, sqrt(X1))
+ChisquareSamples$X3 <- with(ChisquareSamples, log(X1))
+ChisquareSamples$X4 <- with(ChisquareSamples, -1/(X1))
+
+par(mfrow=c(2, 2))
+
+Hist(ChisquareSamples$X1, scale="density", breaks=16)
+
+Hist(ChisquareSamples$X2, scale="density", breaks=16)
+
+Hist(ChisquareSamples$X3, scale="density", breaks=16)
+
+Hist(ChisquareSamples$X4, scale="density", breaks=16)
+
+dev.off()
+

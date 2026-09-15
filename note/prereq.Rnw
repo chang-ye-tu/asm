@@ -48,15 +48,6 @@ knitr::opts_chunk$set(fig.path = "figs/prereq-")
 
 \setcounter{page}{1}
 
-This is the single source for the analysis, linear algebra and measure-theoretic
-probability the course uses. Every result stated in a unit without proof is proved here.
-
-\textbf{What is assumed.} The completeness of $\Real$, and the Lebesgue integral on a
-measure space together with its four convergence theorems: monotone convergence,
-Fatou's lemma, dominated convergence, and Fubini--Tonelli. These are stated in
-§\ref{sec:P.13} for reference and are the only unproved statements in the course.
-Everything above them is derived.
-
 %##############################################################################
 \coursepart{I}{Analysis}
 %##############################################################################
@@ -64,8 +55,6 @@ Everything above them is derived.
 %==============================================================================
 \section{The Real Line}\label{sec:P.0}
 %==============================================================================
-
-Nothing beyond this section is assumed of analysis.
 
 \begin{definition}[Supremum]\label{def:sup}
 $s$ is the \emph{supremum} of $S\subseteq\Real$ if $s$ is an upper bound and no smaller
@@ -165,13 +154,6 @@ Also $q_n(x)\to\partial f/\partial t(t,x)$ pointwise by (ii). Dominated converge
 $\int q_n\,\dd\mu\to\int\partial f/\partial t\,\dd\mu$, and the left side is
 $\{F(t+h_n)-F(t)\}/h_n$. As the sequence $(h_n)$ was arbitrary, the limit defines $F'(t)$.
 \end{proof}
-
-\begin{remark}
-Theorem~\ref{thm:diff-int} is what licenses the differentiation under the integral in the
-Gaussian characteristic function (Proposition~\ref{prop:cf-gauss}), where
-$f(t,z)=e^{itz}\phi(z)$ has $|\partial f/\partial t|=|z|\phi(z)$, integrable and free of
-$t$.
-\end{remark}
 
 %==============================================================================
 \section{Limits and Semi-continuity}\label{sec:P.1}
@@ -308,9 +290,6 @@ modulus at most $1$.
 %==============================================================================
 \section{Convexity and Separation}\label{sec:P.3}
 %==============================================================================
-
-Unit 14 derives the support vector machine from Lagrangian duality; the geometry it needs
-is here.
 
 \begin{definition}[Convex set, convex function]\label{def:convex}
 $C\subseteq\Real^d$ is \emph{convex} if $\lambda x+(1-\lambda)y\in C$ whenever
@@ -460,7 +439,7 @@ between them.
 \section{Convex Programming and Duality}\label{sec:P.3b}
 %==============================================================================
 
-Unit 14 derives the support vector machine as a convex program. Consider
+Consider
 \begin{equation}\label{eq:primal}
 p^\star = \inf\ f_0(x) \quad\text{subject to}\quad f_i(x)\leqslant0,\ i=1,\ldots,m,
 \qquad x\in\calD\subseteq\Real^d ,
@@ -576,7 +555,7 @@ is feasible and $\blam^\star\geqslant\bzero$, weak duality closes the gap.
 \end{proof}
 
 \begin{remark}
-Complementary slackness is what makes support vectors: $\lambda_i^\star>0$ forces
+Complementary slackness produces the support vectors: $\lambda_i^\star>0$ forces
 $f_i(x^\star)=0$, so only the observations whose margin constraint is active carry a
 nonzero multiplier, and the solution depends on those alone.
 \end{remark}
@@ -654,10 +633,8 @@ For~\ref{tr:iv}, the $(i,i)$ entry of $\bA'\bA$ is $\sum_j a_{ji}^2$.
 \end{proof}
 
 \begin{remark}
-Property~\ref{tr:iii} is what makes $\tr(\bA)$ well defined on a linear map rather than on
-a matrix, and it is the step used in Lemma~\ref{lem:idempotent} to pass from
-$\bP\bLam\bP^{-1}$ to $\bLam$. Property~\ref{tr:ii} is used in
-Lemma~\ref{lem:quadratic-form}.
+Property~\ref{tr:iii} makes $\tr(\bA)$ well defined on a linear map rather than on a
+matrix.
 \end{remark}
 
 %==============================================================================
@@ -948,13 +925,11 @@ Proposition~\ref{prop:opnorm} its condition number is $d_1^2/d_r^2=(d_1/d_r)^2$.
 \end{proof}
 
 \begin{remark}
-Corollary~\ref{cor:kappa-square} is the reason least squares is computed from a $\bQ\bR$
+Corollary~\ref{cor:kappa-square} is why least squares is computed from a $\bQ\bR$
 factorisation of $\bX$ rather than by forming $\bX'\bX$: the latter squares the condition
-number, so a design that is merely ill-conditioned becomes numerically singular. It is also
-the quantitative form of the collinearity diagnostics of Unit 4: a large
-$\kappa(\bX'\bX)$ and a large variance inflation factor detect the same
-near-degeneracy, the first through the spectrum of $\bX'\bX$ and the second one predictor
-at a time.
+number, so a design that is merely ill-conditioned becomes numerically singular. A large
+$\kappa(\bX'\bX)$ and a large variance inflation factor detect the same near-degeneracy,
+the first through the spectrum of $\bX'\bX$ and the second one predictor at a time.
 \end{remark}
 
 %==============================================================================
@@ -1049,7 +1024,6 @@ The following are the only statements in the course used without proof.
 \item \emph{Fubini--Tonelli.} For $\sigma$-finite measures, a non-negative or
       absolutely integrable function of two variables may be integrated in either order.
 \end{enumerate}
-Everything else in this document is derived from them.
 \end{remark}
 
 %==============================================================================
@@ -1121,11 +1095,6 @@ $N<\infty$ almost surely.
 \section{Conditional Expectation}\label{sec:P.16}
 %==============================================================================
 
-Unit 1 defines the regression function as $f^\ast(x)=\expc[Y\mid X=x]$ and proves it is the
-best squared-error predictor. That statement rests on the following construction, which is
-itself an orthogonal projection, the same one as Theorem~\ref{thm:projection}, in
-$L^2$ rather than $\Real^n$.
-
 \begin{definition}[$L^2$ and its inner product]\label{def:L2}
 $L^2(\Omega,\calF,\prb)$ is the space of random variables with $\expc[X^2]<\infty$,
 with $\langle X,Y\rangle=\expc[XY]$, variables equal almost surely being identified.
@@ -1154,9 +1123,7 @@ Theorem~\ref{thm:projection}'s characterisation transported to $L^2$.
 \begin{remark}
 Taking $W=\indc_G$ for $G\in\calG$ turns~\eqref{eq:condexp} into the familiar
 $\expc[X\indc_G]=\expc[\expc[X\mid\calG]\indc_G]$. For $X\in L^1\setminus L^2$ the same
-object is obtained by approximating with truncations $X\wedge m\vee(-m)$ and passing to the
-limit by dominated convergence; the course needs only the $L^2$ case, where the projection
-interpretation is exactly what Unit 1 uses.
+object is obtained by approximating with truncations $X\wedge m\vee(-m)$ and passing to the limit by dominated convergence.
 \end{remark}
 
 \begin{proposition}[Tower property]\label{prop:tower}
@@ -1662,10 +1629,8 @@ the whole sequence converges in probability.
 \end{proof}
 
 \begin{remark}
-The three uses in this course are all of the everywhere-continuous kind: $\bv\mapsto\bv'\bA\bv$
-for a fixed matrix, $\bA\mapsto\bA^{-1}$ on the open set of invertible matrices, and
-$x\mapsto\sqrt{x}$ on $(0,\infty)$. The measurable version is stated because the natural
-statement of Slutsky's theorem needs a map that is continuous only at the relevant limit.
+The measurable version is stated because the natural statement of Slutsky's theorem needs
+a map that is continuous only at the relevant limit.
 \end{remark}
 
 %==============================================================================
@@ -1709,8 +1674,7 @@ $c\neq0$ with probability one.
 \end{proof}
 
 \begin{remark}
-No independence between $X_n$ and $Y_n$ is assumed, which is what makes the theorem usable:
-in applications $Y_n$ is typically an estimator computed from the same data as $X_n$, such
+No independence between $X_n$ and $Y_n$ is assumed: in applications $Y_n$ is typically an estimator computed from the same data as $X_n$, such
 as $s^2$ or $\hat\tau^2$.
 \end{remark}
 
@@ -1720,9 +1684,7 @@ as $s^2$ or $\hat\tau^2$.
 
 A \emph{triangular array} is a doubly indexed collection $\{\xi_{nj} : 1\leqslant j\leqslant
 k_n\}$ of random variables, independent within each row $n$. Nothing is assumed across
-rows, and the row entries need not be identically distributed, which is what the
-regression applications require, since there the summands carry non-identical weights
-$\bz_i$.
+rows, and the row entries need not be identically distributed.
 
 \begin{theorem}[Lindeberg--Feller]\label{thm:LF}
 Let $\{\xi_{nj}\}$ be a triangular array with $\expc[\xi_{nj}]=0$ and
@@ -1854,8 +1816,7 @@ $\langle\theta,V\rangle$ for $V\sim N(\bzero,\tau^2\bQ)$.
 
 \begin{remark}
 The condition $n^{-1}\max_i|\bz_i|^2\to0$ says no single observation dominates the design.
-In regression terms it is implied by $\max_i h_{ii}\to0$, the same condition that appears
-in Unit 4; without it one observation can carry a non-vanishing share of the sum and no
+In regression terms it is implied by $\max_i h_{ii}\to0$; without it one observation can carry a non-vanishing share of the sum and no
 central limit theorem holds.
 \end{remark}
 
@@ -1887,9 +1848,7 @@ $n^{-1/2}\sum_i\langle\theta,\bW_i\rangle\convd N(0,\theta'\bF\theta)$.
 \begin{remark}
 Corollary~\ref{cor:weighted} keeps the variance common and lets the weights vary;
 Corollary~\ref{cor:bounded-clt} lets the variance vary and pays for it with a uniform
-bound on the summands. The score of a binary regression, $\sum_i\bx_i(y_i-\pi_i)$, has
-both features and is bounded whenever the design is, so it is the second form that Unit 7
-uses.
+bound on the summands. The score of a binary regression, $\sum_i\bx_i(y_i-\pi_i)$, has both features and is bounded whenever the design is, so it falls under the second.
 \end{remark}
 
 \begin{corollary}[Lyapunov]\label{cor:lyapunov}
@@ -1917,23 +1876,13 @@ the proof.
 \end{proof}
 
 \begin{remark}
-A Poisson score $\sum_i\bx_i(y_i-\mu_i)$ is not bounded, so Unit 8 uses
-Corollary~\ref{cor:lyapunov} where Unit 7 used Corollary~\ref{cor:bounded-clt}; any
+A Poisson score $\sum_i\bx_i(y_i-\mu_i)$ is not bounded, so Corollary~\ref{cor:lyapunov} applies to it where Corollary~\ref{cor:bounded-clt} does not; any
 $\delta>0$ will do, and $\delta=2$ needs only bounded fourth moments.
 \end{remark}
 
 %==============================================================================
 \section{Dependent Summands}\label{sec:P.24d}
 %==============================================================================
-
-Every central limit theorem above assumes the summands independent. A regression of a
-series on its own past breaks that at the first step: the least squares estimator of an
-autoregression carries $\sum_t y_{t-1}\varepsilon_t$ in its numerator, and $y_{t-1}$ is
-built from $\varepsilon_{t-1},\varepsilon_{t-2},\ldots$, so the summands are uncorrelated
-but not independent and Theorem~\ref{thm:LF} does not reach them. Three results close the
-gap: a law of large numbers for correlated sequences, a central limit theorem for sequences
-whose dependence has finite range, and a device that passes from the second to sequences
-whose dependence has infinite range.
 
 \begin{definition}[Weak stationarity]\label{def:wstat}
 A sequence $\{X_t\}_{t\in\mathbb{Z}}$ with $\expc[X_t^2]<\infty$ is \emph{weakly
@@ -2126,10 +2075,6 @@ $\limsup_n\prb\{|S_n-S_n^{(p)}|>\varepsilon\}\leqslant 2mC/\{(p+m)\varepsilon^2\
 tends to $0$ as $p\to\infty$. Lemma~\ref{lem:approx-clt} completes the proof.
 \end{proof}
 
-The last step of the section removes the restriction to finite-range dependence in the one
-case the course needs, a product of a present innovation with a linear function of the past.
-Everything is phrased inside $L^2$, so no conditioning on infinite families is required.
-
 \begin{definition}[The past space]\label{def:past}
 Let $\{\varepsilon_t\}_{t\in\mathbb{Z}}$ be independent and identically distributed with
 mean $0$ and variance $\tau^2\in(0,\infty)$. Let $\calL_t$ be the closure in
@@ -2306,11 +2251,6 @@ Theorem~\ref{thm:slutsky}\ref{sl:iii}. One more application of Slutsky adds the 
 \section{Maximum Likelihood}\label{sec:P.ML}
 %==============================================================================
 
-Units 7 and 8 fit their models by maximum likelihood and test with the Wald and likelihood
-ratio statistics. The results are collected here for independent but not identically
-distributed observations, which is what a regression design produces, and under a
-concavity hypothesis, which every model in those units satisfies.
-
 \subsection{Score and information}\label{sec:P.ML.1}
 
 \begin{definition}[Log-likelihood, score, information]\label{def:score}
@@ -2363,8 +2303,7 @@ Finally $\var(\bU)=\expc[\bU\bU']$ because $\expc[\bU]=\bzero$.
 \end{proof}
 
 \begin{remark}
-When $\mu$ is counting measure on a finite set, as for the Bernoulli and multinomial
-families of Unit 7, the integrals are finite sums and the domination hypothesis is
+When $\mu$ is counting measure on a finite set, as for the Bernoulli and multinomial families, the integrals are finite sums and the domination hypothesis is
 automatic. The equality of the two expressions for $\calI$ in~\eqref{eq:score-identities} is
 the \emph{information equality}; it is a property of the model at the true parameter, not
 an identity in $\btheta$ for a misspecified one.
@@ -2413,8 +2352,7 @@ Then, writing $\lambda=\lambda_{\min}(\bG)>0$:
 $\bG$ is the limiting curvature of the criterion and $\bF$ the limiting variance of its
 gradient. When $\ell_n$ is the log-likelihood of a correctly specified model the two agree,
 by the information equality of Lemma~\ref{lem:score}, and~\ref{mle:iv} applies. When only
-the mean is correctly specified they need not, and~\ref{mle:iii} leaves the
-\emph{sandwich} $\bG^{-1}\bF\bG^{-1}$, which is what Unit 8 needs for overdispersed counts.
+the mean is correctly specified they need not, and~\ref{mle:iii} leaves the \emph{sandwich} $\bG^{-1}\bF\bG^{-1}$.
 \end{remark}
 
 \begin{proof}
@@ -2576,8 +2514,7 @@ Theorem~\ref{thm:quadratic-chisq}.
 \begin{remark}
 The three statistics use different parts of the same expansion: Wald uses $\hat\btheta_n$ and
 the curvature at it, the likelihood ratio uses the heights of the two fitted
-log-likelihoods, and both are $\chi^2_q$ in the limit. They are not equal in finite
-samples, and Unit 7 exhibits a data set on which they disagree.
+log-likelihoods, and both are $\chi^2_q$ in the limit. They are not equal in finite samples.
 \end{remark}
 
 %==============================================================================
@@ -2607,31 +2544,20 @@ is $\chi^2_p$ by definition.
 \end{proof}
 
 \begin{remark}[The Breusch--Pagan statistic]
-Unit 4 needs exactly this. There $V_n = n^{-1/2}\bZ'\bg$ is shown to satisfy
+In Unit 4, $V_n = n^{-1/2}\bZ'\bg$ satisfies
 $V_n\convd N(\bzero,\ \kappa\bQ)$ by Corollary~\ref{cor:weighted}: the summands
 $\bz_i(\varepsilon_i^2/\sigma^2-1)$ are independent, mean zero, and carry non-identical
-weights, which is why the Lindeberg--Feller form is required and the
-identically-distributed Corollary~\ref{cor:iid-clt} is not enough. The constant is
+weights, so the Lindeberg--Feller form is required and the identically-distributed Corollary~\ref{cor:iid-clt} does not apply. The constant is
 $\kappa=2$ under normality and $\kappa=\tau^2/\sigma^4$ in general. The empirical
 $n^{-1}\bZ'\bM_0\bZ$ converges to $\bQ$, so Theorem~\ref{thm:quadform} delivers the
-$\chi^2_p$ limit, and Slutsky is what allows the unknown $\sigma^2$ and $\kappa$ to be
-replaced by consistent estimates without changing the limit.
-\end{remark}
-
-\begin{remark}[Where else]
-Units 7--8 use Theorem~\ref{thm:delta} for the asymptotic distribution of functions of the
-maximum likelihood estimator, Theorem~\ref{thm:quadform} for the Wald statistic, and
-Theorem~\ref{thm:slutsky} to substitute the observed information for its expectation.
-Unit 10 uses Theorem~\ref{thm:LF} for the least squares estimator of an autoregression,
-where the summands $y_{t-1}\varepsilon_t$ are again not identically distributed.
+$\chi^2_p$ limit, and Slutsky's theorem lets the unknown $\sigma^2$ and $\kappa$ be replaced by consistent estimates without changing the limit.
 \end{remark}
 
 %==============================================================================
 \section{Numerical Illustration}\label{sec:P.27}
 %==============================================================================
 
-The Lindeberg condition is not a technicality: when it fails, the conclusion fails. The
-array below has $\sum_j\var(\xi_{nj})=1$ for every $n$ and mean zero, but one summand
+The array below has $\sum_j\var(\xi_{nj})=1$ for every $n$ and mean zero, but one summand
 carries a fixed share of the variance, violating Step 1 of the proof of
 Theorem~\ref{thm:LF}.
 
@@ -2680,8 +2606,7 @@ sum of two normals and so is itself exactly normal. The illustration is that the
 not reached \emph{by accumulation}, the dominant term never becoming negligible.}
 \end{figure}
 
-Corollary~\ref{cor:weighted} is what the regression applications use. Its two design
-conditions are limits and so cannot be verified on a single sample; what a sample does show
+The two design conditions of Corollary~\ref{cor:weighted} are limits and so cannot be verified on a single sample; what a sample does show
 is the finite-$n$ quantity behind the second of them, the largest share of
 $\sum_i|\bz_i|^2$ carried by one observation. If that share is small the design is far from
 the degenerate case, and if it is close to $1$ no central limit theorem applies however
@@ -2718,7 +2643,7 @@ The simulated statistic has the mean, variance and upper tail of a $\chi^2_1$, w
 Theorem~\ref{thm:quadform} with the covariance $\kappa\bQ$ and $\kappa=2$ supplied by
 Corollary~\ref{cor:weighted} under normality.
 
-Theorem~\ref{thm:ar-score-clt} makes two claims that can be separated. The variance of
+The variance of
 $n^{-1/2}\sum_tu_{t-1}\varepsilon_t$ is $\tau^4\sum_j a_j^2$ \emph{exactly}, for every $n$,
 by Corollary~\ref{cor:mds}; what the theorem adds is that the law is asymptotically normal.
 Both are checked below for $a_j=\phi^j$ with $\phi=0.8$, the score of a first-order

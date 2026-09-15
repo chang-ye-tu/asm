@@ -38,7 +38,7 @@ library(ISLR2)
 \setcounter{page}{1}
 
 %==============================================================================
-\section{The Iterative Modelling Process}\label{sec:4.1}
+\section{Assumptions and Their Diagnostics}\label{sec:4.1}
 %==============================================================================
 
 \begin{reading}
@@ -46,25 +46,22 @@ FREES §5.1.
 \end{reading}
 
 \begin{remark}
-Fitting is one step of a loop: specify a model, fit it, criticise the fit, respecify. The
-criticism step is this unit. Each of the classical assumptions of Unit 2 has a diagnostic
-attached to it, and a different remedy:
+Each classical assumption of Unit 2 has a diagnostic:
 \begin{ctab}[\small]
-\begin{tabular}{@{}lll@{}}
+\begin{tabular}{@{}ll@{}}
 \toprule
-Assumption & Diagnostic & Section \\
+Assumption & Diagnostic \\
 \midrule
-\Aref{1} linearity           & residuals against fitted values      & §\ref{sec:4.2} \\
-\Aref{3} constant variance   & residual spread against fitted values; Breusch--Pagan & §\ref{sec:4.5} \\
-\Aref{3} uncorrelated errors & residuals against time or index      & Unit 9 \\
-\Aref{4} full rank           & VIF, condition number                & §\ref{sec:4.4} \\
-\Aref{5} normality           & normal quantile plot of residuals    & §\ref{sec:4.2} \\
-(none)                       & leverage, Cook's distance            & §\ref{sec:4.3} \\
+\Aref{1} linearity           & residuals against fitted values \\
+\Aref{3} constant variance   & residual spread against fitted values; Breusch--Pagan \\
+\Aref{3} uncorrelated errors & residuals against time or index \\
+\Aref{4} full rank           & VIF, condition number \\
+\Aref{5} normality           & normal quantile plot of residuals \\
+(none)                       & leverage, Cook's distance \\
 \bottomrule
 \end{tabular}
 \end{ctab}
-The last row has no assumption attached: an influential observation violates nothing, but a
-conclusion resting on one observation is worth knowing about.
+An influential observation violates no assumption.
 \end{remark}
 
 %==============================================================================
@@ -111,8 +108,7 @@ degrees of freedom $n-1-k-1 = n-k-2$ gives~\eqref{eq:s2i}.
 \begin{remark}
 $t_i$ has a $t_{n-k-2}$ distribution under \Aref{1}--\Aref{5}, whereas $r_i$ does not have
 a $t$ distribution at all: its numerator and denominator both contain $e_i$, so an
-observation with a large residual inflates $s$ and partly hides itself. Deleting the
-observation from the variance estimate removes that feedback, which is why $t_i$ is the
+observation with a large residual inflates $s$ and partly hides itself. Deleting the observation from the variance estimate removes that feedback, so $t_i$ is the
 statistic for testing whether observation $i$ is an outlier. The conventional flag is
 $|r_i| > 2$.
 \end{remark}
@@ -197,8 +193,7 @@ substituting $e_i^2 = r_i^2 s^2 (1-h_{ii})$ gives the second.
 
 \begin{remark}
 The second form separates the two ingredients: $r_i^2$ measures how unusual the response
-is and $h_{ii}/(1-h_{ii})$ how unusual the predictors are. $D_i$ is large only when both
-are appreciable, which is the formal content of the distinction above. A common flag is
+is and $h_{ii}/(1-h_{ii})$ how unusual the predictors are. $D_i$ is large only when both are appreciable. A common flag is
 $D_i > 1$, or $D_i > 4/n$ for a more sensitive screen.
 \end{remark}
 
@@ -282,8 +277,7 @@ $\VIF$ is unaffected by the response: collinearity is a property of $\bX$.
 \begin{remark}[What collinearity does and does not do]
 Collinearity does not bias $\hat\bb$, does not violate any of \Aref{1}--\Aref{5}, and does
 not damage prediction at predictor combinations resembling those observed. What it does is
-inflate standard errors, so that individually insignificant coefficients coexist with a
-highly significant joint $F$ (Unit 3 §\ref{sec:4.4}), and make estimates unstable across
+inflate standard errors, so that individually insignificant coefficients coexist with a highly significant joint $F$ (Unit 3), and make estimates unstable across
 samples. The remedies are to drop one of the redundant variables, to combine them, or to
 shrink; ridge regression (Unit 6) is the direct attack, replacing $(\bX'\bX)^{-1}$ by
 $(\bX'\bX+\lambda\bI)^{-1}$.
@@ -375,16 +369,15 @@ invertible. Its variance is $1\cdot(\bX^{\ast\prime}\bX^\ast)^{-1} = (\bX'\bW\bX
 \begin{remark}
 Weighted least squares therefore \emph{is} ordinary least squares, on data rescaled so
 that every observation has unit error variance: an observation with large $\sigma_i^2$ is
-down-weighted because it carries less information. The practical obstacle is that
-$\sigma_i^2$ is unknown; it is usually modelled as a function of the predictors or of the
+down-weighted because it carries less information. $\sigma_i^2$ is unknown in practice; it
+is usually modelled as a function of the predictors or of the
 fitted value, or sidestepped by transforming the response so that the variance is
 approximately constant.
 \end{remark}
 
 \subsection{Detecting heteroscedasticity}\label{sec:4.5.1}
 
-Plot the residuals against the fitted values and look for a fan. The Breusch--Pagan test
-formalises this.
+Plot the residuals against the fitted values and look for a fan.
 
 \begin{definition}[Variance model and hypothesis]\label{def:bp-model}
 Let $\bY = \bX\bb+\be$ with $\varepsilon_i$ independent $N(0,\sigma_i^2)$ and
@@ -486,8 +479,7 @@ and $\bZ'\bM_0\bg = \bZ'\bg - n^{-1}(\bZ'\bone)(\bone'\bg) = \bZ'\bg$.
 \begin{remark}
 The identity $\bone'\bg=0$ is the reason the scaling in~\eqref{eq:bp-g} must be
 $\tilde\sigma^2 = \SSE/n$ and not $s^2 = \SSE/(n-k-1)$: only the maximum likelihood
-estimator makes the score component along the intercept column of $\bW$ vanish, which is
-what the next theorem needs.
+estimator makes the score component along the intercept column of $\bW$ vanish, which the next theorem needs.
 \end{remark}
 
 \begin{definition}[Score statistic]\label{def:bp-LM}
@@ -594,15 +586,11 @@ $(2\bQ)^{-1/2}\bV\sim N(\bzero,\bI_p)$, so $\tfrac12\bV'\bQ^{-1}\bV = \|(2\bQ)^{
 mapping theorem transfers this to the limit of $LM$.
 \end{proof}
 
-\begin{remark}[Where the limit theory comes from]
-Step 2 uses the Lindeberg--Feller central limit theorem in its weighted form and Step 3 the
-continuous mapping theorem. Neither is assumed: the \emph{Mathematical Prerequisites} note proves the Lindeberg--Feller
-theorem and its weighted-sums corollary, the continuous mapping theorem, Slutsky's theorem
-, which is what permits $\sigma^2$ and the scale $\kappa$ to be replaced by consistent
-estimates, and the theorem on quadratic forms of asymptotically normal vectors that
-converts $\bZ'\bg$ into a $\chi^2_p$ limit. The only things taken as given anywhere in that
-chain are the completeness of $\Real$ and the four convergence theorems of the Lebesgue
-integral.
+\begin{remark}
+Step 2 uses the Lindeberg--Feller central limit theorem in its weighted form, Step 3 the
+continuous mapping theorem, and the replacement of $\sigma^2$ and $\kappa$ by consistent
+estimates is Slutsky's theorem; all three are proved in the \emph{Mathematical
+Prerequisites}.
 \end{remark}
 
 \begin{theorem}[Koenker's studentised statistic]\label{thm:bp-koenker}
@@ -656,8 +644,8 @@ substantially, so a hand computation following Theorem~\ref{thm:bp} compared aga
 
 By~\eqref{eq:bp-ratio} the ratio is $\hat\tau^2/(2\tilde\sigma^4)$, which estimates
 $\var(\varepsilon^2)/\{2\var(\varepsilon)^2\}$, which is exactly $1$ when the errors are normal,
-by Lemma~\ref{lem:fourth}. The ratio is therefore itself a measurement: how far the fourth
-moment of the errors departs from the normal value. §\ref{sec:4.6.4} computes it.
+by Lemma~\ref{lem:fourth}. The ratio is therefore itself a measurement: how far the fourth moment of the errors
+departs from the normal value.
 \end{remark}
 
 %==============================================================================
@@ -689,9 +677,6 @@ c(rstandard = max(abs(r_man - rstandard(fit))),
   sd_raw    = sd(e), sd_standardised = sd(r_man))
 @
 
-The studentised residual exceeds the standardised one exactly where the observation
-inflates $s$:
-
 <<resid-compare>>=
 i <- which.max(abs(e))
 c(index = i, e_i = e[i], h_ii = h[i],
@@ -706,8 +691,6 @@ c(flag_2  = sum(abs(r_man) > 2),
 @
 
 \subsection{Influence (§\ref{sec:4.3})}\label{sec:4.6.2}
-
-The deletion identity of Lemma~\ref{lem:deletion}, against $n$ explicit refits:
 
 <<deletion-check>>=
 b <- coef(fit); XtXi <- solve(t(X) %*% X)
@@ -737,8 +720,6 @@ c(dffits_vs_R = max(abs(dff_man - dffits(fit))),
     dfbetas(fit)[idx, "lstat"])))
 @
 
-Outlier, leverage and influence rank different observations:
-
 <<three-lists>>=
 top <- function(v) order(abs(v), decreasing = TRUE)[1:5]
 rbind(by_studentised = top(t_man),
@@ -756,16 +737,12 @@ vif_man <- sapply(seq_len(ncol(Xn)), function(j)
 rbind(manual = vif_man, car = vif(fit))
 @
 
-Theorem~\ref{thm:vif} against the standard errors R reports:
-
 <<vif-se>>=
 sx  <- apply(Xn, 2, sd)
 se_from_vif <- sqrt(s2) / (sx * sqrt(n - 1)) * sqrt(vif_man)
 rbind(from_VIF = se_from_vif,
       lm       = coef(summary(fit))[-1, "Std. Error"])
 @
-
-Adding a nearly redundant column inflates the standard errors without touching the fit:
 
 <<collinear-demo>>=
 set.seed(1)
@@ -782,8 +759,6 @@ c(R2_base = summary(fit)$r.squared, R2_col = summary(m_col)$r.squared,
 
 \subsection{Heteroscedasticity (§\ref{sec:4.5})}\label{sec:4.6.4}
 
-A design where the truth is known: $\var(\varepsilon_i)$ grows with $x_i$.
-
 <<hetero-setup>>=
 set.seed(2)
 nh   <- 300
@@ -793,10 +768,6 @@ yh   <- 2 + 1.5 * xh + rnorm(nh, sd = sig)
 mh   <- lm(yh ~ xh)
 c(beta_true = 1.5, beta_hat = coef(mh)[["xh"]])           # still unbiased
 @
-
-Theorem~\ref{thm:bp} is an identity between three expressions. All three are computed
-below, together with the two facts the proof turns on: $\bone'\bg=0$ and
-$\bZ'\bg = \bZ'\bM_0\bg$.
 
 <<bp-identities>>=
 suppressMessages({library(lmtest); library(sandwich)})
@@ -822,9 +793,6 @@ $\sigma_i^2 = \alpha_0+\bz_i'\bgamma$, $\exp(\alpha_0+\bz_i'\bgamma)$, or any ot
 differentiable $h$, because $h_0'$ cancelled in Step 2 of the proof. Nothing in the
 computation above refers to $h$ at all.
 
-Koenker's studentised statistic of Theorem~\ref{thm:bp-koenker}, and the two identities
-its proof establishes:
-
 <<bp-koenker>>=
 v     <- eh^2
 auxv  <- lm(v ~ Z)
@@ -847,13 +815,8 @@ c(ratio_observed = LM_quad / (nh * SSRv / SSTv),
 Both reject overwhelmingly, but they are not the same statistic. The ratio is
 $\hat\tau^2/(2\tilde\sigma^4)$ exactly, as~\eqref{eq:bp-ratio} requires, and
 $\hat\tau^2/\tilde\sigma^4$ is well above the value $2$ that Lemma~\ref{lem:fourth} gives
-under normality: the squared residuals are more dispersed than a normal error would
-produce, which is precisely the circumstance in which the studentised form is the one to
-report.
-
-Weighted least squares with the true weights, three ways: the closed
-form~\eqref{eq:wls}, \texttt{lm(weights=)}, and ordinary least squares on the
-$\sqrt{w}$-rescaled data of Theorem~\ref{thm:gls}:
+under normality: the squared residuals are more dispersed than a normal error would produce, so the
+studentised form is the one to report.
 
 <<wls-check>>=
 Xh <- cbind(1, xh)
@@ -1001,7 +964,7 @@ y_i - \bx_i'\hat\bb^{(-i)} = e_i + \frac{h_{ii}e_i}{1-h_{ii}}
 For the second claim, the deleted fit minimises the sum of squares over the remaining
 $n-1$ observations. Its residual sum of squares is the full-sample $\SSE$ less the
 contribution of observation $i$, adjusted for the fact that the remaining fit no longer
-accommodates it; the algebra gives exactly $\SSE - e_i^2/(1-h_{ii})$, which is what makes
+accommodates it; the algebra gives exactly $\SSE - e_i^2/(1-h_{ii})$, which makes
 Theorem~\ref{thm:s2i} computable without refitting.
 \end{solution}
 
@@ -1064,7 +1027,7 @@ The transformation is Theorem~\ref{thm:gls}: with $\bW^{1/2}=\diag(1/\sigma_i)$,
 starred model has $\var(\be^\ast)=\bI$ and OLS on it gives
 $(\bX'\bW\bX)^{-1}\bX'\bW\bY$, which is $\hat\bb_W$.
 
-Intuitively, dividing observation $i$ by $\sigma_i$ puts every observation on a common
+Dividing observation $i$ by $\sigma_i$ puts every observation on a common
 noise scale. An observation with large $\sigma_i$ says little about the regression line and
 receives a small weight $1/\sigma_i^2$; a precise observation receives a large one. Least
 squares weights all observations equally, which is right only when they are equally

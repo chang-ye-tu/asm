@@ -45,10 +45,9 @@ knitr::opts_chunk$set(fig.path = "figs/unit09-")
 FREES §7.1--7.2.
 \end{reading}
 
-The data are now a single series $y_1,\ldots,y_T$ indexed by time. The index is not a
-label: observations near each other in time are typically dependent, and the classical
-assumption of Unit 2 that the errors are uncorrelated is the first thing to check rather
-than the last.
+The data are a single series $y_1,\ldots,y_T$ indexed by time. Observations near each other
+in time are typically dependent, so the assumption of Unit 2 that the errors are uncorrelated
+cannot be taken for granted.
 
 \subsection{Decomposition}\label{sec:9.1.1}
 
@@ -234,8 +233,7 @@ each term of order $T^{-1}$ or $l^2T^{-3}$.
 \begin{remark}
 The interval~\eqref{eq:trend-pi} is dominated by the irreducible term $1$ under the square
 root: for a trend model the uncertainty about a forecast ten steps ahead is barely larger
-than one step ahead. That is a strong claim, and it is false for the model of the next
-section, where the interval widens like $\sqrt l$. Which of the two is right is a question
+than one step ahead. It is false for a random walk, where the interval widens like $\sqrt l$. Which of the two is right is a question
 about the error process, not about the trend.
 \end{remark}
 
@@ -478,8 +476,7 @@ remainder is smaller than $2\pi^2$ in modulus.
 \end{proof}
 
 \begin{remark}[Identifying a random walk]
-Three checks, all of which the computation of §\ref{sec:9.4.3} performs. The sample
-standard deviation should fall sharply on differencing, since the level has variance
+Three checks. The sample standard deviation should fall sharply on differencing, since the level has variance
 growing like $t\sigma_c^2$ while the differences have variance $\sigma_c^2$. The sample
 autocorrelation function of the level should start near $1$ and decay slowly
 (Theorem~\ref{thm:rw-moments}), and that of the differences should be negligible at every
@@ -599,14 +596,12 @@ Chebyshev's inequality (prerequisites) with~\eqref{eq:acf-var}.
 Chebyshev gives only $\tfrac14$; the conventional reading of the band as a $95\%$ device
 rests on a normal approximation for $\tilde r_k$, which is not proved here. The sequence
 $z_t=\xi_t\xi_{t-k}$ is not independent, so the central limit theorem of the prerequisites
-does not apply to it directly. What §\ref{sec:9.4.5} does instead is measure the coverage
-by simulation, and it comes out at the advertised $95\%$.
+does not apply to it directly. The coverage is measured by simulation instead, and comes out
+at the advertised $95\%$.
 \end{remark}
 
 \begin{remark}
-Replacing $\mu$ by $\bar y$ and $(T-k)$ by $T$, as in~\eqref{eq:sample-acf}, introduces a
-small negative bias: $\expc[r_k]\approx-1/T$, which §\ref{sec:9.4.5} also exhibits. For a
-series of any length the bias is negligible beside the standard deviation $1/\sqrt T$.
+Replacing $\mu$ by $\bar y$ and $(T-k)$ by $T$, as in~\eqref{eq:sample-acf}, introduces a small negative bias, $\expc[r_k]\approx-1/T$. For a series of any length the bias is negligible beside the standard deviation $1/\sqrt T$.
 \end{remark}
 
 \subsection{Autocorrelated errors in a regression}\label{sec:9.3.3}
@@ -640,9 +635,7 @@ noting the correction term is $O(1/T)$ when no single residual dominates.
 \begin{remark}
 Positive residual autocorrelation is the normal state of affairs for a regression on time
 series data, and its consequence is the one Theorem~\ref{thm:rw-mean} exhibits in extreme
-form: the reported standard errors are too small, so significance is overstated. The
-remedies are to model the dependence, which is Unit 10, or to difference the series, which
-§\ref{sec:9.2.4} does.
+form: the reported standard errors are too small, so significance is overstated. The remedies are to model the dependence or to difference the series.
 \end{remark}
 
 %==============================================================================
@@ -677,18 +670,12 @@ c(R2_trend = summary(m1)$r.squared, R2_trend_season = summary(m2)$r.squared,
   s_trend = summary(m1)$sigma, s_trend_season = summary(m2)$sigma)
 @
 
-Theorem~\ref{thm:trend-ls} gives the sampling variances in closed form.
-
 <<trend-variance>>=
 X <- cbind(1, tt); V <- solve(crossprod(X))
 c(var_b1_matrix = V[2, 2], formula = 12/(T*(T^2 - 1)),
   var_b0_matrix = V[1, 1], formula_b0 = 2*(2*T + 1)/(T*(T - 1)),
   cov_matrix = V[1, 2], formula_cov = -6/(T*(T - 1)))
 @
-
-Propositions~\ref{prop:seasonal-ident} and~\ref{prop:seasonal-means}: the dummies alone fit
-the seasonal means, and the harmonic basis of Theorem~\ref{thm:fourier} spans the same
-space.
 
 <<seasonal-checks>>=
 ms <- lm(y ~ mo - 1)
@@ -797,9 +784,6 @@ interval of almost constant width (Proposition~\ref{prop:trend-forecast}). Both 
 observed part well.}\label{fig:forecast}
 \end{figure}
 
-Theorem~\ref{thm:rw-mean} says the variance of the sample mean of a random walk grows with
-$T$, while the estimate computed as though the data were independent does not.
-
 <<rw-mean-var>>=
 set.seed(4); B <- 3000
 t(sapply(c(50, 200, 800), function(Tn) {
@@ -818,9 +802,6 @@ c(var_white_noise = var(w), var_of_its_difference = var(diff(w)),
 
 \subsection{Correlograms and Durbin--Watson (§\ref{sec:9.3.2}--§\ref{sec:9.3.3})}
 \label{sec:9.4.5}
-
-Theorem~\ref{thm:acf-wn} gives the mean and variance of $r_k$ under white noise; the $95\%$
-calibration of the $\pm2/\sqrt T$ band is not proved there and is measured here.
 
 <<acf-calibration>>=
 set.seed(3); B <- 5000

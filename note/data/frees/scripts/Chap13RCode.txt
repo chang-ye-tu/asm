@@ -1,0 +1,159 @@
+#  FILENAME IS Chap13R.txt  ;
+#  USE DATA "Automobile UK Collision Claims.csv"
+
+#  PRIVATE PASSENGER AUTODATA
+AutoDat = read.csv(file.choose(),quote="",header=TRUE)
+attach(AutoDat)
+str(AutoDat)
+names(AutoDat)
+dim(AutoDat)
+
+#  MODEL WITH TWO FACTORS
+model1 = glm(Severity~factor(Age)+factor(Vehicle_Use), 
+    control = glm.control(maxit = 50), weights=Claim_Count,
+    data=AutoDat,family=Gamma(link="log"))
+summary(model1)
+model1$coefficients
+
+Agecoeff = model1$coefficients[1:8]
+Agecoeff[1]=0
+EAgecoeff = exp(Agecoeff)
+EAgecoeff
+Vehcoeff = model1$coefficients[9:11];
+Vehcoeff = c(Vehcoeff,0)
+EVehcoeff = exp(Vehcoeff)
+EVehcoeff
+
+Premiums = exp(model1$coefficients[1])*
+EAgecoeff %*%t(EVehcoeff)
+Premiums
+setwd("C://Book3//CUPBook//Chapter13GLM")
+write.csv(Premiums, file = "Premiums.csv")
+
+
+# FULL DATASET WITH 2000 OBSERVATIONS
+# LOAD DATA "HealthExpend"
+Hexpend = read.csv(file.choose(),quote="",header=TRUE)
+
+# POSITIVE EXPENDIPs, 157 OBSERVATIONS
+MEPS=subset(Hexpend,EXPENDIP>0)
+attach(MEPS)
+str(MEPS)
+names(MEPS)
+dim(MEPS)
+hist(EXPENDIP)
+
+# TEMPORARILY REMOVE OBS # 58
+MEPS58 = subset(MEPS, !(EXPENDIP>600000))
+setwd("C://Book3//CUPBook//Chapter13GLM")
+postscript("Fig13kernelExpendIP.ps")
+plot(density(MEPS58$EXPENDIP), main="", xlab="Expenditures")#Gaussian kernel
+dev.off()
+hist(MEPS58$EXPENDIP, main="", xlab="Expenditures")
+
+#  MODEL WITH ALL VARIABLES
+#  HAD TO INCREASE THE DEFAULT NUMBER OF ITERATIONS FOR CONVERGENCE
+model1 = glm(EXPENDIP~COUNTIP+AGE+GENDER
+    +factor(RACE)+factor(REGION)+factor(EDUC)+factor(PHSTAT)
+    +MNHPOOR+ANYLIMIT+factor(INCOME)+insure, 
+    control = glm.control(maxit = 50), 
+    data=MEPS,family=Gamma(link="log"))
+summary(model1)
+
+#  REDUCED MODEL
+BLACK = (MEPS$RACE == "BLACK")
+POOR = (MEPS$PHSTAT == "POOR")
+POORNEG = (MEPS$INCOME == "POOR")
+model2 = glm(EXPENDIP~COUNTIP+AGE+GENDER
+    +factor(BLACK)+factor(REGION)+factor(EDUC)+factor(POOR)
+    +MNHPOOR+ANYLIMIT+factor(POORNEG), 
+    data=MEPS,family=Gamma(link="log"))
+summary(model2)
+
+anova(model1, model2)
+
+#  REDUCED MODEL - INVERSE GAUSSIAN 
+#  DOES NOT WANT TO CONVERGE !!
+model3 = glm(EXPENDIP~COUNTIP+AGE+GENDER
+    +factor(BLACK)+factor(REGION)+factor(EDUC)+factor(POOR)
+    +MNHPOOR+ANYLIMIT+factor(POORNEG), 
+    data=MEPS58,family=inverse.gaussian(link = "log"))
+summary(model3)
+#   ALSO PROBLEMS WITH family=inverse.gaussian(link = "1/mu^2")
+
+
+#plot
+plot(EXPENDIP~COUNTIP)
+
+#qqplot for gamma
+library(MASS)
+n=length(EXPENDIP)
+fit=fitdistr(EXPENDIP, dgamma, list(shape = 1, rate = 0.1), 
+  lower = 0.01)
+n=1000
+TheoDist=rgamma(n,shape=fit$estimate[[1]],rate=fit$estimate[[2]])
+qqplot(TheoDist,EXPENDIP,xlab="Theoretical Gamma Distribution",
+  main="QQ Plot Gamma Distribution")
+y = quantile(EXPENDIP[!is.na(EXPENDIP)], c(0.25, 0.75))
+x = qgamma(c(0.25, 0.75),shape=fit$estimate[[1]],rate=fit$estimate[[2]])
+slope = diff(y)/diff(x)
+int = y[1] - slope * x[1]
+abline(int, slope)
+
+
+#correlation
+variables=cbind(COUNTIP,AGE,insure,EXPENDIP)
+cor(variables)
+
+#step
+model2 = glm(EXPENDIP~AGE+famsize+ANYLIMIT
+  +GENDER+UNEMPLOY+MANAGEDCARE+EDUC+REGION+MARISTAT,data=MEPS,
+    family=Gamma(link="log"))
+summary(model2)
+fix(MEPS)
+
+AVGEXPENDIP = EXPENDIP/COUNTIP
+hist(AVGEXPENDIP)
+
+step(glm(EXPENDIP~COUNTIP+AGE+famsize+ANYLIMIT+GENDER+MNHPOOR+
+    insure+USC+UNEMPLOY+MANAGEDCARE+EDUC+RACE+REGION+MARISTAT+
+    INCOME+PHSTAT,data=MEPS,family=Gamma(link="log")),
+    direction=c("backward"))
+##last model: EXPENDIP ~ COUNTIP + AGE + famsize + insure + 
+##  MANAGEDCARE + EDUC + REGION
+test=glm(EXPENDIP ~ COUNTIP + AGE + famsize + insure + 
+    MANAGEDCARE + EDUC + REGION,data=MEPS,family=Gamma(link="log"))
+summary(test)
+##some variables are not significant
+
+#glm model
+MEPSglm=glm(EXPENDIP~COUNTIP+AGE+insure,data=MEPS,
+  family=Gamma(link="log"))
+
+#deviance residual plot
+dr=residuals(MEPSglm,type=c("deviance"))
+plot(dr)
+qqnorm(dr)
+qqline(dr)
+
+#tweedie model (all data including EXPENDIP=0)
+library(statmod)
+library(tweedie)
+
+out=tweedie.profile(MEPS$EXPENDIP~1,p.vec=seq(1.1,1.9,length=9),
+  method="interpolation",do.ci=TRUE,do.smooth=TRUE,do.plot=TRUE)
+
+TheoDist=rtweedie(n,power=out$p.max,phi=out$phi.max,
+  mu=mean(EXPENDIP))
+qqplot(TheoDist,EXPENDIP,xlab="Theoretical Tweedie Distribution",
+  main="QQ Plot Tweedie Distribution")
+
+MEPStweedie=glm(EXPENDIP~COUNTIP+AGE+insure,
+  data=MEPS,family=tweedie(var.power=out$p.max,link.power=0))
+summary(MEPStweedie)
+
+MEPSglmtd=glm.diag(MEPStweedie)
+glm.diag.plots(MEPStweedie,MEPSglmtd)
+
+
+

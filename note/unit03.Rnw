@@ -329,9 +329,9 @@ the rank argument in the OLS theorem of Unit 2.
 Software resolves the singularity silently: R drops the redundant column and reports
 \texttt{NA} for its coefficient. Changing the reference level changes every reported
 coefficient and every individual $t$ statistic, but not the fitted values, $\SSE$, $R^2$,
-or the $F$ test for the factor as a whole. This is why a categorical variable should be
-assessed by the partial $F$ of Corollary~\ref{cor:nested-F} on all $c-1$ indicators
-jointly, not by individual $t$ statistics.
+or the $F$ test for the factor as a whole. A categorical variable is therefore assessed
+by the partial $F$ of Corollary~\ref{cor:nested-F} on all $c-1$ indicators jointly, not
+by individual $t$ statistics.
 \end{remark}
 
 \subsection{Interactions}\label{sec:3.4.3}
@@ -346,9 +346,9 @@ In $\expc[y] = \beta_0+\beta_1x+\beta_2z+\beta_3xz$ with $z$ binary, the slope i
 $\beta_1$ when $z=0$ and $\beta_1+\beta_3$ when $z=1$: the two lines are no longer
 parallel, and $\beta_3$ is the difference in slopes. When $x$ and $z$ are both continuous,
 $\partial\expc[y]/\partial x = \beta_1+\beta_3z$ depends on $z$, so no single number
-describes the effect of $x$. A main effect is then not interpretable in isolation, which is
-the reason for the \emph{hierarchy principle}: if $xz$ is in the model, keep $x$ and $z$
-too, whatever their individual $t$ statistics.
+describes the effect of $x$. A main effect is then not interpretable in isolation, hence the \emph{hierarchy
+principle}: if $xz$ is in the model, keep $x$ and $z$ too, whatever their individual $t$
+statistics.
 \end{remark}
 
 \subsection{Transformed variables}\label{sec:3.4.4}
@@ -448,9 +448,7 @@ and the last term has expectation $\bzero$ by \Aref{2}.
 The bias is the coefficient matrix from regressing the omitted $\bX_2$ on the included
 $\bX_1$, multiplied by the omitted effect $\bb_2$. It vanishes iff $\bb_2=\bzero$ or
 $\bX_1'\bX_2=\bzero$. With one included and one omitted variable the sign of the bias is
-the product of the sign of $\bb_2$ and the sign of the sample correlation between the two
-variables, which is enough to reason about the direction of the error without knowing its
-size.
+the product of the sign of $\bb_2$ and the sign of the sample correlation between the two variables.
 \end{remark}
 
 \begin{remark}[Significance, size and causation]
@@ -505,9 +503,7 @@ c(estimate = est, se = se_c,
 
 \subsection{Several coefficients (§\ref{sec:3.2})}\label{sec:3.6.2}
 
-$H_0\colon \beta_{\mathrm{age}} = \beta_{\mathrm{rm}} = 0$, by four routes: the quadratic
-form~\eqref{eq:general-F}, the extra sum of squares~\eqref{eq:nested-F},
-\texttt{anova} on the nested pair, and \texttt{car::linearHypothesis}.
+$H_0\colon \beta_{\mathrm{age}} = \beta_{\mathrm{rm}} = 0$:
 
 <<general-F>>=
 R <- rbind(c(0, 0, 1, 0), c(0, 0, 0, 1)); r0 <- c(0, 0); q <- nrow(R)
@@ -524,8 +520,8 @@ c(quadratic_form = F_quad, extra_SS = F_extra,
   p_value        = pf(F_quad, q, n-k-1, lower.tail = FALSE))
 @
 
-A constraint that is not a variable exclusion, $H_0\colon\beta_{\mathrm{lstat}} =
-\beta_{\mathrm{age}}$, for which only the quadratic form is convenient:
+$H_0\colon\beta_{\mathrm{lstat}} = \beta_{\mathrm{age}}$, a constraint that is not a variable
+exclusion:
 
 <<constraint-not-exclusion>>=
 R2m <- matrix(c(0, 1, -1, 0), nrow = 1)
@@ -576,9 +572,6 @@ trap <- lm(Boston$medv ~ D)
 sum(is.na(coef(trap)))                         # one coefficient is inestimable
 @
 
-The factor is assessed by the partial $F$ on all its indicators jointly, not by individual
-$t$ statistics:
-
 <<factor-F>>=
 m_small <- lm(medv ~ lstat, data = Boston)
 a <- anova(m_small, m_fac)
@@ -586,16 +579,12 @@ c(F = a$F[2], df1 = a$Df[2], df2 = a$Res.Df[2],
   p = a$`Pr(>F)`[2])
 @
 
-Changing the reference level moves every coefficient but no fitted value:
-
 <<relevel>>=
 m_alt <- lm(medv ~ lstat + relevel(rad_f, ref = "24"), data = Boston)
 c(max_coef_change = max(abs(coef(m_fac)[-(1:2)] - coef(m_alt)[-(1:2)])),
   max_fitted_diff = max(abs(fitted(m_fac) - fitted(m_alt))),
   SSE_same        = sum(residuals(m_fac)^2) - sum(residuals(m_alt)^2))
 @
-
-An interaction makes the slope depend on the other variable:
 
 <<interaction>>=
 m_int <- lm(medv ~ lstat * chas, data = Boston)
@@ -608,9 +597,6 @@ c(slope_chas0 = cf[["lstat"]],                       # beta_1
 
 \subsection{FWL and omitted-variable bias (§\ref{sec:3.5})}\label{sec:3.6.5}
 
-Regressing out \texttt{age} and \texttt{rm} from both \texttt{medv} and \texttt{lstat}
-reproduces the full-model coefficient on \texttt{lstat}, which is Theorem~\ref{thm:fwl}.
-
 <<fwl-check>>=
 X2 <- X[, c(1, 3, 4)]                          # intercept, age, rm
 M2 <- diag(n) - X2 %*% solve(t(X2) %*% X2) %*% t(X2)
@@ -621,8 +607,8 @@ c(fwl_lm        = coef(lm(y_res ~ x_res - 1))[["x_res"]],
   resid_matches = max(abs(residuals(lm(y_res ~ x_res - 1)) - residuals(fit))))
 @
 
-Theorem~\ref{thm:ovb} predicts the bias from omitting \texttt{rm}: the coefficient from
-regressing \texttt{rm} on the retained variables, times $\beta_{\mathrm{rm}}$.
+The bias from omitting \texttt{rm}, by Theorem~\ref{thm:ovb}, is the coefficient from regressing
+\texttt{rm} on the retained variables, times $\beta_{\mathrm{rm}}$:
 
 <<ovb-check>>=
 X1 <- X[, c(1, 2, 3)]                          # intercept, lstat, age
@@ -633,8 +619,8 @@ round(cbind(short_fit = coef(short), predicted = predicted_short,
             diff = coef(short) - predicted_short), 10)
 @
 
-The identity is algebraic and holds in the realised sample, not merely in expectation.
-A simulation with a known truth separates bias from sampling noise:
+The identity holds in the realised sample; a simulation with a known truth separates the
+bias from sampling noise:
 
 <<ovb-sim>>=
 set.seed(1)
@@ -895,7 +881,7 @@ t(sapply(c(0, 0.9, 0.99), covr))
 (c) The $F$ region is at nominal coverage throughout. The rectangle is not: at $\rho=0$ the
 two events are nearly independent, so joint coverage is about $0.95^2=0.9025$.
 
-The $F$ column is bit-identical across the three rows, and not by accident. Since
+The $F$ column is bit-identical across the three rows. Since
 $z_2=\rho z_1+\sqrt{1-\rho^2}\,w$ with the same $z_1$ and $w$, the three designs have the
 \emph{same column space}, so by the invariance of a projection to the basis chosen for it
 the numerator $\|(\bH-\bH_0)\bY\|^2$ and the denominator $\|\bM\bY\|^2$ are unchanged and
@@ -950,7 +936,7 @@ The confidence half-width grows tenfold across the table while the prediction ha
 grows by under $10\%$: away from the data the estimation error grows, but $\sigma^2$
 dominates the prediction interval throughout, so it looks reassuringly stable.
 
-That is what makes it misleading. At $\bar x+10s_x$ we have $x_0=84.1$, while
+At $\bar x+10s_x$ we have $x_0=84.1$, while
 \texttt{lstat} is a percentage whose observed maximum is $37.97$: the point is outside the
 data and outside the variable's range. Both formulas assume the linear model holds at
 $x_0$, and no quantity computed from the sample can test that, because there are no
@@ -1171,8 +1157,7 @@ standard error is strong evidence. Second, a coefficient's size depends on the u
 regressor. Here $X_4=\mathrm{GPA}\times\mathrm{IQ}$ ranges to about $4\times130=520$, so
 the term $\hat\beta_4X_4$ contributes about $5.2$, comparable with the $7.7$ contributed by
 IQ itself. By the invariance argument of Unit 2, rescaling $X_4$ divides $\hat\beta_4$ and
-its standard error by the same factor and leaves $t$ alone, which is why $t$ and not
-$\hat\beta$ is what one reads.
+its standard error by the same factor and leaves $t$ alone.
 \end{solution}
 
 \begin{exercise}[ISLR §3.7, exercise 10]\label{ex:islr-carseats}

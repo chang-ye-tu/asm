@@ -1,13 +1,17 @@
 # ASM lecture notes — conventions, sources, and gotchas
 
-Authoritative handoff for anyone (human or model) continuing these notes.
-Read this before editing any `.Rnw`.
+Authoritative handoff for anyone (human or model) continuing these notes. Read this before
+editing any `.Rnw`, then read `REVISION.md`, the current work order.
 
-**A revision pass is outstanding.** All fourteen units are written and built, and the
-instructor has ordered a line-by-line revision: strip non-load-bearing remarks and lead-ins,
-remove every forward citation, and greatly expand the exercises. The work order, the
-measured inventory, the decision rules and a per-unit checklist are in
-[`REVISION.md`](REVISION.md). Do that before adding anything new.
+**State (2026-09-15).** The course prepares students for SOA Exam SRM and Exam PA. Each
+unit covers the exam's required FREES/ISLR sections, rewritten as rigorous accounts of what
+those books hand-wave, with exercises from those texts and the mapped SOA sample questions.
+§1's motto holds and `prereq.Rnw` remains the single source of background results. FREES's
+data files and chapter scripts are on disk under `note/data/frees/`, so the book's examples
+are reproduced from its data and all its exercises are in scope. Unit 1 is rebuilt on this
+design as the template; Units 2–14 are the pre-rebuild versions and are rebuilt next, in
+order. The rules fixed on the template, the syllabus map, the SOA map and the per-unit
+procedure are in `REVISION.md`.
 
 ---
 
@@ -42,7 +46,8 @@ rather than asserting it in the unit or inventing a second appendix.
 
 ## 2. House style
 
-Derived from `mva/note/clm.tex`, not from FREES/ISLR prose.
+The style is that of `mva/note/clm.tex`. The content of a unit is the syllabus sections of
+FREES and ISLR (`REVISION.md` §3), condensed into the blocks below, never their prose.
 
 **Allowed:** definition · theorem/lemma/proposition/corollary · proof · *short factual*
 remark · `reading` box (one line, the required sections) · `derivation` box (mathematics
@@ -68,7 +73,21 @@ only) · `\periodmark` at the two 50-minute breaks.
   gloss, or split into two sentences. `grep -c -- '---' *.Rnw` must return 0 everywhere. The rule governs the
   typeset notes; this markdown file is not typeset and is exempt;
 * lead-ins that announce what the next passage will do ("it is derived here in full",
-  "we now show", "in this section").
+  "we now show", "the methods below", "in this section"), and any sentence that carries no
+  load. The instructor's words, twice: **no lead-ins, no non-load-bearing sentences, no
+  fillers, ever.**
+
+**Required tags (fixed on the Unit 1 template).**
+
+* A remark, definition or example that condenses a passage of ISLR or FREES carries the
+  passage in its title: `\begin{remark}[Two drawbacks; ISLR §5.1.1]`. The block is the
+  author's condensation, never a quotation; the tag makes that checkable.
+* A section or exercise outside the SRM/PA reading lists carries "(beyond the syllabus)"
+  in its title and a reading box saying so. Nothing is deleted on that ground.
+* Exercises are titled by source: `[ISLR §5.4, exercise 8]`, `[FREES exercise 3.2]`,
+  `[SOA sample question 12]`.
+* Proofs are complete: no intermediate step omitted; numbered steps when a proof has more
+  than one idea.
 
 Test for a sentence: if it is not a definition, theorem, proof, or one terse factual
 remark, delete it.
@@ -81,54 +100,52 @@ subtitle, rule, course name, or reading list.
 > Add **as many comparisons as possible** between the manual formula and what the package
 > produces.
 
-Every unit has a §Computation section mirroring its theory sections, printing the
-*difference* rather than asserting agreement. Where several routes to one quantity exist,
-compute all of them (Unit 3 gets the joint *F* four ways; Unit 2 gets *R*²=*r*² four ways;
-Unit 4 gets Cook's D two ways and WLS three ways).
+Every unit reproduces the ISLR lab of its sections with the lab's numbers, and FREES's
+in-chapter examples from the book's data and script to the digits of the book's tables,
+and prints the *difference* between the manual formula and the package output rather than
+asserting agreement. Where several routes to one quantity exist, compute all
+of them (the pre-rebuild Unit 3 gets the joint *F* four ways; Unit 2 gets *R*²=*r*² four
+ways; Unit 4 gets Cook's D two ways and WLS three ways). R stays because PA is R-based.
 
 **Never state a numerical claim you have not run.** Several prose claims were wrong on
 first draft and only the printed output caught them (§6).
 
-## 4. Course structure (locked)
+## 4. Course structure
 
-14 teaching weeks × 3 × 50 min = 42 periods; midterm week 9, final week 16.
-Linear models are developed for general *k*; *k*=1 appears as corollaries, **never** as its
-own unit.
+Fourteen units, one per weekly meeting of 130–140 minutes, in the order below; the order
+is the reading order and later units cite earlier ones by name. The `\periodmark`s still
+say "period $k$ of 3" and stay until the instructor says otherwise. `README.md`'s schedule
+table lists the date and the unit's contents in English, with no week or assigned-reading
+column (instructor, 2026-09-15). Linear models are developed for general *k*; *k*=1
+appears as corollaries, never as its own unit.
 
-| Wk | Unit | Topic tag |
-|---:|------|-----------|
-| 1 | U01 Statistical Learning (incl. bootstrap) | T1×3 |
-| 2 | U02 Multiple Regression I: Matrix Theory (+ *k*=1) | T2×3 |
-| 3 | U03 Multiple Regression II: Inference & Interpretation | T2×3 |
-| 4 | U04 Regression Diagnostics | T2×3 |
-| 5 | U05 Variable Selection & Dimension Reduction | T2×2 + T5×1 |
-| 6 | U06 Shrinkage, High Dimensions, KNN | T2×3 |
-| 7 | U07 GLM I: categorical responses (FREES 11) | T2×3 |
-| 8 | U08 GLM II: counts & exponential family (FREES 12–13) | T2×3 |
-| 9 | **期中考** (U01–08) | |
-| 10 | U09 Modeling Trends (FREES 7, 8.1) | T3×3 |
-| 11 | U10 Autoregression & Forecasting (FREES 8.2–8.4, 9) + trees intro | T3×2 + T4×1 |
-| 12 | U11 Decision Trees | T4×3 |
-| 13 | U12 Ensembles | T4×3 |
-| 14 | U13 Unsupervised Learning | T5×3 |
-| 15 | U14 Convex Optimization, SVM, Neural Networks | beyond-syllabus ×3 |
-| 16 | **期末考** (U09–14) | |
-
-Period totals: T1 3 · T2 20 · T3 5 · T4 7 · T5 4 · beyond 3 = 42.
-T4 (16.7%) and T5 (9.5%) sit **below** their SOA bands; this was a deliberate trade,
-paid to trees, to fund Unit 14. Recorded in the README appendix, not hidden.
-
-Framing: a graduate course with SRM as one input. The README leads with the course's own
-structure; SRM tables are an appendix showing chapter-by-chapter coverage.
+| Unit | Topic | SRM topic |
+|------|-------|-----------|
+| U01 | Statistical learning; resampling (bootstrap beyond the syllabus) | 1 |
+| U02 | Multiple regression I: matrix theory (+ *k*=1) | 2 |
+| U03 | Multiple regression II: inference and interpretation | 2 |
+| U04 | Regression diagnostics (robust SEs beyond the syllabus) | 2 |
+| U05 | Variable selection and dimension reduction | 2, 5 |
+| U06 | Shrinkage, high dimensions, KNN | 2 |
+| U07 | GLM I: categorical responses (FREES 11) | 2 |
+| U08 | GLM II: counts and the exponential family (FREES 12–13) | 2 |
+| U09 | Modeling trends (FREES 7, 8.1) | 3 |
+| U10 | Autoregression and forecasting (FREES 8.2–8.4, 9); trees intro | 3, 4 |
+| U11 | Decision trees | 4 |
+| U12 | Ensembles | 4 |
+| U13 | Unsupervised learning | 5 |
+| U14 | Convex optimisation, SVM, neural networks | beyond the syllabus |
 
 ## 5. Sources (all texified and local)
 
 | Source | Path | What it gives |
 |---|---|---|
 | ISLR | `research/llm_proj/books/islr/islr_NN.Rnw` | required reading |
+| ISLR data not in `ISLR2` | `lectures/asm/note/data/islr/Advertising.csv` | the `Advertising` data of ISLR chapters 2–3, from statlearning.com |
 | FREES | `research/llm_proj/books/frees/frees_NN.tex` | required reading |
-| CLM / MC / MLM / GCI | `lectures/mva/note/*.tex` | U02–03 theorems and proofs; MC = matrix differentials |
-| BDA units 1–7 | `lectures/bda/note/unitNN.Rnw` | u02 ridge/lasso → U06 · u03 logistic/ROC → U07 · u04 bias-var/CV → U01 · u05 trees → U11–12 · **u06 convex/SVM/NN (115 pp) → U14** · u07 PCA/clustering → U13 |
+| FREES data and scripts | `lectures/asm/note/data/frees/{csv,scripts,doc}/` | the 41 data sets, the in-chapter R code by chapter, the data descriptions and errata (`REVISION.md` §4 for the deviations from the book) |
+| CLM / MC / MLM / GCI | `lectures/mva/note/*.tex` | proof sources for regression theory (prereq and the pre-rebuild U02–03); MC = matrix differentials |
+| BDA units 1–7 | `lectures/bda/note/unitNN.Rnw` | proof sources: u02 ridge/lasso (U06) · u03 logistic/ROC (U07) · u04 bias-var/CV (U01) · u05 trees (U11–12) · u06 convex/SVM/NN (U14) · u07 PCA/clustering (U13); the pre-rebuild bodies came from these |
 | EconometricsWithR | `research/llm_proj/books/EconometricsWithR/abridged/abridged.Rnw` | robust SEs, LPM/probit/logit, AR(1)/unit roots/ADF. Same `.Rnw` format and notation. `abridged_zh.Rnw` is a full Chinese translation. `data/` has 7 real datasets incl. `us_macro_quarterly.xlsx` |
 | ptpr (Devroye–Györfi–Lugosi) | `research/llm_proj/books/ptpr/ptpr_NN.tex` | Bayes optimality (ch 2, used in U01); VC theory, trees, NN, deleted estimates |
 | Baldi, *Probability* | `research/llm_proj/books/baldi_p/baldi_p_03.tex` | **Convergence chapter**: Lévy continuity, Portmanteau, Slutsky, delta method |
@@ -138,11 +155,13 @@ structure; SRM tables are an appendix showing chapter-by-chapter coverage.
 | Knapp, *Advanced Real Analysis* | `books/knapp_real_a/` | functional analysis, probability foundations |
 | Boyd & Vandenberghe | `books/boyd/boyd_02,03,05.tex` | convex sets, convex functions, **Duality** (§5.3.2 = the Slater proof) |
 | Bertsekas, *Convex Analysis* | `books/bertsekas_cv/cv_chap*.tex` | alternative convex-duality development |
-| SOA sample questions | `lectures/asm/srm/srm_body.tex` | 71 live questions, each followed by its solution |
-| SOA syllabus | `lectures/asm/syllabus/2026-09-exam-srm-syllabus.pdf` | topic weights, reading list |
+| SOA sample questions | `lectures/asm/srm/srm_body.tex` | 71 live questions (17, 28, 47, 65 deleted from the syllabus), `\begin{question}{N}` then `\begin{solution}{N}{LETTER}`; mapped to units in `REVISION.md` §6 |
+| SOA SRM syllabus | `lectures/asm/syllabus/2026-09-exam-srm-syllabus.pdf` | topic weights, reading list (the scope of every unit) |
+| SOA PA syllabus | `lectures/asm/syllabus/2026-10-exam-pa-syllabus.pdf` | assumes SRM minus FREES 7–9; R workflow, data exploration, feature engineering; no R at the exam |
 
-Datasets: prefer `ISLR2::Boston` (always present). FREES's own datasets are **not** on disk;
-quote FREES's typeset tables instead, or simulate from a known truth.
+Datasets: every `ISLR2` data set is installed (`Auto`, `Boston`, `Carseats`, `College`,
+`Default`, `Hitters`, `Portfolio`, …), and every FREES data set is a CSV under
+`note/data/frees/csv/`, read with a path relative to `note/`.
 
 ## 6. Gotchas — every one of these cost a build failure or a wrong number
 
@@ -393,186 +412,100 @@ quote FREES's typeset tables instead, or simulate from a known truth.
     Figure 4 needed `ylim = c(-0.06, 0.20)`; otherwise the structure at lags 1--30, which is
     the whole point of the picture, is a flat line at the bottom. Say in the caption that
     the axis is cropped.
+54. **Never edit a `.Rnw` while its build is running.** `knitr::knit` read `unit02.Rnw` at the
+    moment a script rewrote it and knitted a truncated file (88 KB instead of 190 KB) with
+    no error; the PDF simply ended early. Wait for `[OK]`/`[FAIL]` before touching the source,
+    and kill a build with `pkill -f 'python build.py'`, never with a pattern that also
+    matches the shell issuing the `pkill`.
+55. **`Rscript -e` mangles long scripts.** Past a few thousand characters the argument is
+    garbled (spaces become `~+~`) and R hangs waiting on stdin. Put anything longer than a
+    few lines in a file under the scratchpad and run `Rscript file.R`.
+56. **`grep -c '## Error' unitNN.tex` is fooled by an ANOVA table**, whose `Error` row prints
+    as `## Error   630.4 271 ...`. The check that only catches R failures is
+    `grep -c -E '^## Error( in|:)' unitNN.tex`.
 
 ## 7. Files
 
 ```
-asm/README.md                  course page: syllabus, 16-week schedule, SRM appendix
+asm/README.md                  course page (Chinese): schedule and SRM appendix; to be rewritten after the re-plan
+asm/syllabus/                  SRM and PA syllabus PDFs
+asm/srm/srm_body.tex           SOA sample questions and solutions (texify project)
 asm/note/asm_preamble.tex      17pt 16:9, tcolorbox theorem boxes, minted, xeCJK, macros
 asm/note/asm_knitr_setup.R     minted/Verbatim hooks, output.lines, options(width = 62)
 asm/note/build.py              UNITS + NOTES; --quiet --pkg-check
-asm/note/REVISION.md           outstanding revision work order + per-unit checklist
-asm/note/unit01–14.Rnw         built
-asm/note/prereq.Rnw            Mathematical Prerequisites (the core source), built
-asm/exam/1151/                 empty — exams not yet written
-asm/srm/                       SOA question bank (texify project)
+asm/note/data/frees/           FREES data (csv/), chapter scripts (scripts/), descriptions and errata (doc/)
+asm/note/prose.py              lists unnumbered paragraphs and remarks with line numbers
+asm/note/REVISION.md           current work order: rules, syllabus map, SOA map, procedure, checklist
+asm/note/unit01.Rnw            rebuilt on the SRM/PA design (the template)
+asm/note/unit02–14.Rnw         pre-rebuild versions, all built; to be rebuilt in order
+asm/note/prereq.Rnw            Mathematical Prerequisites (the single source of background results)
+asm/note/superseded/           unit01-first-principles.Rnw, the replaced Unit 1
+asm/exam/1151/                 empty; exams not yet written
 ```
 
-Build: `cd note && python build.py [03|prereq|…]`. One PDF per document; the
-student edition was removed on the instructor's instruction.
-Needs `Rscript`, `xelatex`, `bibtex`, `pygmentize`. All R packages are installed.
+**What the repository carries (instructor, 2026-09-16).** Only the PDFs and the sources that
+compile them: in `note/`, the `.Rnw` files, the two headers, `build.py`, `data/`, the two
+handoff documents and the PDFs; in `srm/`, `srm.tex`, `srm_*.tex`, `assets/`, `src/srm.pdf`,
+`srm.pdf` and the README. Both directories use a whitelist `.gitignore` (`*` then `!`
+rules), so a new file type must be added there before it can be committed. The texify
+pipeline in `srm/`, `note/superseded/`, `note/prose.py` and every build product stay
+local.
+
+Build: `cd note && python build.py [03|prereq|…]`, one document per invocation, never two
+at once. One PDF per document; there is no student edition. Needs `Rscript`, `xelatex`,
+`bibtex`, `pygmentize`; all R packages are installed. A green `[OK]` means LaTeX
+compiled, not that the R ran: `grep -c -E '^## Error( in|:)' unitNN.tex` must be 0 (gotchas 37, 56). The
+pre-rebuild sources of every document are in git at `84b0283`.
 
 ## 8. State and what is left
 
-**Built and verified** — unit01 43 pp · unit02 59 · unit03 35 · unit04 47 · unit05 29 ·
-unit06 77 · unit07 68 · unit08 71 · unit09 52 · unit10 91 · unit11 63 ·
-unit12 46 · unit13 42 · unit14 41 · prereq 109; all 0 errors,
-0 undefined references. **One PDF per document**: the student edition, its `--student` flag and the
-`\studentedition` toggle were removed on the instructor's instruction.
+**Built.** unit01 (rebuilt, 108 pp, 60 chunks, 8 proofs, 25 exercises) · unit02
+(rebuilt, 168 pp, 84 chunks, 31 proofs, 45 exercises) · unit03–14 and prereq
+(pre-rebuild, 0 errors, 0 undefined references). Next: rebuild Unit 3 per
+`REVISION.md` §5, then Units 4–14 in order.
 
-**Added to `prereq.Rnw` for Unit 2** (§P.18, immediately after the definition of the
-three laws): the corollary *the square of a $t_\nu$ is $F_{1,\nu}$*, with a three-line
-proof from the definitions. Unit 2 used this identity twice (Example 2.2 and the $k=1$
-remark) and the only proof of anything like it in the course was Unit 3's `cor:t2F`, i.e.
-forward. Note the two are different statements: the prerequisites' is about the *laws*,
-Unit 3's is about the general-$F$ *statistic* collapsing to $t^2$ when $q=1$.
+**What `prereq.Rnw` supplies beyond Parts I–III, and why** (each added for the unit named;
+cite by name, never by number):
 
-**Added to `prereq.Rnw` for Unit 6** (§P.3, Convexity and Separation): *coercive
-minimisation* (continuous + coercive attains its infimum; strictly convex ⇒ unique) and the
-*directional characterisation of a convex minimum* (`f'(x;v) ⩾ 0` for every `v`). The second
-is what lets Unit 6 derive the lasso stationarity conditions without introducing
-subdifferentials, and the lasso/ridge constrained-versus-penalised equivalence reuses the
-existing Slater strong-duality theorem verbatim.
+* §P.3 coercive minimisation (continuous + coercive attains its infimum; strictly convex ⇒
+  unique) and the directional characterisation of a convex minimum: the lasso stationarity
+  conditions without subdifferentials; the constrained/penalised equivalence of ridge and
+  lasso reuses the Slater strong-duality theorem (U06).
+* §P.18 the square of a $t_\nu$ is $F_{1,\nu}$, a statement about the laws; Unit 3's
+  `cor:nested-F`/$t^2$ statement is about the statistic when $q=1$ (U02).
+* §P.24 a CLT for bounded independent summands with unequal variances (U07) and a
+  Lyapunov CLT with (2+δ)-moments, since a Poisson score is unbounded (U08).
+* §P.24d *Dependent summands*: variance of a stationary average and the *L*² weak law; an
+  approximation lemma from Lévy continuity; a CLT for stationary *m*-dependent sequences by
+  big/small blocks; a CLT for autoregressive scores $n^{-1/2}\sum u_{t-1}\varepsilon_t$
+  with $u_t=\sum_j a_j\varepsilon_{t-j}$ (U10; makes the correlogram band a 95.45% band).
+  **It is not a martingale CLT**: martingale differences appear only as *L*²-orthogonality
+  to a "past space", with no σ-fields. If a later unit needs a genuine martingale CLT, add
+  it.
+* Part IV *Maximum Likelihood*: score identities by differentiation under the integral; a
+  concave maximum-likelihood theorem (existence, consistency, asymptotic normality) in
+  sandwich form $\sqrt n(\hat\theta-\theta_0)\Rightarrow N(0,G^{-1}FG^{-1})$, with the
+  χ² limit of $2\{\ell(\hat\theta)-\ell(\theta_0)\}$, Wald and likelihood-ratio
+  corollaries under the information equality $F=G$ (U07, U08; quasi-Poisson has $F=\phi G$).
+  Concavity is what keeps the proof short (curvature floor + $|U|=O_p(\sqrt n)$; no uniform
+  law of large numbers).
 
-**Added to `prereq.Rnw` for Unit 7.** §P.24 gained a CLT for *bounded* independent
-summands with *unequal* variances (Corollary "Bounded summands with unequal variances"),
-which the binary-regression score needs and the existing weighted-sums corollary, with its
-common-variance hypothesis, does not cover. Part IV gained a whole section, **Maximum
-Likelihood**: score identities via differentiation under the integral, then a *concave*
-maximum likelihood theorem (existence, consistency, asymptotic normality, and the χ² limit
-of 2{ℓ(θ̂)−ℓ(θ₀)}) for independent non-identically distributed observations, with Wald and
-likelihood ratio corollaries. Concavity is what makes the proof short: the curvature floor
-plus |U| = O_p(√n) puts the maximiser inside any ball, so consistency needs no uniform law
-of large numbers and no subdifferentials. Units 7 and 8 both rest on it; Unit 7 verifies its
-three hypotheses for logistic regression in one page.
+**Deliberately not in `prereq.Rnw`.** Determinants (only the trace is used) and the
+Moore–Penrose inverse (the rank-deficient case is handled by noting that R reports `NA`).
+Add them from `books/ma/` when a unit first needs them.
 
-**Added to `prereq.Rnw` for Unit 8.** §P.24 gained a **Lyapunov** CLT (bounded
-(2+δ)-moments, unequal variances), because a Poisson score `Σx_i(y_i−μ_i)` is unbounded and
-Unit 7's bounded-summand corollary does not reach it. The maximum-likelihood theorem was
-**generalised to the sandwich form**: the limiting curvature `G` and the limiting score
-variance `F` are now separate hypotheses, the conclusion is
-`√n(θ̂−θ₀) → N(0, G⁻¹FG⁻¹)`, and the χ² statements for `2{ℓ(θ̂)−ℓ(θ₀)}`, Wald and the
-likelihood ratio are stated under the extra hypothesis `F = G`, the information equality.
-That is exactly what quasi-Poisson needs: only the *mean* is correctly specified, `F = φG`,
-and the sandwich collapses to `φG⁻¹`. Unit 7 was updated to note that `F = G` holds there.
+**Proof choices to keep when rebuilding.** Unit 11 proves the cost-complexity pruning
+theorem by dynamic programming ($m_\alpha(t)=\min\{R(t)+\alpha,\,m_\alpha(t_L)+m_\alpha(t_R)\}$,
+every slope of $h_t$ at least 1, hence a unique $\alpha_t$ and nesting by induction on
+height), which is the algorithm the packages run and lets `prune.tree`'s `k` be recomputed
+to 1e−11; do not replace it with the lattice argument of `bda/note/unit05.Rnw`. Unit 10
+does not prove, and says so, the $\chi^2_{K-p-q}$ limit of a portmanteau statistic on
+fitted residuals (measured by simulation), the limiting law of the Dickey–Fuller $t$ (it
+proves the rate is $T$ and that the limit is not normal, then simulates the critical
+values), and GARCH asymptotics (the likelihood is not concave).
 
-**Unit 9 needed nothing new in `prereq.Rnw`.** Everything it proves is elementary algebra
-or a direct application of results already there: the closed-form
-`var(β̂₁) = 12σ²/{T(T²−1)}`, the random-walk moments, `var(ȳ) = σ²(T+1)(2T+1)/(6T)`,
-the discrete orthogonality of harmonics from a geometric sum, and the exact
-`DW = 2(1−r₁) − (e₁²+e_T²)/Σe²`. The one place where a limit theorem would be needed, the
-95% calibration of the ±2/√T correlogram band, is **not** claimed: the unit proves
-`var(r̃_k) = 1/(T−k)`, notes that Chebyshev gives only 1/4, and measures the coverage by
-simulation (95.6% and 95.8%). **Unit 10 closes that gap**: §2.3 derives
-`√T(r₁,…,r_K)' ⇒ N(0, I_K)` from the new prerequisites section below, so the band is a
-95.45% band, and Unit 9's two simulated numbers are explained rather than merely reported.
-Unit 9's own text was left as it stands.
-
-**Added to `prereq.Rnw` for Unit 10** (§P.24d, *Dependent Summands*, between
-Lindeberg–Feller and the delta method). The dependence wall that Unit 9 hit is now down.
-The section proves, in order: the variance of a stationary average and the resulting
-*L*² weak law (`γ(k)→0 ⇒ ȳ→μ`, no independence needed); an **approximation lemma**
-(if `S_n^{(p)} ⇒ Z_p` for each *p*, `Z_p ⇒ Z`, and `lim_p limsup_n P{|S_n−S_n^{(p)}|>ε}=0`,
-then `S_n ⇒ Z`), proved from Lévy continuity; *m*-dependence and a **CLT for stationary
-*m*-dependent sequences** by big-block/small-block, the big blocks being genuinely i.i.d.
-so Lindeberg–Lévy applies unchanged; and finally a **CLT for autoregressive scores**,
-`n^{-1/2} Σ u_{t-1}ε_t ⇒ N(0, τ²Γ)` for `u_t = Σ_j a_j ε_{t-j}` with `Σ|a_j|² < ∞`.
-§P.27 gained a numerical check of the last one: the variance is exact at every *n*, the
-*m*-dependent truncation error matches `τ⁴Σ_{j⩾m}a_j²`, and skewness and kurtosis approach
-0 and 3 at the *n*^(−1/2) rate but slowly (kurtosis still 4.76 at *n* = 50).
-
-**This replaces the martingale CLT that the Unit 9 handoff planned.** The martingale route
-needs conditioning on infinite σ-fields, hence the grouping lemma for independence, hence
-a π–λ argument that `prereq.Rnw` does not have and that the motto would require proving.
-The *m*-dependent approximation reaches every application the course has (AR(1) least
-squares with `a_j = β₁^j`; the correlogram and Ljung–Box with `a_j = 1{j = k−1}`) using
-only finite independence, Fubini and the existing Lindeberg–Lévy corollary. Martingale
-differences still appear, but as an *L*²-orthogonality statement about a "past space"
-`L_t` (the closure in *L*² of square-integrable functions of finitely many `ε_u`, `u ≤ t`),
-which needs no σ-fields at all. **If a later unit needs a genuine martingale CLT, add it;
-do not assume this section already is one.**
-
-**What Unit 10 deliberately does not prove**, and says so in the text:
-the `χ²_{K−p−q}` limit of a portmanteau statistic on *fitted* residuals (measured by
-simulation instead: mean *Q* at *K*−1 with one fitted coefficient, at *K*−4 with four);
-the limiting law of the Dickey–Fuller `t` statistic (a Brownian functional; the unit
-*does* prove the rate is *T* not √*T*, and that `T^{-1}Σy_{t-1}ε_t ⇒ (σ²/2)(χ²₁−1)`, which
-is enough to show the limit is not normal, then simulates the critical values); and the
-asymptotics of GARCH estimation (the likelihood is not concave, so §P.ML does not apply).
-
-**Two defects in already-built units were found by gotcha 37 and repaired.** The scan for
-`## Error` in the built `.tex` files, run retroactively over every unit, hit two:
-
-* `unit04` §4.6.4: `Xh` and `V_hc1` were never defined, so all five chunks of the weighted
-  least squares comparison errored and the PDF printed `object 'Xh' not found` where the
-  three-way agreement should have been. Fixed by adding `Xh <- cbind(1, xh)` and
-  `V_hc1 <- vcovHC(mh, type = "HC1")`. With the numbers finally printing, the exercise's
-  claim that the ordering is "WLS smallest, then HC1 and OLS" turned out to be wrong: HC1
-  is larger than OLS on the slope and *smaller* on the intercept. Reworded.
-* `unit05` §5.5.2: the chunk indexed the data frame by `names(coef(rs, j))`, which are
-  `regsubsets`'s dummy-column names (`DivisionW`) and not columns of `d`, so it errored.
-  Worse, **the pitfall's claim was false**: with the ISLR §6.1.3 form
-  `C_p = {RSS + 2(d+1)σ̂²}/n`, substituting the candidate's own `σ̂²` gives
-  `(RSS_d/n)(n+d+1)/(n−d−1)`, which still penalises size and on `Hitters` picks the same
-  model (10) as the correct version. The degeneracy belongs to the **standardised** form
-  `C_p = RSS_d/σ̂² − n + 2(d+1)`, where the substitution gives exactly `d+1`, a function of
-  size alone that always picks the smallest model. Rewritten with that algebra, verified to
-  2.8e−14, and the ISLR form's non-collapse stated explicitly.
-
-**Both had been reported as built and verified.** The lesson is gotcha 37: a green build
-means LaTeX compiled, not that the R ran.
-
-**Units 13 and 14 needed nothing new in `prereq.Rnw`.** Unit 13 uses the SVD (§P.10) for
-Eckart--Young, the spectral theorem and its Rayleigh corollary for the variance
-characterisation Unit 5 already proved, Jensen for the impurity-style arguments, and Unit
-10's analysis-of-variance identity for the within/between decomposition. Unit 14 is the
-payoff of §§P.3--P.3b: the SVM dual, strong duality under affine constraints, and
-complementary slackness are all direct applications, and coercive minimisation gives
-existence of the optimal hyperplane. Backpropagation is §P.11's chain rule.
-
-**Unit 12 needed nothing new in `prereq.Rnw`.** The variance-of-an-average theorem is one
-line of algebra; the majority-vote bound is Chebyshev; the boosting operator uses the
-spectral theorem and Taylor, both already there. Unit 1's out-of-bag fraction proposition is
-cited by name, and its closing remark was corrected from "(Unit 11)" to "(Unit 12)", bagging
-having moved.
-
-**Unit 11 needed nothing new in `prereq.Rnw`.** Everything it proves is elementary: the
-value function of cost-complexity pruning is a minimum of finitely many affine functions,
-hence concave and piecewise linear; the impurity results are Jensen on the simplex; the
-staircase bound is Jensen on `u ↦ u³`; and the two-class Gini identity and the categorical
-ordering theorem both reduce to Unit 10's analysis-of-variance identity.
-
-**The pruning theorem is proved by dynamic programming, not by the pruning lattice.**
-`bda/note/unit05.Rnw` §5.2.3 proves the same theorem through modularity of `R_α` on the
-lattice of pruned subtrees; both proofs are correct. Unit 11 uses the recursion
-`m_α(t) = min{R(t)+α, m_α(t_L)+m_α(t_R)}` instead, from which `h_t(α) = m_α(t_L)+m_α(t_R)
-− R(t) − α` has every slope ⩾ 1, so it is strictly increasing and has a unique zero `α_t`.
-That is shorter, needs no lattice theory, gives nesting by induction on height in three
-lines, and **is the algorithm the packages run**, so §4.1 can recompute `prune.tree`'s `k`
-from it to 1e−11. Do not replace it with the lattice argument.
-
-**Outstanding before anything new: the revision pass of `REVISION.md`.** 204 remarks to
-triage, 76 in-unit forward `\ref`s and 25 forward `Unit M` mentions to remove, and 154
-exercises to expand to roughly 20–26 per unit. **Unit 1's twelve forward `Unit M` mentions
-are exempt by instructor decision** and stay as they are; everything else goes. `remark` is `\newtheorem*`, so deleting
-remarks shifts no numbering and breaks no `\ref`; only units 02, 12 and 14 use
-`\ref{ex:...}` at all. Do not delete or merge `\subsection`s, which would move `sec:N.x`
-labels (gotcha 12).
-
-**To write** — the two exams; problem sets (`qa_mid`, `qa_final`);
-an SRM question→unit map. **All fourteen units are now written and built.**
-
-**Deliberately not yet in `prereq.Rnw`.** Determinants (only the trace is used so far) and
-the Moore–Penrose inverse (the rank-deficient case is currently handled by noting that R
-reports `NA`). Add them from `books/ma/` when the multivariate-normal density, the GLM
-likelihood, or the singular design case first needs them.
-
-**Known duplication.** Units 01–02 still prove in place four results that now also live in
-`prereq.Rnw`: Sherman–Morrison (U01), matrix differentiation, trace = rank, and the
-multivariate-normal/χ² results (U02). The intended end state is that the units cite them by
-name and the proofs live only in the prerequisites. Not yet done.
-
-**Exam format (decided, not yet built):** `exam` class with `\printanswers` toggle,
-Chinese header in the style of `mva/exam/1142/mid-1142.tex`; Part I ≈ 15 SOA-style
-five-choice questions (60 marks), Part II 3–4 written derivation/interpretation problems
-(40 marks).
+**Still to write.** The two exams (`exam` class with `\printanswers`, Chinese header as in
+`mva/exam/1142/mid-1142.tex`; Part I about 15 SOA-style five-choice questions for 60
+marks, Part II 3–4 written derivation/interpretation problems for 40 marks) and the
+problem sets (`qa_mid`, `qa_final`), after the units are rebuilt and the schedule
+re-planned.

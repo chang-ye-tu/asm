@@ -1,0 +1,124 @@
+# FILENAME IS Chap6RCode.txt
+#  THIS CODE USES THE DATASET risksurvey.csv
+
+## Risk Manager's Analysis
+survey <- read.table(choose.files(), header=TRUE, sep=",")
+names(survey)
+fix(survey)
+attach(survey)
+
+lmsurvey <- lm(FIRMCOST ~ ASSUME + CAP + SIZELOG + INDCOST + SOPH + CENTRAL,
+   data=survey)
+summary(lmsurvey)
+
+#  hist(lmsurvey$residuals)
+survey$rstudent.lmsurvey <- rstudent(lmsurvey)
+survey$hatvalues.lmsurvey <- hatvalues(lmsurvey)
+
+#  FIGURE  6.5
+par(mfrow=c(1, 2))
+library(Rcmdr)
+Hist(survey$rstudent.lmsurvey, scale="frequency", breaks=16)
+Hist(survey$hatvalues.lmsurvey, scale="frequency", breaks=16)
+dev.off()
+
+#  TABLE 6.3 SUMMARY STATS
+library(abind)
+numSummary(survey[,c("ASSUME", "CAP", "CENTRAL", "FIRMCOST", "INDCOST", "SIZELOG", "SOPH")], 
+  statistics=c("mean", "sd", "quantiles"), quantiles=c(0,.5,1))
+
+#  TABLE 6.4 MEANS BY LEVEL OF CAP
+survey$COSTLOG <- with(survey, log(FIRMCOST))
+survey$CAPfactor <- as.factor(survey$CAP)
+
+numSummary(survey[,c("ASSUME", "CAP", "CENTRAL", "COSTLOG", "FIRMCOST", "INDCOST", "SIZELOG", "SOPH")], 
+  groups=survey$CAPfactor, statistics=c("mean", "sd", "quantiles"), quantiles=c(0,.5,1))
+
+#  TABLE 6.5 CORRELATIONS
+cor(survey[,c("ASSUME","CAP","CENTRAL","COSTLOG","FIRMCOST","INDCOST", "SIZELOG","SOPH")], use="complete.obs")
+
+#  FIGURE  6.6
+layout(matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),byrow=TRUE,ncol=6))
+par("oma"=c(3,3,3,3),"mai"=c(0,0,0.1,0))
+
+plot.new()
+Hist(survey$ASSUME,scale="frequency",breaks=18,main="ASSUME", xaxt="n", yaxt="n")
+Hist(survey$SIZELOG,scale="frequency",breaks=18,main="SIZELOG", xaxt="n", yaxt="n")
+Hist(survey$INDCOST,scale="frequency",breaks=18,main="INDCOST", xaxt="n", yaxt="n")
+Hist(survey$CENTRAL,scale="frequency",breaks=18,main="CENTRAL", xaxt="n", yaxt="n")
+Hist(survey$SOPH,scale="frequency",breaks=18,main="SOPH", xaxt="n", yaxt="n")
+Hist(survey$FIRMCOST,scale="frequency",breaks=18,main="FIRMCOST", xaxt="n", yaxt="n")
+
+plot(ASSUME,FIRMCOST, xaxt="n", yaxt="n")
+plot(SIZELOG,FIRMCOST, xaxt="n", yaxt="n")
+plot(INDCOST,FIRMCOST, xaxt="n", yaxt="n")
+plot(CENTRAL,FIRMCOST, xaxt="n", yaxt="n")
+plot(SOPH,FIRMCOST, xaxt="n", yaxt="n")
+dev.off()
+
+#  FIGURE  6.7
+Hist(survey$COSTLOG, scale="frequency", breaks=16)
+dev.off()
+
+#  FIGURE  6.8
+layout(matrix(c(1,2,3,4,5),byrow=TRUE,ncol=5))
+par("oma"=c(3,5,3,3),"mai"=c(0,0,0.2,0))
+plot(ASSUME,survey$COSTLOG,main="ASSUME",xaxt="n",yaxt="n",ylab="COSTLOG")
+plot(SIZELOG,survey$COSTLOG,main="SIZELOG",xaxt="n",yaxt="n")
+plot(INDCOST,survey$COSTLOG,main="INDCOST",xaxt="n",yaxt="n")
+plot(CENTRAL,survey$COSTLOG,main="CENTRAL",xaxt="n",yaxt="n")
+plot(SOPH,survey$COSTLOG,main="SOPH",xaxt="n",yaxt="n")
+dev.off()
+
+lm2survey <- lm(COSTLOG~ASSUME+CAP+SIZELOG+INDCOST+CENTRAL+SOPH,
+  data=survey)
+summary(lm2survey)
+#hist(lm2survey$residuals)
+survey$rstudent.lm2survey <- rstudent(lm2survey)
+survey$hatvalues.lm2survey <- hatvalues(lm2survey)
+
+#  FIGURE  6.9
+par(mfrow=c(1, 2))
+Hist(survey$rstudent.lm2survey, scale="frequency", breaks=16)
+Hist(survey$hatvalues.lm2survey, scale="frequency", breaks=16)
+dev.off()
+
+#  VARIANCE INFLATION FACTORS NOT A PROBLEM
+#  library(faraway)
+#  The "vif" function is also under the library "faraway" if you haven't opened up the Rcmdr library. 
+
+vif(lm2survey)
+
+# STEPWISE REGRESSION SUGGESTS SIZELOG AND INDCOST
+stepwise(lm2survey, direction='backward/forward', criterion='AIC')
+
+# The "stepwise" function is in the Rcmdr library, alternatively, you can use the following codes:
+# step(im2survey)
+
+lm3survey <- lm(COSTLOG~SIZELOG+INDCOST,data=survey)
+summary(lm3survey)
+#hist(lm3survey$residuals)
+survey$rstudent.lm3survey <- rstudent(lm3survey)
+survey$hatvalues.lm3survey <- hatvalues(lm3survey)
+
+#  FIGURE  6.10
+par(mfrow=c(1, 2))
+Hist(survey$rstudent.lm3survey, scale="frequency", breaks=16)
+Hist(survey$hatvalues.lm3survey, scale="frequency", breaks=16)
+dev.off()
+
+#  FIGURE  6.11 
+survey$residuals.lm3survey <- residuals(lm3survey)
+plot(INDCOST,survey$residuals.lm3survey,xlab="INDCOST",ylab="RESIDUAL")
+survey$INDCOST2 <- with(survey, INDCOST*INDCOST)
+
+lm4survey <- lm(survey$residuals.lm3survey~INDCOST+INDCOST2,data=survey)
+summary(lm4survey)
+
+lm5survey <- lm(COSTLOG~SIZELOG+INDCOST+INDCOST2,data=survey)
+summary(lm5survey)
+
+#quadfit <- lm4survey$coefficients[1] + lm4survey$coefficients[2]*INDCOST #+lm4survey$coefficients[3]*INDCOST2
+plot(INDCOST,survey$residuals.lm3survey,xlab="INDCOST",ylab="RESIDUAL")
+lines(lowess(INDCOST,survey$residuals.lm3survey, f=.8))
+ 

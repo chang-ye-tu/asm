@@ -51,7 +51,3 @@ _minted*/
 
 # Local packaging output
 /dist/
-
-# Redundant copy of the official SRM input.  The pipeline's canonical input is
-# srm/src/srm.pdf; the interleaved course draft is srm/srm.pdf.
-/srm-qa.pdf

@@ -1,0 +1,111 @@
+#  FILENAME IS Chap19RCode.txt ;
+#  THIS CODE USES THE DATASET SingaporeInjury.csv
+
+library(HH)
+ 
+#  READ IN DATA
+SingInjury = read.csv(choose.files(),header=TRUE)
+#  OMIT THE ZERO FROM MOST ANALYSES
+SingInjuryA = subset(SingInjury, Payment != 0 )
+fix(SingInjuryA)
+str(SingInjuryA)
+attach(SingInjuryA)
+
+#  SOME QUICK LOOKS AT PAYMENTS
+hist(Payment)
+plot(Delay,Payment)
+lnPayment = log(Payment)
+hist(lnPayment)
+
+#  FIGURE 19.2 - Payments
+library(lattice)
+boxplot(Payment ~ Delay)
+xyplot(Payment~Delay, groups=Year, type="b")
+#  FIGURE 19.2 - Log Payments
+boxplot(lnPayment ~ Delay)
+trellis.device(color=F) # telling the trellis device to mimic 
+                        #'black and white'
+xyplot(lnPayment~Delay, groups=Year, type="b", lty=1)
+
+#  LOGNORMAL MODEL
+model1=lm(lnPayment ~ factor(Year)+factor(Delay) )
+summary(model1)
+anova(model1)
+#  CHECK OUT RESIDUALS
+hist(residuals(model1))
+qqnorm(residuals(model1));qqline(residuals(model1))
+par(mfrow=c(2, 2))
+plot(model1)
+dev.off()
+
+#  FITTED VALUES
+beta = coefficients(model1)
+forei=rep(c(1:9),each=9); forej=rep(c(1:9),9)
+premat=model.matrix(lm(rnorm(81)~factor(forei)+factor(forej)))
+forecast= exp(premat %*% beta)
+
+########Comment: not elegant ############################
+forecast1=rep(0,81);forei=forecast;forej=forecast
+forecast1=NULL
+for(i in 1:9){
+for(j in 1:9){
+xij = c(1, rep(0,16))
+if(i>1){xij[i]=1}
+if(j>1){xij[8+j]=1}
+foreij = xij %*% beta
+forecast1[9*(i-1)+j]=exp(foreij)
+forei[9*(i-1)+j]=i
+forej[9*(i-1)+j]=j
+}}
+forecast1;forei;forej
+
+
+trellis.device(color=F) 
+xyplot(forecast~forej, groups=forei, type="b", pch=16, lty=1)
+
+# HOERL CURVE
+model2=lm(lnPayment ~ factor(Year)+factor(Year)*log(Delay)+
+           factor(Year)*Delay )
+summary(model2)
+anova(model2)
+par(mfrow=c(2, 2))
+plot(model2)
+dev.off()
+
+#  REDUCED FORM OF HOERL CURVE
+model3=lm(lnPayment ~ factor(Year)+log(Delay)+Delay )
+summary(model3)
+anova(model3)
+
+#  SHOW THAT THE REDUCED FORM IS BETTER
+anova(model3,model2)
+
+#  FITTED VALUES FOR REDUCED FORM OF HOERL CURVE
+beta = coefficients(model3)
+forei=rep(c(1:9),each=9); forej=rep(c(1:9),9)
+premat=model.matrix(lm(rnorm(81)~factor(forei)+
+    log(forej)+forej))
+forecast= exp(premat %*% beta)
+
+
+trellis.device(color=F) 
+xyplot(forecast~forej, groups=forei, type="b", pch=16, lty=1)
+
+
+# POISSON MODEL
+model4=glm(Payment ~ factor(Year)+factor(Delay),
+data=SingInjuryA,poisson(link="log") )
+summary(model4)
+
+#  FITTED VALUES FOR POISSON MODEL
+beta = coefficients(model4)
+forei=rep(c(1:9),each=9); forej=rep(c(1:9),9)
+premat=model.matrix(lm(rnorm(81)~factor(forei)+
+    factor(forej)))
+forecast= exp(premat %*% beta)
+
+
+trellis.device(color=F) 
+xyplot(forecast~forej, groups=forei, type="b", pch=16, lty=1)
+
+

@@ -1,0 +1,161 @@
+#  FILENAME IS Chap10RCode.txt ;
+#  THIS CODE USED THE DATASET Divorce.csv
+#  THIS CODE ALSO USED THE DATASET Medicare.csv.
+
+#  READ IN DATASET DIVORCE.CSV
+Divorce <- read.table(choose.files(),header=TRUE, sep =",")
+fix(Divorce)
+dim(Divorce)
+names(Divorce)
+
+#  FIGURE 10.1 - Plot of 1965 Data
+#  Pick a subset of Divorce for the 1965 data
+Divorce65 <- subset (Divorce, TIME==1)
+dim(Divorce65)
+attach(Divorce65)
+
+library(HH)
+par(cex=1.5)
+plot(DIVORCE ~ AFDC, xaxt="n", yaxt="n",ylab="",xlab="")
+axis(2, at=seq(0, 6, by=1), las=1, tck=0.01)
+axis(2, at=seq(0, 6, by=0.1), lab=F, tck=0.005)
+axis(1, at=seq(20,220, by=40), tck=0.01)
+axis(1, at=seq(20,220, by=2), lab=F, tck=0.005)
+mtext("DIVORCE", side=2, line=-1, at=6,   las=1, cex=1.2)
+mtext("AFDC", side=1, line=3, at=120, cex=1.2)
+setwd("R://")
+export.eps("F10Divorce65.eps", width=6,height=6) 
+dev.off()
+
+#  FIGURE 10.2 - PLOT OF 1965 AND 1975 DATA, CONNECTING THE YEARS 
+
+par(cex=1.5)
+plot(DIVORCE ~ AFDC, data = subset(Divorce, TIME %in% c(1, 2)), xaxt="n", yaxt="n",ylab="",xlab="")
+   for (i in Divorce$STATE) {
+    lines(DIVORCE ~ AFDC, data = subset(Divorce, TIME %in% c(1, 2) & STATE == i)) }
+axis(2, at=seq(0, 10, by=1), las=1, tck=0.01)
+axis(2, at=seq(0, 10, by=0.1), lab=F, tck=0.005)
+axis(1, at=seq(0,400, by=100), tck=0.01)
+axis(1, at=seq(0,400, by=10), lab=F, tck=0.005)
+mtext("DIVORCE", side=2, line=-1, at=8.9, cex=1.2, las=1)
+mtext("AFDC", side=1, line=3, at=200, cex=1.2)
+export.eps("F10DivorcePanel.eps", width=6,height=6) 
+dev.off()
+
+
+#  MULTIPLE TIME SERIES PLOT  ;
+Divorce$YEAR<-Divorce$TIME*10+1955
+plot(DIVORCE ~ YEAR, data = Divorce, xaxt="n", yaxt="n",ylab="",xlab="")
+   for (i in Divorce$STATE) {
+   lines(DIVORCE ~ YEAR, data = subset(Divorce, STATE == i)) }
+axis(2, at=seq(0, 10, by=1), las=1, font=10, cex=0.005, tck=0.01)
+axis(2, at=seq(0, 10, by=0.1), lab=F, tck=0.005)
+axis(1, at=seq(1965,1995, by=10), font=10, cex=0.005, tck=0.01)
+axis(1, at=seq(1964,2000, by=1), lab=F, tck=0.005)
+mtext("DIVORCE", side=2, line=0, at=10, font=12, cex=1, las=1)
+mtext("YEAR", side=1, line=3, at=1980, font=12, cex=1)
+dev.off()
+
+# READ IN DATASET Medicare.CSV
+
+detach(Divorce65)
+Medicare <- read.table(choose.files(), sep =",",header=TRUE)
+#  CREATE OTHER VARIABLES;
+Medicare$AVE_DAYS= Medicare$TOT_D/Medicare$NUM_DCHG
+Medicare$CCPD=Medicare$COV_CHG/Medicare$NUM_DCHG
+Medicare$NUM_DCHG=Medicare$NUM_DCHG/1000
+Medicare$YEAR1 = 1989+Medicare$YEAR
+attach(Medicare)
+
+#  FIGURE 10.3 - CCPD vs YEAR;  MULTIPLE TIME SERIES PLOT;
+par(cex=0.9)
+plot(CCPD ~ YEAR1, data = Medicare, xaxt="n", yaxt="n", ylab="", xlab="")
+ for (i in Medicare$STATE) {
+ lines(CCPD ~ YEAR1, data = subset(Medicare, STATE == i)) }
+axis(2, at=seq(0, 22000, by=4000), las=1,  tck=0.01)
+axis(1, at=seq(1990,1995, by=1), tck=0.01)
+mtext("CCPD", side=2, line=0, at=23500, cex=1, las=1)
+mtext("YEAR", side=1, line=3, at=3.5, cex=1)
+export.eps("F10MedicareTSPlot.eps", width=5,height=4) 
+dev.off()
+
+#  FIGURE 10.4 - CCPD vs NUM.DCHG;
+plot(CCPD ~ NUM_DCHG, data = Medicare, xaxt="n", yaxt="n", ylab="", xlab="")
+for (i in Medicare$STATE) {
+ lines(CCPD ~ NUM_DCHG, data = subset(Medicare, STATE == i)) }
+axis(2, at=seq(0, 22000, by=4000), las=1, font=10, cex=0.005, tck=0.01)
+axis(2, at=seq(0, 22000, by=200), lab=F, tck=0.005)
+axis(1, at=seq(0,1200, by=200), font=10, cex=0.005, tck=0.01)
+axis(1, at=seq(0,1200, by=20), lab=F, tck=0.005)
+mtext("CCPD", side=2, line=0, at=23000, cex=1, las=1)
+mtext("Number of Discharges in Thousands", side=1, line=3, at=500, cex=1)
+export.eps("F10MedicarePlotWithLines.eps", width=6,height=6) 
+dev.off()
+
+
+#  CREATE A NEW DATA SET, REMOVING THE OUTLIER 
+#  BY EXCLUDING THE 2ND OBSERVATION OF THE 54TH STATE;
+
+Medicare2 <- subset(Medicare, STATE != 54 | YEAR != 2)
+
+#  FIGURE 10.5: TRELLIS PLOT
+library(nlme)
+trellis.device(color=F) # telling the trellis device to mimic 'black and white'
+GrpMedicare <- groupedData(CCPD ~ YEAR1| NMSTATE, data=Medicare2)
+plot(GrpMedicare, xlab="YEAR", ylab="CCPD", 
+     scale = list(x=list(draw=FALSE)), layout=c(18,3),
+      par.strip.text = list(cex=0.75), grid=FALSE)
+export.eps("F10MedicareTrellisPlot.eps", width=6,height=6) 
+dev.off()
+
+
+#  CREATE A NEW VARIABLE;
+# THE NEW VARIABLES YR31 WILL BE USED IN THE FINAL MODEL TO GIVE THE 31st STATE A SPECIFIC SLOPE;
+Medicare2$FSTATE <- factor(Medicare2$NMSTATE)
+Medicare2$Yr31<-(Medicare2$STATE==31)*Medicare2$YEAR
+
+#  Regression Model 1;
+Model.1 <- lm(CCPD ~ NUM_DCHG + YEAR + AVE_DAYS , data=Medicare2)
+Model.1.sum <- summary(Model.1)
+#  Regression Model 2;
+Model.2 <- lm(CCPD ~ NUM_DCHG + YEAR + AVE_DAYS + Yr31 , data=Medicare2)
+Model.2.sum <- summary(Model.2)
+#  Basic Fixed Effects Model
+Model.3 <- lm(CCPD ~ NUM_DCHG  + YEAR + AVE_DAYS + Yr31 + FSTATE - 1, data=Medicare2)
+Model.3.sum <- summary(Model.3)
+anova(Model.2, Model.3)
+
+#  SECTION 10.3
+
+beta1   <- Model.1$coefficients
+tstats1 <- beta1/(Model.1.sum$sigma*sqrt(diag(Model.1.sum$cov.unscaled)))
+beta2   <- Model.2$coefficients
+tstats2 <- beta2/(Model.2.sum$sigma*sqrt(diag(Model.2.sum$cov.unscaled)))
+beta3   <- Model.3$coefficients
+tstats3 <- beta3/(Model.3.sum$sigma*sqrt(diag(Model.3.sum$cov.unscaled)))
+
+#  Table 10.1 - Smmarry statistics from three models
+tout <- cbind(beta1[2:4], tstats1[2:4], beta2[2:5], tstats2[2:5], beta3[1:4], tstats3[1:4])
+tout
+sigma         <- cbind(Model.1.sum$sigma, Model.2.sum$sigma,Model.3.sum$sigma)
+r.squared     <- 100*cbind(Model.1.sum$r.squared, Model.2.sum$r.squared,Model.3.sum$r.squared)
+adj.r.squared <- 100*cbind(Model.1.sum$adj.r.squared, Model.2.sum$adj.r.squared,Model.3.sum$adj.r.squared)
+sigma;r.squared;adj.r.squared
+
+
+#  SECTION 10.4
+
+Model.4 <- lm(CCPD ~ NUM_DCHG  + YEAR + AVE_DAYS + FSTATE +FSTATE*YEAR- 1, data=Medicare2)
+Model.4.sum <- summary(Model.4)
+Model.4.sum
+
+Model.4.sum$r.squared; Model.4.sum$adj.r.squared;Model.3.sum$r.squared
+partialF = (Model.4.sum$r.squared-Model.3.sum$r.squared)/52/
+          (  (1-Model.4.sum$r.squared)/Model.4.sum$df[2] )
+partialF
+1- pf(partialF, 52, 213)
+
+#  You can also get the test statistics directly
+anova(Model.3, Model.4)
+
+

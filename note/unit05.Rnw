@@ -46,10 +46,6 @@ library(ISLR2)
 FREES §5.2, §6.2--6.3 · ISLR §6.1.1--6.1.2.
 \end{reading}
 
-$R^2$ cannot rank models of different size, since it never decreases when a predictor is
-added (Unit 2). Selection therefore needs both a search over subsets and a criterion that
-charges for size.
-
 \begin{definition}[Search procedures]\label{def:search}
 With $k$ candidate predictors:
 \begin{enumerate}[label=\textup{(\roman*)}]
@@ -140,9 +136,8 @@ Subtracting, $n\,\mathrm{Err}_{\mathrm{in}} - \expc[\SSE] = \sigma^2d - \sigma^2
 
 \begin{remark}
 The bias term $|\bM\bmu|^2$ cancels, so~\eqref{eq:mallows} holds under misspecification.
-The training error understates prediction error by $2d\sigma^2/n$, and that quantity grows
-with the number of parameters: this is the precise form of the statement in Unit 1 that
-training error is optimistic and that the optimism widens with flexibility.
+The training error understates prediction error by $2d\sigma^2/n$, and that quantity grows with the number of parameters, which is the precise form of Unit 1's
+optimism of the training error.
 \end{remark}
 
 \begin{definition}[Criteria]\label{def:criteria}
@@ -267,8 +262,8 @@ preferable in small samples.
 ISLR §6.3, §12.2.
 \end{reading}
 
-Subset selection discards predictors. Dimension reduction instead replaces the $k$
-predictors by $M<k$ linear combinations and regresses on those.
+Dimension reduction replaces the $k$ predictors by $M<k$ linear combinations and regresses on
+those.
 
 \subsection{Principal components}\label{sec:5.3.1}
 
@@ -346,9 +341,8 @@ column space (Unit 2), and the two column spaces coincide.
 \begin{remark}
 So PCR is not a new estimator but a path from the null model to least squares, indexed by
 $M$. It reduces variance by discarding the low-variance directions of $\bX$, at the cost of
-bias if the response happens to depend on them. The directions are chosen without looking
-at $\bY$, which is the essential difference from the next method, and the reason PCR can
-discard exactly the direction that matters.
+bias if the response happens to depend on them. The directions are chosen without looking at $\bY$, so PCR can discard exactly the direction
+that matters.
 \end{remark}
 
 \subsection{Partial least squares}\label{sec:5.3.3}
@@ -398,9 +392,6 @@ c(Cp    = (RSS + 2*dd*s2)/n,
   adjR2_manual = 1 - (RSS/(n-dd)) / (SST/(n-1)),
   adjR2_lm     = summary(m)$adj.r.squared)
 @
-
-The optimism of Theorem~\ref{thm:mallows} is $2d\sigma^2/n$ per observation. Simulating
-from a known $\bmu$ lets both sides of~\eqref{eq:mallows} be computed.
 
 <<mallows-sim>>=
 set.seed(1)
@@ -637,7 +628,7 @@ Both are Theorem~\ref{thm:pca}. The first claim is the Rayleigh characterisation
 largest eigenvalue applied to $\bS$, which is symmetric, so the spectral theorem provides
 an orthonormal eigenbasis. The second follows from
 $\bz_j'\bz_l=(n-1)\lambda_l\bv_j'\bv_l$, which vanishes for $j\neq l$ by orthonormality of
-the eigenvectors. Uncorrelatedness is what makes the regression on the scores in PCR a
+the eigenvectors. Uncorrelatedness makes the regression on the scores in PCR a
 sequence of independent one-dimensional problems.
 \end{solution}
 

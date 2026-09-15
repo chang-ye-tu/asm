@@ -239,9 +239,7 @@ coefficient by $\pi/\sqrt3$.
 
 \begin{remark}
 The two factors, $1.60$ and $1.81$, calibrate different things: the first the slope at
-$\pi=1/2$, the second the scale of the latent error. Neither is exact, since $\Lambda$ and
-$\Phi$ are genuinely different functions; §\ref{sec:7.4.3} reports the ratio actually
-observed on a data set whose events are rare.
+$\pi=1/2$, the second the scale of the latent error. Neither is exact, since $\Lambda$ and $\Phi$ are genuinely different functions.
 \end{remark}
 
 \subsection{The likelihood}\label{sec:7.1.3}
@@ -881,8 +879,7 @@ compared by an information criterion rather than by a likelihood ratio test
 FREES writes the model as in~\eqref{eq:polr}, with $+\bx_i'\bb$. R's \texttt{MASS::polr}
 fits $\logit\,\prb\{y\leqslant j\}=\zeta_j-\bx_i'\bgamma$, so that
 $\bgamma=-\bb$ and $\zeta_j=\alpha_j$: a positive \texttt{polr} coefficient pushes the
-response towards \emph{higher} categories. The two parametrisations give the same fitted
-probabilities and the same log-likelihood, and §\ref{sec:7.4.6} checks that they do.
+response towards \emph{higher} categories. The two parametrisations give the same fitted probabilities and the same log-likelihood.
 \end{remark}
 
 %==============================================================================
@@ -938,17 +935,11 @@ c(max_abs_score = max(abs(U)), largest_column_entry = max(abs(X)),
   smallest_se = min(summary(g)$coefficients[, 2]))
 @
 
-Corollary~\ref{cor:score-eq} is an exact arithmetic identity at the optimum, not an
-approximation: the fitted probabilities reproduce the observed counts overall and within
-each level of any $0/1$ covariate.
-
 <<score-identity>>=
 c(defaults = sum(y), fitted_total = sum(p),
   student_defaults = sum(y[d$student == "Yes"]),
   student_fitted = sum(p[d$student == "Yes"]))
 @
-
-Theorem~\ref{thm:irls} says the whole fit is a sequence of weighted least squares steps.
 
 <<irls>>=
 irls <- function(X, y, tol = 1e-13) {
@@ -1061,8 +1052,6 @@ accurate, against $96.7\%$ for the rule that never predicts a default: almost al
 accuracy comes from the class proportions. The third row is the cost-optimal threshold of
 Theorem~\ref{thm:cost-threshold} when a missed default costs ten times a false alarm.
 
-Theorem~\ref{thm:auc} and Corollary~\ref{cor:auc-invariance} give five routes to one number.
-
 <<auc>>=
 np <- sum(y == 1); nn <- sum(y == 0)
 rank_auc <- function(v) (sum(rank(v)[y == 1]) - np*(np + 1)/2)/(np*nn)
@@ -1103,9 +1092,6 @@ dotted diagonal is the curve of a score carrying no information
 (Corollary~\ref{cor:auc-invariance}(ii)).}\label{fig:roc}
 \end{figure}
 
-Theorem~\ref{thm:cost-threshold} is a statement about the true conditional probability, so
-it is checked on data simulated from a known logistic model.
-
 <<cost-threshold>>=
 set.seed(3); N <- 200000
 xg <- rnorm(N); pt <- plogis(-2 + 1.5*xg); yg <- rbinom(N, 1, pt)
@@ -1134,9 +1120,6 @@ c(rows_sum_to_one = max(abs(rowSums(P) - 1)),
   c_minus_1_times_p = (nlevels(w$maritl) - 1)*ncol(Xm))
 @
 
-Corollary~\ref{cor:genlogit-fitted} again holds exactly, and
-Proposition~\ref{prop:baseline} says the choice of baseline is immaterial.
-
 <<multinom-checks>>=
 Y <- model.matrix(~ maritl - 1, data = w)
 rbind(observed = colSums(Y), fitted = colSums(P))
@@ -1147,10 +1130,6 @@ c(max_probability_difference =
   loglik_original = as.numeric(logLik(m)),
   loglik_rebased = as.numeric(logLik(m2)))
 @
-
-Theorem~\ref{thm:iia} says the conditional model on two categories is a binary logistic
-regression with coefficient $\bb_j-\bb_h$, so restricting the sample must reproduce the
-difference of the full fit.
 
 <<iia-check>>=
 sub <- droplevels(subset(w, maritl %in% c("2. Married", "4. Divorced")))
@@ -1175,9 +1154,6 @@ c(manual_loglik = sum(log(pm[cbind(seq_len(nrow(pm)), yo)])),
 round(rbind(beta_of_equation_polr = bb,
             gamma_reported_by_polr = unname(o$coefficients)), 5)
 @
-
-Corollary~\ref{cor:polr-check}: the four dichotomisations $\indc\{y\leqslant j\}$ are
-logistic regressions sharing one slope vector under the model.
 
 <<polr-check>>=
 sep <- sapply(1:4, function(j)

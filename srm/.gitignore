@@ -1,20 +1,14 @@
-# Most texify state is disposable, but the map and two local QA tools are
-# hand-written source files referenced by README.md and must be versioned.
-.texify_work/*
-!.texify_work/srm.map.yaml
-!.texify_work/smoke.tex
-!.texify_work/mathdiff.py
-!.texify_work/run1/
-.texify_work/run1/*
-!.texify_work/run1/*.tex
-!.texify_work/run2/
-.texify_work/run2/*
-!.texify_work/run2/*.tex
-
-*.aux
-*.log
-*.out
-*.fdb_latexmk
-*.fls
-*.synctex.gz
-__pycache__/
+# Versioned in srm/: the interleaved sample questions (srm.tex, srm_01–03.tex,
+# srm_body.tex), the assets they \input, the official input in src/, the built
+# srm.pdf and the README. The texify pipeline that produced the .tex files, its work
+# directory, caches and the agent skill files stay local.
+*
+!.gitignore
+!README.md
+!srm.tex
+!srm_*.tex
+!*.pdf
+!assets/
+!assets/**
+!src/
+!src/**
