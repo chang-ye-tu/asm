@@ -37,175 +37,112 @@ knitr::opts_chunk$set(fig.path = "figs/unit13-")
 
 \setcounter{page}{1}
 
+
 %==============================================================================
-\section{Principal Components}\label{sec:13.1}
+
+\section{Unsupervised Learning}\label{sec:13.1}
 %==============================================================================
 
 \begin{reading}
-ISLR §12.1--12.2.
+ISLR §12.1, §12.2 (both reading lists; §12.2 is proved in Unit 5). \ SRM learning outcomes
+5(a), 5(b).
 \end{reading}
 
-There is no response: what is asked of $\bX$ alone is whether its $k$ columns carry $k$
-directions' worth of information, and whether its $n$ rows fall into groups.
-
-\subsection{Two definitions, one answer}\label{sec:13.1.1}
-
-\begin{definition}[Rank-$M$ approximation]\label{def:rankM}
-For $1\leqslant M\leqslant k$ let $\calA_M$ be the set of $n\times k$ matrices of rank at
-most $M$. The best rank-$M$ approximation problem is
-\begin{equation}\label{eq:rankM}
-\min_{\bA\in\calA_M}\ \|\bX-\bA\|_F^2 ,
-\qquad \|\bB\|_F^2=\sum_{i,j}b_{ij}^2=\tr(\bB'\bB) .
-\end{equation}
-\end{definition}
-
-\begin{theorem}[Eckart--Young]\label{thm:eckart}
-Let $\bX=\bU\bD\bV'$ be a singular value decomposition (prerequisites) with singular values
-$d_1\geqslant\cdots\geqslant d_k\geqslant0$, and let $\bX_M=\sum_{m\leqslant M}d_m\bu_m\bv_m'$
-be the truncation. Then $\bX_M$ solves~\eqref{eq:rankM} and
-\begin{equation}\label{eq:eckart}
-\min_{\bA\in\calA_M}\|\bX-\bA\|_F^2=\sum_{m>M}d_m^2 .
-\end{equation}
-Its columns of $\bV$ are the loading vectors of Unit 5 and $\bU\bD$ holds the scores, so the
-two definitions of a principal component coincide.
-\end{theorem}
-
-\begin{proof}
-\textbf{The value is attained.} $\bX-\bX_M=\sum_{m>M}d_m\bu_m\bv_m'$, and the $\bu_m$ are
-orthonormal, as are the $\bv_m$, so
-$\tr\{(\bX-\bX_M)'(\bX-\bX_M)\}=\sum_{m>M}d_m^2$.
-
-\textbf{No rank-$M$ matrix does better.} Let $\bA$ have rank at most $M$ and let $\bP$ be
-the orthogonal projection on the column space of $\bA$, of rank $r\leqslant M$. Since the
-columns of $\bA$ lie in that space, $\bP\bA=\bA$, and for each column $\bx$ of $\bX$ the
-projection theorem (prerequisites) gives $|\bx-\bP\bx|\leqslant|\bx-\bA\bx^\ast|$ for the
-corresponding column; summing over columns, $\|\bX-\bA\|_F^2\geqslant\|\bX-\bP\bX\|_F^2$.
-So it suffices to minimise over projections of rank $M$.
-
-Write $\bP=\bW\bW'$ with $\bW$ having $M$ orthonormal columns. Then
-\[
-\|\bX-\bP\bX\|_F^2=\tr(\bX'\bX)-\tr(\bW'\bX'\bX\bW) ,
-\]
-because $\tr\{(\bI-\bP)\bX\bX'(\bI-\bP)\}=\tr(\bX'\bX)-\tr(\bP\bX\bX')$ and $\bP$ is
-idempotent. Maximising $\tr(\bW'\bX'\bX\bW)$ over orthonormal $\bW$ is maximising
-$\sum_{m\leqslant M}\bw_m'\bX'\bX\bw_m$, which by the argument of Unit 5, applied one
-direction at a time, is at most $\sum_{m\leqslant M}d_m^2$, the $d_m^2$ being the
-eigenvalues of $\bX'\bX$; equality holds at $\bW=[\bv_1\ \cdots\ \bv_M]$. Subtracting from
-$\tr(\bX'\bX)=\sum_md_m^2$ gives~\eqref{eq:eckart}.
-
-\textbf{The two definitions agree.} $\bX'\bX=\bV\bD^2\bV'$, so the eigenvectors of
-$\bS=\bX'\bX/(n-1)$ are the columns of $\bV$ with eigenvalues $\lambda_m=d_m^2/(n-1)$, which
-is the statement of Unit 5, and the scores are $\bX\bv_m=d_m\bu_m$.
-\end{proof}
-
-\begin{remark}
-So the first $M$ components are simultaneously the $M$ directions of greatest variance and
-the $M$-dimensional plane closest to the data in squared distance. Because the two questions have one answer, a picture of the first two scores is both the
-most spread-out projection and the least distorted one.
+\begin{remark}[ISLR §12.1]
+In unsupervised learning there are features $X_1,\ldots,X_p$ on $n$ observations and no
+response. Nothing is predicted, so there is no test error and no cross-validation: the goals are
+an informative picture of the data and the discovery of subgroups, among the observations or
+among the variables. ISLR's examples are subgroups of breast cancer patients by gene
+expression, groups of shoppers by browsing and purchase history, and the choice of search
+results to show a given user. The analysis is often part of exploratory data analysis, and
+there is no universally accepted way to check its result.
 \end{remark}
 
-\begin{corollary}[Variance explained is error removed]\label{cor:pve-recon}
-With $\lambda_m=d_m^2/(n-1)$,
-\begin{equation}\label{eq:pve-recon}
-\frac{\sum_{m\leqslant M}\lambda_m}{\sum_{m\leqslant k}\lambda_m}
-=1-\frac{\|\bX-\bX_M\|_F^2}{\|\bX\|_F^2} ,
-\end{equation}
-so the cumulative proportion of variance explained of Unit 5 is one minus the relative
-approximation error.
-\end{corollary}
+\begin{remark}[ISLR §12.2; Unit 5]
+Principal components were treated in Unit 5, and its results are used here by name. The loading
+vectors $\bphi_m$ are the eigenvectors of the sample covariance matrix $\bS$ and the score
+vectors $\bz_m=\bX\bphi_m$ are uncorrelated, unique up to sign when the eigenvalues are distinct
+(Unit 5's theorem \emph{principal components are eigenvectors}). The proportion of variance
+explained by the $m$th component is $\lambda_m/\sum_l\lambda_l$ (\emph{proportion of variance
+explained}). The first $M$ components give the best rank-$M$ approximation of $\bX$ and the
+closest $M$-dimensional subspace (\emph{best approximation and closest subspaces}). Rescaling
+the columns changes the components (\emph{scaling changes the components}), and a scree plot is
+read for an elbow. What remains for this unit is the biplot of ISLR's Figure 12.1, the picture in
+which loadings and scores are read together.
+\end{remark}
 
-\begin{proof}
-Divide~\eqref{eq:eckart} by $\|\bX\|_F^2=\tr(\bX'\bX)=\sum_md_m^2$ and use
-$\lambda_m\propto d_m^2$.
-\end{proof}
+\begin{definition}[Biplot; ISLR Figure 12.1]\label{def:biplot}
+The scatter of the score pairs $(z_{i1},z_{i2})$, $i=1,\ldots,n$, with the loading pairs
+$\ba_j=(\phi_{j1},\phi_{j2})$, $j=1,\ldots,p$, drawn as arrows from the origin on a common pair
+of axes.
+\end{definition}
 
-\subsection{What is not determined}\label{sec:13.1.2}
-
-\begin{proposition}[Sign and rotation]\label{prop:pca-indet}
+\begin{proposition}[What the arrows mean]\label{prop:biplot}
+With $\bX$ column-centred, $\bS=n^{-1}\bX'\bX$, $\bphi_m=\bv_m$, $\lambda_m$, $\bZ_M$ and
+$\bPhi_M$ as in Unit 5's definition \emph{principal components} and theorems \emph{principal
+components are eigenvectors} and \emph{best approximation and closest subspaces}, let
+$\bz_{(i)}=(z_{i1},z_{i2})$ and let $\hat x_{ij}$ be the $(i,j)$ entry of the rank-two
+approximation $\bZ_2\bPhi_2'$ of $\bX$. Then
 \begin{enumerate}[label=\textup{(\roman*)}]
-\item\label{ind:i} If $\bv_m$ is an $m$th loading vector so is $-\bv_m$, with scores
-      negated; every statement about variance, approximation and $\PVE$ is unchanged.
-\item\label{ind:ii} If $\lambda_m=\lambda_{m+1}$ then any orthonormal pair spanning the same
-      two-dimensional eigenspace serves, so the individual components are not determined at
-      all.
+\item\label{bi:i} $\hat x_{ij}=\bz_{(i)}'\ba_j$: the reconstruction of variable $j$ for
+      observation $i$ is the inner product of the score point with the $j$th arrow;
+\item\label{bi:ii} if $\lambda_1,\lambda_2>0$ and $\ba_j,\ba_k\neq\bzero$, the sample correlation
+      of the reconstructed columns $\hat\bx_j$ and $\hat\bx_k$ is the cosine of the angle between
+      $\bLam^{1/2}\ba_j$ and $\bLam^{1/2}\ba_k$, $\bLam=\diag(\lambda_1,\lambda_2)$. In particular
+      two parallel arrows give perfectly correlated reconstructions, and two perpendicular arrows
+      give uncorrelated ones when $\lambda_1=\lambda_2$.
 \end{enumerate}
 \end{proposition}
 
 \begin{proof}
-\ref{ind:i} $(-\bv)'\bS(-\bv)=\bv'\bS\bv$ and $\bX(-\bv)=-\bX\bv$; the rank-$M$
-approximation $\sum_m d_m\bu_m\bv_m'$ is unchanged when both $\bu_m$ and $\bv_m$ change
-sign.
+\ref{bi:i} The $(i,j)$ entry of $\bZ_2\bPhi_2'$ is $\sum_{m\leqslant2}z_{im}\phi_{jm}$.
 
-\ref{ind:ii} If $\bS\bw=\lambda\bw$ for every $\bw$ in a two-dimensional space, any
-orthonormal basis of it consists of eigenvectors with the same eigenvalue, and the argument
-of Unit 5 selects none of them over another.
+\ref{bi:ii} By~\ref{bi:i}, $\hat\bx_j=\bZ_2\ba_j$. The score vectors have mean zero, so the
+reconstructions do too, and by Unit 5's theorem \emph{principal components are eigenvectors}
+$\bZ_2'\bZ_2=n\bLam$. Hence the sample covariance of $\hat\bx_j$ and $\hat\bx_k$ is
+$n^{-1}\ba_j'\bZ_2'\bZ_2\ba_k=\ba_j'\bLam\ba_k=(\bLam^{1/2}\ba_j)'(\bLam^{1/2}\ba_k)$, and
+dividing by the two standard deviations $|\bLam^{1/2}\ba_j|$ and $|\bLam^{1/2}\ba_k|$, both
+positive, gives the cosine. Parallel arrows have $\bLam^{1/2}\ba_j$ and $\bLam^{1/2}\ba_k$
+parallel; when $\lambda_1=\lambda_2$ the matrix $\bLam^{1/2}$ is a multiple of $\bI$ and
+preserves angles.
 \end{proof}
 
 \begin{remark}
-Reading a loading vector as though its signs meant something is therefore reading an
-arbitrary choice made by the software. What is determined is the subspace and the ordering
-of the eigenvalues, and any interpretation must be invariant under the sign flip: that
-Assault and Murder load together is a statement, that they load positively is not.
+So the arrows of ISLR's \texttt{USArrests} biplot (Unit 5's example \texttt{USArrests}) are read
+as follows. \texttt{Murder} and \texttt{Assault} point nearly together and \texttt{Rape} lies
+between them and \texttt{UrbanPop}, so the two-component reconstructions of the three crime
+rates are highly correlated ($0.80$ to $0.97$); \texttt{UrbanPop} points away from them, nearly
+at right angles to \texttt{Assault}. The reading concerns the reconstruction, not the data: it is as good as the
+two components' share of the variance, $87\%$ there.
 \end{remark}
-
-\begin{remark}
-Unit 5 recorded that $\bS$ changes under rescaling of the columns and that standardising is
-the usual default. Nothing above weakens that: Theorem~\ref{thm:eckart} minimises squared
-error in whatever units the columns carry, so the choice of units is the choice of what the approximation is asked to preserve.
-\end{remark}
-
-\subsection{How many components}\label{sec:13.1.3}
-
-\begin{definition}[Scree plot]\label{def:scree}
-The plot of $\PVE_m=\lambda_m/\sum_l\lambda_l$ against $m$, or of its cumulative sum.
-\end{definition}
-
-\begin{remark}
-There is no criterion here of the kind Unit 5 had. Cross-validation compares predictions and
-there is nothing to predict; the sequence $\sum_{m\leqslant M}\lambda_m$ increases in $M$ by
-construction, so it cannot be optimised over $M$ any more than the training error of
-Unit 11 could be optimised over tree size. What is done instead is to look for an elbow,
-which is a judgement, and to check that the components kept admit a reading. When the
-components feed a supervised model, as in the principal components regression of Unit 5,
-$M$ becomes a tuning parameter again and cross-validation returns.
-\end{remark}
-
-\begin{definition}[Biplot]\label{def:biplot}
-The scatter of the first two score columns with the first two rows of $\bV'$ drawn as
-arrows from the origin on a common pair of axes.
-\end{definition}
-
-\begin{proposition}[What the arrows mean]\label{prop:biplot}
-The $j$th arrow is $(v_{j1},v_{j2})$, and the projection of a score point
-$(z_{i1},z_{i2})$ on that arrow's direction is the part of $x_{ij}$ reconstructed by the
-first two components: $\hat x_{ij}=z_{i1}v_{j1}+z_{i2}v_{j2}$. Two arrows at a small angle
-belong to variables whose reconstructions are nearly proportional across observations.
-\end{proposition}
-
-\begin{proof}
-The rank-two reconstruction is $\bX_2=\sum_{m\leqslant2}d_m\bu_m\bv_m'$, whose $(i,j)$ entry
-is $\sum_{m\leqslant2}z_{im}v_{jm}$ with $z_{im}=d_mu_{im}$. Reading that as an inner
-product of $(z_{i1},z_{i2})$ with $(v_{j1},v_{j2})$ gives the first claim, and the cosine of
-the angle between two arrows is the correlation of the two reconstructions when the score
-columns are scaled to equal norm.
-\end{proof}
 
 %==============================================================================
+
 \section{K-means Clustering}\label{sec:13.2}
 %==============================================================================
 
 \begin{reading}
-ISLR §12.4.1.
+ISLR §12.4 (introduction), §12.4.1 (both reading lists). \ SRM learning outcome 5(c).
 \end{reading}
 
-\begin{definition}[The criterion]\label{def:kmeans}
+\begin{remark}[ISLR §12.4]
+Clustering looks for subgroups of observations that are similar within and different between.
+Principal components look for a low-dimensional representation that explains much of the
+variance; clustering looks for homogeneous groups. The observations can be clustered on the
+basis of the features, or the features on the basis of the observations by transposing $\bX$.
+$K$-means asks for the number of clusters in advance; hierarchical clustering does not, and
+returns a tree from which any number can be read.
+\end{remark}
+
+\begin{definition}[The criterion; ISLR (12.17)]\label{def:kmeans}
 A \emph{clustering} into $K$ groups is a partition $C_1,\ldots,C_K$ of $\{1,\ldots,n\}$ with
 every $C_g$ non-empty. Its \emph{within-cluster sum of squares} is
 \begin{equation}\label{eq:wss}
 W(C)=\sum_{g=1}^{K}\sum_{i\in C_g}\,\bigl|\bx_i-\bar\bx_g\bigr|^2 ,
 \qquad \bar\bx_g=\frac1{|C_g|}\sum_{i\in C_g}\bx_i ,
 \end{equation}
-and $K$-means clustering is the problem $\min_CW(C)$.
+and $K$-means clustering is the problem $\min_CW(C)$. Here $|C_g|$ is the number of elements
+of $C_g$, and for a vector $|\cdot|$ is the Euclidean norm.
 \end{definition}
 
 \begin{proposition}[Three readings of the criterion]\label{prop:wss}
@@ -216,9 +153,10 @@ and $K$-means clustering is the problem $\min_CW(C)$.
 \item\label{wss:ii} $W(C)+B(C)=T$, where $T=\sum_i|\bx_i-\bar\bx|^2$ is free of $C$ and
       $B(C)=\sum_g|C_g|\,|\bar\bx_g-\bar\bx|^2$. Minimising $W$ is maximising $B$.
 \item\label{wss:iii} For fixed centres $\bmu_1,\ldots,\bmu_K$,
-      $\sum_g\sum_{i\in C_g}|\bx_i-\bmu_g|^2$ is minimised over partitions by assigning
+      $\sum_g\sum_{i\in C_g}|\bx_i-\bmu_g|^2$ is minimised over assignments of the $n$ points to the $K$ labels (empty clusters
+      allowed) by assigning
       each $i$ to a nearest centre; and for a fixed partition it is minimised over centres
-      at $\bmu_g=\bar\bx_g$.
+      uniquely at $\bmu_g=\bar\bx_g$.
 \end{enumerate}
 \end{proposition}
 
@@ -229,21 +167,37 @@ and $K$-means clustering is the problem $\min_CW(C)$.
 =2|C_g|\bigl\{\sum_i|\bx_i|^2-|C_g|\,|\bar\bx_g|^2\bigr\}$, and the brace is
 $\sum_{i\in C_g}|\bx_i-\bar\bx_g|^2$.
 
-\ref{wss:ii} is the analysis of variance identity of Unit 10 applied coordinatewise, the
-cross terms vanishing because $\sum_{i\in C_g}(\bx_i-\bar\bx_g)=\bzero$.
+\ref{wss:ii} For $i\in C_g$ write $\bx_i-\bar\bx=(\bx_i-\bar\bx_g)+(\bar\bx_g-\bar\bx)$ and
+expand: $|\bx_i-\bar\bx|^2=|\bx_i-\bar\bx_g|^2+|\bar\bx_g-\bar\bx|^2
++2(\bx_i-\bar\bx_g)'(\bar\bx_g-\bar\bx)$. Summing over $i\in C_g$ the cross term vanishes,
+because $\sum_{i\in C_g}(\bx_i-\bar\bx_g)=\bzero$, and summing over $g$ gives $T=W(C)+B(C)$.
 
 \ref{wss:iii} The double sum splits over $i$, and the term for $i$ is
 $|\bx_i-\bmu_{g(i)}|^2$, smallest when $g(i)$ indexes a nearest centre. For fixed $C$ the
-sum splits over $g$ and each part is minimised at the mean (Unit 2).
+sum splits over $g$, and by the expansion of~\ref{wss:ii} with $\bmu_g$ in place of $\bar\bx$,
+$\sum_{i\in C_g}|\bx_i-\bmu_g|^2=\sum_{i\in C_g}|\bx_i-\bar\bx_g|^2+|C_g|\,|\bar\bx_g-\bmu_g|^2$,
+smallest exactly at $\bmu_g=\bar\bx_g$.
 \end{proof}
 
-\begin{definition}[Lloyd's algorithm]\label{def:lloyd}
-Start from an assignment. Repeat: compute the cluster means; reassign each observation to a
-nearest mean. Stop when the assignment does not change.
+\begin{remark}[ISLR (12.15)--(12.18)]
+ISLR measures a cluster by its within-cluster variation
+$|C_g|^{-1}\sum_{i,i'\in C_g}|\bx_i-\bx_{i'}|^2$, its (12.16) with squared Euclidean distance. By
+Proposition~\ref{prop:wss}\ref{wss:i} that is $2\sum_{i\in C_g}|\bx_i-\bar\bx_g|^2$, ISLR's
+(12.18), so ISLR's criterion (12.17) is $2W(C)$ and has the same minimisers. R's \texttt{kmeans}
+reports $W(C)$ as \texttt{tot.withinss}. By default it runs a different local search
+(Hartigan--Wong), which also stops at a local optimum; with \texttt{algorithm = "Lloyd"} the
+numbers of the simulated-data example of this unit's lab are the same.
+\end{remark}
+
+\begin{definition}[Lloyd's algorithm; ISLR Algorithm 12.2]\label{def:lloyd}
+Start from an assignment; ISLR assigns each observation a cluster from $1$ to $K$ at random.
+Repeat: compute the cluster means; reassign each observation to a nearest mean, ties broken by
+a fixed rule that depends only on the means (say, the smallest cluster index). Stop when the
+assignment does not change. The algorithm is defined as long as no cluster becomes empty.
 \end{definition}
 
 \begin{theorem}[The algorithm decreases the criterion and stops]\label{thm:lloyd}
-Write $C^{(t)}$ for the assignment after $t$ rounds. Then $W(C^{(t+1)})\leqslant W(C^{(t)})$,
+Suppose no cluster becomes empty, and write $C^{(t)}$ for the assignment after $t$ rounds. Then $W(C^{(t+1)})\leqslant W(C^{(t)})$,
 and the algorithm reaches an assignment it does not change after finitely many rounds.
 \end{theorem}
 
@@ -260,36 +214,45 @@ equalities because $W(C)=\min_{\bmu}F(C,\bmu)$ attained at the cluster means.
 
 There are finitely many partitions of $n$ points into $K$ groups, and $W$ never increases,
 so the sequence $W(C^{(t)})$ is non-increasing and takes finitely many values, hence is
-eventually constant. Once $W(C^{(t+1)})=W(C^{(t)})$ both inequalities are equalities, so
-$C^{(t+1)}$ is also optimal for $\bmu^{(t)}$ and the assignment step returns it again.
+eventually constant. Once $W(C^{(t+1)})=W(C^{(t)})$ both inequalities are equalities. By
+the second, and because the centre half of Proposition~\ref{prop:wss}\ref{wss:iii} is
+minimised exactly at the cluster means, $\bmu^{(t+1)}=\bmu^{(t)}$. So the next assignment step
+faces the same means as the last one and, the tie rule depending only on the means, returns
+$C^{(t+1)}$ again.
 \end{proof}
 
 \begin{remark}
-The theorem promises a fixed point of the algorithm and nothing more. It is not a global
-minimum: the number of partitions is a Stirling number of the second kind, which for $n=50$
-and $K=3$ exceeds $10^{23}$, and no algorithm here searches them. The remedy is to run Lloyd's algorithm from many random starts and keep the best.
+The theorem promises a fixed point of the algorithm and nothing more. It need not be a global
+minimum: the number of partitions into $K$ non-empty groups is a Stirling number of the second kind,
+which for $n=50$ and $K=3$ is $(3^{50}-3\cdot2^{50}+3)/6\approx1.2\cdot10^{23}$ (of the $3^{50}$
+labellings, $3^{50}-3\cdot2^{50}+3$ use all three labels by inclusion--exclusion, and each
+partition arises from $3!$ of them), and no algorithm here searches them. The remedy, ISLR's, is to
+run Lloyd's algorithm from many random starts and keep the assignment with the smallest
+criterion; its Figure 12.9 shows six starts reaching three different values. Different starts
+can give different clusters, so two analysts with the same data and the same $K$ need not agree.
 \end{remark}
 
-\begin{proposition}[$W$ cannot choose $K$]\label{prop:K}
-The optimal $W$ is non-increasing in $K$, and equals $0$ at $K=n$.
-\end{proposition}
-
-\begin{proof}
-Any partition into $K$ groups is refined into one with $K+1$ by splitting a group with at
-least two members, and by Proposition~\ref{prop:wss}\ref{wss:ii} applied within that group
-the within-cluster sum of squares cannot rise. At $K=n$ every cluster is a single point and
-each term of~\eqref{eq:wss} vanishes.
-\end{proof}
+% \periodmark{End of period 1 of 3.}
 
 %==============================================================================
+
 \section{Hierarchical Clustering}\label{sec:13.3}
 %==============================================================================
 
 \begin{reading}
-ISLR §12.4.2.
+ISLR §12.4.2 (both reading lists). \ SRM learning outcome 5(c).
 \end{reading}
 
-\begin{definition}[Agglomerative clustering and linkage]\label{def:hclust}
+\begin{remark}[ISLR §12.4.2]
+Hierarchical clustering needs no $K$. Its bottom-up, or agglomerative, form builds a
+\emph{dendrogram}: each leaf is an observation, and moving up, similar observations and groups
+fuse. The height of the fusion of two observations measures how different they are; their
+horizontal closeness in the picture means nothing, since the two branches at each fusion can be
+swapped. Cutting the dendrogram at a height gives clusters, and one dendrogram gives any number
+of clusters.
+\end{remark}
+
+\begin{definition}[Agglomerative clustering and linkage; ISLR Algorithm 12.3, Table 12.3]\label{def:hclust}
 Begin with $n$ singleton clusters and a dissimilarity $d(i,i')$. At each step merge the two
 clusters with the smallest \emph{linkage} $D$, and record the merge height $D$. The usual
 linkages, for clusters $A$ and $B$, are
@@ -305,13 +268,17 @@ The \emph{dendrogram} draws each merge as a join at its height.
 
 \begin{proposition}[Cutting the dendrogram]\label{prop:cut}
 The clusters present at any moment form a partition, and every cluster at a later moment is
-a union of clusters at an earlier one. Cutting the dendrogram at height $h$ therefore
-returns a partition, and the partitions obtained at different heights are nested.
+a union of clusters at an earlier one. If the merge heights are non-decreasing,
+cutting the dendrogram at height $h$ therefore returns a partition, and the partitions
+obtained at different heights are nested.
 \end{proposition}
 
 \begin{proof}
 The initial clusters partition the observations, and replacing two blocks by their union
-leaves a partition; each step does that once, which is also the nesting claim.
+leaves a partition; each step does that once, which is also the nesting claim. When the
+merge heights are non-decreasing, the merges of height at most $h$ are the first $m$ merges
+for some $m$, so the cut at $h$ returns the clusters present after $m$ steps, a partition;
+and a lower cut takes fewer merges, so it returns an earlier state and refines a higher one.
 \end{proof}
 
 \begin{theorem}[No inversions]\label{thm:no-inversion}
@@ -320,7 +287,7 @@ Suppose the linkage satisfies the \emph{reducibility} inequality
 D(A\cup B,\,C)\ \geqslant\ \min\{D(A,C),\,D(B,C)\}
 \end{equation}
 for all disjoint clusters. Then the merge heights are non-decreasing, so the dendrogram has
-no inversion. Single, complete and average linkage all satisfy~\eqref{eq:reducible}.
+no \emph{inversion}, a merge at a height below that of the previous merge. Single, complete and average linkage all satisfy~\eqref{eq:reducible}.
 \end{theorem}
 
 \begin{proof}
@@ -339,11 +306,23 @@ minimum.
 \end{proof}
 
 \begin{remark}
+So the hypothesis of Proposition~\ref{prop:cut} holds for single, complete and average linkage,
+and their dendrograms can be cut at any height; the proof of Theorem~\ref{thm:no-inversion} does
+not use that proposition.
+\end{remark}
+
+\begin{remark}
 Centroid linkage is not of this form: $\bar\bx_{A\cup B}$ is a weighted mean of $\bar\bx_A$
 and $\bar\bx_B$ and can be strictly closer to $\bar\bx_C$ than either, so~\eqref{eq:reducible}
 fails and a merge can occur below the height of the merge that produced it. The dendrogram
 then crosses itself and cutting it at a height no longer returns the clusters the picture suggests. On
-\texttt{USArrests} there are seven such inversions, and none for the other three linkages.
+\texttt{USArrests} there are five such inversions (Figure~\ref{fig:hclust}, right), and none for the other three linkages.
+(R's \texttt{hclust(d, "centroid")} computes~\eqref{eq:centroid} only when \texttt{d} holds
+squared Euclidean distances, so the computations below pass \texttt{dist(X)\^{}2} and take
+square roots of the heights.)
+ISLR's account: average and complete linkage are generally preferred to single, and centroid
+linkage, used in genomics, can produce an inversion, a fusion below either of the clusters
+fused.
 \end{remark}
 
 \begin{proposition}[Single linkage chains]\label{prop:chain}
@@ -353,9 +332,16 @@ every step.
 \end{proposition}
 
 \begin{proof}
-Merging at height at most $h$ requires only one pair at distance at most $h$, so the
-clusters at height $h$ are exactly the connected components of the graph on
-$\{1,\ldots,n\}$ whose edges are the pairs at distance at most $h$, and membership of a
+Single linkage satisfies~\eqref{eq:reducible}, so by Theorem~\ref{thm:no-inversion} its
+merge heights are non-decreasing and, by Proposition~\ref{prop:cut}, the clusters at height
+$h$ are those present after all merges of height at most $h$. Merging at height at most $h$
+requires only one pair at distance at most $h$, so each cluster at height $h$ is connected
+in the graph on $\{1,\ldots,n\}$ whose edges are the pairs at distance at most $h$.
+Conversely, if $i\in A$ and $i'\in B$, two different clusters at height $h$, had
+$d(i,i')\leqslant h$, then $D(A,B)\leqslant h$, and the next merge, being of minimal linkage
+and, by Theorem~\ref{thm:no-inversion}, not below the previous ones, would be at height at
+most $h$, contrary to the cut. So the
+clusters at height $h$ are exactly the connected components of that graph, and membership of a
 component is the existence of such a chain.
 \end{proof}
 
@@ -367,110 +353,238 @@ between two clusters merges them. Complete linkage, which is governed by the far
 produces compact clusters and splits elongated ones.
 \end{remark}
 
-\begin{remark}
+\begin{proposition}[Correlation-based distance; ISLR §12.4.2]\label{prop:corrdist}
+Standardise each observation across its $p\geqslant2$ features, $\tilde x_{ij}=(x_{ij}-\bar
+x_i)/s_i$ with $\bar x_i$ and $s_i>0$ the mean and standard deviation (divisor $p-1$) of
+$x_{i1},\ldots,x_{ip}$, and let $r_{ii'}$ be the correlation between observations $i$ and $i'$
+across features. Then
+\begin{equation}\label{eq:corrdist}
+|\tilde\bx_i-\tilde\bx_{i'}|^2=2(p-1)(1-r_{ii'}) ,
+\end{equation}
+so on standardised observations the correlation-based dissimilarity $1-r_{ii'}$ is proportional
+to the squared Euclidean distance, and the two give the same hierarchical clustering under any
+linkage of Definition~\ref{def:hclust} except centroid.
+\end{proposition}
+
+\begin{proof}
+Each $\tilde\bx_i$ has entries summing to $0$ and $|\tilde\bx_i|^2=p-1$, and
+$r_{ii'}=\tilde\bx_i'\tilde\bx_{i'}/(p-1)$. Expanding,
+$|\tilde\bx_i-\tilde\bx_{i'}|^2=|\tilde\bx_i|^2+|\tilde\bx_{i'}|^2-2\tilde\bx_i'\tilde\bx_{i'}
+=2(p-1)-2(p-1)r_{ii'}$. Multiplying every dissimilarity by the constant $2(p-1)$ multiplies the
+single, complete and average linkages by the same constant, so every comparison in the
+algorithm, and hence every merge, is unchanged.
+\end{proof}
+
+\begin{remark}[ISLR §12.4.2]
 Nothing here says which linkage or which dissimilarity is right, and there is no criterion
 to appeal to: the choices define what a cluster is. Euclidean distance on standardised
 columns and correlation-based dissimilarity answer different questions, the first about
 magnitudes and the second about profiles, and two observations can be close in one and far
-in the other.
+in the other. Variables measured in the same units, such as counts of the same kind, may be left
+unscaled when their differences in spread are meaningful, as ISLR notes in §12.2.4. ISLR's shoppers: Euclidean distance groups the infrequent shoppers together,
+correlation groups shoppers with similar preferences whatever their volume. Scaling matters in
+the same way: in ISLR's Figure 12.16 a shopper's purchases of socks and computers, counted in
+items, are dominated by socks; in dollars, by computers.
+\end{remark}
+
+\begin{remark}[ISLR §12.4.2]
+The word \emph{hierarchical} is an assumption. Proposition~\ref{prop:cut} forces the clusters
+at every moment of the algorithm to be nested, and ISLR's example is a population split evenly by sex and among
+three nationalities: the best two groups split by sex and the best three by nationality, and
+these are not nested. Then no single dendrogram returns both the best two and the best three
+clusters, and $K$-means, which solves each $K$ afresh, can do better for at least one of them.
 \end{remark}
 
 %==============================================================================
-\section{Computation: Formulas Against Package Output}\label{sec:13.4}
+
+\section{Practical Issues in Clustering}\label{sec:13.4}
 %==============================================================================
 
 \begin{reading}
-ISLR §12.5.1, §12.5.3.
+ISLR §12.4.3 (both reading lists). \ SRM learning outcomes 5(c), 5(d).
 \end{reading}
 
-\texttt{USArrests} from \texttt{ISLR2}: four crime and population measurements on the fifty
-states, in four different units, which is the case standardisation exists for.
+\begin{proposition}[$W$ cannot choose $K$]\label{prop:K}
+The optimal $W$ is non-increasing in $K$, and equals $0$ at $K=n$.
+\end{proposition}
+
+\begin{proof}
+Any partition into $K$ groups is refined into one with $K+1$ by splitting a group with at
+least two members, and by Proposition~\ref{prop:wss}\ref{wss:ii} applied within that group
+the within-cluster sum of squares cannot rise. At $K=n$ every cluster is a single point and
+each term of~\eqref{eq:wss} vanishes.
+\end{proof}
+
+\begin{remark}
+So the within-cluster criterion cannot choose $K$, and neither can anything else here: with no
+response there is nothing held out to predict. What is done is to plot the optimal $W$ against
+$K$ and look for an elbow, which is a judgement, or to check stability under resampling. When the
+clusters feed a model with a response, $K$ becomes a tuning parameter and cross-validation
+applies to that model.
+\end{remark}
+
+\begin{remark}[ISLR §12.4.3]
+ISLR's \emph{small decisions with big consequences}: whether to standardise, which
+dissimilarity, which linkage, where to cut, how many clusters. None has a right answer, and the
+advice is to try several and look for the patterns that persist. Nor is there a consensus on
+validating clusters, on telling real subgroups from clusters of noise; ISLR mentions methods
+that attach a $p$-value to a cluster.
+\end{remark}
+
+\begin{remark}[ISLR §12.4.3]
+Both methods put every observation in a cluster, so a few outliers that belong to no group can
+distort all the clusters; mixture models give a soft version that need not. And clustering
+methods are not robust: clustering a subset of the data can give quite different clusters, so
+ISLR recommends clustering subsets as a check and reporting the results as a starting point for
+hypotheses, not as truth.
+\end{remark}
+
+% \periodmark{End of period 2 of 3.}
+
+%==============================================================================
+
+\section{Computation in R}\label{sec:13.5}
+%==============================================================================
+
+\begin{reading}
+ISLR §12.5.3--12.5.4 (labs). The principal components lab §12.5.1 is Unit 5's; §12.5.2 (matrix
+completion) is excluded by the syllabus. \ SRM learning outcomes 5(b)--5(d).
+\end{reading}
+
+\subsection{The ISLR labs}\label{sec:comp-labs}
+
+\begin{example}[$K$-means and hierarchical clustering on simulated data; ISLR §12.5.3]
+\label{ex:lab-cluster}
+Fifty points in the plane, the first $25$ shifted by $(3,-4)$, ISLR's seeds:
+<<lab-cluster>>=
+suppressMessages(library(ISLR2))
+set.seed(2); x <- matrix(rnorm(50 * 2), ncol = 2)
+x[1:25, 1] <- x[1:25, 1] + 3; x[1:25, 2] <- x[1:25, 2] - 4
+km2 <- kmeans(x, 2, nstart = 20)
+c(misplaced_by_K2 = min(sum(km2$cluster != rep(1:2, each = 25)),
+                        sum(km2$cluster != rep(2:1, each = 25))))
+set.seed(4); km3 <- kmeans(x, 3, nstart = 20); km3$size
+table(cluster = km3$cluster, group = rep(1:2, each = 25))
+set.seed(4)
+c(nstart_1 = kmeans(x, 3, nstart = 1)$tot.withinss,
+  nstart_20 = kmeans(x, 3, nstart = 20)$tot.withinss)
+hcs <- lapply(c(complete = "complete", average = "average", single = "single"),
+              function(m) hclust(dist(x), method = m))
+sapply(hcs, function(h) table(factor(cutree(h, 2), levels = 1:2)))
+table(cutree(hcs$single, 4))
+table(complete = cutree(hcs$complete, 2), group = rep(1:2, each = 25))
+table(scaled_complete = cutree(hclust(dist(scale(x))), 2), group = rep(1:2, each = 25))
+x3 <- matrix(rnorm(30 * 3), ncol = 3); dc <- as.dist(1 - cor(t(x3)))
+range(dc)
+@
+$K=2$ recovers the two groups exactly. With $K=3$ the third cluster takes points from both
+groups ($8$ and $2$). With one start the
+criterion $W$, which \texttt{kmeans} reports as \texttt{tot.withinss}, is $104.33$; with twenty it
+is $97.98$, ISLR's two numbers and the reason for many starts (Theorem~\ref{thm:lloyd}). Cut at
+two clusters, complete linkage gives $25$ and $25$, average linkage $28$ and $22$, and single
+linkage puts one point alone; cut at four, single linkage still leaves two singletons. The
+correlation-based dissimilarity needs at least three features to be informative and lies in
+$[0,2]$.
+\end{example}
+
+\begin{figure}[H]\centering
+<<lab-cluster-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+op <- par(mfrow = c(1, 3), mar = c(0.5, 3, 2, 0.5), cex = 0.6)
+plot(hcs$complete, labels = FALSE, main = "complete linkage", xlab = "", sub = "")
+plot(hclust(dist(scale(x))), labels = FALSE, main = "scaled features", xlab = "", sub = "")
+plot(hclust(dc), labels = FALSE, main = "correlation distance", xlab = "", sub = "")
+par(op)
+@
+\caption{Example~\ref{ex:lab-cluster}, the dendrograms of ISLR's lab §12.5.3: complete linkage
+on the fifty points, the same after scaling each feature to standard deviation one, and complete
+linkage on the correlation-based dissimilarity of thirty points in three dimensions.}
+\label{fig:lab-cluster}
+\end{figure}
+
+\begin{remark}
+In Figure~\ref{fig:lab-cluster} the two-cluster cut recovers the two groups exactly both before and
+after scaling: the shift of $3$ and $-4$ is large against the unit noise in each feature, so the
+choice of units does not matter here. The correlation-based dendrogram has no such structure,
+the thirty points being pure noise.
+\end{remark}
+
+\begin{example}[The \texttt{NCI60} cancer cell lines; ISLR §12.5.4]\label{ex:lab-nci60}
+Expression of $6830$ genes in $64$ cancer cell lines of $14$ labelled types. The labels are not
+used by the methods, only to judge them afterwards.
+<<lab-nci60>>=
+nci.labs <- NCI60$labs; nci.data <- NCI60$data
+pr.nci <- prcomp(nci.data, scale = TRUE)
+pve <- 100 * pr.nci$sdev^2 / sum(pr.nci$sdev^2)
+round(rbind(pve = pve[1:7], cumulative = cumsum(pve)[1:7]), 1)
+sd.data <- scale(nci.data); hc.out <- hclust(dist(sd.data))
+hc.clusters <- cutree(hc.out, 4)
+table(hc.clusters, nci.labs)[, c("BREAST", "COLON", "LEUKEMIA", "MELANOMA", "RENAL")]
+set.seed(2); km.clusters <- kmeans(sd.data, 4, nstart = 20)$cluster
+table(km.clusters, hc.clusters)
+table(pc_clusters = cutree(hclust(dist(pr.nci$x[, 1:5])), 4), hc.clusters)
+@
+The first seven components explain $38.5\%$ of the variance and the scree plot has an elbow
+there, ISLR's reading. Complete linkage on the standardised data, cut at four clusters, puts all
+six leukemia lines in cluster $3$ and spreads the breast lines over three clusters. $K$-means
+with $K=4$ agrees on the leukemia cluster and splits hierarchical cluster $1$ three ways, as in
+ISLR. Clustering the first five score vectors instead of the full data gives yet another
+partition: the components are a denoised version of the data, and a different input gives
+different clusters.
+\end{example}
+
+\begin{figure}[H]\centering
+<<nci60-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+cols <- rainbow(length(unique(nci.labs)))[as.numeric(as.factor(nci.labs))]
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
+plot(pr.nci$x[, 1:2], col = cols, pch = 19, xlab = "Z1", ylab = "Z2")
+plot(pr.nci$x[, c(1, 3)], col = cols, pch = 19, xlab = "Z1", ylab = "Z3")
+par(op)
+@
+\caption{Example~\ref{ex:lab-nci60}, ISLR's Figure 12.17: the first three principal component
+score vectors of the \texttt{NCI60} cell lines, coloured by cancer type. Lines of one type tend to
+lie near each other, so the types are partly visible without the labels.}\label{fig:nci60}
+\end{figure}
+
+\begin{figure}[H]\centering
+<<nci60-dend, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+op <- par(mfrow = c(1, 2), mar = c(0.5, 3, 2, 0.5), cex = 0.55)
+plot(hc.out, labels = FALSE, main = "complete linkage", xlab = "", sub = "")
+abline(h = 139, col = "#B45309", lwd = 2, lty = 2)
+plot(hclust(dist(sd.data), method = "single"), labels = FALSE, main = "single linkage",
+     xlab = "", sub = "")
+par(op)
+@
+\caption{Example~\ref{ex:lab-nci60} (ISLR's Figure 12.19 and its lab): complete linkage on the
+standardised \texttt{NCI60} data with the lab's cut at height $139$, which gives the four
+clusters of the example, and single linkage on the same dissimilarities.}\label{fig:nci60-dend}
+\end{figure}
+
+\begin{remark}
+In Figure~\ref{fig:nci60-dend} complete linkage gives the more balanced tree; single linkage
+trails, merging the cell lines one at a time, the chaining of Proposition~\ref{prop:chain}. The
+cut at height $139$ returns the same four clusters as \texttt{cutree(hc.out, 4)}, of sizes $40$,
+$7$, $8$ and $9$.
+\end{remark}
+
+\begin{remark}
+Figure~\ref{fig:nci60} is the principal components view of Example~\ref{ex:lab-nci60}: the
+first three score vectors, along which the cell lines are most spread out (Unit 5's theorem
+\emph{principal components are eigenvectors}). ISLR draws it before clustering, to see whether
+groups are visible at all.
+\end{remark}
+
+\subsection{The \texttt{USArrests} data}\label{sec:comp-data}
+
+The checks below use \texttt{USArrests}, four crime and population measurements on the fifty
+states (three arrest rates per $100{,}000$ residents and a percentage), standardised, the scaling Unit 5's example \texttt{USArrests}
+used.
 
 <<setup-data>>=
-suppressMessages(library(ISLR2))
 X <- scale(USArrests); n <- nrow(X); k <- ncol(X)
 round(rbind(mean = colMeans(USArrests), sd = apply(USArrests, 2, sd)), 2)
 @
 
-\subsection{Principal components (§\ref{sec:13.1.1})}\label{sec:13.4.1}
-
-<<pca-three-ways>>=
-pr <- prcomp(USArrests, scale. = TRUE)
-E <- eigen(cor(USArrests)); sv <- svd(X)
-round(rbind(prcomp_sdev = pr$sdev, sqrt_eigenvalue = sqrt(E$values),
-            singular_over_sqrt_n_minus_1 = sv$d/sqrt(n - 1)), 6)
-c(loadings_agree_to = max(abs(abs(pr$rotation) - abs(E$vectors))),
-  scores_agree_to = max(abs(abs(pr$x) - abs(X %*% E$vectors))),
-  pve_sums_to = sum(pr$sdev^2)/k, trace_of_correlation = sum(diag(cor(USArrests))))
-@
-
-The comparison is of absolute values, because by
-Proposition~\ref{prop:pca-indet}\ref{ind:i} the sign of each column is arbitrary. On this data the two routines happen to agree; nothing makes them, and the same call
-returns the opposite sign after the rows are permuted.
-
-<<pca-signs>>=
-rbind(prcomp = round(pr$rotation[, 1], 4), eigen = round(E$vectors[, 1], 4))
-@
-
-<<eckart-young>>=
-recon <- function(M) if (M == 0) matrix(0, n, k) else
-  sv$u[, 1:M, drop = FALSE] %*% diag(sv$d[1:M], M, M) %*% t(sv$v[, 1:M, drop = FALSE])
-t(sapply(0:4, function(M) c(M = M,
-  squared_error = sum((X - recon(M))^2),
-  dropped_singular_squares = sum(sv$d[seq_len(k) > M]^2),
-  one_minus_relative_error = 1 - sum((X - recon(M))^2)/sum(X^2),
-  cumulative_pve = sum(pr$sdev[seq_len(M)]^2)/k)))
-@
-
-<<eckart-check>>=
-als <- function(M, iter = 200) { V <- matrix(rnorm(k*M), k, M)
-  for (it in 1:iter) { U <- X %*% V %*% solve(crossprod(V))
-                       V <- t(X) %*% U %*% solve(crossprod(U)) }
-  sum((X - U %*% t(V))^2) }
-set.seed(2); v <- replicate(20, als(2))
-c(best_of_twenty_starts = min(v), worst = max(v),
-  truncated_svd = sum((X - recon(2))^2))
-@
-
-\begin{figure}[H]\centering
-<<pca-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
-op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 0.8), cex = 0.85)
-plot(1:k, pr$sdev^2/k, type = "b", pch = 16, lwd = 2, col = "#1E3A8A",
-     ylim = c(0, 1), xlab = "component m", ylab = "proportion of variance",
-     main = "scree")
-lines(1:k, cumsum(pr$sdev^2)/k, type = "b", pch = 17, lwd = 2, lty = 2,
-      col = "#B45309")
-legend("right", bty = "n", cex = 0.8, lwd = 2, lty = c(1, 2), pch = c(16, 17),
-       col = c("#1E3A8A", "#B45309"), legend = c("individual", "cumulative"))
-biplot(pr, scale = 0, cex = c(0.45, 0.8), col = c("grey55", "#B45309"),
-       xlabs = abbreviate(rownames(USArrests), 4))
-title("biplot", cex.main = 1)
-par(op)
-@
-\caption{Left: the scree plot of Definition~\ref{def:scree}; two components carry $87\%$ of
-the variance, which by Corollary~\ref{cor:pve-recon} is the same statement as a relative
-approximation error of $13\%$. Right: the biplot of Definition~\ref{def:biplot}. Three crime
-arrows point nearly together and \texttt{UrbanPop} nearly at right angles to them, so the
-second component separates urbanisation from crime.}\label{fig:pca}
-\end{figure}
-
-\subsection{Scaling changes the answer (§\ref{sec:13.1.2})}\label{sec:13.4.2}
-
-<<pca-scaling>>=
-pu <- prcomp(USArrests, scale. = FALSE)
-round(rbind(unscaled_loading_1 = pu$rotation[, 1],
-            scaled_loading_1 = pr$rotation[, 1],
-            column_sd = apply(USArrests, 2, sd)), 4)
-c(unscaled_pve_1 = pu$sdev[1]^2/sum(pu$sdev^2),
-  scaled_pve_1 = pr$sdev[1]^2/sum(pr$sdev^2))
-@
-
-Unstandardised, the first component is \texttt{Assault} almost alone, because
-\texttt{Assault} is recorded in counts with a standard deviation of $83$ against
-\texttt{Murder}'s $4.4$, and it carries $97\%$ of the variance. Standardised, all four
-variables contribute and the first component carries $62\%$.
-
-\subsection{$K$-means (§\ref{sec:13.2})}\label{sec:13.4.3}
+\subsection{$K$-means (§\ref{sec:13.2})}\label{sec:comp-kmeans}
 
 <<kmeans-identities>>=
 set.seed(4); km <- kmeans(X, centers = 3, nstart = 50)
@@ -490,13 +604,13 @@ lloyd <- function(Xm, K, seed) { set.seed(seed)
   for (it in 1:30) {
     C <- t(sapply(1:K, function(g) colMeans(Xm[lab == g, , drop = FALSE])))
     D <- sapply(1:K, function(g) rowSums(sweep(Xm, 2, C[g, ])^2))
-    lab <- max.col(-D); tr <- c(tr, sum(apply(D, 1, min))) }
+    lab <- max.col(-D, ties.method = "first"); tr <- c(tr, sum(apply(D, 1, min))) }
   tr }
 round(lloyd(X, 3, 11)[1:8], 3)
 @
 
 The sequence is non-increasing and constant from the sixth round, as
-Theorem~\ref{thm:lloyd} requires. It is a fixed point and not a minimum: repeated single
+Theorem~\ref{thm:lloyd} requires. It is a fixed point and not the global minimum: repeated single
 starts land in several places.
 
 <<kmeans-local>>=
@@ -513,12 +627,13 @@ t(sapply(1:8, function(K) c(K = K,
   within = kmeans(X, centers = K, nstart = 25)$tot.withinss)))
 @
 
-\subsection{Hierarchical clustering (§\ref{sec:13.3})}\label{sec:13.4.4}
+\subsection{Hierarchical clustering (§\ref{sec:13.3})}\label{sec:comp-hclust}
 
 <<hclust-inversions>>=
 dd <- dist(X)
 t(sapply(c("single", "complete", "average", "centroid"), function(m) {
-  h <- hclust(dd, method = m)
+  h <- hclust(if (m == "centroid") dd^2 else dd, method = m)
+  if (m == "centroid") h$height <- sqrt(h$height)   # eq:centroid needs squared distances
   c(smallest_height_step = min(diff(h$height)),
     inversions = sum(diff(h$height) < 0),
     largest_height = max(h$height)) }))
@@ -552,22 +667,22 @@ op <- par(mfrow = c(1, 2), mar = c(0.6, 3.6, 2.0, 0.6), cex = 0.55,
           mgp = c(2.2, 0.7, 0))
 plot(hclust(dd, "complete"), labels = abbreviate(rownames(USArrests), 4),
      main = "complete linkage", xlab = "", sub = "", ylab = "height")
-abline(h = hclust(dd, "complete")$height[n - 3], col = "#B45309", lty = 2,
+abline(h = mean(hclust(dd, "complete")$height[c(n - 4, n - 3)]), col = "#B45309", lty = 2,
        lwd = 2)
-hcen <- hclust(dd, "centroid")
+hcen <- hclust(dd^2, "centroid"); hcen$height <- sqrt(hcen$height)
 plot(hcen, labels = abbreviate(rownames(USArrests), 4),
-     main = "centroid linkage: seven inversions", xlab = "", sub = "",
+     main = "centroid linkage: five inversions", xlab = "", sub = "",
      ylab = "height")
 par(op)
 @
 \caption{Left: a dendrogram with non-decreasing heights (Theorem~\ref{thm:no-inversion}),
 cut at the dashed line to give four clusters. Right: centroid linkage on the same
-dissimilarities, where a merge can sit below the merge that produced it, so the branches
+data, \eqref{eq:centroid}, where a merge can sit below the merge that produced it, so the branches
 double back and a horizontal cut no longer reads off the clusters
 drawn.}\label{fig:hclust}
 \end{figure}
 
-\subsection{The two methods on the same data}\label{sec:13.4.5}
+\subsection{The two methods on the same data}\label{sec:comp-two}
 
 <<compare-clusterings>>=
 set.seed(9)
@@ -578,18 +693,19 @@ c(within_kmeans = wss(km3), within_hclust = wss(hc3))
 @
 
 $K$-means minimises~\eqref{eq:wss} directly and hierarchical clustering does not, so the
-first reaches the smaller value; the two partitions nonetheless agree on most states.
+first reaches the smaller value, $78.32$ against $84.40$. The partitions differ substantially:
+complete linkage puts $31$ states in one cluster, which $K$-means splits $17$, $13$ and $1$, and
+$K$-means joins all of the other two complete-linkage clusters into one. Neither is wrong; they
+answer different criteria.
 
-%==============================================================================
-\section{Pitfalls}\label{sec:13.5}
-%==============================================================================
+\subsection{Clustering in practice}\label{sec:comp-practice}
 
-\subsection{Not standardising, or standardising without asking}\label{sec:13.5.1}
+\subsubsection*{Not standardising, or standardising without asking}
 
-§\ref{sec:13.4.2} showed the first component of \texttt{USArrests} changing from
-\texttt{Assault} alone to a balanced combination. The same choice governs clustering,
-because every dissimilarity in Definition~\ref{def:hclust} is computed in whatever units the
-columns carry.
+Unit 5's proposition \emph{scaling changes the components} showed the first component of
+\texttt{USArrests} changing from \texttt{Assault} alone to a balanced combination. The same
+choice governs clustering, because every dissimilarity in Definition~\ref{def:hclust} is computed
+in whatever units the columns carry.
 
 <<pitfall-scale>>=
 cl_raw <- cutree(hclust(dist(USArrests), "complete"), 3)
@@ -604,39 +720,22 @@ whichever way the three groups of one analysis are matched to the three of the o
 large minority of the fifty states changes group. The two analyses are not the same
 analysis.
 
-\textbf{Diagnostic.} A clustering or a component dominated by whichever variable happens to
+The symptom is a clustering dominated by whichever variable happens to
 be recorded on the largest scale.
-\textbf{Fix.} Standardise unless the columns are already commensurable, and say which was
+Standardise unless the columns are already commensurable, and say which was
 done. Neither choice is right in general: standardising declares all four variables equally
-important, and not standardising declares that a count of assaults matters more than a
-murder rate because it is a bigger number.
+important, and not standardising declares that the assault rate matters more than the
+murder rate because it varies over a wider range. Columns in one unit need not be
+commensurable in spread.
 
-\subsection{Reading the signs of a loading vector}\label{sec:13.5.2}
+\subsubsection*{Choosing $K$ by the within-cluster criterion}
 
-<<pitfall-sign>>=
-p1 <- prcomp(USArrests, scale. = TRUE)
-p2 <- prcomp(USArrests[sample(nrow(USArrests)), ], scale. = TRUE)
-rbind(first_run = round(p1$rotation[, 1], 4),
-      after_reordering_rows = round(p2$rotation[, 1], 4))
-@
-
-\textbf{Diagnostic.} A sentence that would be reversed by multiplying a loading vector
-by $-1$.
-\textbf{Fix.} By Proposition~\ref{prop:pca-indet}\ref{ind:i} the sign is a convention of the
-routine and carries no information; report relations among the loadings, which the sign flip
-preserves, and not their direction. The same applies to the axes of a biplot.
-
-\subsection{Choosing $K$ by the within-cluster criterion}\label{sec:13.5.3}
-
-\textbf{Diagnostic.} A $K$ chosen as the minimiser of the within-cluster sum of squares,
-which by Proposition~\ref{prop:K} is always $K=n$; §\ref{sec:13.4.3} prints the sequence
+The symptom is a $K$ chosen as the minimiser of the within-cluster sum of squares,
+which by Proposition~\ref{prop:K} is always $K=n$; §\ref{sec:comp-kmeans} prints the sequence
 falling monotonically to $K=8$ with no sign of stopping.
-\textbf{Fix.} There is no criterion of the supervised kind here, because there is nothing
-held out to predict. What is available is an elbow, which is a judgement, and stability
-under resampling. When the clustering feeds something with a response, $K$ becomes a tuning
-parameter and cross-validation applies to that.
+What is available instead is set out in the remark after Proposition~\ref{prop:K}.
 
-\subsection{Reporting one run of $K$-means}\label{sec:13.5.4}
+\subsubsection*{Reporting one run of $K$-means}
 
 <<pitfall-local>>=
 set.seed(12)
@@ -647,16 +746,16 @@ c(best = min(r[, 1]), worst = max(r[, 1]),
   distinct_optima = length(unique(round(r[, 1], 6))))
 @
 
-\textbf{Diagnostic.} A $K$-means result reported without \texttt{nstart}, or two analysts
+The symptom is a $K$-means result reported without \texttt{nstart}, or two analysts
 getting different clusters from the same data.
-\textbf{Fix.} Theorem~\ref{thm:lloyd} guarantees a fixed point and nothing more, and the
+Theorem~\ref{thm:lloyd} guarantees a fixed point and nothing more, and the
 starts here reach several distinct values spanning a wide range. Use many starts and report
 the number used.
 
-\subsection{Cutting a dendrogram that has inversions}\label{sec:13.5.5}
+\subsubsection*{Cutting a dendrogram that has inversions}
 
 <<pitfall-inversion>>=
-hcen <- hclust(dd, "centroid")
+hcen <- hclust(dd^2, "centroid"); hcen$height <- sqrt(hcen$height)
 bad <- which(diff(hcen$height) < 0)
 rbind(merge_index = bad[1:3],
       height_before = round(hcen$height[bad[1:3]], 4),
@@ -671,177 +770,371 @@ R declines to cut by height at all, which is the honest response: with the heigh
 sorted there is no partition for a horizontal line to name. Cutting by number of clusters
 still works, because that reads the merge order rather than the heights.
 
-\textbf{Diagnostic.} A dendrogram whose branches double back, and a horizontal cut that
+The symptom is a dendrogram whose branches double back, and a horizontal cut that
 either fails or returns a different number of clusters from the one the picture suggests.
-\textbf{Fix.} Centroid linkage fails the reducibility inequality~\eqref{eq:reducible} of
+Centroid linkage fails the reducibility inequality~\eqref{eq:reducible} of
 Theorem~\ref{thm:no-inversion}, so its heights are not monotone and the usual reading of a
 cut is not available. Use single, complete or average linkage, all three of which the
 theorem covers, or cut by number of clusters rather than by height.
 
+% \periodmark{End of period 3 of 3.}
+
 %==============================================================================
+
 \section{Exercises}\label{sec:13.6}
 %==============================================================================
 
-\begin{exercise}\label{ex:eckart}
-A standardised $n\times5$ data matrix has singular values $3.2,2.1,1.4,0.9,0.4$. What
-proportion of variance do the first two components explain, and what is the relative squared
-error of the best rank-two approximation?
+\begin{exercise}[ISLR §12.6, exercise 1]\label{ex:i12-1}
+(a) Prove ISLR's (12.18): $|C_k|^{-1}\sum_{i,i'\in C_k}\sum_j(x_{ij}-x_{i'j})^2
+=2\sum_{i\in C_k}\sum_j(x_{ij}-\bar x_{kj})^2$. (b) On the basis of this identity, argue that
+Algorithm 12.2 decreases the objective (12.17) at each iteration.
 \end{exercise}
 
 \begin{solution}
-The squared singular values are $10.24,4.41,1.96,0.81,0.16$, summing to $17.58$. The first
-two explain $(10.24+4.41)/17.58=0.833$.
-
-By Theorem~\ref{thm:eckart} the squared error of the best rank-two approximation is
-$1.96+0.81+0.16=2.93$, and relative to $\|\bX\|_F^2=17.58$ that is $0.167$. The two numbers
-sum to one, which is Corollary~\ref{cor:pve-recon}: the proportion of variance explained and
-the relative approximation error are the same statement read two ways.
+(a) Multiply Proposition~\ref{prop:wss}\ref{wss:i} by $2$; the proof there expands the double
+sum. (b) By (a) the objective (12.17) is $2W(C)$. Theorem~\ref{thm:lloyd} shows that neither half
+of an iteration increases $W$: replacing the centres by the cluster means minimises over centres
+for the current partition, and reassigning each observation to its nearest mean minimises over
+partitions for the current centres (Proposition~\ref{prop:wss}\ref{wss:iii}).
 \end{solution}
 
-\begin{exercise}\label{ex:signs}
-Two analysts run \texttt{prcomp} on the same data and report first loading vectors
-$(0.54,0.58,0.28,0.54)$ and $(-0.54,-0.58,-0.28,-0.54)$. Who is right, and what can be said
-about the component?
+\begin{exercise}[ISLR §12.6, exercise 2]\label{ex:i12-2}
+Four observations have dissimilarities $d_{12}=0.3$, $d_{13}=0.4$, $d_{14}=0.7$, $d_{23}=0.5$,
+$d_{24}=0.8$, $d_{34}=0.45$. (a) Sketch the complete linkage dendrogram, with the fusion heights.
+(b) The same for single linkage. (c), (d) Cut each into two clusters. (e) Can the dendrogram be
+drawn with the leaves in another order without changing its meaning?
 \end{exercise}
 
 \begin{solution}
-Both. By Proposition~\ref{prop:pca-indet}\ref{ind:i} the loading vector is determined only
-up to sign, and every quantity in the theory is unchanged: the variance $\bphi'\bS\bphi$ is
-quadratic, the scores change sign with the loadings, and the rank-$M$ reconstruction
-$\sum_md_m\bu_m\bv_m'$ is a product of two things that flip together.
-
-What can be said is invariant under the flip: all four variables load with the same sign and
-with comparable magnitude, so the first component is an overall level, and any observation
-scoring high on it is high on all four variables together. What cannot be said is that the
-component increases with crime, since the other analyst's version decreases with it.
+<<i12-2>>=
+d <- as.dist(matrix(c(0, .3, .4, .7,  .3, 0, .5, .8,
+                     .4, .5, 0, .45,  .7, .8, .45, 0), 4))
+hc <- hclust(d, "complete"); hs <- hclust(d, "single")
+list(complete_heights = hc$height, single_heights = hs$height,
+     complete_2 = cutree(hc, 2), single_2 = cutree(hs, 2))
+@
+(a) Complete linkage fuses $\{1,2\}$ at $0.3$, then $\{3,4\}$ at $0.45$, then the two at $0.8$, the
+largest of $0.4,0.7,0.5,0.8$. (b) Single linkage fuses $\{1,2\}$ at $0.3$, then $3$ with them at
+$\min\{0.4,0.5\}=0.4$, then $4$ at $\min\{0.7,0.8,0.45\}=0.45$. (c) $\{1,2\}$ and $\{3,4\}$.
+(d) $\{1,2,3\}$ and $\{4\}$. (e) Yes: the two branches at every fusion can be swapped, for
+example $1,2$ to $2,1$, without changing any fusion or height; only the heights carry meaning.
 \end{solution}
 
-\begin{exercise}\label{ex:wss}
-Show that the within-cluster sum of squares can be written without reference to a cluster
-centre, and use the identity to explain why $K$-means finds spherical clusters.
+\begin{exercise}[ISLR §12.6, exercise 3]\label{ex:i12-3}
+Perform $K$-means with $K=2$ by hand on the six observations $(1,4)$, $(1,3)$, $(0,4)$,
+$(5,1)$, $(6,2)$, $(4,0)$: assign clusters at random, then alternate between computing the
+centroids and reassigning, until the assignment stops changing.
 \end{exercise}
 
 \begin{solution}
-Proposition~\ref{prop:wss}\ref{wss:i}:
-$\sum_{i\in C}|\bx_i-\bar\bx_C|^2=(2|C|)^{-1}\sum_{i,i'\in C}|\bx_i-\bx_{i'}|^2$, proved by
-expanding both sides and recognising $\sum_i|\bx_i|^2-|C||\bar\bx_C|^2$.
-
-The criterion is therefore an average squared Euclidean distance within a cluster, and it is
-small exactly when the cluster is small in every direction at once. An elongated group of
-points has a large average pairwise squared distance however tightly it hugs its own axis,
-so $K$-means prefers to cut it in two, and it prefers clusters of comparable spread because
-a large loose one contributes heavily. Nothing in Definition~\ref{def:kmeans} refers to
-density or shape.
+<<i12-3>>=
+X3 <- cbind(c(1, 1, 0, 5, 6, 4), c(4, 3, 4, 1, 2, 0)); set.seed(1)
+lab <- sample(2, 6, replace = TRUE); lab
+repeat {
+  C3 <- t(sapply(1:2, function(g) colMeans(X3[lab == g, , drop = FALSE])))
+  new <- max.col(-sapply(1:2, function(g) rowSums(sweep(X3, 2, C3[g, ])^2)),
+                 ties.method = "first")
+  print(list(centroids = C3, assignment = new))
+  if (all(new == lab)) break
+  lab <- new }
+@
+The random start is $1,2,1,1,2,1$, with centroids $(2.5,2.25)$ and $(3.5,2.5)$. Reassigning puts
+the first three observations in cluster $1$ and the last three in cluster $2$; the new centroids
+are $(2/3,11/3)$ and $(5,1)$, and a further reassignment changes nothing. The final clusters are
+$\{(1,4),(1,3),(0,4)\}$ and $\{(5,1),(6,2),(4,0)\}$.
 \end{solution}
 
-\begin{exercise}\label{ex:lloyd}
-What does Theorem~\ref{thm:lloyd} promise, what does it not promise, and what follows for
-practice?
+\begin{exercise}[ISLR §12.6, exercise 4]\label{ex:i12-4}
+Single and complete linkage dendrograms are built from the same data. (a) At some point $\{1,2,3\}$
+and $\{4,5\}$ fuse in both. Which fusion is higher, or is there not enough information?
+(b) At some point $\{5\}$ and $\{6\}$ fuse in both. Which fusion is higher?
 \end{exercise}
 
 \begin{solution}
-It promises that each round leaves the criterion no larger, and that the algorithm reaches
-an assignment it does not change after finitely many rounds. The proof is the two halves of
-Proposition~\ref{prop:wss}\ref{wss:iii} applied in turn, plus the finiteness of the set of
-partitions.
-
-It does not promise a global minimum. The number of partitions of $n$ points into $K$
-non-empty groups is astronomically large, and Lloyd's algorithm visits a decreasing sequence
-of them from wherever it started. §\ref{sec:13.4.3} runs it from two hundred random starts
-and reaches several distinct values.
-
-In practice: use many starts and keep the best, and treat the reported clustering as the
-best of the starts rather than the solution.
+(a) Not enough information to say which is strictly higher. The complete linkage of the two
+clusters, $\max d(i,i')$ over the six cross pairs, is at least the single linkage, the minimum
+over the same pairs, so the complete linkage fusion is at least as high; they are equal when all
+six distances are equal. (b) The same height: for two single observations both linkages equal
+$d(5,6)$.
 \end{solution}
 
-\begin{exercise}\label{ex:linkage}
-Two clusters $A=\{a\}$ and $B=\{b\}$ with $d(a,b)=2$ merge, and a third cluster $C=\{c\}$
-has $d(a,c)=5$ and $d(b,c)=9$. Give the next merge height under single, complete and average
-linkage, and check the reducibility inequality in each case.
+\begin{exercise}[ISLR §12.6, exercise 5]\label{ex:i12-5}
+ISLR's Figure 12.16 records eight shoppers' purchases of socks and computers: shoppers
+$1,\ldots,8$ bought $8,11,7,6,5,6,7,8$ pairs of socks and $0,0,0,0,1,1,1,1$ computers. In
+dollars (the figure's right panel) each computer bought is well over \$1500 and the socks a few
+dollars. Describe the $K$-means clusters with $K=2$ on the raw
+counts, on the counts each scaled to standard deviation one, and on the dollars spent.
 \end{exercise}
 
 \begin{solution}
-Single: $D(A\cup B,C)=\min\{5,9\}=5$. Complete: $\max\{5,9\}=9$. Average:
-$(5+9)/2=7$.
-
-Reducibility~\eqref{eq:reducible} asks for $D(A\cup B,C)\geqslant\min\{5,9\}=5$, and all
-three give $5$, $9$ and $7$, so all three satisfy it, with single linkage at equality. Each
-is also at least the height $2$ of the merge just made, so the dendrogram does not invert,
-which is Theorem~\ref{thm:no-inversion}.
-
-Centroid linkage would place the merged centroid midway between $a$ and $b$ and its distance
-to $c$ can be smaller than both $5$ and $9$ when the geometry allows, which is why it is not
-covered.
+The squared Euclidean distance $\sum_j(x_{ij}-x_{i'j})^2$ is dominated by the variable with the
+larger spread. On the raw counts the number of socks varies far more than the number of
+computers, so the two clusters split the shoppers by how many socks they bought. Scaled, both
+variables count equally, and the split reflects socks and computers together; with these data,
+whether a computer was bought separates the shoppers. (On the raw counts the optimal split in
+fact isolates shopper $2$, the one with $11$ pairs of socks.) In dollars a computer outweighs any
+number of socks bought here by well over an order of magnitude, so the clusters split the shoppers by whether they bought a computer.
+The three analyses answer three different questions, as the remark on dissimilarities after
+Proposition~\ref{prop:corrdist} says.
 \end{solution}
 
-\begin{exercise}\label{ex:chain}
-Why does single linkage produce long thin clusters, and what does the same property do when
-one stray observation lies between two groups?
+\begin{exercise}[ISLR §12.6, exercise 7]\label{ex:i12-7}
+Show that if each observation has been centred to mean zero and scaled to standard deviation one
+across its features, then $1-r_{ii'}$ is proportional to the squared Euclidean distance between
+observations $i$ and $i'$; check it on \texttt{USArrests}.
 \end{exercise}
 
 \begin{solution}
-By Proposition~\ref{prop:chain} two observations share a cluster at height $h$ precisely
-when a chain of steps each shorter than $h$ connects them. Distance along the chain is never
-accumulated, so a sequence of closely spaced points joins two ends that are arbitrarily far
-apart, and the resulting cluster follows whatever path the data lay down.
-
-The same mechanism is the failure. One observation midway between two well-separated groups
-gives a two-step chain, so the two groups merge at a height set by the stray point alone.
-Complete linkage is governed by the farthest pair and refuses that merge until the two
-groups are close throughout, which is why the two linkages disagree most in exactly the
-cases where it matters.
+This is Proposition~\ref{prop:corrdist}, with constant $2(p-1)$:
+<<i12-7>>=
+Xr <- t(scale(t(USArrests))); r <- cor(t(Xr)); D2 <- as.matrix(dist(Xr))^2
+range((D2 / (1 - r))[upper.tri(D2)])
+@
+The ratio is $6=2(4-1)$ for every pair of states.
 \end{solution}
 
-\begin{exercise}\label{ex:K}
-An analyst reports that within-cluster sum of squares falls from $196$ at $K=1$ to $78$ at
-$K=3$ and $43$ at $K=6$, and concludes that $K=6$ is best. What is wrong?
+\begin{exercise}[ISLR §12.6, exercise 9]\label{ex:i12-9}
+For \texttt{USArrests}: (a) cluster the states by complete linkage and Euclidean distance;
+(b) cut into three clusters and list them; (c) repeat after scaling the variables to standard
+deviation one; (d) what does scaling change, and should the variables be scaled?
 \end{exercise}
 
 \begin{solution}
-By Proposition~\ref{prop:K} the optimal within-cluster sum of squares is non-increasing in
-$K$ and reaches $0$ at $K=n$, so the sequence falling is a theorem and not evidence. The
-conclusion would be $K=50$.
-
-The falls themselves can be read: $196\to78$ removes $60\%$ of the total, and $78\to43$
-removes another $18\%$, so the first two splits do most of the work and the picture flattens.
-That is the elbow, and it is a judgement, not a criterion. It has the same status as the
-scree plot of §\ref{sec:13.1.3}, and for the same reason: with no response there is nothing
-to hold out.
+<<i12-9>>=
+c3 <- cutree(hclust(dist(USArrests), "complete"), 3); table(c3)
+split(names(c3), c3)
+s3 <- cutree(hclust(dist(scale(USArrests)), "complete"), 3)
+table(raw = c3, scaled = s3)
+@
+(a), (b) Unscaled, the three clusters have $16$, $14$ and $20$ states; the first holds the states
+with high assault rates, from Alabama to South Carolina; the second ($14$ states, from Arkansas to
+Wyoming) has intermediate rates; the third ($20$ states, from Connecticut to Wisconsin) holds the
+low-crime states. (c) Scaled, the partition changes: of the
+$16$ states in the first raw cluster, $9$ move to one scaled cluster, $6$ to another and $1$ to the third, and only
+the third raw cluster survives intact inside one scaled cluster. (d) Unscaled, \texttt{Assault},
+with standard deviation $83$ against \texttt{Murder}'s $4.4$, decides almost every distance, so the
+clustering is essentially of the assault rate. The four variables are in different units
+(arrests per $100{,}000$ and a percentage), so they should be scaled unless there is a reason to
+let assaults dominate.
 \end{solution}
 
-\begin{exercise}\label{ex:scaling}
-On \texttt{USArrests}, the unstandardised first component loads almost entirely on
-\texttt{Assault}. Explain, and say when not standardising would be right.
+\begin{exercise}[ISLR §12.6, exercise 10]\label{ex:i12-10}
+(a) Simulate $60$ observations of $50$ variables in three classes of $20$ with a mean shift between
+classes. (b) Plot the first two principal component score vectors. (c) Run $K$-means with $K=3$
+and compare with the true classes; (d) with $K=2$; (e) with $K=4$; (f) with $K=3$ on the first two
+score vectors; (g) with $K=3$ after scaling each variable.
 \end{exercise}
 
 \begin{solution}
-The four columns are in different units. §\ref{sec:13.4.2} prints the column standard
-deviations, and \texttt{Assault} at $83$ dwarfs \texttt{Murder} at $4.4$. Principal
-components maximise variance in the units supplied (Unit 5), so the largest-variance column
-takes the first direction and carries $97\%$ of the total.
-
-Not standardising is right when the columns are already in the same units and their relative
-spread is itself the information: repeated measurements of one quantity at different times,
-or the same price series for several assets. Then rescaling each to unit variance would
-throw away the fact that one of them moves more than the others.
+<<i12-10, fig.width=4.2, fig.height=2.8>>=
+set.seed(2); x10 <- matrix(rnorm(60 * 50), ncol = 50); y10 <- rep(1:3, each = 20)
+x10[1:20, 1:2] <- x10[1:20, 1:2] + 4; x10[21:40, 1] <- x10[21:40, 1] - 4
+x10[41:60, 2] <- x10[41:60, 2] - 4
+pr10 <- prcomp(x10); set.seed(1)
+fits <- list(K3 = kmeans(x10, 3, nstart = 20), K2 = kmeans(x10, 2, nstart = 20),
+             K4 = kmeans(x10, 4, nstart = 20),
+             K3_scores = kmeans(pr10$x[, 1:2], 3, nstart = 20),
+             K3_scaled = kmeans(scale(x10), 3, nstart = 20))
+lapply(fits, function(z) table(cluster = z$cluster, class = y10))
+par(mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
+plot(pr10$x[, 1:2], col = c("#1E3A8A", "#B45309", "#15803D")[y10], pch = 19)
+@
+(a) The three classes differ in the means of the first two variables only. (b) The first two
+score vectors show three well-separated groups. (c) $K=3$ recovers the classes exactly (the
+labels are arbitrary). (d) $K=2$ keeps class $1$ and merges classes $2$ and $3$. (e) $K=4$ splits
+class $1$ into $11$ and $9$. (f) On the two score vectors $K=3$ again recovers the classes
+exactly: they carry the signal and leave out most of the noise. (g) Scaled, the clusters no longer
+match the classes. The shift raises the standard deviation of the two informative variables, so
+scaling shrinks the separation between classes while leaving the $48$ noise variables at full
+size.
 \end{solution}
 
-\begin{exercise}\label{ex:computational}
-In R: (a) obtain the principal components three ways and reconcile the signs; (b) verify
-that the truncated singular value decomposition minimises the rank-$M$ approximation error;
-(c) verify that Lloyd's algorithm never increases the within-cluster sum of squares.
+\begin{exercise}[ISLR §12.6, exercise 13]\label{ex:i12-13}
+ISLR's \texttt{Ch12Ex13.csv} holds the expression of $1000$ genes in $40$ tissue samples, the first
+$20$ healthy and the last $20$ diseased. (b) Cluster the samples hierarchically with
+correlation-based distance. Do the two groups separate? Does the result depend on the linkage?
+(c) Which genes differ most between the two groups?
 \end{exercise}
 
 \begin{solution}
-(a) is §\ref{sec:13.4.1}, where the three agree to $10^{-15}$ in absolute value and
-\texttt{prcomp} and \texttt{eigen} return opposite signs on the first component; (b) is the
-same section, where alternating least squares from twenty random starts never beats the
-truncation; (c) is §\ref{sec:13.4.3}.
+<<i12-13>>=
+G <- read.csv("data/islr/Ch12Ex13.csv", header = FALSE); dim(G)
+dG <- as.dist(1 - cor(G)); grp <- rep(c("healthy", "diseased"), each = 20)
+lapply(c(complete = "complete", average = "average", single = "single",
+         centroid = "centroid"), function(m) table(cutree(hclust(dG, m), 2), grp))
+tt <- apply(G, 1, function(g) t.test(g[1:20], g[21:40])$statistic)
+blk <- c(11:20, 501:600)
+c(abs_t_over_4_in_11_20 = sum(abs(tt[11:20]) > 4),
+  in_501_600 = sum(abs(tt[501:600]) > 4),
+  largest_abs_t_elsewhere = max(abs(tt[-blk])), mean_t_in_blocks = mean(tt[blk]),
+  min_abs_t_in_blocks = min(abs(tt[blk])), max_t_in_blocks = max(tt[blk]))
+@
+(b) Partly, and it depends on the linkage. Complete and average linkage, cut at two, put all $20$
+diseased samples in one cluster with about half the healthy ones; single and centroid linkage
+leave one healthy sample on its own and put everything else together. (c) For each gene a
+two-sample $t$ statistic compares the groups. Two blocks stand out: every one of genes $11$ to $20$
+and $501$ to $600$ has $|t|>4.1$, every other gene $|t|<4$, and the statistics in the blocks are
+negative, the genes more highly expressed in the diseased samples. The clustering uses all $1000$
+genes, $890$ of them noise, which is why it separates the groups only partly.
+\end{solution}
 
-The point to watch in (b) is that agreement of the truncation's error with
-$\sum_{m>M}d_m^2$ only checks the arithmetic of Theorem~\ref{thm:eckart}; it is the search
-over other rank-$M$ matrices that checks the optimality, which is the part of the theorem
-that does work.
+\begin{exercise}[SOA sample question 1]\label{ex:soa-1}
+For $x_1=(-1,0)$, $x_2=(1,1)$, $x_3=(2,-1)$, $x_4=(5,10)$, hierarchical clustering with complete
+linkage and Euclidean distance: calculate the intercluster dissimilarity between $\{x_1,x_2\}$
+and $\{x_4\}$. (A) $2.2$; (B) $3.2$; (C) $9.9$; (D) $10.8$; (E) $11.7$.
+\end{exercise}
+
+\begin{solution}
+Complete linkage~\eqref{eq:complete} takes the largest of $d(x_1,x_4)=\sqrt{136}=11.66$ and
+$d(x_2,x_4)=\sqrt{97}=9.85$: $11.66$, (E).
+\end{solution}
+
+\begin{exercise}[SOA sample question 2]\label{ex:soa-2}
+Which are true? I. The number of clusters must be pre-specified for both $K$-means and
+hierarchical clustering. II. $K$-means is less sensitive to outliers than hierarchical
+clustering. III. $K$-means requires random assignments while hierarchical clustering does not.
+(A) I only; (B) II only; (C) III only; (D) I, II and III; (E) none of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+I is false: hierarchical clustering needs no $K$ (Definition~\ref{def:hclust}). II is false: both
+put every observation in a cluster, so outliers distort both. III is true: Lloyd's algorithm
+starts from a random assignment (Definition~\ref{def:lloyd}), and agglomerative clustering is
+deterministic. (C).
+\end{solution}
+
+\begin{exercise}[SOA sample question 15]\label{ex:soa-15}
+Twelve points are initially assigned to three clusters: A: $(2,-1)$, $(-1,2)$, $(-2,1)$, $(1,2)$;
+B: $(4,0)$, $(4,-1)$, $(0,-2)$, $(0,-5)$; C: $(-1,0)$, $(3,8)$, $(-2,0)$, $(0,0)$. After one
+iteration of $K$-means with Euclidean distance, how many points are in the smallest cluster?
+(A) $0$; (B) $1$; (C) $2$; (D) $3$; (E) $4$.
+\end{exercise}
+
+\begin{solution}
+<<soa-15>>=
+P <- rbind(c(2, -1), c(-1, 2), c(-2, 1), c(1, 2), c(4, 0), c(4, -1), c(0, -2),
+           c(0, -5), c(-1, 0), c(3, 8), c(-2, 0), c(0, 0))
+g0 <- rep(c("A", "B", "C"), each = 4)
+cen <- apply(P, 2, function(v) tapply(v, g0, mean)); cen
+table(c("A", "B", "C")[max.col(-as.matrix(dist(rbind(cen, P)))[-(1:3), 1:3])])
+@
+The centroids are $(0,1)$, $(2,-2)$ and $(0,2)$; reassigning each point to its nearest centroid
+(Definition~\ref{def:lloyd}) leaves $4$, $5$ and $3$ points. (D).
+\end{solution}
+
+\begin{exercise}[SOA sample question 16]\label{ex:soa-16}
+Which statement applies to $K$-means clustering and not to hierarchical clustering? (A) Two people
+performing one iteration on the same data get the same result. (B) At each iteration the number
+of clusters exceeds that of the previous iteration. (C) The algorithm needs to be run only once,
+however many clusters are finally used. (D) The algorithm must be initialised with an assignment
+of the data points to clusters. (E) None of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+(A) fails for $K$-means, whose start is random. (B) holds for neither: $K$-means keeps $K$
+clusters, and agglomerative clustering decreases their number. (C) is true of hierarchical
+clustering, one dendrogram serving every $K$ (Proposition~\ref{prop:cut}), not of $K$-means.
+(D) is Definition~\ref{def:lloyd}; hierarchical clustering starts from singletons. (D).
+\end{solution}
+
+\begin{exercise}[SOA sample question 32]\label{ex:soa-32}
+For $n$ observations with $p$ features, which are true? I. The observations can be clustered on
+the basis of the features to find subgroups of observations. II. The features can be clustered on
+the basis of the observations to find subgroups of features. III. Clustering is an unsupervised
+method, often part of exploratory data analysis. (A) none; (B) I and II only; (C) I and III only;
+(D) II and III only; (E) none of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+All three are true: II by transposing $\bX$, as the remark at the start of §\ref{sec:13.2} says,
+and III by the remark at the start of §\ref{sec:13.1}. So the answer is (E).
+\end{solution}
+
+\begin{exercise}[SOA sample question 34]\label{ex:soa-34}
+Which are true? I. With $K$ fixed, $K$-means always produces the same assignments. II. Given a
+linkage and a dissimilarity, hierarchical clustering always produces the same assignments for a
+given number of clusters. III. Cutting a dendrogram into five clusters gives the same assignments
+as $K$-means with $K=5$. (A) I only; (B) II only; (C) III only; (D) I, II and III; (E) none of
+(A)--(D).
+\end{exercise}
+
+\begin{solution}
+I is false: the start is random and different starts reach different fixed points (the remark
+after Theorem~\ref{thm:lloyd}). II is true: the algorithm of Definition~\ref{def:hclust} is
+deterministic (ties aside). III is false: the two methods optimise different things, and
+§\ref{sec:comp-two} shows them disagreeing on \texttt{USArrests}. (B).
+\end{solution}
+
+\begin{exercise}[SOA sample question 36]\label{ex:soa-36}
+Which are true of hierarchical clustering? I. It may not assign extreme outliers to any cluster.
+II. The dendrogram can be used to obtain different numbers of clusters. III. It is not robust to
+small changes in the data. (A) none; (B) I and II only; (C) I and III only; (D) II and III only;
+(E) none of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+I is false: every cut by number of clusters, and every height cut of a dendrogram without
+inversions, is a partition (Proposition~\ref{prop:cut}), so every observation is in a
+cluster. II is true by the same proposition. III is true: ISLR's remark on robustness in
+§\ref{sec:13.4}. (D).
+\end{solution}
+
+\begin{exercise}[SOA sample question 40]\label{ex:soa-40}
+Which are true? I. Cutting a dendrogram at a lower height will not decrease the number of
+clusters. II. $K$-means requires plotting the data before choosing the number of clusters.
+III. For a given number of clusters, hierarchical clustering can sometimes give less accurate
+results than $K$-means. (A) none; (B) I and II only; (C) I and III only; (D) II and III only;
+(E) none of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+I is true: for a dendrogram without inversions (single, complete and average linkage; the remark
+after Theorem~\ref{thm:no-inversion}) the partitions are nested (Proposition~\ref{prop:cut}), and a lower cut refines a
+higher one, so it has at least as many clusters. II is false: nothing in
+Definition~\ref{def:lloyd} needs a plot. III is true: when the best clusters are not nested, no
+dendrogram finds the best partition for every $K$, ISLR's sex-and-nationality example in §\ref{sec:13.3}. (C).
+\end{solution}
+
+\begin{exercise}[SOA sample question 43]\label{ex:soa-43}
+Which is NOT true of clustering? (A) It is used to discover structure in a data set. (B) It finds
+homogeneous subgroups among the observations. (C) It is unsupervised. (D) It reduces the
+dimensionality of a data set while retaining a good fraction of the variance. (E) In $K$-means
+the number of clusters must be pre-specified.
+\end{exercise}
+
+\begin{solution}
+(D) describes principal components (Unit 5's proposition \emph{proportion of variance
+explained}), not clustering. (D).
+\end{solution}
+
+\begin{exercise}[SOA sample question 59]\label{ex:soa-59}
+Five observations $(1,3)$, $(0,4)$, $(6,2)$ in cluster $1$ and $(5,2)$, $(1,6)$ in cluster $2$:
+calculate the total within-cluster variation of this assignment, by Euclidean distance.
+(A) $32.0$; (B) $70.3$; (C) $77.3$; (D) $118.3$; (E) $141.0$.
+\end{exercise}
+
+\begin{solution}
+The within-cluster variation is ISLR's (12.16), which by the remark after Proposition~\ref{prop:wss}
+(via~\ref{wss:i}) is $2W(C)$:
+<<soa-59>>=
+P59 <- rbind(c(1, 3), c(0, 4), c(6, 2), c(5, 2), c(1, 6)); g59 <- c(1, 1, 1, 2, 2)
+W59 <- sum(sapply(1:2, function(g) sum(scale(P59[g59 == g, ], scale = FALSE)^2)))
+c(W = W59, ISLR_variation = 2 * W59)
+@
+$W=22.67+16=38.67$, and the variation is $77.33$, (C). The answer $38.7$, the plain sum of squares
+about the centroids, is not among the choices: the question uses ISLR's factor $2$.
+\end{solution}
+
+\begin{exercise}[SOA sample question 60]\label{ex:soa-60}
+Which are true of choosing $K$ in $K$-means? I. Set $K=n$. II. Choose $K$ to minimise the total
+within-cluster variation. III. The choice of $K$ is subjective, and no one method determines the
+optimal number. (A) I only; (B) II only; (C) III only; (D) I, II and III; (E) none of (A)--(D).
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:K} the optimal within-cluster variation is non-increasing in $K$ and $0$
+at $K=n$, so II leads to I, which makes every observation its own cluster and says nothing. III is
+the remark after that proposition. (C).
 \end{solution}
 
 \end{document}

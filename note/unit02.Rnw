@@ -74,8 +74,8 @@ Both variables are skewed to the right, each mean well above its median; the sca
 plot shows sales rising with population.
 \end{example}
 
-\begin{definition}[Pearson correlation; FREES §2.1, ISLR §3.1.3]\label{def:corr}
-For pairs $(x_i,y_i)$, $i=1,\ldots,n$, with $s_x^2=(n-1)^{-1}\sum_i(x_i-\bar x)^2$ and
+\begin{definition}[Pearson correlation; FREES §2.1, ISLR §3.1.3; CLM Definition 2.15]\label{def:corr}
+For pairs $(x_i,y_i)$, $i=1,\ldots,n$, of variables that are not constant, with $s_x^2=(n-1)^{-1}\sum_i(x_i-\bar x)^2$ and
 $s_y^2$ likewise,
 \begin{equation}\label{eq:corr}
 r = \frac{1}{(n-1)s_xs_y}\sum_{i=1}^n(x_i-\bar x)(y_i-\bar y)
@@ -86,8 +86,8 @@ The variables are \emph{positively correlated} if $r>0$ and \emph{negatively
 correlated} if $r<0$.
 \end{definition}
 
-\begin{proposition}[Bounds and invariance]\label{prop:corr-bounds}
-$-1\leqslant r\leqslant1$; $r=1$ iff the points lie on a line of positive slope and
+\begin{proposition}[Bounds and invariance; CLM Proposition 2.17]\label{prop:corr-bounds}
+For variables that are not constant, $-1\leqslant r\leqslant1$; $r=1$ iff the points lie on a line of positive slope and
 $r=-1$ iff they lie on a line of negative slope. Replacing $x_i$ by $a+bx_i$ and $y_i$ by
 $c+dy_i$ leaves $r$ unchanged when $bd>0$ and changes its sign when $bd<0$.
 \end{proposition}
@@ -124,6 +124,27 @@ cor(lottery$POP, lottery$SALES)
 Sales and population are strongly and positively correlated.
 \end{example}
 
+\begin{example}[Summarizing simulations; FREES §2.1, Figure 2.3]\label{ex:var-cte}
+Manistre and Hancock's put option: a stock worth $\$100$ now is worth
+$S(Z)=100\exp(0.08\cdot10+0.15\sqrt{10}\,Z)$ in ten years, $Z$ standard normal, and a put with
+strike $\$110$ has present value $C(Z)=e^{-0.06\cdot10}\max\{0,110-S(Z)\}$. Each of $1000$
+replicates simulates $1000$ values of $C$ and records their $95$th percentile, the value at risk
+$\text{VaR}$, and the mean of the largest $50$, the conditional tail expectation
+$\text{CTE}$:
+<<var-cte, fig.width=4.2, fig.height=2.5>>=
+set.seed(1)
+Cput <- function(z) exp(-0.6) * pmax(0, 110 - 100 * exp(0.8 + 0.15 * sqrt(10) * z))
+vc <- t(replicate(1000, { v <- sort(Cput(rnorm(1000)))
+  c(VaR = v[950], CTE = mean(v[951:1000])) }))
+cor(vc[, "VaR"], vc[, "CTE"])
+par(mar = c(4, 4.2, 0.5, 0.5), cex = 0.85)
+plot(vc, pch = 16, cex = 0.4, col = "grey40")
+@
+The correlation is $0.78$, FREES's $0.782$ up to simulation noise: a strong but not perfect
+linear relation between two risk measures computed from the same simulated values. The
+summaries of this unit apply to the output of a simulation study as they do to data.
+\end{example}
+
 \begin{example}[Term life insurance; FREES §3.1]\label{ex:termlife}
 The 2004 Survey of Consumer Finances: of $500$ households with positive income, the
 $275$ that bought term life insurance, with the policy face amount \texttt{FACE}, annual
@@ -150,6 +171,15 @@ In dollars the points cluster in the lower left corner and the relation is far f
 linear; in logarithms a line is a reasonable summary. The correlation matrix
 summarises the pairwise scatter plots: each entry is a pairwise linear association and
 cannot show how the response depends on several variables jointly.
+<<termlife-pairs, fig.height=3.0, fig.width=4.0, out.width="0.58\\linewidth", echo=FALSE>>=
+pairs(term[, c("NUMHH", "EDUCATION", "LNINCOME", "LNFACE")], pch = 16, cex = 0.35,
+      col = "grey30", gap = 0.3)
+@
+\begin{figure}[H]\centering
+\caption{The scatterplot matrix of the four variables, whose correlations are printed above
+(FREES Figure 3.2): \texttt{LNFACE} rises with \texttt{LNINCOME} and \texttt{EDUCATION};
+\texttt{NUMHH} takes few values.}
+\end{figure}
 \end{example}
 
 \begin{example}[Advertising; ISLR §2.1, §3.1--3.2]\label{ex:advertising}
@@ -174,7 +204,7 @@ par(op)
 
 \subsection{The model and its assumptions}\label{sec:2.1.2}
 
-\begin{definition}[Multiple linear regression model; FREES §3.2, ISLR §3.2]\label{def:model}
+\begin{definition}[Multiple linear regression model; FREES §3.2, ISLR §3.2; CLM Definition 1.1, equation (2)]\label{def:model}
 Given $n$ observations, each consisting of a response $Y_i$ and $k$ explanatory
 variables $X_{i1},\ldots,X_{ik}$, the \emph{multiple linear regression model} is
 \begin{equation}\label{eq:model-scalar}
@@ -208,12 +238,12 @@ use both. The case $k=1$, $\bX=[\bone\ \bx]$, is FREES's \emph{basic} and ISLR's
 \emph{regressing $Y$ on $X_1,\ldots,X_k$}.
 \end{remark}
 
-\begin{definition}[Classical assumptions; FREES §2.2, §3.2.3, ISLR §3.1.2]\label{def:assumptions}
+\begin{definition}[Classical assumptions; FREES §2.2, §3.2.3, ISLR §3.1.2; CLM Definition 1.2]\label{def:assumptions}
 On model~\eqref{eq:model-matrix}:
 \begin{enumerate}[label=\textup{(A\arabic*)}]
 \item\Atarget{1} \emph{Linearity}: $\expc[\bY\mid\bX] = \bX\bb$.
 \item\Atarget{2} \emph{Zero conditional mean}: $\expc[\be\mid\bX] = \bzero$.
-\item\Atarget{3} \emph{Spherical errors}: $\var(\be\mid\bX) = \sigma^2\bI_n$, that is
+\item\Atarget{3} \emph{Spherical errors}: $\var(\be\mid\bX) = \sigma^2\bI_n$ with $\sigma^2>0$, that is
       $\var(\varepsilon_i)=\sigma^2$ for every $i$ (\emph{homoscedasticity}) and
       $\cov(\varepsilon_i,\varepsilon_j)=0$ for $i\neq j$.
 \item\Atarget{4} \emph{Full rank}: $\rank(\bX)=k+1$, which requires $n\geqslant k+1$;
@@ -260,7 +290,7 @@ FREES §2.1, §3.1, §3.2.2 · ISLR §3.1.1, §3.2.1 · CLM §2. \ SRM learning 
 
 \subsection{The normal equations}\label{sec:2.2.1}
 
-\begin{definition}[Least squares; FREES §2.1, §3.1, ISLR §3.1.1]\label{def:ols}
+\begin{definition}[Least squares; FREES §2.1, §3.1, ISLR §3.1.1; CLM Definition 2.1]\label{def:ols}
 The \emph{least squares estimator} $\hat\bb$ minimises the \emph{residual sum of squares}
 \begin{equation}\label{eq:sse-obj}
 Q(\bb^\ast)=\sum_{i=1}^n(Y_i-\bx_i'\bb^\ast)^2
@@ -272,7 +302,7 @@ $\hat y=\hat\beta_0+\hat\beta_1x_1+\cdots+\hat\beta_kx_k$ is the \emph{fitted re
 plane}, a line when $k=1$.
 \end{definition}
 
-\begin{theorem}[The least squares estimator]\label{thm:ols}
+\begin{theorem}[The least squares estimator; CLM Theorem 2.4, equation (6)]\label{thm:ols}
 Under \Aref{4} the minimiser of~\eqref{eq:sse-obj} is unique and equals
 \begin{equation}\label{eq:ols}
 \hat\bb=(\bX'\bX)^{-1}\bX'\bY .
@@ -320,16 +350,20 @@ $\hat\bb$ is the unique global minimiser.
 \end{proof}
 
 \begin{remark}[Without full rank; FREES §3.1]
-Only Step 3 uses \Aref{4}. If one column of $\bX$ is a linear combination of the
-others, $\bX'\bX$ is singular, the normal equations have infinitely many solutions, all
+Only Step 3 and the equality case of Step 4 use \Aref{4}. If one column of $\bX$ is a
+linear combination of the others, $\bX'\bX$ is singular, the normal equations have
+infinitely many solutions (one exists because the prerequisites' theorem
+\emph{orthogonal projection} gives a closest point $\bX\bb$ of $\calC(\bX)$ with
+$\bY-\bX\bb\perp\calC(\bX)$, which is~\eqref{eq:normal-eq}; adding any nonzero
+vector of the null space of $\bX$ gives others), all
 with the same fitted vector by Step 4, and R reports \texttt{NA} for the redundant
 coefficients.
 \end{remark}
 
 \subsection{Orthogonal projection}\label{sec:2.2.2}
 
-\begin{theorem}[Least squares as projection]\label{thm:ols-proj}
-$\hat\bY=\bX\hat\bb$ is the orthogonal projection of $\bY$ onto the column space
+\begin{theorem}[Least squares as projection; CLM Theorem 2.5]\label{thm:ols-proj}
+Under \Aref{4}, $\hat\bY=\bX\hat\bb$ is the orthogonal projection of $\bY$ onto the column space
 $\calC(\bX)$: it is the unique point of $\calC(\bX)$ closest to $\bY$, and
 $\bY-\hat\bY\perp\calC(\bX)$.
 \end{theorem}
@@ -359,14 +393,15 @@ whose solution Theorem~\ref{thm:ols} gives. Uniqueness of the closest point is t
 equality case of Step 1.
 \end{proof}
 
-\begin{definition}[Hat matrix and residual maker; CLM §2]\label{def:hat-matrix}
+\begin{definition}[Hat matrix and residual maker; CLM Definition 2.6]\label{def:hat-matrix}
+Under \Aref{4},
 \begin{equation}\label{eq:hat}
 \bH = \bX(\bX'\bX)^{-1}\bX', \qquad \bM = \bI_n - \bH ,
 \end{equation}
 so that $\hat\bY = \bH\bY$ and $\mathbf{e} = \bM\bY$.
 \end{definition}
 
-\begin{theorem}[Properties of $\bH$ and $\bM$]\label{thm:HM}
+\begin{theorem}[Properties of $\bH$ and $\bM$; CLM Theorem 2.9]\label{thm:HM}
 \leavevmode
 \begin{enumerate}[label=\textup{(\roman*)}]
 \item\label{HM:i}   $\bH$ and $\bM$ are symmetric and idempotent.
@@ -403,7 +438,7 @@ Definition~\ref{def:hat-matrix} describe one object, and $\bM$ is the projection
 $\calC(\bX)^{\perp}$, of dimension $n-k-1$.
 \end{remark}
 
-\begin{lemma}[The intercept projection]\label{lem:HH0}
+\begin{lemma}[The intercept projection; CLM Remark 6.2, Lemma 7.2]\label{lem:HH0}
 Let $\bH_0=\tfrac1n\bone\bone'$ and suppose $\bone\in\calC(\bX)$. Then
 $\bH\bH_0=\bH_0\bH=\bH_0$; $\bH-\bH_0$ is symmetric idempotent with
 $\tr(\bH-\bH_0)=k$, and is the orthogonal projection onto $\calC(\bX)\cap\bone^\perp$;
@@ -432,7 +467,7 @@ Theorem~\ref{thm:HM}\ref{HM:iii} and $\bH_0=\bH_0\bH$.
 
 \subsection{Residuals and leverage}\label{sec:2.2.3}
 
-\begin{theorem}[Residual identities]\label{thm:normal-eq}
+\begin{theorem}[Residual identities; CLM Theorem 2.12]\label{thm:normal-eq}
 The least squares residuals satisfy
 \begin{enumerate}[label=\textup{(\roman*)}]
 \item\label{ne:i}   $\bX'\mathbf{e} = \bzero$;
@@ -463,12 +498,12 @@ them are free. The identities hold for every fit, so a residual mean of zero is 
 evidence that the model is right.
 \end{remark}
 
-\begin{definition}[Leverage; ISLR §3.3.3]\label{def:leverage}
+\begin{definition}[Leverage; ISLR §3.3.3; CLM Definition 2.13]\label{def:leverage}
 The \emph{leverage} of observation $i$ is $h_{ii}$, the $i$-th diagonal entry of $\bH$,
 so that $\hat Y_i=\sum_jh_{ij}Y_j$ and $h_{ii}=\partial\hat Y_i/\partial Y_i$.
 \end{definition}
 
-\begin{theorem}[Properties of leverage]\label{thm:leverage}
+\begin{theorem}[Properties of leverage; CLM Theorem 2.14, Exercise D3]\label{thm:leverage}
 \leavevmode
 \begin{enumerate}[label=\textup{(\roman*)}]
 \item\label{lev:i}  $0\leqslant h_{ii}\leqslant1$, and $h_{ii}=1$ forces $h_{ij}=0$ for
@@ -512,15 +547,17 @@ using $\sum_jx_j^2=S_{xx}+n\bar x^2$.
 \end{proof}
 
 \begin{remark}[ISLR §3.3.3]
-$h_{ii}$ depends on $\bX$ alone and measures how far $\bx_i$ lies from the centre of
-the design: with one explanatory variable it is a quadratic in $x_i-\bar x$ with minimum
-$1/n$. The conventional flag is $h_{ii}>2(k+1)/n$, twice the mean.
+$h_{ii}$ depends on $\bX$ alone and, with one explanatory variable, measures how far
+$x_i$ lies from $\bar x$: by~\eqref{eq:lev-k1} it is a quadratic in $x_i-\bar x$ with
+minimum $1/n$. ISLR flags a leverage that greatly exceeds the mean $(k+1)/n$; FREES §5.4.1 flags
+three times the mean, and twice the mean, $2(k+1)/n$, is also in common use.
 \end{remark}
 
 \subsection{The case \texorpdfstring{$k=1$}{k=1}}\label{sec:2.2.4}
 
-\begin{corollary}[The fitted line; FREES §2.1, ISLR §3.1.1]\label{cor:slr-ls}
-With one explanatory variable and an intercept, and $x_1,\ldots,x_n$ not all equal,
+\begin{corollary}[The fitted line; FREES §2.1, ISLR §3.1.1; CLM Corollary 2.18]\label{cor:slr-ls}
+With one explanatory variable and an intercept, and $x_1,\ldots,x_n$ not all equal
+(and, for the last form of $b_1$, $y_1,\ldots,y_n$ not all equal),
 \begin{equation}\label{eq:slr-ls}
 b_1=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2}
 =\frac{\sum_ix_iy_i-n\bar x\bar y}{\sum_ix_i^2-n\bar x^2}
@@ -550,8 +587,8 @@ by $n-1$ gives $b_1=\{(n-1)s_xs_yr\}/\{(n-1)s_x^2\}=r\,s_y/s_x$. Finally
 $\hat y_i-\bar y=b_0+b_1x_i-\bar y=b_1(x_i-\bar x)$.
 \end{proof}
 
-\begin{corollary}[Regression through the origin; FREES exercise 2.7, ISLR §3.7]\label{cor:origin}
-For the model $y_i=\beta x_i+\varepsilon_i$ without an intercept, the least squares
+\begin{corollary}[Regression through the origin; FREES exercise 2.7, ISLR §3.7; CLM Corollary 2.20]\label{cor:origin}
+For the model $y_i=\beta x_i+\varepsilon_i$ without an intercept, and some $x_i\neq0$, the least squares
 estimate is $\hat\beta=\sum_ix_iy_i/\sum_ix_i^2$ and $\hat y_i=x_i\hat\beta$.
 \end{corollary}
 
@@ -562,10 +599,10 @@ $\bX'\bY=\sum_ix_iy_i$; Theorem~\ref{thm:ols} gives the ratio.
 
 \begin{example}[Lottery sales, continued; FREES §2.1]\label{ex:lottery-fit}
 From Example~\ref{ex:lottery-r} and the summary statistics,
-$b_1=r\,s_y/s_x=0.886(8103)/11{,}098=0.647$ and
-$b_0=\bar y-b_1\bar x=6495-0.647(9311)=470$: the fitted line is
+$b_1=r\,s_y/s_x=0.8863(8103)/11{,}098=0.6471$ and
+$b_0=\bar y-b_1\bar x=6495-0.6471(9311)=470$: the fitted line is
 $\widehat{\texttt{SALES}}=470+0.647\,\texttt{POP}$, and at a population of $10{,}000$
-it gives $470+6470=6940$ dollars of sales.
+it gives $470+6471=6941$ dollars of sales.
 <<lottery-fit>>=
 r <- cor(lottery$POP, lottery$SALES)
 b1 <- r * sd(lottery$SALES) / sd(lottery$POP)
@@ -624,7 +661,7 @@ used because these identities need them.
 \begin{example}[Term life insurance, continued; FREES §3.2.2]\label{ex:termlife-interp}
 Holding \texttt{NUMHH} and \texttt{LNINCOME} at their sample means and moving
 \texttt{EDUCATION} in steps of $0.1$ year raises $\widehat{\texttt{LNFACE}}$ by a
-constant $0.0206$ per step, and the fitted face amount by a constant $2.08\%$ per step;
+constant $0.0206$ per step, and the fitted face amount by a constant $2.09\%$ per step;
 the continuous version is $0.206\times0.1=2.06\%$. Moving \texttt{LNINCOME} in steps of
 $0.1$ raises income by $10.52\%$ per step and the fitted face amount by $5.06\%$, a
 ratio of $0.481$ against the coefficient $0.494$.
@@ -672,7 +709,7 @@ is positive until temperature is added.
 FREES §2.3.2, §2.4, §3.2.4, §3.3 · ISLR §3.1.2 · CLM §3. \ SRM learning outcome 2(a).
 \end{reading}
 
-\begin{definition}[Sums of squares, mean squares and the residual standard deviation; FREES §2.3, §3.3, ISLR §3.1.3]\label{def:sumsq}
+\begin{definition}[Sums of squares, mean squares and the residual standard deviation; FREES §2.3, §3.3, ISLR §3.1.3; CLM Definition 3.1]\label{def:sumsq}
 For the fitted model $\hat\bY=\bX\hat\bb$,
 \[
 \SST=\sum_i(Y_i-\bar Y)^2,\qquad
@@ -680,14 +717,14 @@ For the fitted model $\hat\bY=\bX\hat\bb$,
 \SSE=\sum_i(Y_i-\hat Y_i)^2=\mathbf e'\mathbf e ,
 \]
 \[
-\MSE=s^2=\frac{\SSE}{n-k-1},\qquad \MSR=\frac{\SSR}{k}.
+\MSE=s^2=\frac{\SSE}{n-k-1}\ \ (n>k+1),\qquad \MSR=\frac{\SSR}{k}\ \ (k\geqslant1).
 \]
 $s$ is the \emph{residual standard deviation} (FREES) or \emph{residual standard error},
 RSE (ISLR). FREES writes \emph{Total SS}, \emph{Regression SS} and \emph{Error SS};
 ISLR writes $\TSS$ and $\RSS$ for $\SST$ and $\SSE$; the SOA questions use both.
 \end{definition}
 
-\begin{proposition}[Coefficients are weighted sums of the responses; FREES §2.4, §3.2.4]\label{prop:weights}
+\begin{proposition}[Coefficients are weighted sums of the responses; FREES §2.4, §3.2.4; CLM Proposition 2.19]\label{prop:weights}
 $\hat\bb=\bW\bY$ with $\bW=(\bX'\bX)^{-1}\bX'$ fixed by the design, so each
 $\hat\beta_j=\sum_iw_{ji}Y_i$. For $k=1$,
 \begin{equation}\label{eq:weights}
@@ -708,7 +745,7 @@ $\sum_iw_i^2=\sum_i(x_i-\bar x)^2/\{(n-1)s_x^2\}^2=1/\{(n-1)s_x^2\}$.
 
 \subsection{Unbiasedness and variance}\label{sec:2.3.1}
 
-\begin{theorem}[Unbiasedness]\label{thm:unbiased}
+\begin{theorem}[Unbiasedness; CLM Theorem 3.3, equation (12)]\label{thm:unbiased}
 Under \Aref{1}--\Aref{2} and \Aref{4}, $\expc[\hat\bb]=\bb$.
 \end{theorem}
 
@@ -720,7 +757,7 @@ Substituting $\bY=\bX\bb+\be$ into~\eqref{eq:ols},
 and $\expc[\be]=\bzero$ by \Aref{2}, so $\expc[\hat\bb]=\bb+(\bX'\bX)^{-1}\bX'\bzero=\bb$.
 \end{proof}
 
-\begin{theorem}[Variance--covariance matrix]\label{thm:var-beta}
+\begin{theorem}[Variance--covariance matrix; CLM Theorem 3.4]\label{thm:var-beta}
 Under \Aref{1}--\Aref{4}, $\var(\hat\bb)=\sigma^2(\bX'\bX)^{-1}$; in particular
 $\var(\hat\beta_j)=\sigma^2[(\bX'\bX)^{-1}]_{jj}$ and
 $\cov(\hat\beta_i,\hat\beta_j)=\sigma^2[(\bX'\bX)^{-1}]_{ij}$.
@@ -736,8 +773,8 @@ $\var(\bA\bz)=\bA\var(\bz)\bA'$, with $\bA=(\bX'\bX)^{-1}\bX'$,
 \]
 \end{proof}
 
-\begin{corollary}[The case $k=1$; FREES §2.4, ISLR §3.1.2]\label{cor:slr-var}
-With $S_{xx}=\sum_i(x_i-\bar x)^2=(n-1)s_x^2$,
+\begin{corollary}[The case $k=1$; FREES §2.4, ISLR §3.1.2; CLM Corollary 3.13]\label{cor:slr-var}
+Under \Aref{1}--\Aref{4}, with $x_1,\ldots,x_n$ not all equal and $S_{xx}=\sum_i(x_i-\bar x)^2=(n-1)s_x^2$,
 \begin{equation}\label{eq:slr-var}
 \var(b_1)=\frac{\sigma^2}{S_{xx}},\qquad
 \var(b_0)=\sigma^2\Bigl(\frac1n+\frac{\bar x^2}{S_{xx}}\Bigr),\qquad
@@ -765,7 +802,7 @@ which case $b_0=\bar Y$.
 
 \subsection{The Gauss--Markov theorem}\label{sec:2.3.2}
 
-\begin{theorem}[Gauss--Markov; FREES §3.2.4]\label{thm:gm}
+\begin{theorem}[Gauss--Markov; FREES §3.2.4; CLM Theorem 3.5]\label{thm:gm}
 Under \Aref{1}--\Aref{4}, $\hat\bb$ is the \emph{best linear unbiased estimator} of
 $\bb$: for any estimator $\tilde\bb=\bC\bY$ with $\bC$ a constant matrix and
 $\expc[\tilde\bb]=\bb$ for every $\bb$, the matrix $\var(\tilde\bb)-\var(\hat\bb)$ is
@@ -808,7 +845,7 @@ mean squared error.
 
 \subsection{Estimating the error variance}\label{sec:2.3.3}
 
-\begin{theorem}[Unbiasedness of the mean square error; FREES §2.3.2, §3.3]\label{thm:mse-unbiased}
+\begin{theorem}[Unbiasedness of the mean square error; FREES §2.3.2, §3.3; CLM Theorem 3.7]\label{thm:mse-unbiased}
 Under \Aref{1}--\Aref{4}, $\expc[\SSE]=(n-k-1)\sigma^2$, so $\expc[s^2]=\sigma^2$.
 \end{theorem}
 
@@ -830,7 +867,7 @@ variation about it. Dividing $\SSE$ by $n$ gives an estimator biased downward by
 factor $(n-k-1)/n$.
 \end{remark}
 
-\begin{theorem}[Variance of the residuals]\label{thm:var-resid}
+\begin{theorem}[Variance of the residuals; CLM Theorem 3.8]\label{thm:var-resid}
 Under \Aref{1}--\Aref{4}, $\var(\mathbf e)=\sigma^2\bM$: $\var(e_i)=\sigma^2(1-h_{ii})$
 and $\cov(e_i,e_j)=-\sigma^2h_{ij}$.
 \end{theorem}
@@ -882,7 +919,9 @@ and averaged over many samples they reproduce it, which is Theorem~\ref{thm:unbi
 set.seed(2)
 x_pop <- runif(100, -2, 2)
 fits <- replicate(2000, coef(lm(I(2 + 3 * x_pop + rnorm(100, sd = 2)) ~ x_pop)))
-rbind(true = c(2, 3), mean_of_fits = rowMeans(fits), sd_of_fits = apply(fits, 1, sd))
+Sxx_pop <- sum((x_pop - mean(x_pop))^2)
+rbind(true = c(2, 3), mean_of_fits = rowMeans(fits), sd_of_fits = apply(fits, 1, sd),
+      sd_by_formula = 2 * sqrt(c(1 / 100 + mean(x_pop)^2 / Sxx_pop, 1 / Sxx_pop)))
 @
 <<pop-line-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
@@ -899,10 +938,11 @@ par(op)
 for one sample. Right: ten least squares lines from ten samples (ISLR Figure 3.3).}
 \end{figure}
 The mean of $2000$ fitted intercepts and slopes agrees with $(2,3)$ within $0.01$, and
-the spread of the fits is the standard deviation~\eqref{eq:slr-var}.
+the spread of the fits is close to the standard deviation~\eqref{eq:slr-var}
+(row \texttt{sd\_by\_formula}).
 \end{example}
 
-\periodmark{End of period 1 of 3.}
+% \periodmark{End of period 1 of 3.}
 
 %==============================================================================
 \section{Goodness of Fit}\label{sec:2.4}
@@ -914,13 +954,13 @@ FREES §2.3, §3.3 · ISLR §3.1.3, §3.2.2 · CLM §6. \ SRM learning outcome 2
 
 \subsection{The analysis of variance}\label{sec:2.4.1}
 
-\begin{definition}[Centering matrix]\label{def:centering}
+\begin{definition}[Centering matrix; CLM Definition 6.1]\label{def:centering}
 $\bM_0=\bI_n-\tfrac1n\bone\bone'=\bI_n-\bH_0$, so that $\bM_0\bv=\bv-\bar v\bone$.
 $\bM_0$ is the residual maker of the intercept-only model: symmetric idempotent, with
 $\tr(\bM_0)=n-1$, projecting onto $\bone^\perp$.
 \end{definition}
 
-\begin{theorem}[Variance decomposition; FREES §2.3.1, §3.3, ISLR §3.1.3]\label{thm:anova}
+\begin{theorem}[Variance decomposition; FREES §2.3.1, §3.3, ISLR §3.1.3; CLM Theorem 6.4, equation (24)]\label{thm:anova}
 In a model with an intercept,
 \begin{equation}\label{eq:anova}
 \SST=\SSR+\SSE ,
@@ -953,9 +993,9 @@ Theorem~\ref{thm:normal-eq}\ref{ne:iii} and \ref{ne:ii}.
 \begin{remark}[FREES §2.3.1]
 Equation~\eqref{eq:anova} is FREES's ``total deviation equals unexplained deviation plus
 explained deviation'', $y_i-\bar y=(y_i-\hat y_i)+(\hat y_i-\bar y)$, squared and summed;
-the cross products sum to zero for the least squares fit and for no other line, because
-Step 4 uses the normal equations. Without an intercept $\bar e\neq0$, the cross term
-survives and~\eqref{eq:anova} fails.
+the cross products sum to zero for the least squares fit because of the normal
+equations (Step 4); for an arbitrary line they need not vanish. Without an intercept $\bar e$ is in general nonzero (unless $\bone\in\calC(\bX)$), the cross term $-2n\bar Y\bar e$
+survives, and~\eqref{eq:anova} in general fails.
 \end{remark}
 
 \begin{ctab}[\small]
@@ -989,7 +1029,7 @@ line is $s=3792$ against $s_y=8103$ without the explanatory variable.
 
 \subsection{The coefficient of determination}\label{sec:2.4.2}
 
-\begin{definition}[$R^2$ and adjusted $R^2$; FREES §2.3.1, §3.3, ISLR §3.1.3]\label{def:R2}
+\begin{definition}[$R^2$ and adjusted $R^2$; FREES §2.3.1, §3.3, ISLR §3.1.3; CLM Definition 6.6]\label{def:R2}
 \begin{equation}\label{eq:R2}
 R^2=\frac{\SSR}{\SST}=1-\frac{\SSE}{\SST},
 \qquad
@@ -1000,8 +1040,8 @@ adjusted for degrees of freedom; $R_a^2$ can be negative. $R=\sqrt{R^2}$ is the
 \emph{multiple correlation coefficient}.
 \end{definition}
 
-\begin{proposition}[Bounds and monotonicity; FREES §2.3, §3.3, ISLR §3.2.2]\label{prop:R2-bounds}
-In a model with an intercept, $0\leqslant R^2\leqslant1$; $R^2=1$ iff every residual is
+\begin{proposition}[Bounds and monotonicity; FREES §2.3, §3.3, ISLR §3.2.2; CLM Proposition 6.7, Theorem 6.8]\label{prop:R2-bounds}
+In a model with an intercept and $\SST>0$, $0\leqslant R^2\leqslant1$; $R^2=1$ iff every residual is
 zero and $R^2=0$ iff $\hat\bY=\bar Y\bone$. Adding an explanatory variable cannot decrease
 $R^2$, and can decrease $R_a^2$.
 \end{proposition}
@@ -1019,8 +1059,8 @@ $n-1$ are fixed and $s^2=\SSE/(n-k-1)$ rises whenever $\SSE$ falls by less than 
 factor $(n-k-2)/(n-k-1)$.
 \end{proof}
 
-\begin{proposition}[$R^2$ as a squared correlation; FREES §3.3, ISLR §3.2.2]\label{prop:R2-cor}
-In a model with an intercept, $R^2=\cor(Y,\hat Y)^2$, the squared sample correlation
+\begin{proposition}[$R^2$ as a squared correlation; FREES §3.3, ISLR §3.2.2; CLM Proposition 6.12]\label{prop:R2-cor}
+In a model with an intercept, $\SST>0$ and $\SSR>0$, $R^2=\cor(Y,\hat Y)^2$, the squared sample correlation
 between the responses and the fitted values; and among all vectors $\bv\in\calC(\bX)$
 that are not constant, $\cor(Y,v)^2$ is largest at $\bv=\hat\bY$.
 \end{proposition}
@@ -1052,8 +1092,8 @@ Theorem~\ref{thm:anova}. Equality holds when $\tilde\bv$ is proportional to
 $\bP\tilde\bY=\bM_0\hat\bY$, which is the case $\bv=\hat\bY$ by Step 1.
 \end{proof}
 
-\begin{lemma}[Adding one explanatory variable; CLM §6]\label{lem:sse-reduction}
-Let $\bX_+=[\bX\ \ \bz]$ with $\bz\notin\calC(\bX)$, so that $\bz'\bM\bz>0$, and let
+\begin{lemma}[Adding one explanatory variable; CLM Lemma 6.9, equation (28)]\label{lem:sse-reduction}
+Let $\bX$ satisfy \Aref{4}, let $\bX_+=[\bX\ \ \bz]$ with $\bz\notin\calC(\bX)$, so that $\bz'\bM\bz>0$, and let
 $\hat\gamma$ be the coefficient of $\bz$ in the enlarged fit, with residual sum of squares
 $\SSE_+$. Then
 \begin{equation}\label{eq:sse-reduction}
@@ -1061,7 +1101,8 @@ $\SSE_+$. Then
 \SSE-\SSE_+=\hat\gamma^2\,\bz'\bM\bz=\frac{(\bz'\bM\bY)^2}{\bz'\bM\bz},\qquad
 \var(\hat\gamma)=\frac{\sigma^2}{\bz'\bM\bz},
 \end{equation}
-and the standard error of $\hat\gamma$ in the enlarged model is
+the last under \Aref{1}--\Aref{4}; and for $n>k+2$ the standard error of $\hat\gamma$ in
+the enlarged model is
 $\SE(\hat\gamma)=s_+/\sqrt{\bz'\bM\bz}$ with $s_+^2=\SSE_+/(n-k-2)$.
 \end{lemma}
 
@@ -1098,10 +1139,11 @@ $\var(\hat\gamma)=\sigma^2\bz'\bM\bM'\bz/(\bz'\bM\bz)^2=\sigma^2/(\bz'\bM\bz)$; 
 standard error replaces $\sigma^2$ by the enlarged model's $s_+^2$.
 \end{proof}
 
-\begin{theorem}[Adjusted $R^2$ rises iff $|t|>1$; CLM §6]\label{thm:adj-R2}
-Adding one explanatory variable raises $R_a^2$ iff the $t$ statistic
+\begin{theorem}[Adjusted $R^2$ rises iff $|t|>1$; CLM Theorem 6.10]\label{thm:adj-R2}
+Let $n>k+2$ and $\SST>0$, and add one explanatory variable $\bz\notin\calC(\bX)$ with
+enlarged residual sum of squares $\SSE_+>0$. The addition raises $R_a^2$ iff the $t$ statistic
 $t=\hat\gamma/\SE(\hat\gamma)$ of the new variable in the enlarged model satisfies
-$|t|>1$.
+$|t|>1$, and lowers it iff $|t|<1$.
 \end{theorem}
 
 \begin{proof}
@@ -1117,13 +1159,14 @@ $\SSE_+=(n-k-2)s_+^2>0$ gives $1<(\SSE-\SSE_+)/s_+^2$, and by
 Lemma~\ref{lem:sse-reduction}
 \[
 \frac{\SSE-\SSE_+}{s_+^2}=\frac{\hat\gamma^2\,\bz'\bM\bz}{s_+^2}
-=\frac{\hat\gamma^2}{\SE(\hat\gamma)^2}=t^2 . \qedhere
+=\frac{\hat\gamma^2}{\SE(\hat\gamma)^2}=t^2 .
 \]
+The same equivalences hold with $<$ replaced by $>$ or $=$, which gives the second statement.
 \end{proof}
 
-\begin{corollary}[The case $k=1$; FREES §2.5.1, ISLR §3.1.3]\label{cor:R2-r2}
-With one explanatory variable and an intercept, $R^2=r^2$,
-$\SSR=b_1^2(n-1)s_x^2$, and
+\begin{corollary}[The case $k=1$; FREES §2.5.1, ISLR §3.1.3; CLM Corollary 6.13]\label{cor:R2-r2}
+With one explanatory variable whose values are not all equal, an intercept and $\SST>0$, $R^2=r^2$,
+$\SSR=b_1^2(n-1)s_x^2$, and, for $n>2$,
 \begin{equation}\label{eq:capm-decomp}
 s_y^2=b_1^2s_x^2+s^2\,\frac{n-2}{n-1} .
 \end{equation}
@@ -1162,6 +1205,17 @@ logarithmic face amount; the typical error falls from $s_y=1.871$ to $s=1.525$, 
 $R_a^2=1-s^2/s_y^2=0.335$.
 \end{example}
 
+\begin{remark}[Why do females live longer than males?; FREES §3.3, Table 3.4]
+Lemaire's regression of the female advantage in life expectancy, $4.51$ years on average over
+$n=169$ countries, chose $k=4$ of $45$ candidate measures and reached $R^2=61\%$: the logarithm
+of persons per physician ($-0.473$), fertility ($-0.444$), the percentage of Hindus and Buddhists
+($-0.018$) and an indicator of the former Soviet Union ($4.922$), each with $|t|>3$. The four stand
+for wider groups of correlated variables, economic modernisation, education, religion and
+geography; with so much collinearity among the candidates another analyst could pick another
+four. The data are not published, so the table is quoted, not reproduced; its point is that a
+parsimonious model can explain most of the variation.
+\end{remark}
+
 \begin{example}[Advertising, continued; ISLR §3.1.3, §3.2.2]\label{ex:adv-fit}
 <<adv-fit>>=
 fit_two <- lm(sales ~ TV + radio, data = adv)
@@ -1170,6 +1224,7 @@ fit_stats <- function(m) c(RSE = summary(m)$sigma, R2 = summary(m)$r.squared,
 round(rbind(TV_only = fit_stats(fit_tv), TV_radio = fit_stats(fit_two),
             all_three = fit_stats(fit_all)), 5)
 sprintf("R2: TV+radio %.5f, all three %.5f", summary(fit_two)$r.squared, summary(fit_all)$r.squared)
+c(mean_sales = mean(adv$sales))
 @
 Television alone explains $61\%$ of the variation with a residual standard error of
 $3.26$, so a market's sales deviate from the line by about $3{,}260$ units, $23\%$ of
@@ -1193,7 +1248,7 @@ outcomes 2(e), 2(f). \Aref{5} is in force throughout.
 
 \subsection{Sampling distributions}\label{sec:2.5.1}
 
-\begin{theorem}[Normality of $\hat\bb$; FREES §3.2.4]\label{thm:beta-dist}
+\begin{theorem}[Normality of $\hat\bb$; FREES §3.2.4; CLM Theorem 5.1]\label{thm:beta-dist}
 Under \Aref{1}--\Aref{5}, $\hat\bb\sim N\bigl(\bb,\,\sigma^2(\bX'\bX)^{-1}\bigr)$, and
 for any constant $\bc$, $\bc'\hat\bb\sim N(\bc'\bb,\,\sigma^2\bc'(\bX'\bX)^{-1}\bc)$.
 \end{theorem}
@@ -1206,7 +1261,7 @@ $\bA\bA'=(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1}=(\bX'\bX)^{-1}$. Applying the same 
 to the map $\hat\bb\mapsto\bc'\hat\bb$ gives the second statement.
 \end{proof}
 
-\begin{theorem}[Distribution of $\SSE$ and independence from $\hat\bb$]\label{thm:sse-dist}
+\begin{theorem}[Distribution of $\SSE$ and independence from $\hat\bb$; CLM Theorem 5.2]\label{thm:sse-dist}
 Under \Aref{1}--\Aref{5}, $\SSE/\sigma^2\sim\chi^2_{n-k-1}$, and $\SSE$ is independent
 of $\hat\bb$.
 \end{theorem}
@@ -1241,8 +1296,8 @@ covariance would not give it.
 
 \subsection{Tests and confidence intervals for a coefficient}\label{sec:2.5.2}
 
-\begin{theorem}[The $t$ statistic; FREES §2.4--2.5, §3.4, ISLR §3.1.2]\label{thm:t-test}
-Under \Aref{1}--\Aref{5}, for any constant $\bc$,
+\begin{theorem}[The $t$ statistic; FREES §2.4--2.5, §3.4, ISLR §3.1.2; CLM Theorem 7.1]\label{thm:t-test}
+Under \Aref{1}--\Aref{5}, for any constant $\bc\neq\bzero$,
 \begin{equation}\label{eq:t-pivot}
 \frac{\bc'\hat\bb-\bc'\bb}{s\sqrt{\bc'(\bX'\bX)^{-1}\bc}}\sim t_{n-k-1} ;
 \end{equation}
@@ -1252,7 +1307,8 @@ $(b_1-\beta_1)/\SE(b_1)\sim t_{n-2}$.
 
 \begin{proof}
 \textbf{Step 1: a standard normal.} By Theorem~\ref{thm:beta-dist},
-$Z=(\bc'\hat\bb-\bc'\bb)/\{\sigma\sqrt{\bc'(\bX'\bX)^{-1}\bc}\}\sim N(0,1)$.
+$Z=(\bc'\hat\bb-\bc'\bb)/\{\sigma\sqrt{\bc'(\bX'\bX)^{-1}\bc}\}\sim N(0,1)$, so $Z$ is
+standard normal by the prerequisites' corollary \emph{standardising a normal variable}.
 
 \textbf{Step 2: an independent chi-square.} By Theorem~\ref{thm:sse-dist},
 $V=\SSE/\sigma^2\sim\chi^2_{n-k-1}$ is independent of $\hat\bb$, hence of $Z$, which is
@@ -1270,7 +1326,7 @@ since $s=\sqrt{\SSE/(n-k-1)}$. Taking $\bc$ the $j$-th coordinate vector gives t
 statement for $\hat\beta_j$, and $k=1$ gives $n-2$ degrees of freedom.
 \end{proof}
 
-\begin{definition}[$t$ tests, $p$-values and confidence intervals; FREES §2.5.1--2.5.2, ISLR §3.1.2]\label{def:ttest}
+\begin{definition}[$t$ tests, $p$-values and confidence intervals; FREES §2.5.1--2.5.2, Tables 2.3--2.4 and 3.5--3.6, ISLR §3.1.2; CLM Definition 7.11, Theorem 7.9]\label{def:ttest}
 To test $H_0\colon\beta_j=d$ at significance level $\alpha$, compute the \emph{$t$ ratio}
 $t(\hat\beta_j)=(\hat\beta_j-d)/\SE(\hat\beta_j)$ and, with $t_{\nu,q}$ the $q$-th
 quantile of $t_\nu$ and $\nu=n-k-1$:
@@ -1296,7 +1352,7 @@ and $p$-value software prints for every coefficient. A $100(1-\alpha)\%$
 and for $\bc'\bb$ it is $\bc'\hat\bb\pm t_{n-k-1,1-\alpha/2}\,s\sqrt{\bc'(\bX'\bX)^{-1}\bc}$.
 \end{definition}
 
-\begin{proposition}[Validity of the procedures]\label{prop:ttest-valid}
+\begin{proposition}[Validity of the procedures; CLM Proposition 7.12]\label{prop:ttest-valid}
 Under \Aref{1}--\Aref{5} each test of Definition~\ref{def:ttest} rejects a true $H_0$
 with probability exactly $\alpha$, and the interval~\eqref{eq:ci-beta} contains
 $\beta_j$ with probability exactly $1-\alpha$.
@@ -1324,6 +1380,10 @@ exact multiplier is $t_{n-k-1,0.975}$, which is $2.01$ at $48$ degrees of freedo
 $1.97$ at $198$, and the $t$ law itself rests on \Aref{5}. Rejecting $H_0\colon\beta_1=0$
 is ISLR's ``there is a relationship between $X$ and $Y$''; the $p$-value cutoffs $5\%$
 and $1\%$ correspond, at $n=30$, to $|t|$ of about $2$ and $2.75$.
+<<t-quantiles>>=
+round(c(t48_975 = qt(0.975, 48), t198_975 = qt(0.975, 198),
+        t28_975 = qt(0.975, 28), t28_995 = qt(0.995, 28)), 3)
+@
 \end{remark}
 
 \begin{example}[Lottery sales, continued; FREES §2.5]\label{ex:lottery-t}
@@ -1357,14 +1417,16 @@ round(coef(summary(fit_all)), 4)
 
 \subsection{The overall \texorpdfstring{$F$}{F} test}\label{sec:2.5.3}
 
-\begin{theorem}[Overall $F$ test; ISLR §3.2.2]\label{thm:F-test}
+\begin{theorem}[Overall $F$ test; ISLR §3.2.2; CLM Theorem 7.3, Proposition 7.14, equation (34)]\label{thm:F-test}
 Under \Aref{1}--\Aref{5}, for $H_0\colon\beta_1=\cdots=\beta_k=0$,
 \begin{equation}\label{eq:F}
 F=\frac{\MSR}{\MSE}=\frac{\SSR/k}{\SSE/(n-k-1)}
 =\frac{(\SST-\SSE)/k}{\SSE/(n-k-1)}
 =\frac{R^2/k}{(1-R^2)/(n-k-1)}
 \end{equation}
-is distributed as $F_{k,\,n-k-1}$ under $H_0$; and $\expc[\SSR/k]=\sigma^2+\bb_1'\bX_1'\bM_0\bX_1\bb_1/k\geqslant\sigma^2$ in general,
+is distributed as $F_{k,\,n-k-1}$ under $H_0$; it is defined with probability one, since
+$\SSE/\sigma^2\sim\chi^2_{n-k-1}$ (Theorem~\ref{thm:sse-dist}) is positive with
+probability one and $\SST\geqslant\SSE$; and $\expc[\SSR/k]=\sigma^2+\bb_1'\bX_1'\bM_0\bX_1\bb_1/k\geqslant\sigma^2$ in general,
 with equality iff $H_0$ holds, where $\bX_1$ holds the non-intercept columns and $\bb_1$
 the slopes.
 \end{theorem}
@@ -1399,8 +1461,8 @@ The quadratic form $\|\bM_0\bX_1\bb_1\|^2$ is zero iff $\bX_1\bb_1$ is constant,
 by \Aref{4} happens iff $\bb_1=\bzero$.
 \end{proof}
 
-\begin{corollary}\label{cor:R2-from-F}
-$\ds R^2=\frac{kF}{kF+n-k-1}$, so $F$ determines $R^2$ without $\SSE$ and $\SST$.
+\begin{corollary}[$R^2$ from $F$; CLM Corollary 7.15]\label{cor:R2-from-F}
+If $\SST>0$ and $\SSE>0$, then $\ds R^2=\frac{kF}{kF+n-k-1}$, so $F$ determines $R^2$ without $\SSE$ and $\SST$.
 \end{corollary}
 
 \begin{proof}
@@ -1412,16 +1474,28 @@ $\expc[\MSE]=\sigma^2$ always and $\expc[\MSR]=\sigma^2$ under $H_0$, so $F$ nea
 consistent with no relation and $F$ well above $1$ is evidence of one; how far above
 depends on $n$ and $k$ through the $F_{k,n-k-1}$ quantile, and a value barely above $1$
 can be decisive when $n$ is large. With $k=100$ true null slopes, about five of the
-individual $p$-values fall below $0.05$ by chance and the smallest almost surely does, so
-declaring a relation whenever some $t$ test rejects has a false-alarm rate far above
-$5\%$; the $F$ test rejects a true $H_0$ with probability exactly $5\%$ whatever $k$.
-When $k\geqslant n$ least squares cannot be fitted and neither statistic exists.
+individual $p$-values fall below $0.05$ by chance and the smallest very probably does
+(in $98\%$ of the $2000$ simulated data sets with $n=250$ printed here), so declaring a
+relation whenever some $t$ test rejects has a false-alarm rate far above $5\%$; the $F$ test rejects a true $H_0$ with probability exactly $5\%$ whatever $k$.
+When $k+1\geqslant n$ no residual degrees of freedom are left (and for $k\geqslant n$ the least squares coefficients are not unique), so neither statistic exists.
+<<F-vs-t-sim>>=
+set.seed(5); n_s <- 250; k_s <- 100
+X_s <- cbind(1, matrix(rnorm(n_s * k_s), n_s)); A_s <- solve(crossprod(X_s))
+sims <- replicate(2000, {
+  y_s <- rnorm(n_s); b_s <- drop(A_s %*% crossprod(X_s, y_s))
+  s_s <- sqrt(sum((y_s - X_s %*% b_s)^2) / (n_s - k_s - 1))
+  p_s <- 2 * pt(-abs(b_s[-1] / (s_s * sqrt(diag(A_s)[-1]))), n_s - k_s - 1)
+  c(n_below = sum(p_s < 0.05), some_below = any(p_s < 0.05))
+})
+round(rowMeans(sims), 3)
+@
 \end{remark}
 
-\begin{proposition}[$t^2=F$ for one explanatory variable; ISLR §3.2.2]\label{prop:t2F}
+\begin{proposition}[$t^2=F$ for one explanatory variable; ISLR §3.2.2; CLM Corollary 7.17]\label{prop:t2F}
 Let $\bz$ be one of the explanatory variables in a fitted model, $t$ its $t$ ratio for
 $H_0\colon\gamma=0$, $\SSE_0$ the residual sum of squares of the model without $\bz$,
-and $\SSE$ that of the full model, with $n-k-1$ residual degrees of freedom. Then
+and $\SSE$ that of the full model, with $n-k-1$ residual degrees of freedom. Then, under
+\Aref{4} and $\SSE>0$,
 \begin{equation}\label{eq:t2F}
 \frac{(\SSE_0-\SSE)/1}{\SSE/(n-k-1)}=t^2 ,
 \end{equation}
@@ -1430,19 +1504,21 @@ overall $F$ of~\eqref{eq:F} is $t(b_1)^2$.
 \end{proposition}
 
 \begin{proof}
-Apply Lemma~\ref{lem:sse-reduction} with the model without $\bz$ as the base:
-$\SSE_0-\SSE=\hat\gamma^2\bz'\bM_0\bz$ where $\bM_0$ is now the residual maker of the
-base model, and $\SE(\hat\gamma)^2=s^2/(\bz'\bM_0\bz)$, so the left side
-of~\eqref{eq:t2F} is $\hat\gamma^2\bz'\bM_0\bz/s^2=\hat\gamma^2/\SE(\hat\gamma)^2=t^2$.
+Let $\bX_{(\bz)}$ be the design without the column $\bz$ and $\bM_{(\bz)}$ its residual
+maker. By \Aref{4} the columns of $\bX_{(\bz)}$ are linearly independent and
+$\bz\notin\calC(\bX_{(\bz)})$, so Lemma~\ref{lem:sse-reduction} with $\bX_{(\bz)}$ as the
+base gives $\SSE_0-\SSE=\hat\gamma^2\bz'\bM_{(\bz)}\bz$ and
+$\SE(\hat\gamma)^2=s^2/(\bz'\bM_{(\bz)}\bz)$, and the left side of~\eqref{eq:t2F} is
+$\hat\gamma^2\bz'\bM_{(\bz)}\bz/s^2=\hat\gamma^2/\SE(\hat\gamma)^2=t^2$.
 Under $H_0$, $t\sim t_{n-k-1}$ by Theorem~\ref{thm:t-test}, and by the prerequisites'
-corollary \emph{the square of a $t$ is an $F$}, $t^2\sim F_{1,n-k-1}$. For $k=1$ the
-base model is the intercept alone, whose residual sum of squares is $\SST$, and
+corollary \emph{the square of a $t$ is an $F$}, $t^2\sim F_{1,n-k-1}$. For $k=1$,
+$\bX_{(\bz)}=\bone$, the intercept alone, whose residual sum of squares is $\SST$, and
 \eqref{eq:t2F} is~\eqref{eq:F}.
 \end{proof}
 
 \begin{example}[Advertising, continued; ISLR §3.2.2]\label{ex:adv-F}
 For the three-medium model $F=570$ on $(3,196)$ degrees of freedom, with a $p$-value
-that is zero to machine precision: at least one medium is associated with sales.
+of order $10^{-96}$: at least one medium is associated with sales.
 <<adv-F>>=
 sm <- summary(fit_all); Fst <- sm$fstatistic
 SSE_a <- sum(residuals(fit_all)^2); SST_a <- sum((adv$sales - mean(adv$sales))^2)
@@ -1458,7 +1534,7 @@ which is Proposition~\ref{prop:t2F}.
 
 \subsection{Prediction}\label{sec:2.5.4}
 
-\begin{theorem}[Confidence and prediction intervals; FREES §2.5.3, ISLR §3.2.2]\label{thm:pred}
+\begin{theorem}[Confidence and prediction intervals; FREES §2.5.3, ISLR §3.2.2; CLM Theorem 9.1, Theorem 9.2, Corollary 9.4, Corollary 3.10]\label{thm:pred}
 Let $\bx_0$ be a new vector of explanatory variables, $\hat Y_0=\bx_0'\hat\bb$, and
 $h_0=\bx_0'(\bX'\bX)^{-1}\bx_0$. Under \Aref{1}--\Aref{5}:
 \begin{enumerate}[label=\textup{(\roman*)}]
@@ -1489,7 +1565,9 @@ $\sigma^2+\bx_0'\var(\hat\bb)\bx_0=\sigma^2+\sigma^2h_0$, and the difference of 
 independent normals is normal: $Y_0-\hat Y_0\sim N(0,\sigma^2(1+h_0))$. It is
 independent of $\SSE$, which is a function of $\mathbf e=\bM\be$: $(\hat\bb-\bb,\mathbf e)$
 are independent by Theorem~\ref{thm:sse-dist}, and $\varepsilon_0$ is independent of
-both. So $(Y_0-\hat Y_0)/\{s\sqrt{1+h_0}\}$ is a standard normal over an independent
+the pair $(\hat\bb,\mathbf e)$, both being functions of $\be$. So
+$(Y_0-\hat Y_0)/\{s\sqrt{1+h_0}\}$ is $(Y_0-\hat Y_0)/\{\sigma\sqrt{1+h_0}\}$, standard normal
+by the prerequisites' corollary \emph{standardising a normal variable}, over an independent
 $\sqrt{\chi^2_{n-k-1}/(n-k-1)}$, hence $t_{n-k-1}$, and the interval follows as in
 Proposition~\ref{prop:ttest-valid}.
 
@@ -1502,7 +1580,8 @@ $\var(e_i)=\sigma^2(1-h_{ii})$ by Theorem~\ref{thm:var-resid}.
 
 \begin{remark}[ISLR §3.2.2, FREES §2.5.3]
 The confidence interval measures the reducible error, the uncertainty in the estimated
-plane, and shrinks to nothing as $n$ grows, since $h_0\to0$; the prediction interval
+plane, and shrinks to nothing as $n$ grows whenever $h_0\to0$, as for $k=1$ when $\bar x$ stays
+bounded and $s_x$ stays away from $0$ (by~\eqref{eq:lev-k1}); the prediction interval
 adds the irreducible error $\varepsilon_0$, is always the wider, and cannot be narrower
 than $2t\,s$. Both are centred at $\hat Y_0$. Leverage is the share of $\sigma^2$ that a
 point's own fitted value carries, and $1-h_{ii}$ the share left in its residual. Model
@@ -1511,11 +1590,11 @@ intervals.
 \end{remark}
 
 \begin{example}[Lottery sales, continued; FREES §2.5.3]\label{ex:lottery-pred}
-At $x_0=10{,}000$ the point prediction is $6{,}940$ and
+At $x_0=10{,}000$ the point prediction is $6{,}941$ and
 \[
 \SE(\mathrm{pred})=3792\sqrt{1+\frac1{50}+\frac{(10{,}000-9{,}311)^2}{49(11{,}098)^2}}=3830 ,
 \]
-so the $95\%$ prediction interval is $6940\pm2.011(3830)$, which \texttt{predict}
+so the $95\%$ prediction interval is $6941\pm2.011(3830)$, which \texttt{predict}
 gives as $(-759,\,14{,}641)$: of many ZIP codes with population $10{,}000$, about $19$
 in $20$ would have sales between $0$ and $\$14{,}641$, the negative lower limit being
 truncated at zero.
@@ -1535,8 +1614,8 @@ markets is $[10{,}985,\,11{,}528]$ and the prediction interval for one such mark
 $[7{,}930,\,14{,}583]$.
 <<adv-pred>>=
 nd <- data.frame(TV = 100, radio = 20)
-rbind(confidence = predict(fit_two, nd, interval = "confidence"),
-      prediction = predict(fit_two, nd, interval = "prediction"))
+round(1000 * rbind(confidence = predict(fit_two, nd, interval = "confidence"),
+                   prediction = predict(fit_two, nd, interval = "prediction")))
 @
 \end{example}
 
@@ -1567,7 +1646,7 @@ par(op)
 \caption{Time series plots of the two returns, and Lincoln's return against the
 market's with the fitted line (FREES Figures 2.10--2.11).}
 \end{figure}
-The fitted line is $\widehat{\texttt{LINCOLN}}=-0.00214+0.973\,\texttt{MARKET}$ with
+The fitted line is $\widehat{\texttt{LINCOLN}}=-0.0021+0.973\,\texttt{MARKET}$ with
 $t(b_1)=5.64$: the market is clearly a determinant, yet $R^2=35.4\%$, so it explains
 only a third of the variation in Lincoln's return. Lincoln is riskier than the market,
 $s_y=0.0859>0.0525=s_x$, and its five-year mean return, $0.51\%$ a month, is below the
@@ -1603,7 +1682,7 @@ c(coef(fit_capm1), R2 = summary(fit_capm1)$r.squared, s = summary(fit_capm1)$sig
 CLM §5. Not in the SRM or PA reading lists.
 \end{reading}
 
-\begin{proposition}[Least squares is maximum likelihood]\label{prop:mle}
+\begin{proposition}[Least squares is maximum likelihood; CLM Theorem 5.3]\label{prop:mle}
 Under \Aref{1}--\Aref{5}, $\hat\bb$ is the maximum likelihood estimator of $\bb$, and
 $\hat\sigma^2_{\mathrm{MLE}}=\SSE/n$, which is biased downward by the factor
 $(n-k-1)/n$.
@@ -1623,27 +1702,29 @@ by Theorem~\ref{thm:ols}, whatever $\sigma^2$. Substituting $Q(\hat\bb)=\SSE$,
 \ifff \sigma^2=\frac{\SSE}{n},
 \]
 and $\partial^2\ell/\partial(\sigma^2)^2=n/(2\sigma^4)-\SSE/\sigma^6$ is negative
-there, equal to $-n^3/(2\SSE^2)$, so it is a maximum. Its expectation is
+there, equal to $-n^3/(2\SSE^2)$, and $\partial\ell/\partial\sigma^2=(\SSE-n\sigma^2)/(2\sigma^4)$
+changes sign from $+$ to $-$ there, so it is the global maximum ($\SSE>0$ with probability
+one when $n>k+1$). Its expectation is
 $(n-k-1)\sigma^2/n$ by Theorem~\ref{thm:mse-unbiased}.
 \end{proof}
 
-\periodmark{End of period 2 of 3.}
+% \periodmark{End of period 2 of 3.}
 
 %==============================================================================
 \section{Residual Analysis and Unusual Points}\label{sec:2.6}
 %==============================================================================
 
 \begin{reading}
-FREES §2.6 · ISLR §3.1.1 · CLM §2. \ SRM learning outcome 2(d).
+FREES §2.6 · ISLR §3.3.3 (outliers, high leverage points) · CLM §2--3. \ SRM learning outcome 2(d).
 \end{reading}
 
-\begin{definition}[Standardised residuals, outliers, high leverage points; FREES §2.6]\label{def:outlier}
-The \emph{standardised residual} of observation $i$ is
+\begin{definition}[Standardised residuals, outliers, high leverage points; FREES §2.6; CLM Definition 3.11]\label{def:outlier}
+The \emph{standardised residual} of observation $i$ is, for $s>0$ and $h_{ii}<1$,
 $e_i/\{s\sqrt{1-h_{ii}}\}$, the residual divided by its estimated standard deviation
 (Theorem~\ref{thm:var-resid}); FREES's approximation $e_i/s$ ignores the leverage. An
 observation is an \emph{outlier} if it is unusual in the vertical direction, its
 standardised residual exceeding $2$ in absolute value, and a \emph{high leverage point}
-if it is unusual in the horizontal direction, $h_{ii}$ exceeding $2(k+1)/n$. A point can
+if it is unusual in the horizontal direction, flagged here by $h_{ii}>2(k+1)/n$. A point can
 be both.
 \end{definition}
 
@@ -1654,8 +1735,10 @@ respecify the model. FREES lists five discrepancies: lack of independence among 
 errors; heteroscedasticity, a variance that changes with the observation; a relation
 between the errors and an explanatory variable, which means the variable could predict
 better; non-normal errors, which invalidate the exact inference of §\ref{sec:2.5}; and
-unusual points, single observations that move the fit. Standardised residuals have a
-standard normal reference distribution under \Aref{5}, and are dimensionless, so
+unusual points, single observations that move the fit. Standardised residuals have
+approximately a standard normal distribution under \Aref{5} when $n-k-1$ is large
+($e_i/(\sigma\sqrt{1-h_{ii}})$ is exactly $N(0,1)$, $e_i$ being a linear function of the
+normal errors with variance $\sigma^2(1-h_{ii})$ by Theorem~\ref{thm:var-resid}), and are dimensionless, so
 experience of their size transfers between data sets.
 \end{remark}
 
@@ -1693,8 +1776,8 @@ enlarging $\SST$ while leaving $\SSE$ nearly unchanged. C has B's $x$ and a low
 $y$-value, so it is both: the slope falls from $0.61$ to $0.16$, $R^2$ to $10\%$, and
 the $t$ ratio to $1.4$. One point in twenty can do this, because the coefficients are
 weighted sums of the responses (Proposition~\ref{prop:weights}) with weights that grow
-with $|x_i-\bar x|$. Removing an outlier always improves the fit; removing a high
-leverage point need not.
+with $|x_i-\bar x|$. Here removing the outlier A would restore the fit, while removing
+the high leverage point B would lower $R^2$.
 \end{example}
 
 \begin{example}[Lottery sales, continued: Kenosha; FREES §2.6]\label{ex:kenosha}
@@ -1723,8 +1806,9 @@ par(op)
 (FREES Figure 2.9).}
 \end{figure}
 Kenosha is an outlier with a standardised residual of $4.9$ and ordinary leverage. The
-slope and its $t$ ratio barely change when it is removed, but $R^2$ rises from $78.5\%$
-to $88.3\%$ and $s$ falls by more than $\$1{,}000$, which matters for prediction
+slope barely changes when it is removed, from $0.647$ to $0.662$, but its $t$ ratio rises
+from $13.3$ to $18.8$ because $s$ falls by more than $\$1{,}000$ (from $3792$ to $2728$),
+and $R^2$ rises from $78.5\%$ to $88.3\%$; the smaller $s$ matters for prediction
 intervals. The quantile plot with Kenosha climbs away from the line at the upper end;
 without it the points follow the line much more closely, with mild departures in both
 tails, so the apparent non-normality was one observation, not skewness shared by all.
@@ -1823,7 +1907,7 @@ c(R2 = summary(lm.fit3)$r.squared, RSE = summary(lm.fit3)$sigma)
 lm.fit4 <- update(lm.fit3, ~ . - age)
 c(R2_without_age = summary(lm.fit4)$r.squared, RSE_without_age = summary(lm.fit4)$sigma)
 @
-Dropping \texttt{age}, whose $p$-value is $0.96$, leaves $R^2$ unchanged to three
+Dropping \texttt{age}, whose $p$-value is $0.79$, leaves $R^2$ unchanged to three
 decimals and lowers the residual standard error, as Theorem~\ref{thm:adj-R2} requires
 of a variable with $|t|<1$.
 
@@ -1901,8 +1985,9 @@ c(R2_with = summary(lm.fit)$r.squared, R2_without = summary(m_no)$r.squared,
   sum_resid_without = sum(residuals(m_no)))
 @
 Without an intercept the residuals do not sum to zero, Theorem~\ref{thm:anova} does not
-apply, and R switches to an uncentred $R^2$ that is larger although $\SSE$ is larger:
-the two $R^2$ values are not comparable.
+apply, and R switches to an uncentred $R^2$, $1-\SSE/\sum_iY_i^2$, which is not
+comparable with the centred one (here $0.449$ against $0.544$, with an $\SSE$ $8.5$ times
+larger).
 
 \subsection{Maximum likelihood in R (beyond the syllabus)}\label{sec:2.7.4}
 
@@ -1951,7 +2036,7 @@ rows against the $\chi^2_{56}$ density.}
 The mean and variance of $\SSE/\sigma^2$ are those of $\chi^2_{56}$, $56$ and $112$, and
 its correlations with the four estimates are zero to Monte-Carlo error.
 
-\periodmark{End of period 3 of 3.}
+% \periodmark{End of period 3 of 3.}
 
 %==============================================================================
 \section{Exercises}\label{sec:2.8}
@@ -2052,7 +2137,7 @@ $x$ on $y$, both with intercepts. Show $|r|=\sqrt{b_{y|x}\,b_{x|y}}$.
 \begin{solution}
 By Corollary~\ref{cor:slr-ls}, $b_{y|x}=r\,s_y/s_x$ and, exchanging the roles of the
 variables, $b_{x|y}=r\,s_x/s_y$. Their product is $r^2$, so $|r|=\sqrt{b_{y|x}b_{x|y}}$;
-the two slopes share the sign of $r$. Drawn on the same axes the second line has slope
+the two slopes share the sign of $r$. For $r\neq0$, drawn on the same axes the second line has slope
 $1/b_{x|y}=s_y/(rs_x)$, and the ratio of the first slope to it is $r^2$: the lines
 coincide iff $r^2=1$, and otherwise the regression of $y$ on $x$ is the flatter. In
 standard units the fitted line is $\hat v=ru$, so a value one standard deviation above
@@ -2229,7 +2314,7 @@ t(b_1)&=\frac{b_1}{\SE(b_1)}=\frac{r\,s_y/s_x}{s/(s_x\sqrt{n-1})}=\frac{r\,s_y\s
 \end{align*}
 The $t$ statistic is a function of $r$ and $n$ alone, symmetric in $x$ and $y$, so
 regressing $x$ on $y$ gives the same $t$; for the lottery data,
-$\sqrt{48}\,(0.886)/\sqrt{1-0.785}=13.3$.
+$\sqrt{48}\,(0.8863)/\sqrt{1-0.7855}=13.3$.
 \end{solution}
 
 \begin{exercise}[FREES exercise 2.17]\label{ex:f2-17}
@@ -2284,7 +2369,8 @@ par(op)
 @
 (a)--(b) The two $x$ columns share mean $9.00$ and standard deviation $3.32$, the four
 $y$ columns mean $7.50$ and standard deviation $2.03$, and the four fits agree in
-$b_0$, $b_1$, $s$ and $R^2$ to two decimals. (c)--(d) The plots differ entirely: a
+$b_0$, $b_1$, $s$ and $R^2$ to two decimals, with $R^2=0.666$ or $0.667$ in each case:
+the exercise's $0.677$ is a misprint in FREES. (c)--(d) The plots differ entirely: a
 linear relation with scatter; a smooth curve that a line misrepresents; a linear
 relation with one outlier that tilts the line; and a single high leverage point that
 alone determines the slope, the other ten $x$ values being equal. Summary statistics and
@@ -2378,8 +2464,8 @@ c(residual = residuals(fit_ipo)[[i_ink]], share_of_SSE = residuals(fit_ipo)[[i_i
 @
 (a) $b_1=r\,s_y/s_x=-0.0175(0.824)/261.9=-5.5\times10^{-5}$ and
 $b_0=0.106-b_1(134.5)=0.113$; Hyperion's fitted return is $0.113-5.5\times10^{-5}(95.55)=0.108$.
-(b)(i) On the logarithmic scale the fit is $0.438-0.090\,\texttt{LnREV}$ and Hyperion's
-fitted return is $0.438-0.090\ln95.55=0.027$: two models, two fitted values.
+(b)(i) On the logarithmic scale the fit is $0.4381-0.0902\,\texttt{LnREV}$ and Hyperion's
+fitted return is $0.4381-0.0902\ln95.55=0.027$: two models, two fitted values.
 (ii) $H_0\colon\beta_1=0$ against $\beta_1\neq0$ at $10\%$: $|t|=1.97$ exceeds
 $t_{108,0.95}=1.66$, so $H_0$ is rejected, with $p=0.052$. (iii) Against
 $\beta_1>0$ the rejection region is $t>t_{108,0.90}=1.29$, and $t=-1.97$ is not in it:
@@ -2414,14 +2500,14 @@ rbind(US = predict(fit_un, data.frame(FERTILITY = 2.0)),
 res_china <- 72.5 - predict(fit_un, data.frame(FERTILITY = 1.7))
 c(residual = unname(res_china), multiple_of_s = unname(res_china) / summary(fit_un)$sigma)
 b1u <- coef(fit_un)[["FERTILITY"]]; se1u <- coef(summary(fit_un))["FERTILITY", 2]
-c(t = (b1u + 6) / se1u, crit = qt(0.95, nobs(fit_un) - 2), p = pt((b1u + 6) / se1u, nobs(fit_un) - 2, lower.tail = FALSE))
+c(b1 = b1u, t = (b1u + 6) / se1u, crit = qt(0.95, nobs(fit_un) - 2), p = pt((b1u + 6) / se1u, nobs(fit_un) - 2, lower.tail = FALSE))
 @
 The regression uses the $181$ countries reporting fertility:
 $\widehat{\texttt{LIFEEXP}}=83.7-5.27\,\texttt{FERTILITY}$, $s=6.6$, $R^2=0.65$.
 (a) At $2.0$ births per woman the fitted life expectancy is $73.2$ years.
 (b) Dominica's prediction interval is $(60.1,86.3)$, about $\pm2s$. (c) China's fitted
 value is $74.8$, so its residual is $-2.3$ years, $0.34$ of $s$: unremarkable.
-(d) $H_0\colon\beta_1=-6$ against $\beta_1>-6$: $t=(-5.27+6)/0.289=2.52$ exceeds
+(d) $H_0\colon\beta_1=-6$ against $\beta_1>-6$: $t=(-5.2735+6)/0.2887=2.52$ exceeds
 $t_{179,0.95}=1.65$, so $H_0$ is rejected with $p=0.006$; the slope is less steep than
 $-6$.
 \end{solution}
@@ -2512,12 +2598,13 @@ Xf <- cbind(1, x1 = c(-1, 2, 4, 6), x2 = c(0, 0, 1, 1)); yf <- c(0, 1, 5, 8)
 Af <- solve(crossprod(Xf)); bf <- drop(Af %*% crossprod(Xf, yf))
 ef <- yf - Xf %*% bf; sf <- sqrt(sum(ef^2) / (4 - 3))
 round(Af, 5)
+sprintf("b%d = %.5f", 0:2, bf)
 c(b0 = bf[1], b1 = bf[2], b2 = bf[3], s = sf, yhat3 = drop(Xf[3, ] %*% bf),
   se_b2 = sf * sqrt(Af[3, 3]), t_b1 = bf[2] / (sf * sqrt(Af[2, 2])),
   p_b1 = 2 * pt(-abs(bf[2] / (sf * sqrt(Af[2, 2]))), df = 1))
 @
-(b) $\hat y_3=0.154+0.692(4)+2.885(1)=5.81$; (c) $\SE(b_2)=1.373\sqrt{4.115}=2.79$;
-(d) $t(b_1)=0.692/(1.373\sqrt{0.154})=1.29$ on one degree of freedom, whose two-sided
+(b) $\hat y_3=0.154+0.692(4)+2.885(1)=5.81$; (c) with $s=1.3728$, $\SE(b_2)=1.3728\sqrt{4.11538}=2.785$;
+(d) $t(b_1)=0.69231/(1.3728\sqrt{0.15385})=1.29$ on one degree of freedom, whose two-sided
 $p$-value is $0.42$ and $5\%$ critical value $12.7$: four observations and three
 parameters leave almost nothing with which to estimate $\sigma^2$.
 \end{solution}
@@ -2566,8 +2653,8 @@ $3.4$ in \texttt{MEDHVL}. (b) \texttt{POP} ($0.886$), \texttt{MEDHVL} ($0.572$) 
 (e) $H_0\colon\beta_{\texttt{MEDSCHYR}}=0$ against $\neq0$; reject at $5\%$ if
 $|t|>t_{41,0.975}=2.02$; $t=-2.26$ with $p=0.029$, so $H_0$ is rejected. (f) The
 three-variable model has $s=3445$, $R^2=0.830$ and $R_a^2=0.819$: a lower $R^2$, as
-Proposition~\ref{prop:R2-bounds} requires of a submodel, but a smaller $s$ and a larger
-$R_a^2$, the five dropped variables all having $|t|<1$. (i) Without Shorewood the
+Proposition~\ref{prop:R2-bounds} requires of a submodel, but a smaller $s$, hence
+by~\eqref{eq:R2} a larger $R_a^2$. (i) Without Shorewood the
 \texttt{MEDSCHYR} $t$ ratio is $-0.81$ with $p=0.42$, so $H_0$ is no longer rejected:
 the significance in (e) rested on one high leverage observation. (j) Without Kenosha,
 $s$ falls to $2585$ and $R^2$ rises to $0.899$, the outlier of
@@ -2762,6 +2849,7 @@ Diagnostic plots.
 <<ex-i-8>>=
 fit_hp <- lm(mpg ~ horsepower, data = Auto)
 round(coef(summary(fit_hp)), 4)
+c(p_slope = coef(summary(fit_hp))["horsepower", "Pr(>|t|)"])
 c(R2 = summary(fit_hp)$r.squared, RSE = summary(fit_hp)$sigma, mean_mpg = mean(Auto$mpg),
   RSE_over_mean = summary(fit_hp)$sigma / mean(Auto$mpg))
 rbind(confidence = predict(fit_hp, data.frame(horsepower = 98), interval = "confidence"),
@@ -2777,12 +2865,12 @@ plot(fitted(fit_hp), rstandard(fit_hp), xlab = "fitted", ylab = "standardised re
 abline(h = c(-2, 0, 2), lty = 2)
 par(op)
 @
-(a) The slope $-0.158$ has $t=-24.5$ and a $p$-value of $10^{-81}$: there is a
+(a) The slope $-0.158$ has $t=-24.5$ and a $p$-value of $7\times10^{-81}$: there is a
 relation, and it is negative, each additional unit of horsepower lowering the expected
 mileage by $0.16$ miles per gallon. $R^2=0.61$, and the residual standard error $4.9$ is
 $21\%$ of the mean mileage $23.4$. At $98$ horsepower the fitted value is $24.5$, the
 confidence interval $(24.0,25.0)$ and the prediction interval $(14.8,34.1)$.
-(b)--(c) The line overestimates mileage at low and high horsepower and underestimates it
+(b)--(c) The line underestimates mileage at low and high horsepower and overestimates it
 in the middle: the residuals against the fitted values form a U, the mark of a
 relation that is not linear; the standardised residuals also spread more at high fitted
 values.
@@ -2843,7 +2931,10 @@ equal. (f) Show numerically that the same holds with an intercept.
 
 \begin{solution}
 (d) With $\hat\beta=\sum_ix_iy_i/\sum_ix_i^2$ and, for one parameter and no intercept,
-$\SE(\hat\beta)=\sqrt{\sum_i(y_i-x_i\hat\beta)^2/\{(n-1)\sum_ix_i^2\}}$,
+$\SE(\hat\beta)=\sqrt{\sum_i(y_i-x_i\hat\beta)^2/\{(n-1)\sum_ix_i^2\}}$ (the proofs of
+Theorems~\ref{thm:HM}\ref{HM:iv} and~\ref{thm:mse-unbiased} and Definition~\ref{def:se}
+hold for any $\bX$ of full column rank $p$, with $n-p$ in place of $n-k-1$; here
+$\bX=\bx$ has one column, so the divisor is $n-1$),
 \[
 t=\frac{\hat\beta}{\SE(\hat\beta)}
 =\frac{\sum_ix_iy_i}{\sum_ix_i^2}\cdot\frac{\sqrt{n-1}\sqrt{\sum_ix_i^2}}{\sqrt{\sum_i(y_i-x_i\hat\beta)^2}} ,
@@ -3067,8 +3158,9 @@ used to estimate $\beta_0$ and $\beta_1$.
 (A) is false, hence the answer: by \Aref{1}, $\expc[Y\mid X]=\beta_0+\beta_1X$, so
 $\beta_0=\expc[Y\mid X=0]$, the expected response when $X=0$, and the unconditional
 expectation is $\beta_0+\beta_1\expc[X]$. (B) is the interpretation of a coefficient in
-§\ref{sec:2.1.2}, $\beta_1=\partial\expc[Y\mid X]/\partial X$; (C) is \Aref{2} in the
-form ISLR states it; (D) is the population regression line of the same remark; (E) is
+§\ref{sec:2.1.2}, $\beta_1=\partial\expc[Y\mid X]/\partial X$; (C) is a stronger form of
+\Aref{2}: independence of $\varepsilon$ and $X$ together with $\expc[\varepsilon]=0$
+implies \Aref{2}; (D) is the population regression line of the same remark; (E) is
 Definition~\ref{def:ols}.
 \end{solution}
 

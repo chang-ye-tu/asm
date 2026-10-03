@@ -46,7 +46,7 @@ R_PACKAGES_REQUIRED = [
     "AER", "boot", "broom", "car", "class", "cluster", "dplyr", "e1071",
     "FNN", "forecast",
     "gbm", "ggplot2", "glmnet", "ISLR2", "knitr", "leaps", "lmtest",
-    "MASS", "nnet", "pls", "pscl", "randomForest", "rpart", "rpart.plot",
+    "MASS", "nnet", "numDeriv", "pls", "pscl", "randomForest", "rpart", "rpart.plot",
     "quadprog", "sandwich", "statmod", "tree", "tseries", "tweedie", "xfun",
 ]
 

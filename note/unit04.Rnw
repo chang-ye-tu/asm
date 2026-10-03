@@ -30,7 +30,8 @@ library(ISLR2)
 \thispagestyle{empty}
 \vspace*{\fill}
 \begin{center}
-{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont Unit 4.\ Regression Diagnostics}
+{\color{hdrBG}\bfseries\fontsize{26}{32}\selectfont
+ Unit 4.\ Regression Diagnostics}
 \end{center}
 \vspace*{\fill}
 \end{titlepage}
@@ -38,30 +39,63 @@ library(ISLR2)
 \setcounter{page}{1}
 
 %==============================================================================
-\section{Assumptions and Their Diagnostics}\label{sec:4.1}
+\section{The Iterative Approach}\label{sec:4.1}
 %==============================================================================
 
 \begin{reading}
-FREES §5.1.
+FREES §5.1, §5.3 (opening), §5.10.1 · ISLR §3.3.3 (opening). \ SRM learning outcomes
+2(a), 2(d).
 \end{reading}
 
-\begin{remark}
-Each classical assumption of Unit 2 has a diagnostic:
-\begin{ctab}[\small]
-\begin{tabular}{@{}ll@{}}
-\toprule
-Assumption & Diagnostic \\
-\midrule
-\Aref{1} linearity           & residuals against fitted values \\
-\Aref{3} constant variance   & residual spread against fitted values; Breusch--Pagan \\
-\Aref{3} uncorrelated errors & residuals against time or index \\
-\Aref{4} full rank           & VIF, condition number \\
-\Aref{5} normality           & normal quantile plot of residuals \\
-(none)                       & leverage, Cook's distance \\
-\bottomrule
-\end{tabular}
-\end{ctab}
-An influential observation violates no assumption.
+\begin{remark}[The classical assumptions; Unit 2]
+\Atarget{1}\Atarget{2}\Atarget{3}\Atarget{4}\Atarget{5}%
+\Aref{1}--\Aref{5} are Unit 2's classical assumptions on $\bY=\bX\bb+\be$ with $\bX$
+fixed: linearity (\Aref{1}), zero-mean errors (\Aref{2}), $\var(\be)=\sigma^2\bI_n$ with
+$\sigma^2>0$ (\Aref{3}), $\rank(\bX)=k+1$, with $n>k+1$ for inference (\Aref{4}), and
+normal errors (\Aref{5}).
+\end{remark}
+
+\begin{definition}[Iterative model specification; FREES §5.1]\label{def:iterative}
+A model is specified by iterating three stages: \emph{formulation}, from graphs of the data
+and prior knowledge of the relationships; \emph{fitting}, under the assumptions of the
+formulated model; and \emph{diagnostic checking}, or data and model criticism, which
+compares the fitted model with the data and returns the analyst to formulation when they
+disagree. Inferences are drawn from the model only after the data and the model agree.
+\end{definition}
+
+\begin{proposition}[What the residuals carry; FREES §5.3, §5.10.1]\label{prop:resid-mean}
+Let $\bX$ satisfy \Aref{4}, and let $\bY$ have mean $\bmu$ and covariance matrix $\bSig$,
+neither $\bmu\in\calC(\bX)$ nor $\bSig=\sigma^2\bI_n$ being assumed. Then
+\[
+\expc[\mathbf e]=\bM\bmu,\qquad \var(\mathbf e)=\bM\bSig\bM ,
+\]
+and $\expc[\mathbf e]=\bzero$ iff $\bmu\in\calC(\bX)$. Under \Aref{1}--\Aref{3},
+$\var(\mathbf e)=\sigma^2\bM$: $\expc[e_i]=0$ and $\var(e_i)=\sigma^2(1-h_{ii})$.
+\end{proposition}
+
+\begin{proof}
+$\mathbf e=\bM\bY$ with $\bM$ constant (Unit 2's definition of the residual maker), so
+$\expc[\mathbf e]=\bM\bmu$, and by the prerequisites' proposition \emph{variance under a
+linear map}, $\var(\mathbf e)=\bM\bSig\bM'=\bM\bSig\bM$, $\bM$ being symmetric. If
+$\bmu=\bX\bc$ then $\bM\bmu=\bM\bX\bc=\bzero$ by Unit 2's theorem \emph{properties of
+$\bH$ and $\bM$}; conversely $\bM\bmu=\bzero$ says $\bmu=\bH\bmu$, a vector of
+$\calC(\bX)$. Under \Aref{1}, $\bmu=\bX\bb\in\calC(\bX)$; under \Aref{3},
+$\bSig=\sigma^2\bI_n$ and $\bM\bSig\bM=\sigma^2\bM^2=\sigma^2\bM$, whose $(i,i)$ entry
+is $\sigma^2(1-h_{ii})$.
+\end{proof}
+
+\begin{remark}[FREES §5.3.1]
+A pattern in the residuals estimates $\bM\bmu$, the part of the mean that the explanatory
+variables do not reach. FREES lists four patterns: unusual residuals, residuals related to
+other explanatory variables, heteroscedastic residuals, and residuals related to time.
+\end{remark}
+
+\begin{remark}[Potential problems; ISLR §3.3.3]
+ISLR lists six problems of a fitted linear regression: non-linearity of the
+response--predictor relationship, a failure of \Aref{1}; correlated errors and
+non-constant error variance, failures of \Aref{3}; outliers and high leverage points,
+single observations unusual in $y$ or in $\bx$; and collinearity, a near-failure of
+\Aref{4}.
 \end{remark}
 
 %==============================================================================
@@ -69,1004 +103,2107 @@ An influential observation violates no assumption.
 %==============================================================================
 
 \begin{reading}
-FREES §5.3 · ISLR §3.3.3.
+FREES §5.3.1--5.3.3, §5.10.1--5.10.2 · ISLR §3.3.3 (non-linearity, correlation of error
+terms, outliers). \ SRM learning outcome 2(d).
 \end{reading}
 
-\subsection{Standardised and studentised residuals}\label{sec:4.2.1}
+\subsection{Three scalings of a residual}\label{sec:4.2.1}
 
-By the residual-variance theorem of Unit 2, $\var(e_i) = \sigma^2(1-h_{ii})$: the raw residuals have
-unequal variances even under \Aref{3}, so they are not comparable across observations
-until rescaled.
-
-\begin{definition}[Standardised and studentised residuals]\label{def:resid}
-With $s^2 = \SSE/(n-k-1)$ and $s_{(i)}^2$ the same quantity computed with observation $i$
-deleted,
-\begin{equation}\label{eq:resid}
-r_i = \frac{e_i}{s\sqrt{1-h_{ii}}}
-\quad\text{(standardised)},
-\qquad
-t_i = \frac{e_i}{s_{(i)}\sqrt{1-h_{ii}}}
-\quad\text{(studentised, or deleted)} .
-\end{equation}
-\end{definition}
-
-\begin{theorem}[The deleted variance without refitting]\label{thm:s2i}
-\begin{equation}\label{eq:s2i}
-s_{(i)}^2 = \frac{(n-k-1)s^2 - e_i^2/(1-h_{ii})}{n-k-2} .
-\end{equation}
-\end{theorem}
-
-\begin{proof}
-By the deletion identity of Lemma~\ref{lem:deletion} below,
-$y_i - \bx_i'\hat\bb^{(-i)} = e_i/(1-h_{ii})$, and the residual sum of squares of the
-deleted fit satisfies
-$\SSE_{(i)} = \SSE - e_i^2/(1-h_{ii})$: removing observation $i$ removes its contribution
-to $\SSE$, inflated by the same factor that inflates its prediction error. Dividing by its
-degrees of freedom $n-1-k-1 = n-k-2$ gives~\eqref{eq:s2i}.
-\end{proof}
-
-\begin{remark}
-$t_i$ has a $t_{n-k-2}$ distribution under \Aref{1}--\Aref{5}, whereas $r_i$ does not have
-a $t$ distribution at all: its numerator and denominator both contain $e_i$, so an
-observation with a large residual inflates $s$ and partly hides itself. Deleting the observation from the variance estimate removes that feedback, so $t_i$ is the
-statistic for testing whether observation $i$ is an outlier. The conventional flag is
-$|r_i| > 2$.
-\end{remark}
-
-\subsection{What to plot}\label{sec:4.2.2}
-
-\begin{remark}
-Residuals are plotted against \emph{fitted values}, not against the response: by
-the residual identities of Unit 2, $\hat\bY'\mathbf{e} = 0$ but $\bY'\mathbf{e} = \SSE \neq 0$, so a
-plot against $y_i$ shows a spurious upward trend in every data set.
-\begin{itemize}
-\item Curvature in residuals against fitted values indicates a violation of \Aref{1}: the
-      remedy is a transformation or an added term (Unit 3 §3.4).
-\item A fan or funnel indicates non-constant variance, §\ref{sec:4.5}.
-\item A normal quantile plot bearing on \Aref{5} matters only for exact small-sample
-      inference; in large samples the central limit theorem carries the $t$ and $F$
-      statistics regardless.
-\end{itemize}
-\end{remark}
-
-%==============================================================================
-\section{Influential Observations}\label{sec:4.3}
-%==============================================================================
-
-\begin{reading}
-FREES §5.4 · ISLR §3.3.3.
-\end{reading}
-
-\begin{remark}[Three different things]
-An \emph{outlier} has an unusual response given its predictors: large $|t_i|$. A
-\emph{high-leverage} point has unusual predictors, irrespective of its response: large
-$h_{ii}$. An \emph{influential} point is one whose removal materially changes the fit,
-which requires both. A high-leverage point that happens to lie on the fitted surface is
-not influential.
-\end{remark}
-
-\begin{remark}[Leverage thresholds]
-$h_{ii}$ averages $(k+1)/n$ by the leverage theorem of Unit 2. FREES declares high leverage at
-$h_{ii} > 3(k+1)/n$; ISLR uses $2(k+1)/n$. Both are conventions, not tests.
-\end{remark}
-
-\begin{lemma}[Deletion identity]\label{lem:deletion}
-Let $\hat\bb^{(-i)}$ be the least squares estimate with observation $i$ removed. Then
-\begin{equation}\label{eq:deletion}
-\hat\bb - \hat\bb^{(-i)} = \frac{(\bX'\bX)^{-1}\bx_i\,e_i}{1-h_{ii}} ,
-\qquad
-y_i - \bx_i'\hat\bb^{(-i)} = \frac{e_i}{1-h_{ii}} .
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-This is the deletion identity of Unit 1, proved there from the Sherman--Morrison formula applied to
-$\bX'\bX - \bx_i\bx_i'$. The second identity follows from the first on premultiplying by
-$\bx_i'$ and subtracting from $y_i$.
-\end{proof}
-
-\begin{definition}[Cook's distance]\label{def:cook}
-\begin{equation}\label{eq:cook}
-D_i = \frac{\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)'\bX'\bX\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)}
-           {(k+1)s^2}
-    = \frac{\sum_{j=1}^n \bigl(\hat y_j - \hat y_j^{(-i)}\bigr)^2}{(k+1)s^2} .
-\end{equation}
-\end{definition}
-
-\begin{theorem}[Computable form of Cook's distance]\label{thm:cook}
-\begin{equation}\label{eq:cook-form}
-\boxed{\;D_i = \frac{e_i^2}{(k+1)s^2}\cdot\frac{h_{ii}}{(1-h_{ii})^2}
-            = \frac{r_i^2}{k+1}\cdot\frac{h_{ii}}{1-h_{ii}} . \;}
-\end{equation}
-\end{theorem}
-
-\begin{proof}
-Substituting~\eqref{eq:deletion} into~\eqref{eq:cook},
-\[
-\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)'\bX'\bX\bigl(\hat\bb-\hat\bb^{(-i)}\bigr)
-= \frac{e_i^2}{(1-h_{ii})^2}\,\bx_i'(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1}\bx_i
-= \frac{e_i^2\,h_{ii}}{(1-h_{ii})^2} ,
-\]
-since $\bx_i'(\bX'\bX)^{-1}\bx_i = h_{ii}$. Dividing by $(k+1)s^2$ gives the first form;
-substituting $e_i^2 = r_i^2 s^2 (1-h_{ii})$ gives the second.
-\end{proof}
-
-\begin{remark}
-The second form separates the two ingredients: $r_i^2$ measures how unusual the response
-is and $h_{ii}/(1-h_{ii})$ how unusual the predictors are. $D_i$ is large only when both are appreciable. A common flag is
-$D_i > 1$, or $D_i > 4/n$ for a more sensitive screen.
-\end{remark}
-
-\begin{definition}[DFFITS and DFBETAS]\label{def:dffits}
-\begin{equation}\label{eq:dffits}
-\mathrm{DFFITS}_i = \frac{\hat y_i - \hat y_i^{(-i)}}{s_{(i)}\sqrt{h_{ii}}} ,
-\qquad
-\mathrm{DFBETAS}_{j,i}
-= \frac{\hat\beta_j - \hat\beta_j^{(-i)}}{s_{(i)}\sqrt{[(\bX'\bX)^{-1}]_{jj}}} .
-\end{equation}
-\end{definition}
-
-\begin{proposition}\label{prop:dffits}
-$\mathrm{DFFITS}_i = t_i\sqrt{h_{ii}/(1-h_{ii})}$.
+\begin{proposition}[Deleting an observation is adding its indicator; FREES §5.3.2, §5.10.2]\label{prop:indicator}
+Let $\mathbf u_i$ be the $i$-th coordinate vector of $\Real^n$, let $\bX_{(i)}$ and
+$\bY_{(i)}$ be $\bX$ and $\bY$ without row $i$, and suppose \Aref{4} and $h_{ii}<1$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{ind:i} $\bX_{(i)}$ and $[\bX\ \mathbf u_i]$ have full column rank, so the
+      regression without observation $i$ has a unique coefficient vector
+      $\hat\bb_{(i)}$, with residual sum of squares $\SSE_{(i)}$, and the regression of
+      $\bY$ on $[\bX\ \mathbf u_i]$ has a unique coefficient vector
+      $(\tilde\bb',\hat\gamma)'$.
+\item\label{ind:ii} $\tilde\bb=\hat\bb_{(i)}$ and $\hat\gamma=y_i-\bx_i'\hat\bb_{(i)}$,
+      the \emph{deleted residual} $e_{(i)}$; the residual sum of squares of the
+      regression on $[\bX\ \mathbf u_i]$ is $\SSE_{(i)}$.
+\item\label{ind:iii} $e_{(i)}=e_i/(1-h_{ii})$ and
+      $\hat\bb_{(i)}=\hat\bb-(\bX'\bX)^{-1}\bx_i\,e_i/(1-h_{ii})$.
+\item\label{ind:iv} $\SSE_{(i)}=\SSE-e_i^2/(1-h_{ii})$.
+\end{enumerate}
 \end{proposition}
 
 \begin{proof}
-By~\eqref{eq:deletion}, $\hat y_i - \hat y_i^{(-i)} = \bx_i'(\hat\bb-\hat\bb^{(-i)})
-= h_{ii}e_i/(1-h_{ii})$. Dividing by $s_{(i)}\sqrt{h_{ii}}$,
+\textbf{Step 1: rank.} If $\mathbf u_i=\bX\bc$ then $\bH\mathbf u_i=\bH\bX\bc=\bX\bc=\mathbf u_i$
+and $h_{ii}=\mathbf u_i'\bH\mathbf u_i=\mathbf u_i'\mathbf u_i=1$; so $h_{ii}<1$ gives
+$\mathbf u_i\notin\calC(\bX)$. If $\bX\bv+\gamma\mathbf u_i=\bzero$, then $\gamma\neq0$
+would put $\mathbf u_i=-\bX\bv/\gamma$ in $\calC(\bX)$, so $\gamma=0$, $\bX\bv=\bzero$ and
+$\bv=\bzero$ by \Aref{4}. If $\bX_{(i)}\bv=\bzero$, then $\bX\bv=(\bx_i'\bv)\mathbf u_i$
+lies in $\calC(\bX)$, which forces $\bx_i'\bv=0$, so $\bX\bv=\bzero$ and $\bv=\bzero$.
+Unit 2's theorem \emph{the least squares estimator} gives the unique coefficient vectors.
+
+\textbf{Step 2: the two regressions coincide.} For every $\bb$ and $\gamma$,
 \[
-\mathrm{DFFITS}_i = \frac{h_{ii}\,e_i}{(1-h_{ii})\,s_{(i)}\sqrt{h_{ii}}}
-= \frac{e_i}{s_{(i)}\sqrt{1-h_{ii}}}\sqrt{\frac{h_{ii}}{1-h_{ii}}}
-= t_i\sqrt{\frac{h_{ii}}{1-h_{ii}}} . \qedhere
+\|\bY-\bX\bb-\gamma\mathbf u_i\|^2=\sum_{j\neq i}(y_j-\bx_j'\bb)^2+(y_i-\bx_i'\bb-\gamma)^2
+\geqslant\|\bY_{(i)}-\bX_{(i)}\bb\|^2\geqslant\SSE_{(i)} ,
+\]
+with equality throughout at $\bb=\hat\bb_{(i)}$, $\gamma=y_i-\bx_i'\hat\bb_{(i)}$. This
+pair therefore minimises the left side, and by uniqueness it is $(\tilde\bb,\hat\gamma)$,
+with minimum $\SSE_{(i)}$: this is~\ref{ind:ii}.
+
+\textbf{Step 3: the formulas.} Since $\bX'\mathbf u_i=\bx_i$, $\mathbf u_i'\mathbf u_i=1$
+and $\mathbf u_i'\bY=y_i$, the normal equations of the regression on
+$[\bX\ \mathbf u_i]$ are
+\[
+\bX'\bX\tilde\bb+\bx_i\hat\gamma=\bX'\bY ,\qquad \bx_i'\tilde\bb+\hat\gamma=y_i .
+\]
+The first gives $\tilde\bb=\hat\bb-(\bX'\bX)^{-1}\bx_i\hat\gamma$; substituting in the
+second, $\hat y_i-h_{ii}\hat\gamma+\hat\gamma=y_i$, so $\hat\gamma(1-h_{ii})=e_i$. With
+Step 2 this is~\ref{ind:iii}. Unit 2's lemma \emph{adding one explanatory variable}, with
+$\bz=\mathbf u_i\notin\calC(\bX)$, $\bz'\bM\bY=e_i$ and $\bz'\bM\bz=1-h_{ii}$ (the
+$(i,i)$ entry of $\bM$), gives $\SSE-\SSE_{(i)}=e_i^2/(1-h_{ii})$, which is~\ref{ind:iv}.
+\end{proof}
+
+\begin{remark}[FREES §5.10.2, ISLR §5.1.2]
+Part~\ref{ind:iii} at observation $i$ is Unit 1's LOOCV shortcut, and
+part~\ref{ind:iv} is FREES's formula (5.21); FREES derives both from the
+prerequisites' Sherman--Morrison lemma applied to
+$\bX_{(i)}'\bX_{(i)}=\bX'\bX-\bx_i\bx_i'$.
+\end{remark}
+
+\begin{definition}[Standardised and studentised residuals; FREES §5.3.1, ISLR §3.3.3]\label{def:resid}
+Let $h_{ii}<1$, $n>k+2$, and let $s_{(i)}^2=\SSE_{(i)}/(n-k-2)$ be the residual variance
+of the regression without observation $i$ (Proposition~\ref{prop:indicator}). Three
+scalings of the residual $e_i$ are
+\[
+\text{(a) } \frac{e_i}{s},\qquad
+\text{(b) } r_i=\frac{e_i}{s\sqrt{1-h_{ii}}},\qquad
+\text{(c) } t_i=\frac{e_i}{s_{(i)}\sqrt{1-h_{ii}}} ,
+\]
+defined when $s>0$ and $s_{(i)}>0$. $r_i$ is the \emph{standardised residual} of Unit 2,
+the residual over the estimate of its standard deviation $\sigma\sqrt{1-h_{ii}}$
+(Proposition~\ref{prop:resid-mean}); $t_i$, the \emph{studentised residual}, estimates
+$\sigma$ without observation $i$. R returns $r_i$ as \texttt{rstandard} and $t_i$ as
+\texttt{rstudent}.
+\end{definition}
+
+\begin{remark}[FREES §5.3.1]
+FREES motivates (a) by the spread of the residuals: with an intercept they average $0$
+(Unit 2's residual identities), so their sample variance is
+$\SSE/(n-1)=s^2(n-k-1)/(n-1)$, close to $s^2$ when $k$ is small against $n$.
+\end{remark}
+
+\begin{theorem}[The studentised residual; FREES §5.3.1, §5.10.2]\label{thm:stud}
+Let $h_{ii}<1$, $n>k+2$ and $s>0$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{stud:i} $\SSE_{(i)}=s^2(n-k-1-r_i^2)$, so
+      $s_{(i)}^2=s^2(n-k-1-r_i^2)/(n-k-2)$ and $r_i^2\leqslant n-k-1$, with equality iff
+      $\SSE_{(i)}=0$.
+\item\label{stud:ii} If $s_{(i)}>0$,
+      \begin{equation}\label{eq:t-r}
+      t_i=r_i\sqrt{\frac{n-k-2}{n-k-1-r_i^2}} ,
+      \end{equation}
+      a strictly increasing function of $r_i$, and $|t_i|>|r_i|$ iff $|r_i|>1$.
+\item\label{stud:iii} $t_i$ is the $t$ ratio of $\hat\gamma$ in the regression of $\bY$
+      on $[\bX\ \mathbf u_i]$; under \Aref{1}--\Aref{5}, $t_i\sim t_{n-k-2}$.
+\item\label{stud:iv} If $s_{(i)}>0$ and the other responses are held fixed, then
+      $|t_i|\to\infty$ and $r_i^2\to n-k-1$ as $|y_i|\to\infty$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\textbf{(i)} By the definition of $r_i$, $e_i^2/(1-h_{ii})=r_i^2s^2$, and
+$\SSE=(n-k-1)s^2$, so Proposition~\ref{prop:indicator}\ref{ind:iv} reads
+$\SSE_{(i)}=s^2(n-k-1-r_i^2)$. Dividing by $n-k-2$ gives $s_{(i)}^2$, and
+$\SSE_{(i)}\geqslant0$ gives the bound, with equality iff $\SSE_{(i)}=0$.
+
+\textbf{(ii)} $t_i=r_i\,s/s_{(i)}$, and by (i)
+$s/s_{(i)}=\sqrt{(n-k-2)/(n-k-1-r_i^2)}$. Write $m=n-k-1$ and
+$f(r)=r\sqrt{(m-1)/(m-r^2)}$ on $(-\sqrt m,\sqrt m)$; then
+\[
+f'(r)=\sqrt{m-1}\,\Bigl\{(m-r^2)^{-1/2}+r^2(m-r^2)^{-3/2}\Bigr\}
+=\frac{m\sqrt{m-1}}{(m-r^2)^{3/2}}>0 .
+\]
+For $r_i\neq0$, $|t_i|/|r_i|=\sqrt{(m-1)/(m-r_i^2)}$ exceeds $1$ iff $m-1>m-r_i^2$, that
+is iff $r_i^2>1$.
+
+\textbf{(iii)} By Proposition~\ref{prop:indicator}, the regression on
+$[\bX\ \mathbf u_i]$ has $\hat\gamma=e_i/(1-h_{ii})$ and residual sum of squares
+$\SSE_{(i)}$ on $n-(k+2)$ degrees of freedom, so its residual variance is $s_{(i)}^2$,
+and Unit 2's lemma \emph{adding one explanatory variable} gives
+$\SE(\hat\gamma)=s_{(i)}/\sqrt{\mathbf u_i'\bM\mathbf u_i}=s_{(i)}/\sqrt{1-h_{ii}}$. Hence
+$\hat\gamma/\SE(\hat\gamma)=e_i/(s_{(i)}\sqrt{1-h_{ii}})=t_i$. Under
+\Aref{1}--\Aref{5}, $\bY=\bX\bb+0\cdot\mathbf u_i+\be$ satisfies \Aref{1}--\Aref{5} for
+the design $[\bX\ \mathbf u_i]$, which has full column rank $k+2<n$ by
+Proposition~\ref{prop:indicator}\ref{ind:i}. Unit 2's theorem \emph{the $t$ statistic}
+with $\bc$ the last coordinate vector and true value $\gamma=0$ gives $t_i\sim t_{n-k-2}$.
+
+\textbf{(iv)} $\mathbf e=\bM\bY$, so $e_i=(1-h_{ii})y_i-\sum_{j\neq i}h_{ij}y_j$ is affine
+in $y_i$ with slope $1-h_{ii}>0$, and $|e_i|\to\infty$. $\SSE_{(i)}$ and $s_{(i)}$ do not
+involve $y_i$, so $|t_i|\to\infty$. By Proposition~\ref{prop:indicator}\ref{ind:iv},
+$\SSE=\SSE_{(i)}+E_i$ with $E_i=e_i^2/(1-h_{ii})$, and
+$r_i^2=E_i/s^2=(n-k-1)E_i/(\SSE_{(i)}+E_i)\to n-k-1$ as $E_i\to\infty$.
+\end{proof}
+
+\begin{remark}[FREES §5.3.1, ISLR §3.3.3]
+Part~\ref{stud:iv} is FREES's argument for $t_i$: an unusually large response inflates
+$s$ together with $e_i$, so $|r_i|$ can never pass $\sqrt{n-k-1}$, while $s_{(i)}$ is
+untouched and $|t_i|$ grows without bound. FREES gives $t_i$ the $t$ law on $n-(k+1)$
+degrees of freedom; part~\ref{stud:iii} shows the count is $n-(k+1)-1$, since
+$s_{(i)}$ comes from $n-1$ observations and $k+1$ coefficients. ISLR defines the
+studentised residual as the residual over its estimated standard error, which
+describes $r_i$ and $t_i$ alike; its lab computes $t_i$.
+\end{remark}
+
+\begin{corollary}[The largest studentised residual (beyond the syllabus)]\label{cor:bonferroni}
+Suppose \Aref{1}--\Aref{5}, $n>k+2$ and $h_{ii}<1$ for every $i$, and let
+$c=t_{n-k-2,\,1-\alpha/(2n)}$. Then $\prb\{\max_i|t_i|>c\}\leqslant\alpha$.
+\end{corollary}
+
+\begin{proof}
+$\{\max_i|t_i|>c\}=\bigcup_{i=1}^n\{|t_i|>c\}$. By subadditivity of probability and
+Theorem~\ref{thm:stud}\ref{stud:iii}, with the $t$ law symmetric,
+$\prb\{\max_i|t_i|>c\}\leqslant\sum_{i=1}^n\prb\{|t_i|>c\}=n\cdot2\cdot\alpha/(2n)=\alpha$.
+No independence among the $t_i$ is used.
+\end{proof}
+
+\begin{example}[Outliers and high leverage points, continued; FREES §5.3.1]\label{ex:abc-stud}
+The $19$ base points of Unit 2's example with one of the unusual points A, B, C added, so
+$n=20$ and $k=1$:
+<<abc-stud>>=
+ol <- read.csv("data/frees/csv/OutlierExample.csv")
+abc <- sapply(1:3, function(code) {
+  d <- subset(ol, CODES %in% c(0, code)); m <- lm(Y ~ X, data = d); i <- nrow(d)
+  r <- rstandard(m)[[i]]
+  c(r = r, t = rstudent(m)[[i]], t_from_r = r * sqrt((20 - 1 - 2) / (20 - 1 - 1 - r^2)),
+    s = summary(m)$sigma, s_without = summary(lm(Y ~ X, data = d[-i, ]))$sigma)
+})
+colnames(abc) <- c("A", "B", "C"); round(abc, 4)
+c(ceiling_r = sqrt(20 - 1 - 1), bonferroni_cut = qt(1 - 0.05 / (2 * 20), 20 - 1 - 2))
+@
+A and C have $r=4.00$ and $-4.01$, close to the ceiling $\sqrt{n-k-1}=4.24$ of
+Theorem~\ref{thm:stud}\ref{stud:i}. Without them the fit to the base points has
+$s_{(i)}=0.288$ against $s=0.846$ and $0.865$ with them, so their studentised residuals are
+$11.74$ and $-12.04$, far beyond the cutoff $3.54$ of Corollary~\ref{cor:bonferroni} at
+$\alpha=0.05$. B has $|r|<1$, and its $t$ is smaller still, as
+Theorem~\ref{thm:stud}\ref{stud:ii} requires.
+\end{example}
+
+\subsection{Outliers}\label{sec:4.2.2}
+
+\begin{proposition}[How often a correct model is flagged; FREES §5.3.2]\label{prop:flag-rate}
+Under \Aref{1}--\Aref{5} with $n>k+5$ and $h_{jj}<1$ for every $j$,
+\[
+\prb\{|r_i|>2\}=\prb\Bigl\{|T|>2\sqrt{\tfrac{n-k-2}{n-k-5}}\Bigr\},\qquad T\sim t_{n-k-2},
+\]
+and the expected number of observations with $|r_i|>2$ is $n$ times this probability.
+\end{proposition}
+
+\begin{proof}
+By Theorem~\ref{thm:stud}\ref{stud:ii}, $r\mapsto t$ is strictly increasing and odd, so
+$|r_i|>2$ iff $|t_i|>2\sqrt{(n-k-2)/(n-k-1-4)}$; Theorem~\ref{thm:stud}\ref{stud:iii}
+gives the law of $t_i$. The count is $\sum_i\indc\{|r_i|>2\}$, whose expectation is the
+sum of the $n$ equal probabilities.
+\end{proof}
+
+<<flag-rate>>=
+flag <- function(n, k) 2 * pt(-2 * sqrt((n - k - 2) / (n - k - 5)), n - k - 2)
+round(c(n20_k1 = flag(20, 1), n123_k2 = flag(123, 2), n400_k2 = flag(400, 2),
+        normal = 2 * pnorm(-2), expected_flags_n400 = 400 * flag(400, 2)), 4)
+@
+
+\begin{remark}[Flagging outliers; FREES §5.3.2, ISLR §3.3.3]
+FREES flags observation $i$ as an \emph{outlier} when $|r_i|>2$, and ISLR when its
+studentised residual exceeds $3$ in absolute value. By
+Proposition~\ref{prop:flag-rate} a correct model with $n=400$ and $k=2$ has each
+$|r_i|>2$ with probability $0.045$, about $18$ flags expected, and a flag is a reason to
+investigate the observation, not evidence against the model.
+\end{remark}
+
+\begin{remark}[Options for handling outliers; FREES §5.3.2]
+FREES's options are to keep the observation and comment on its effect; to delete it as
+unrepresentative and report it separately; or to add an indicator variable for it, which
+formalises a special cause that later observations may share. By
+Proposition~\ref{prop:indicator} and Theorem~\ref{thm:stud}\ref{stud:iii}, the indicator
+reproduces the deletion exactly: the same
+coefficients for the other variables, the same residuals and $\SSE$ for the other
+observations, and an exact fit at the outlier, whose indicator coefficient is the deleted
+residual and whose $t$ ratio is $t_i$.
+\end{remark}
+
+\subsection{Residuals and other explanatory variables}\label{sec:4.2.3}
+
+\begin{proposition}[Residuals against a candidate variable; FREES §5.3.3, §5.10.1]\label{prop:resid-cand}
+Suppose \Aref{4}, that the model has an intercept and $\SSE>0$, write $r(\cdot,\cdot)$ for
+a sample correlation, and let $\bv\notin\calC(\bX)$ be a candidate explanatory variable whose
+regression on $\bX$ has coefficient of determination $R_v^2$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{rc:i} $r(\mathbf e,\bx_j)=0$ for every non-constant explanatory variable
+      $x_j$ in the model, and $r(\mathbf e,\hat\bY)=0$ if $\hat\bY$ is not constant.
+\item\label{rc:ii} $r(\mathbf e,\bv)=r(y,v\mid x_1,\ldots,x_k)\sqrt{1-R_v^2}$, so
+      $|r(\mathbf e,\bv)|\leqslant|r(y,v\mid x_1,\ldots,x_k)|$.
+\item\label{rc:iii} If the regression on $[\bX\ \bv]$ has positive residual sum of
+      squares, the $t$ ratio $t_v$ of $v$ in it satisfies
+      $r(y,v\mid x_1,\ldots,x_k)=t_v/\sqrt{t_v^2+n-k-2}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+For a vector $\bw$ with $\bM_0\bw\neq\bzero$, where $\bM_0=\bI-\tfrac1n\bone\bone'$,
+$r(\mathbf e,\bw)=\mathbf e'\bM_0\bw/(\|\bM_0\mathbf e\|\,\|\bM_0\bw\|)$. By Unit 2's
+residual identities $\bone'\mathbf e=0$, so $\bM_0\mathbf e=\mathbf e$ and
+$\mathbf e'\bM_0\bw=\mathbf e'\bw$.
+
+\textbf{(i)} $\bX'\mathbf e=\bzero$ and $\hat\bY'\mathbf e=0$ by the same identities.
+
+\textbf{(ii)} In Unit 3's added variable plot of $v$ in the regression on
+$[\bX\ \bv]$, the coordinates are $\bM\bY=\mathbf e$ and $\bM\bv$, both with mean zero
+since $\bone\in\calC(\bX)$, so
+$r(y,v\mid x_1,\ldots,x_k)=\mathbf e'\bM\bv/(\|\mathbf e\|\,\|\bM\bv\|)$, and
+$\bM\bv\neq\bzero$ because $\bv\notin\calC(\bX)$. Since $\bM$ is symmetric and
+$\bM\mathbf e=\bM^2\bY=\mathbf e$, $\mathbf e'\bv=\mathbf e'\bM\bv$. Hence
+\[
+r(\mathbf e,\bv)=\frac{\mathbf e'\bM\bv}{\|\mathbf e\|\,\|\bM_0\bv\|}
+=r(y,v\mid x_1,\ldots,x_k)\,\frac{\|\bM\bv\|}{\|\bM_0\bv\|} ,
+\]
+where $\|\bM\bv\|^2$ and $\|\bM_0\bv\|^2>0$ are the residual and total sums of squares
+of the regression of $\bv$ on $\bX$, whose ratio is $1-R_v^2$ by Unit 2's variance
+decomposition.
+
+\textbf{(iii)} Unit 3's proposition \emph{partial correlation from the $t$ ratio},
+applied to the regression on $[\bX\ \bv]$, which has full column rank because
+$\bv\notin\calC(\bX)$, $k+1$ explanatory variables and $n-k-2$ residual degrees of
+freedom.
+\end{proof}
+
+\begin{remark}[FREES §5.3.3]
+By~\ref{rc:ii}, the correlation of the residuals with a candidate understates the
+partial correlation that governs its $t$ ratio by the factor $\sqrt{1-R_v^2}$, severely
+when the candidate is nearly a combination of the variables already in the model; Unit
+3's added variable plot shows the partial correlation itself. A correlation also misses
+curvature: residuals $\propto v^2-\tfrac23$ against $v\in\{-1,0,1\}$ lie on a parabola
+and have correlation $0$, which a scatter plot reveals.
+\end{remark}
+
+\begin{example}[Stock market liquidity; FREES §5.3.3]\label{ex:liquidity}
+Trading volume \texttt{VOLUME} (millions of shares over three months) of $123$ companies,
+with the number of transactions \texttt{NTRAN}, the average time between transactions
+\texttt{AVGT} (minutes), the opening price \texttt{PRICE}, the shares outstanding
+\texttt{SHARE} (millions), the market value
+$\texttt{VALUE}\approx\texttt{PRICE}\times\texttt{SHARE}/1000$ (billions of dollars) and the debt-to-equity ratio \texttt{DEBEQ}; FREES
+removed three companies with extreme volume or price before the analysis. FREES
+Tables 5.2 and 5.3:
+<<liq-tables>>=
+liq <- read.csv("data/frees/csv/Liquidity.csv"); nrow(liq)
+v7 <- c("VOLUME", "AVGT", "NTRAN", "PRICE", "SHARE", "VALUE", "DEBEQ")
+round(t(sapply(liq[v7], function(x)
+  c(mean = mean(x), median = median(x), sd = sd(x), min = min(x), max = max(x)))), 3)
+round(cor(liq[v7]), 3)
+c(cor_AVGT_1overNTRAN = cor(liq$AVGT, 1 / liq$NTRAN))
+@
+\begin{figure}[H]\centering
+<<liq-pairs, fig.height=2.9, fig.width=4.2, out.width="0.6\\linewidth", echo=FALSE>>=
+pairs(liq[v7], pch = 16, cex = 0.3, col = "grey30", gap = 0.25, cex.labels = 0.8)
+@
+\caption{The scatterplot matrix of the seven liquidity variables (FREES Figure 5.2): the curved
+relation of \texttt{AVGT} to \texttt{NTRAN} and the few extreme companies are visible, which the
+correlation matrix alone does not show.}
+\end{figure}
+\texttt{AVGT} and $1/\texttt{NTRAN}$ have correlation $0.9998$: the average time between
+trades times the number of trades is nearly the length of the trading period. The first
+fit and FREES Table 5.4, the correlations of its residuals with the other variables:
+<<liq-model1>>=
+m1 <- lm(VOLUME ~ NTRAN, data = liq)
+round(coef(summary(m1)), 6)
+c(R2 = summary(m1)$r.squared, s = summary(m1)$sigma)
+cand <- c("AVGT", "PRICE", "SHARE", "VALUE", "DEBEQ")
+round(rbind(residual = drop(cor(residuals(m1), liq[cand])),
+            standardised = drop(cor(rstandard(m1), liq[cand]))), 3)
+@
+FREES's Table 5.4 prints the second row, the correlations of the standardised residuals.
+\texttt{AVGT} has the largest correlation, $-0.159$, and enters next:
+<<liq-model2>>=
+m2 <- lm(VOLUME ~ NTRAN + AVGT, data = liq)
+round(coef(summary(m2)), 6)
+c(R2 = summary(m2)$r.squared, s = summary(m2)$sigma)
+round(rbind(residual = drop(cor(residuals(m2), liq[cand[-1]])),
+            standardised = drop(cor(rstandard(m2), liq[cand[-1]]))), 3)
+@
+The fitted model is $\widehat{\texttt{VOLUME}}=4.41-0.322\,\texttt{AVGT}
++0.00167\,\texttt{NTRAN}$ with $t(b_{\texttt{AVGT}})=-2.39$, $R^2=84.2\%$ and $s=4.26$,
+against $83.4\%$ and $4.35$ for the first model; FREES's Table 5.5 is the standardised
+row. Proposition~\ref{prop:resid-cand}\ref{rc:ii} links the first model's residual
+correlation with \texttt{AVGT}'s $t$ ratio in the second, and recovers the partial
+correlation of every remaining candidate from the second model's residuals:
+<<liq-identity>>=
+t_A <- coef(summary(m2))["AVGT", "t value"]; n <- nrow(liq)
+R2_A <- summary(lm(AVGT ~ NTRAN, data = liq))$r.squared
+c(partial_from_t = t_A / sqrt(t_A^2 + n - 3), sqrt_1_minus_R2v = sqrt(1 - R2_A),
+  product = t_A / sqrt(t_A^2 + n - 3) * sqrt(1 - R2_A),
+  cor_resid_AVGT = cor(residuals(m1), liq$AVGT))
+round(sapply(cand[-1], function(v) {
+  R2v <- summary(lm(reformulate(c("NTRAN", "AVGT"), v), data = liq))$r.squared
+  tv <- coef(summary(lm(reformulate(c("NTRAN", "AVGT", v), "VOLUME"), data = liq)))[v, 3]
+  c(cor_resid = cor(residuals(m2), liq[[v]]), R2v = R2v,
+    partial = cor(residuals(m2), liq[[v]]) / sqrt(1 - R2v),
+    partial_from_t = tv / sqrt(tv^2 + n - 4), t = tv)
+}), 4)
+@
+\texttt{SHARE} and \texttt{VALUE} have residual correlations $0.100$ and $0.074$, but
+$R_v^2=0.69$ and $0.64$ turn these into partial correlations $0.180$ and $0.124$, and
+\texttt{SHARE} would enter with $t=1.99$. The candidates are strongly skewed:
+<<liq-skew>>=
+skew <- function(x) mean((x - mean(x))^3) / (mean((x - mean(x))^2))^1.5
+round(sapply(c(liq[c("PRICE", "SHARE", "VALUE", "DEBEQ")], list(resid = residuals(m2))), skew), 2)
+@
+<<liq-fig, fig.height=2.2, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 4), mar = c(3.2, 2.6, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
+for (v in c("PRICE", "SHARE", "VALUE", "DEBEQ"))
+  plot(liq[[v]], residuals(m2), xlab = v, ylab = if (v == "PRICE") "residual" else "",
+       pch = 16, cex = 0.45)
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Residuals of \texttt{VOLUME} on \texttt{NTRAN} and \texttt{AVGT} against the
+four remaining candidates (FREES Figure 5.3).}
+\end{figure}
+The residuals have skewness $0.60$, while \texttt{SHARE}, \texttt{VALUE} and
+\texttt{DEBEQ} have skewness $3.18$, $6.26$ and $5.42$; their plots are clouds
+compressed against the left edge, and no plot shows a trend.
+\end{example}
+
+\begin{example}[Non-linearity; ISLR §3.3.3]\label{ex:auto-resid}
+The regression of \texttt{mpg} on \texttt{horsepower} for the $392$ cars of
+\texttt{Auto}, with and without the square of \texttt{horsepower} (ISLR Figure 3.9):
+<<auto-resid, fig.height=2.4, fig.width=6.4>>=
+nrow(Auto)
+a1 <- lm(mpg ~ horsepower, data = Auto)
+a2 <- lm(mpg ~ horsepower + I(horsepower^2), data = Auto)
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.4, 0.6), mgp = c(1.9, 0.6, 0))
+for (m in list(a1, a2)) {
+  plot(fitted(m), residuals(m), xlab = "fitted", ylab = "residual", pch = 16, cex = 0.4,
+       main = if (identical(m, a1)) "linear" else "quadratic", cex.main = 0.9)
+  lines(lowess(fitted(m), residuals(m)), col = "#B45309", lwd = 2); abline(h = 0, lty = 2)
+}
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Residuals against fitted values, with a \texttt{lowess} smooth, for the linear
+and the quadratic fit of \texttt{mpg} on \texttt{horsepower}.}
+\end{figure}
+The linear fit leaves a U: positive residuals at both ends of the fitted range and
+negative ones in the middle, the estimate of $\bM\bmu$ of
+Proposition~\ref{prop:resid-mean} for a curved mean. The quadratic fit's smooth stays
+near $0$ except at the largest fitted values. With several explanatory variables the residuals are plotted against the fitted
+values, with which they have correlation $0$
+(Proposition~\ref{prop:resid-cand}\ref{rc:i}), so any trend in the plot is non-linear.
+\end{example}
+
+\subsection{Correlated errors}\label{sec:4.2.4}
+
+\begin{proposition}[Least squares under a general error covariance; ISLR §3.3.3, CLM exercise B5]\label{prop:general-cov}
+Assume \Aref{1}, \Aref{2} and \Aref{4}, and let $\var(\be)=\bSig$ be any covariance
+matrix. Then $\expc[\hat\bb]=\bb$,
+\[
+\var(\hat\bb)=(\bX'\bX)^{-1}\bX'\bSig\bX(\bX'\bX)^{-1},\qquad
+\expc[s^2]=\frac{\tr(\bM\bSig)}{n-k-1},
+\]
+so the reported $s^2(\bX'\bX)^{-1}$ has expectation
+$\{\tr(\bM\bSig)/(n-k-1)\}(\bX'\bX)^{-1}$.
+\end{proposition}
+
+\begin{proof}
+$\hat\bb-\bb=(\bX'\bX)^{-1}\bX'\be$ has mean $\bzero$ by \Aref{2}, and the variance
+follows from the prerequisites' proposition \emph{variance under a linear map}. By Unit
+2's identity $\mathbf e=\bM\be$ and the symmetry and idempotency of $\bM$,
+$\SSE=\be'\bM\be$, and the prerequisites' lemma \emph{expectation of a quadratic form}
+gives $\expc[\SSE]=\tr(\bM\bSig)$. Divide by $n-k-1$.
+\end{proof}
+
+\begin{corollary}[Equicorrelated errors; ISLR §3.3.3]\label{cor:equicorr}
+In the model $Y_i=\beta_0+\varepsilon_i$, with $k=0$ and $\hat\beta_0=\bar Y$, let
+$\var(\varepsilon_i)=\sigma^2$ and $\cor(\varepsilon_i,\varepsilon_j)=\rho$ for $i\neq j$,
+with $-1/(n-1)<\rho<1$, so that the covariance matrix is positive definite. Then
+\[
+\var(\bar Y)=\frac{\sigma^2}{n}\{1+(n-1)\rho\},\qquad
+\expc\Bigl[\frac{s^2}{n}\Bigr]=\frac{\sigma^2}{n}(1-\rho) ,
+\]
+so the reported variance of $\bar Y$ has expectation $(1-\rho)/\{1+(n-1)\rho\}$ times the
+true one, a factor below $1$ for $\rho>0$ that tends to $0$ as $n\to\infty$.
+\end{corollary}
+
+\begin{proof}
+$\bSig=\sigma^2\{(1-\rho)\bI_n+\rho\bone\bone'\}$ and $\bX=\bone$, so
+$\var(\bar Y)=n^{-2}\bone'\bSig\bone=n^{-2}\sigma^2\{(1-\rho)n+\rho n^2\}$, as in Unit 1's
+proposition \emph{mean of correlated estimates}. Here $\bM=\bM_0=\bI-\tfrac1n\bone\bone'$
+with $\bM_0\bone=\bzero$ and $\tr(\bM_0)=n-1$, so
+$\tr(\bM_0\bSig)=\sigma^2(1-\rho)(n-1)$ and Proposition~\ref{prop:general-cov} gives
+$\expc[s^2]=\sigma^2(1-\rho)$.
+\end{proof}
+
+\begin{proposition}[Doubled data; ISLR §3.3.3]\label{prop:doubled}
+Stack the data on themselves, $\bX_d=\begin{pmatrix}\bX\\\bX\end{pmatrix}$ and
+$\bY_d=\begin{pmatrix}\bY\\\bY\end{pmatrix}$, and suppose \Aref{4}. The least squares
+coefficients are unchanged, and every standard error computed from the $2n$ rows equals
+the original one times $\sqrt{(n-k-1)/(2n-k-1)}$, which tends to $1/\sqrt2$.
+\end{proposition}
+
+\begin{proof}
+$\bX_d'\bX_d=2\bX'\bX$ and $\bX_d'\bY_d=2\bX'\bY$, so the normal equations are those of
+the original data times $2$. The residual vector is $\mathbf e$ stacked twice, so
+$\SSE_d=2\SSE$ and $s_d^2=2\SSE/(2n-k-1)$, and
+\[
+\SE_d(\hat\beta_j)=\sqrt{\frac{2\SSE}{2n-k-1}}\sqrt{\frac{[(\bX'\bX)^{-1}]_{jj}}{2}}
+=\sqrt{\frac{n-k-1}{2n-k-1}}\;\sqrt{\frac{\SSE}{n-k-1}}\sqrt{[(\bX'\bX)^{-1}]_{jj}} .
+\qedhere
 \]
 \end{proof}
 
-\begin{remark}
-$D_i$ and $\mathrm{DFFITS}_i$ measure the same thing on different scales, one using $s$
-and the other $s_{(i)}$; they rank observations almost identically. DFBETAS is the finer
-instrument, reporting which \emph{coefficient} an observation moves, at the cost of $k+1$
-numbers per observation. A conventional flag is $|\mathrm{DFFITS}_i| > 2\sqrt{(k+1)/n}$.
+\begin{remark}[ISLR §3.3.3]
+The duplicated errors are perfectly correlated in pairs, so $\bSig$ violates \Aref{3},
+and the standard errors behave as if there were $2n$ independent observations. Positive
+correlation between the errors of adjacent observations, common in time series and in
+clustered data, shows as \emph{tracking} in a plot of the residuals against time:
+neighbouring residuals take similar values.
 \end{remark}
+
+\begin{example}[Tracking; ISLR §3.3.3]\label{ex:tracking}
+The simple regression on $x_t=t$, $t=1,\ldots,100$, with errors of variance $1$ and
+$\cor(\varepsilon_t,\varepsilon_u)=\rho^{|t-u|}$. The exact variance of $b_1$ and the
+exact expectation of its reported variance come from
+Proposition~\ref{prop:general-cov}; the coverage of the nominal $95\%$ interval for
+$\beta_1$ is simulated:
+<<tracking>>=
+set.seed(4); nT <- 100; X <- cbind(1, 1:nT); XtXi <- solve(crossprod(X))
+M <- diag(nT) - X %*% XtXi %*% t(X)
+track <- t(sapply(c(0, 0.5, 0.9), function(rho) {
+  S <- rho^abs(outer(1:nT, 1:nT, "-")); L <- t(chol(S))
+  true_var <- (XtXi %*% t(X) %*% S %*% X %*% XtXi)[2, 2]
+  rep_var <- sum(diag(M %*% S)) / (nT - 2) * XtXi[2, 2]
+  cover <- mean(replicate(2000, {
+    y <- 1 + 0.1 * (1:nT) + drop(L %*% rnorm(nT)); f <- lm.fit(X, y)
+    se <- sqrt(sum(f$residuals^2) / (nT - 2) * XtXi[2, 2])
+    abs(f$coefficients[2] - 0.1) <= qt(0.975, nT - 2) * se
+  }))
+  c(rho = rho, true_over_reported = true_var / rep_var, coverage = cover)
+}))
+round(track, 3)
+@
+<<tracking-fig, fig.height=2.2, fig.width=6.4, echo=FALSE>>=
+set.seed(7)
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 1.4, 0.4), mgp = c(1.9, 0.6, 0))
+for (rho in c(0, 0.5, 0.9)) {
+  L <- t(chol(rho^abs(outer(1:nT, 1:nT, "-")))); y <- 1 + 0.1 * (1:nT) + drop(L %*% rnorm(nT))
+  plot(1:nT, residuals(lm(y ~ I(1:nT))), type = "b", pch = 16, cex = 0.35, xlab = "t",
+       ylab = if (rho == 0) "residual" else "", main = bquote(rho == .(rho)), cex.main = 0.9)
+  abline(h = 0, lty = 2)
+}
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Residuals against time for $\rho=0$, $0.5$ and $0.9$ (ISLR Figure 3.10).}
+\end{figure}
+At $\rho=0.5$ the true variance of $b_1$ is $3.0$ times the expectation of its reported
+variance and the nominal $95\%$ interval covers $\beta_1$ in $75\%$ of the samples; at
+$\rho=0.9$ the factor is $19.6$ and the coverage $35\%$. The residual series
+wander in longer runs as $\rho$ grows.
+\end{example}
+
+% \periodmark{End of period 1 of 3.}
+
+%==============================================================================
+\section{Influential Points}\label{sec:4.3}
+%==============================================================================
+
+\begin{reading}
+FREES §5.4, §5.10.2 · ISLR §3.3.3 (high leverage points). \ SRM learning outcome 2(d).
+\end{reading}
+
+\subsection{Leverage}\label{sec:4.3.1}
+
+\begin{proposition}[Leverage as a distance; FREES §5.4.1, ISLR §3.3.3]\label{prop:mahal}
+Suppose the model has an intercept, write $\bX=[\bone\ \tilde\bX]$ and
+$\bx_0=(1,\tilde\bx_0')'$ for a point with $\tilde\bx_0\in\Real^k$, let $\bar\bx$ be the
+vector of means of the $k$ explanatory variables, $\tilde\bX_c=\tilde\bX-\bone\bar\bx'$,
+and $\bS=\tilde\bX_c'\tilde\bX_c/(n-1)$ their sample covariance matrix. Under
+\Aref{4}, $\bS$ is positive definite,
+\begin{equation}\label{eq:H-split}
+\bH=\tfrac1n\bone\bone'+\tilde\bX_c(\tilde\bX_c'\tilde\bX_c)^{-1}\tilde\bX_c' ,
+\end{equation}
+and
+\begin{equation}\label{eq:mahal}
+\bx_0'(\bX'\bX)^{-1}\bx_0=\frac1n+\frac{(\tilde\bx_0-\bar\bx)'\bS^{-1}(\tilde\bx_0-\bar\bx)}{n-1} .
+\end{equation}
+In particular $h_{ii}=1/n+\Delta_i^2/(n-1)$, where
+$\Delta_i^2=(\tilde\bx_i-\bar\bx)'\bS^{-1}(\tilde\bx_i-\bar\bx)$ is the squared
+\emph{Mahalanobis distance} of observation $i$ from the centre of the design; and under
+\Aref{1}--\Aref{4} the fitted mean $\bx_0'\hat\bb$ has variance
+$\sigma^2\bx_0'(\bX'\bX)^{-1}\bx_0$.
+\end{proposition}
+
+\begin{proof}
+Let $\bA=\begin{pmatrix}1&-\bar\bx'\\\bzero&\bI_k\end{pmatrix}$, invertible, so that
+$\bX\bA=[\bone\ \ \tilde\bX-\bone\bar\bx']=[\bone\ \tilde\bX_c]$. The columns of
+$\tilde\bX_c$ sum to zero, so
+$(\bX\bA)'(\bX\bA)=\diag\bigl(n,\ \tilde\bX_c'\tilde\bX_c\bigr)$. By \Aref{4} and the
+invertibility of $\bA$, $\bX\bA$ has full column rank, so this matrix is invertible and so
+is $\tilde\bX_c'\tilde\bX_c=(n-1)\bS$; being a Gram matrix it is positive
+semi-definite, $\bv'\tilde\bX_c'\tilde\bX_c\bv=\|\tilde\bX_c\bv\|^2$, and an invertible
+positive semi-definite matrix is positive definite. From
+$(\bX\bA)'(\bX\bA)=\bA'\bX'\bX\bA$,
+\[
+(\bX'\bX)^{-1}=\bA\,\diag\bigl(1/n,\ (\tilde\bX_c'\tilde\bX_c)^{-1}\bigr)\bA' .
+\]
+Pre- and post-multiplying by $\bX$ and $\bX'$ gives~\eqref{eq:H-split}, since
+$\bX\bA=[\bone\ \tilde\bX_c]$. For~\eqref{eq:mahal}, $\bA'\bx_0=(1,(\tilde\bx_0-\bar\bx)')'$,
+so $\bx_0'(\bX'\bX)^{-1}\bx_0=1/n+(\tilde\bx_0-\bar\bx)'\{(n-1)\bS\}^{-1}(\tilde\bx_0-\bar\bx)$.
+Taking $\bx_0=\bx_i$ gives $h_{ii}$. Finally
+$\var(\bx_0'\hat\bb)=\bx_0'\var(\hat\bb)\bx_0=\sigma^2\bx_0'(\bX'\bX)^{-1}\bx_0$ by Unit
+2's theorem \emph{variance--covariance matrix}.
+\end{proof}
+
+\begin{remark}[FREES §5.4.1, ISLR §3.3.3]
+For $k=1$, \eqref{eq:mahal} is Unit 2's formula
+$h_{ii}=1/n+(x_i-\bar x)^2/\sum_j(x_j-\bar x)^2$. The distance $\Delta_i$ weighs the
+explanatory variables jointly, so a point can be ordinary in each variable and unusual
+in the design: for two variables with unit variances and correlation $r$, the point one
+standard deviation above the mean in the first and one below in the second has
+$\Delta^2=(1,-1)\bS^{-1}(1,-1)'=2(1+r)/(1-r^2)=2/(1-r)$, which is $20$ at $r=0.9$ (FREES
+Figure 5.4, ISLR Figure 3.13).
+\end{remark}
+
+\begin{remark}[High leverage points; FREES §5.4.1, ISLR §3.3.3]
+With an intercept, Unit 2's theorem \emph{properties of leverage} gives
+$1/n\leqslant h_{ii}\leqslant1$ and the mean leverage $(k+1)/n$. FREES declares observation $i$ a \emph{high leverage point}
+when $h_{ii}>3(k+1)/n$, three times the mean; ISLR when $h_{ii}$ greatly exceeds
+$(k+1)/n$. Leverage depends on $\bX$ alone, so replacing the response by a transformation
+of it leaves every leverage unchanged.
+\end{remark}
+
+\begin{remark}[Options for handling high leverage points; FREES §5.4.1]
+FREES's options: keep the observation and comment on its effect; delete it as
+unrepresentative, or present the analysis with and without it; replace the explanatory
+variable by another carrying similar information; or transform the variable, for example
+replacing \texttt{DEBEQ} by the indicator of $\texttt{DEBEQ}>5$, which bounds the
+distance of every company in that coordinate. Robust estimation, which down-weights
+unusual observations, is FREES's intermediate course.
+\end{remark}
+
+\subsection{Cook's distance}\label{sec:4.3.2}
+
+\begin{definition}[Cook's distance; FREES §5.4.2]\label{def:cook}
+For $h_{ii}<1$ and $s>0$, with $\hat\bY_{(i)}=\bX\hat\bb_{(i)}$ the fitted values of all
+$n$ observations from the regression without observation $i$,
+\[
+D_i=\frac{\|\hat\bY-\hat\bY_{(i)}\|^2}{(k+1)s^2}
+=\frac{\sum_{j=1}^n(\hat y_j-\hat y_{j(i)})^2}{(k+1)s^2} .
+\]
+\end{definition}
+
+\begin{theorem}[Cook's distance from one fit; FREES §5.4.2, §5.10.2]\label{thm:cook}
+Under \Aref{4}, with $h_{ii}<1$ and $s>0$,
+\begin{equation}\label{eq:cook}
+D_i=\frac{(\hat\bb-\hat\bb_{(i)})'\bX'\bX(\hat\bb-\hat\bb_{(i)})}{(k+1)s^2}
+=\frac{e_i^2\,h_{ii}}{(k+1)s^2(1-h_{ii})^2}
+=\frac{r_i^2}{k+1}\,\frac{h_{ii}}{1-h_{ii}} ,
+\end{equation}
+and $D_i\leqslant(n-k-1)h_{ii}/\{(k+1)(1-h_{ii})\}$.
+\end{theorem}
+
+\begin{proof}
+$\hat\bY-\hat\bY_{(i)}=\bX(\hat\bb-\hat\bb_{(i)})$, whose squared length is
+$(\hat\bb-\hat\bb_{(i)})'\bX'\bX(\hat\bb-\hat\bb_{(i)})$. By
+Proposition~\ref{prop:indicator}\ref{ind:iii},
+$\hat\bb-\hat\bb_{(i)}=(\bX'\bX)^{-1}\bx_i\,e_i/(1-h_{ii})$, so this equals
+\[
+\frac{e_i^2}{(1-h_{ii})^2}\,\bx_i'(\bX'\bX)^{-1}\bX'\bX(\bX'\bX)^{-1}\bx_i
+=\frac{e_i^2\,h_{ii}}{(1-h_{ii})^2} .
+\]
+Substituting $e_i^2=r_i^2s^2(1-h_{ii})$ gives the last form, and
+$r_i^2\leqslant n-k-1$ (Theorem~\ref{thm:stud}\ref{stud:i}) the bound.
+\end{proof}
+
+\begin{remark}[Reading Cook's distance; FREES §5.4.2]
+$D_i$ is an outlier measure $r_i^2$ times a leverage measure $h_{ii}/(1-h_{ii})$, which
+increases from $1/(n-1)$ at $h_{ii}=1/n$ to $\infty$ as $h_{ii}\to1$. FREES's typical size
+substitutes $r_i^2=1$ and $h_{ii}=(k+1)/n$, giving $1/(n-k-1)$, about $1/n$. FREES also
+compares $D_i$ with $F_{k+1,n-k-1}$. By Unit 3's theorem \emph{the general linear
+hypothesis} with $\bR=\bI_{k+1}$, the statistic for $H_0\colon\bb=\bb_0$ is
+$(\hat\bb-\bb_0)'\bX'\bX(\hat\bb-\bb_0)/\{(k+1)s^2\}$, which has the $F_{k+1,n-k-1}$ law
+at the true $\bb$ under \Aref{1}--\Aref{5}, and $D_i$ is its value at
+$\bb_0=\hat\bb_{(i)}$: $D_i$ exceeds the $1-\alpha$ quantile iff $\hat\bb_{(i)}$ lies
+outside the $100(1-\alpha)\%$ confidence region
+$\{\bb_0\colon F(\bb_0)\leqslant F_{k+1,n-k-1,1-\alpha}\}$ for $\bb$. $D_i$ is bounded
+(Theorem~\ref{thm:cook}), so it does not have an $F$ law; the quantile is a yardstick.
+\end{remark}
+
+\begin{example}[Outliers and high leverage points, continued; FREES §5.4.2]\label{ex:abc-cook}
+FREES Table 5.6, with Cook's distance computed from the definition by refitting and from
+Theorem~\ref{thm:cook}:
+<<abc-cook>>=
+tab56 <- sapply(1:3, function(code) {
+  d <- subset(ol, CODES %in% c(0, code)); m <- lm(Y ~ X, data = d); i <- nrow(d)
+  fit_without <- model.matrix(m) %*% coef(lm(Y ~ X, data = d[-i, ]))
+  c(r = rstandard(m)[[i]], h = hatvalues(m)[[i]],
+    D_refit = sum((fitted(m) - fit_without)^2) / (2 * summary(m)$sigma^2),
+    D_formula = rstandard(m)[[i]]^2 / 2 * hatvalues(m)[[i]] / (1 - hatvalues(m)[[i]]),
+    D_R = cooks.distance(m)[[i]])
+})
+colnames(tab56) <- c("A", "B", "C"); round(tab56, 4)
+c(high_leverage_cut = 3 * 2 / 20, typical_D = 1 / 20, F_2_18_95 = qf(0.95, 2, 18))
+@
+A and C are outliers ($|r|>2$); B and C are high leverage points, both with
+$h=0.550>3(k+1)/n=0.3$, equal because they share $x=9.5$. Cook's distance flags all three
+against FREES's typical value $1/n=0.05$, and only C, with $D=9.83$, exceeds the $F_{2,18}$
+quantile $3.555$, so only deleting C moves $\hat\bb$ outside the $95\%$ confidence region.
+\end{example}
+
+\begin{definition}[DFFITS and DFBETAS (beyond the syllabus)]\label{def:dffits}
+For $0<h_{ii}<1$ and $s_{(i)}>0$,
+\[
+\mathrm{DFFITS}_i=\frac{\hat y_i-\hat y_{i(i)}}{s_{(i)}\sqrt{h_{ii}}},\qquad
+\mathrm{DFBETAS}_{ij}=\frac{\hat\beta_j-\hat\beta_{j(i)}}{s_{(i)}\sqrt{[(\bX'\bX)^{-1}]_{jj}}},
+\quad j=0,\ldots,k,
+\]
+where $\hat y_{i(i)}=\bx_i'\hat\bb_{(i)}$ and $\hat\beta_{j(i)}$ is the $j$-th entry of
+$\hat\bb_{(i)}$.
+\end{definition}
+
+\begin{proposition}[DFFITS and DFBETAS from one fit (beyond the syllabus)]\label{prop:dffits}
+With an intercept, under \Aref{4}, $h_{ii}<1$, $s>0$ and $s_{(i)}>0$,
+\[
+\mathrm{DFFITS}_i=t_i\sqrt{\frac{h_{ii}}{1-h_{ii}}},\qquad
+D_i=\frac{s_{(i)}^2}{(k+1)s^2}\,\mathrm{DFFITS}_i^2 ,
+\]
+\[
+\mathrm{DFBETAS}_{ij}=\frac{[(\bX'\bX)^{-1}\bx_i]_j\,e_i}{(1-h_{ii})\,s_{(i)}\sqrt{[(\bX'\bX)^{-1}]_{jj}}} .
+\]
+\end{proposition}
+
+\begin{proof}
+With an intercept $h_{ii}\geqslant1/n>0$, so the divisions are defined. By
+Proposition~\ref{prop:indicator}\ref{ind:iii},
+$\hat y_i-\hat y_{i(i)}=\bx_i'(\bX'\bX)^{-1}\bx_i\,e_i/(1-h_{ii})=h_{ii}e_i/(1-h_{ii})$;
+dividing by $s_{(i)}\sqrt{h_{ii}}$ gives
+$e_i\sqrt{h_{ii}}/\{s_{(i)}(1-h_{ii})\}=t_i\sqrt{h_{ii}/(1-h_{ii})}$. The $j$-th entry of
+$\hat\bb-\hat\bb_{(i)}=(\bX'\bX)^{-1}\bx_ie_i/(1-h_{ii})$ gives DFBETAS. Finally
+$r_i=t_is_{(i)}/s$, so Theorem~\ref{thm:cook} gives
+$D_i=t_i^2s_{(i)}^2h_{ii}/\{(k+1)s^2(1-h_{ii})\}$.
+\end{proof}
+
+\begin{example}[Stock market liquidity, continued: IBM; FREES §5.5.2 and chapter 5 script]\label{ex:ibm}
+The regression of \texttt{VOLUME} on \texttt{PRICE}, \texttt{SHARE} and \texttt{VALUE},
+whose diagnostics close FREES's liquidity analysis:
+<<ibm>>=
+mv <- lm(VOLUME ~ PRICE + SHARE + VALUE, data = liq); k <- 3
+infl <- cbind(h = hatvalues(mv), t = rstudent(mv), D = cooks.distance(mv))
+round(infl[order(-infl[, "D"])[1:4], ], 4)
+c(high_leverage_cut = 3 * (k + 1) / n)
+liq[c(60, 122), c("COMPANY", "VOLUME", "PRICE", "SHARE", "VALUE")]
+Xt <- as.matrix(liq[c("PRICE", "SHARE", "VALUE")]); S <- cov(Xt)
+round(c((Xt[60, ] - colMeans(Xt)) / sqrt(diag(S)), Delta2 = mahalanobis(Xt[60, ], colMeans(Xt), S),
+        h_from_Delta2 = 1 / n + mahalanobis(Xt[60, ], colMeans(Xt), S) / (n - 1),
+        h_over_1_minus_h = infl[60, "h"] / (1 - infl[60, "h"])), 4)
+@
+<<ibm-fig, fig.height=2.5, fig.width=6.4, out.width="0.66\\linewidth", echo=FALSE>>=
+op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+plot(infl[, "h"], infl[, "t"], cex = 0.4 + 3 * sqrt(infl[, "D"] / max(infl[, "D"])),
+     xlab = "leverage", ylab = "studentised residual", xlim = c(0, 0.95))
+abline(v = 3 * (k + 1) / n, lty = 2); abline(h = c(-2, 2), lty = 3)
+text(infl[c(60, 122), "h"], infl[c(60, 122), "t"], c("IBM", "Exxon"), pos = c(2, 4), cex = 0.8)
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Studentised residuals against leverage, circle areas growing with Cook's
+distance; dashed line at $3(k+1)/n$, dotted lines at $\pm2$.}
+\end{figure}
+IBM has leverage $0.876$, nine times the cutoff $3(k+1)/n=0.098$: its price, shares and
+value are $3.9$, $4.5$ and $8.7$ standard deviations above the means, and its squared
+Mahalanobis distance $105.8$ reproduces $h$ through~\eqref{eq:mahal}. Its studentised
+residual is only $1.22$, yet its Cook's distance $2.60$ is the largest, through the
+leverage factor $h/(1-h)=7.0$. Exxon combines leverage $0.337$ with $t=-3.73$. Refitting
+without IBM:
+<<ibm-refit>>=
+mv60 <- update(mv, data = liq[-60, ])
+round(rbind(all = coef(summary(mv))[, 3], without_IBM = coef(summary(mv60))[, 3]), 3)
+round(rbind(all = coef(mv), without_IBM = coef(mv60)), 5)
+round(rbind(all = car::vif(mv), without_IBM = car::vif(mv60)), 3)
+c(R2_all = summary(mv)$r.squared, R2_without_IBM = summary(mv60)$r.squared)
+@
+The coefficient of \texttt{VALUE} falls from $0.313$ ($t=1.94$) to $-0.125$ ($t=-0.32$)
+and $R^2$ from $0.610$ to $0.524$: one company in $123$ carries the evidence for
+\texttt{VALUE}.
+\end{example}
 
 %==============================================================================
 \section{Collinearity}\label{sec:4.4}
 %==============================================================================
 
 \begin{reading}
-FREES §5.5.
+FREES §5.5, §5.10.3 · ISLR §3.3.3 (collinearity) · CLM §6. \ SRM learning outcomes 2(d),
+2(e).
 \end{reading}
 
-\begin{definition}[Variance inflation factor]\label{def:vif}
-Let $R_j^2$ be the coefficient of determination from regressing $x_j$ on the other $k-1$
-explanatory variables and an intercept. Then
-\begin{equation}\label{eq:vif}
-\VIF_j = \frac{1}{1-R_j^2} .
-\end{equation}
-\end{definition}
+\subsection{What collinearity does}\label{sec:4.4.1}
 
-\begin{theorem}[VIF and the standard error]\label{thm:vif}
-For $j = 1,\ldots,k$,
-\begin{equation}\label{eq:se-vif}
-\SE(\hat\beta_j) = \frac{s}{s_{x_j}\sqrt{n-1}}\,\sqrt{\VIF_j} .
-\end{equation}
-\end{theorem}
+\begin{example}[Perfectly correlated explanatory variables; FREES §5.5.1]\label{ex:joe}
+Joe fits $\hat y=-87+x_1+18x_2$ and Jane fits $\hat y=-7+9x_1+2x_2$ to four observations
+with $x_2=5+x_1/2$:
+<<joe>>=
+jf <- data.frame(y = c(23, 83, 63, 103), x1 = c(2, 8, 6, 10), x2 = c(6, 9, 8, 10))
+Xj <- cbind(1, jf$x1, jf$x2)
+cbind(y = jf$y, joe = drop(Xj %*% c(-87, 1, 18)), jane = drop(Xj %*% c(-7, 9, 2)),
+      null_direction = drop(Xj %*% c(10, 1, -2)))
+c(rank = qr(Xj)$rank); coef(lm(y ~ x1 + x2, data = jf))
+@
+Both fit every observation exactly, and so does R's $(3,10,0)$, which drops $x_2$.
+\end{example}
+
+\begin{proposition}[Exact collinearity; FREES §5.5.1]\label{prop:exact-col}
+If $\rank(\bX)<k+1$, the solutions of the normal equations $\bX'\bX\bb=\bX'\bY$ form the
+set $\hat\bb_0+\calN(\bX)$, for any one solution $\hat\bb_0$, which is infinite; all of
+them give the same fitted values, the orthogonal projection of $\bY$ onto $\calC(\bX)$,
+hence the same residuals, $\SSE$ and $R^2$.
+\end{proposition}
 
 \begin{proof}
-By the Frisch--Waugh--Lovell theorem of Unit 2, applied with $\bX_1 = \bx_j$ and
-$\bX_2$ the remaining columns, $\hat\beta_j$ is the slope from regressing $\bY$ on
-$\bM_2\bx_j$, so
-\[
-\var(\hat\beta_j) = \frac{\sigma^2}{\bx_j'\bM_2\bx_j} .
-\]
-Now $\bx_j'\bM_2\bx_j$ is the residual sum of squares from regressing $x_j$ on the other
-variables, which is $(1-R_j^2)$ times its total sum of squares $(n-1)s_{x_j}^2$. Hence
-\[
-\var(\hat\beta_j) = \frac{\sigma^2}{(n-1)s_{x_j}^2(1-R_j^2)}
-= \frac{\sigma^2}{(n-1)s_{x_j}^2}\,\VIF_j ,
-\]
-and replacing $\sigma$ by $s$ and taking the square root gives~\eqref{eq:se-vif}.
+By the prerequisites' theorem \emph{orthogonal projection} there is a unique
+$\hat\bY\in\calC(\bX)$ with $\bY-\hat\bY\perp\calC(\bX)$; writing
+$\hat\bY=\bX\hat\bb_0$, this says $\bX'(\bY-\bX\hat\bb_0)=\bzero$, so $\hat\bb_0$ solves
+the normal equations. Any solution $\bb$ has $\bX\bb\in\calC(\bX)$ and
+$\bY-\bX\bb\perp\calC(\bX)$, so $\bX\bb=\hat\bY$ by uniqueness and
+$\bb-\hat\bb_0\in\calN(\bX)$; conversely every $\hat\bb_0+\bv$ with $\bX\bv=\bzero$ solves
+them. By the prerequisites' rank--nullity theorem, $\dim\calN(\bX)=k+1-\rank(\bX)\geqslant1$.
 \end{proof}
 
-\begin{remark}
-$\VIF_j\geqslant1$, with equality iff $x_j$ is orthogonal to the other explanatory
-variables; it is the factor by which collinearity multiplies the \emph{variance} of
-$\hat\beta_j$ over that orthogonal ideal. The usual flag is $\VIF_j > 10$, equivalently
-$R_j^2 > 0.9$. Note that~\eqref{eq:se-vif} contains no $\VIF$ for the intercept, and that
-$\VIF$ is unaffected by the response: collinearity is a property of $\bX$.
+\begin{remark}[FREES §5.5.1]
+In Example~\ref{ex:joe}, $\calN(\bX)$ is spanned by $(10,1,-2)'$, since
+$10+x_1-2x_2=0$ on the data; Jane's coefficients are Joe's plus $8(10,1,-2)'$ and R's are
+Joe's plus $9(10,1,-2)'$. The fit is determined and the coefficients are not.
 \end{remark}
 
-\begin{remark}[What collinearity does and does not do]
-Collinearity does not bias $\hat\bb$, does not violate any of \Aref{1}--\Aref{5}, and does
-not damage prediction at predictor combinations resembling those observed. What it does is
-inflate standard errors, so that individually insignificant coefficients coexist with a highly significant joint $F$ (Unit 3), and make estimates unstable across
-samples. The remedies are to drop one of the redundant variables, to combine them, or to
-shrink; ridge regression (Unit 6) is the direct attack, replacing $(\bX'\bX)^{-1}$ by
-$(\bX'\bX+\lambda\bI)^{-1}$.
+\begin{proposition}[What collinearity does and does not affect; FREES §5.5.1--5.5.2]\label{prop:col-facts}
+Suppose the model has an intercept and \Aref{1}--\Aref{4}, and let $R_j^2$ and
+$s_{x_j}$ be as in Unit 3's corollary \emph{the standard error through the other
+explanatory variables}.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{cf:i} $\expc[s^2]=\sigma^2$ and $\var(\hat y_i)=\sigma^2h_{ii}\leqslant\sigma^2$
+      for every $i$, whatever the correlations among the explanatory variables.
+\item\label{cf:ii} $\var(\hat\beta_j)=\sigma^2\VIF_j/\{(n-1)s_{x_j}^2\}$, which for fixed
+      $s_{x_j}$ grows without bound as $R_j^2\to1$.
+\item\label{cf:iii} The slope block of $(\bX'\bX)^{-1}$ is
+      $(\tilde\bX_c'\tilde\bX_c)^{-1}$; for $k=2$,
+      $\cor(\hat\beta_1,\hat\beta_2)=-r_{12}$, the negative of the sample correlation of
+      $x_1$ and $x_2$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\textbf{(i)} $\expc[s^2]=\sigma^2$ is Unit 2's theorem \emph{unbiasedness of the mean
+square error}. $\hat\bY=\bH\bY$, so $\var(\hat\bY)=\bH(\sigma^2\bI)\bH=\sigma^2\bH$, whose
+diagonal entries are $\sigma^2h_{ii}\leqslant\sigma^2$ by Unit 2's theorem
+\emph{properties of leverage}.
+
+\textbf{(ii)} Unit 3's corollary cited in the statement.
+
+\textbf{(iii)} In the proof of Proposition~\ref{prop:mahal},
+$(\bX'\bX)^{-1}=\bA\diag(1/n,\bC)\bA'$ with $\bC=(\tilde\bX_c'\tilde\bX_c)^{-1}$ and
+$\bA=\begin{pmatrix}1&-\bar\bx'\\\bzero&\bI_k\end{pmatrix}$; multiplying out,
+\[
+(\bX'\bX)^{-1}=\begin{pmatrix}1/n+\bar\bx'\bC\bar\bx&-\bar\bx'\bC\\-\bC\bar\bx&\bC\end{pmatrix} .
+\]
+For $k=2$, with $s_1,s_2$ the standard deviations of $x_1,x_2$ and $r=r_{12}$,
+\[
+\tilde\bX_c'\tilde\bX_c=(n-1)\begin{pmatrix}s_1^2&rs_1s_2\\rs_1s_2&s_2^2\end{pmatrix},\qquad
+\bC=\frac{1}{(n-1)s_1^2s_2^2(1-r^2)}\begin{pmatrix}s_2^2&-rs_1s_2\\-rs_1s_2&s_1^2\end{pmatrix},
+\]
+$|r|<1$ by \Aref{4}. By Unit 2's theorem \emph{variance--covariance matrix},
+$\cor(\hat\beta_1,\hat\beta_2)=C_{12}/\sqrt{C_{11}C_{22}}=-rs_1s_2/(s_1s_2)=-r$.
+\end{proof}
+
+\begin{remark}[Collinearity facts; FREES §5.5.1, ISLR §3.3.3]
+Part~\ref{cf:i} is FREES's first two facts: collinearity prevents neither a good fit nor
+reliable estimates of $\sigma^2$ and of the overall fit. Predictions are another matter:
+by Proposition~\ref{prop:mahal} the variance of the fitted mean at a new $\bx_0$ is
+$\sigma^2\{1/n+\Delta_0^2/(n-1)\}$, small where $\bx_0$ follows the pattern of the data and
+large where it breaks a near-linear relation, even with each coordinate inside its
+observed range. Part~\ref{cf:ii} is the third fact and ISLR's point: large standard
+errors, small $t$ ratios, and tests of $H_0\colon\beta_j=0$ that lose power.
 \end{remark}
+
+\begin{proposition}[The residual sum of squares around its minimum; ISLR §3.3.3]\label{prop:rss-ellipse}
+Suppose the model has an intercept and \Aref{4}, let $\hat\bb_s$ be the least squares
+slopes and $\tilde\bX,\tilde\bX_c$ as in Proposition~\ref{prop:mahal}. For every
+$\bb_s\in\Real^k$,
+\[
+\min_{\beta_0\in\Real}\|\bY-\beta_0\bone-\tilde\bX\bb_s\|^2
+=\SSE+(\bb_s-\hat\bb_s)'\tilde\bX_c'\tilde\bX_c(\bb_s-\hat\bb_s) .
+\]
+The contours in $\bb_s$ are therefore ellipsoids centred at $\hat\bb_s$, with axes along
+the eigenvectors of $\tilde\bX_c'\tilde\bX_c$ and semi-axes proportional to the
+reciprocal square roots of its eigenvalues. For $k=2$ variables with unit standard
+deviations and correlation $r_{12}$, the eigenvalues are $(n-1)(1\pm r_{12})$ and the
+longest axis is $\sqrt{(1+|r_{12}|)/(1-|r_{12}|)}$ times the shortest.
+\end{proposition}
+
+\begin{proof}
+Put $\alpha=\beta_0+\bar\bx'\bb_s$, so that
+$\beta_0\bone+\tilde\bX\bb_s=\alpha\bone+\tilde\bX_c\bb_s$, a bijection
+$(\beta_0,\bb_s)\leftrightarrow(\alpha,\bb_s)$ that keeps the slopes. By Unit 3's
+proposition \emph{codings are reparametrisations}, the least squares fit in the design
+$[\bone\ \tilde\bX_c]=\bX\bA$ has the same fitted values and coefficients
+$\bA^{-1}\hat\bb=(\hat\alpha,\hat\bb_s')'$ with $\hat\alpha=\hat\beta_0+\bar\bx'\hat\bb_s$, so $\bY=\hat\alpha\bone+\tilde\bX_c\hat\bb_s+\mathbf e$ and
+\[
+\bY-\alpha\bone-\tilde\bX_c\bb_s=\mathbf e+(\hat\alpha-\alpha)\bone
++\tilde\bX_c(\hat\bb_s-\bb_s) .
+\]
+The three terms are mutually orthogonal: $\mathbf e\perp\calC(\bX)$, and
+$\bone'\tilde\bX_c=\bzero'$. By the prerequisites' Pythagoras theorem the squared length
+is $\SSE+n(\hat\alpha-\alpha)^2+(\hat\bb_s-\bb_s)'\tilde\bX_c'\tilde\bX_c(\hat\bb_s-\bb_s)$,
+minimised over $\alpha$ at $\alpha=\hat\alpha$. By the prerequisites' spectral theorem,
+$\tilde\bX_c'\tilde\bX_c=\bP\bLam\bP'$ with $\bP$ orthogonal; in the coordinates
+$\bw=\bP'(\bb_s-\hat\bb_s)$ the contour at level $\SSE+c$ is
+$\sum_j\lambda_jw_j^2=c$, with semi-axes $\sqrt{c/\lambda_j}$ along the columns of $\bP$.
+For $k=2$ unit-variance variables,
+$\tilde\bX_c'\tilde\bX_c=(n-1)\begin{pmatrix}1&r_{12}\\r_{12}&1\end{pmatrix}$, with
+eigenvectors $(1,1)'/\sqrt2$ and $(1,-1)'/\sqrt2$ and eigenvalues $(n-1)(1\pm r_{12})$;
+the axes are in the ratio $\sqrt{(1+|r_{12}|)/(1-|r_{12}|)}$.
+\end{proof}
+
+\begin{example}[Credit; ISLR §3.3.3]\label{ex:credit-col}
+ISLR Table 3.11: \texttt{Balance} on \texttt{Age} and \texttt{Limit}, and on
+\texttt{Rating} and \texttt{Limit}.
+<<credit-col>>=
+cm1 <- lm(Balance ~ Age + Limit, data = Credit); cm2 <- lm(Balance ~ Rating + Limit, data = Credit)
+round(coef(summary(cm1)), 4); round(coef(summary(cm2)), 4)
+c(se_ratio_Limit = coef(summary(cm2))["Limit", 2] / coef(summary(cm1))["Limit", 2],
+  r_Age_Limit = cor(Credit$Age, Credit$Limit), r_Rating_Limit = cor(Credit$Rating, Credit$Limit))
+axis_ratio <- function(r) sqrt((1 + abs(r)) / (1 - abs(r)))
+c(Age_Limit = axis_ratio(cor(Credit$Age, Credit$Limit)),
+  Rating_Limit = axis_ratio(cor(Credit$Rating, Credit$Limit)))
+V2 <- vcov(cm2); c(cor_b_Rating_b_Limit = V2[2, 3] / sqrt(V2[2, 2] * V2[3, 3]))
+@
+<<credit-contour, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+rss_grid <- function(m, v) {
+  b <- coef(m)[v]; se <- sqrt(diag(vcov(m)))[v]
+  Xc <- scale(as.matrix(Credit[v]), scale = FALSE); G <- crossprod(Xc)
+  g1 <- seq(b[1] - 4 * se[1], b[1] + 4 * se[1], length = 121)
+  g2 <- seq(b[2] - 4 * se[2], b[2] + 4 * se[2], length = 121)
+  z <- outer(g1, g2, Vectorize(function(u, w) { d <- c(u, w) - b; drop(t(d) %*% G %*% d) }))
+  lev <- sum(residuals(m)^2) + 2 * summary(m)$sigma^2 * qf(c(0.5, 0.9, 0.99, 0.999), 2, nrow(Credit) - 3)
+  list(g1 = g1, g2 = g2, z = (sum(residuals(m)^2) + z) / 1e6, b = b, lev = lev / 1e6)
+}
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+for (spec in list(list(cm1, c("Limit", "Age")), list(cm2, c("Limit", "Rating")))) {
+  g <- rss_grid(spec[[1]], spec[[2]])
+  contour(g$g1, g$g2, g$z, levels = g$lev, drawlabels = FALSE,
+          xlab = paste("beta", spec[[2]][1]), ylab = paste("beta", spec[[2]][2]))
+  points(g$b[1], g$b[2], pch = 16)
+}
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Contours of the residual sum of squares, the intercept minimised out, over
+$\pm4$ standard errors of the two slopes, at $\SSE+2s^2F_{2,n-3,1-\alpha}$ for
+$\alpha=0.5,0.1,0.01,0.001$ (ISLR Figure 3.15).}
+\end{figure}
+\texttt{Limit} and \texttt{Rating} have correlation $0.997$, and in their regression the
+standard error of the \texttt{Limit} coefficient is $12.7$ times that in the regression
+with \texttt{Age}, so \texttt{Limit} loses its significance ($p=0.70$). By
+Proposition~\ref{prop:rss-ellipse} the standardised ellipses have axis ratio $25.3$
+against $1.11$ with \texttt{Age}: the long valley of the right panel, along which the
+two coefficients trade off with correlation $-0.997$
+(Proposition~\ref{prop:col-facts}\ref{cf:iii}). The contours drawn are the boundaries
+of the joint confidence regions for the two slopes: their quadratic form
+$(\bb_s-\hat\bb_s)'\tilde\bX_c'\tilde\bX_c(\bb_s-\hat\bb_s)$ is, by
+Proposition~\ref{prop:col-facts}\ref{cf:iii}, the numerator of Unit 3's general linear
+hypothesis statistic for the two slopes, with $q=2$.
+\end{example}
+
+\subsection{Variance inflation factors}\label{sec:4.4.2}
+
+\begin{proposition}[Variance inflation factors; FREES §5.5.2, ISLR §3.3.3]\label{prop:vif}
+Suppose the model has an intercept, $k\geqslant2$ and \Aref{4}; part (ii) also assumes
+\Aref{1}--\Aref{3}.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{vif:i} $\VIF_j\geqslant1$, with equality iff $x_j$ has sample correlation $0$
+      with every other explanatory variable.
+\item\label{vif:ii} $\VIF_j$ is the variance of $\hat\beta_j$ in the full regression
+      divided by the variance of the slope of the simple regression of $y$ on $x_j$
+      alone, ISLR's definition.
+\item\label{vif:iii} The \emph{tolerance} $1/\VIF_j$ equals $1-R_j^2$; $\VIF_j>10$ iff
+      $R_j^2>0.9$, and $\VIF_j>5$ iff $R_j^2>0.8$.
+\item\label{vif:iv} Centring and rescaling the explanatory variables leave every
+      $\VIF_j$ unchanged.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\textbf{(i)} Let $\bX_{(j)}$ be $\bX$ without $\bx_j$ and $\bZ_c$ its $k-1$ non-constant
+columns centred. By~\eqref{eq:H-split} for the design $\bX_{(j)}$, the regression of
+$\bx_j$ on the other variables has regression sum of squares
+$\|\bZ_c(\bZ_c'\bZ_c)^{-1}\bZ_c'\bx_j\|^2\geqslant0$, so $R_j^2\geqslant0$, and
+$R_j^2<1$ by Unit 3's corollary \emph{the standard error through the other explanatory
+variables}. Hence $\VIF_j=1/(1-R_j^2)\geqslant1$, with equality iff
+$\bZ_c(\bZ_c'\bZ_c)^{-1}\bZ_c'\bx_j=\bzero$, which, multiplying by $\bZ_c'$, holds iff
+$\bZ_c'\bx_j=\bzero$. The entries of $\bZ_c'\bx_j$ are $(n-1)$ times the sample
+covariances of $x_j$ with the other variables, $\bZ_c$ having columns that sum to zero.
+
+\textbf{(ii)} The slope of the simple regression is $\sum_iw_iy_i$ with
+$\sum_iw_i^2=1/\{(n-1)s_{x_j}^2\}$ (Unit 2's proposition \emph{coefficients are weighted
+sums of the responses}), so under \Aref{3} its variance is $\sigma^2/\{(n-1)s_{x_j}^2\}$ by
+the prerequisites' proposition \emph{variance under a linear map}, whether or not its mean
+is correct; divide Unit 3's formula
+$\var(\hat\beta_j)=\sigma^2\VIF_j/\{(n-1)s_{x_j}^2\}$ by it.
+
+\textbf{(iii)} $1/(1-R_j^2)>10$ iff $1-R_j^2<0.1$; likewise for $5$.
+
+\textbf{(iv)} Replacing each $x_l$ by $a_lx_l+c_l$ with $a_l\neq0$ replaces $\bX_{(j)}$ by
+$\bX_{(j)}\bB$ for an invertible $\bB$, which leaves its column space and hat matrix
+unchanged, and replaces $\bx_j$ by $a_j\bx_j+c_j\bone$. Since $\bone\in\calC(\bX_{(j)})$,
+the new residuals are $a_j$ times the old and the new total sum of squares is $a_j^2$
+times the old, so $R_j^2=1-\SSE/\SST$ is unchanged.
+\end{proof}
+
+\begin{example}[Credit and liquidity; ISLR §3.3.3, FREES §5.5.2]\label{ex:vif}
+ISLR's three-variable \texttt{Credit} regression and FREES Table 5.7, with FREES's
+equation~(5.5) checked for each coefficient:
+<<vif>>=
+cm3 <- lm(Balance ~ Age + Rating + Limit, data = Credit)
+round(car::vif(cm3), 2)
+c(R2_all_three = summary(cm3)$r.squared, R2_Age_Limit = summary(cm1)$r.squared)
+cat(sprintf("cor(PRICE*SHARE/1000, VALUE) = %.7f, max gap = %.2f\n",
+    cor(liq$PRICE * liq$SHARE / 1000, liq$VALUE), max(abs(liq$PRICE * liq$SHARE / 1000 - liq$VALUE))))
+round(cbind(s_x = sapply(liq[c("PRICE", "SHARE", "VALUE")], sd), coef(summary(mv))[-1, 1:3],
+            VIF = car::vif(mv),
+            se_from_VIF = summary(mv)$sigma * sqrt(car::vif(mv)) /
+              (sapply(liq[c("PRICE", "SHARE", "VALUE")], sd) * sqrt(n - 1))), 4)
+c(R2 = summary(mv)$r.squared, s = summary(mv)$sigma,
+  VIF_PRICE_aux = 1 / (1 - summary(lm(PRICE ~ SHARE + VALUE, data = liq))$r.squared))
+@
+The \texttt{Credit} factors are $1.01$, $160.67$ and $160.59$: \texttt{Rating} and
+\texttt{Limit} each have $R_j^2>0.99$ on the others. For the liquidity regression,
+$R^2=61\%$, $s=6.72$, and the factors $1.5$, $3.8$ and $4.7$ are all below $10$, although
+\texttt{VALUE} is $\texttt{PRICE}\times\texttt{SHARE}/1000$ to within $0.46$ billion
+(correlation $0.999996$): the relation is multiplicative, not linear, and the variance
+inflation factor measures only linear dependence.
+\end{example}
+
+\begin{proposition}[Centring a variable and its square; FREES §5.5.2]\label{prop:center-square}
+Let $x_1,\ldots,x_n$ take at least three distinct values and let $c_i=x_i-\bar x$. The
+regressions of $y$ on $(x,x^2)$ and on $(c,c^2)$ have the same fitted values, and the
+sample correlation of $c$ and $c^2$ is $0$ iff $\sum_ic_i^3=0$, which holds when the
+$x_i$ are symmetric about $\bar x$.
+\end{proposition}
+
+\begin{proof}
+$c=x-\bar x\bone$ and $c^2=x^2-2\bar x\,x+\bar x^2\bone$ entrywise, so
+$[\bone\ c\ c^2]=[\bone\ x\ x^2]\bA$ with $\bA$ upper triangular with unit diagonal; three
+distinct values make $[\bone\ x\ x^2]$ of full rank (a non-zero quadratic has at most two
+roots), and Unit 3's proposition \emph{codings are reparametrisations} gives the same
+fitted values. If the $c_i^2$ were all equal to some $d$, every $c_i$ would be $\sqrt d$ or
+$-\sqrt d$ and the $x_i$ would take at most two values; so the $c_i^2$ are not all equal. With $\sum_ic_i=0$, the sample covariance of
+$c$ and $c^2$ is $\sum_ic_i(c_i^2-\overline{c^2})/(n-1)=\sum_ic_i^3/(n-1)$. Symmetry
+about $\bar x$ pairs each $c_i$ with $-c_i$ and makes $\sum_ic_i^3=0$.
+\end{proof}
+
+\begin{example}[Centring horsepower; FREES §5.5.2]\label{ex:center}
+<<center>>=
+hp <- Auto$horsepower; hc <- hp - mean(hp)
+q_raw <- lm(Auto$mpg ~ hp + I(hp^2)); q_cen <- lm(Auto$mpg ~ hc + I(hc^2))
+range(hp)
+round(c(cor_raw = cor(hp, hp^2), VIF_raw = 1 / (1 - cor(hp, hp^2)^2),
+  cor_centred = cor(hc, hc^2), VIF_centred = 1 / (1 - cor(hc, hc^2)^2)), 3)
+signif(c(sum_c_cubed_over_n = mean(hc^3), fitted_diff = max(abs(fitted(q_raw) - fitted(q_cen)))), 3)
+@
+Over the sampled range, $46$ to $230$, \texttt{horsepower} and its square are nearly
+linearly related, with correlation $0.983$ and variance inflation factor $29.3$ (FREES
+Figure 5.5). Centring lowers the correlation to $0.663$ and the factor to $1.78$ without
+changing the fit; not to $0$, because the distribution of \texttt{horsepower} is skewed
+to the right and $\sum_ic_i^3>0$.
+\end{example}
+
+\begin{remark}[Remedies; FREES §5.5.2, ISLR §3.3.3]
+Rescaling variables of very different magnitudes is a computational remedy only: by
+Proposition~\ref{prop:vif}\ref{vif:iv} it changes no variance inflation factor, and by
+Unit 3's proposition \emph{codings are reparametrisations} no fit. The statistical
+remedies are to drop one of the collinear variables or to combine them. In
+Example~\ref{ex:vif}, dropping \texttt{Rating} lowers $R^2$ from $0.7536$ to $0.7498$.
+<<combine>>=
+Credit$worth <- drop(scale(Credit$Limit) + scale(Credit$Rating)) / 2
+cm4 <- lm(Balance ~ Age + worth, data = Credit)
+c(R2 = summary(cm4)$r.squared, car::vif(cm4))
+@
+The average of the standardised \texttt{Limit} and \texttt{Rating}, a
+creditworthiness score, keeps $R^2=0.7529$ with both variance inflation factors at
+$1.01$.
+\end{remark}
+
+\subsection{Collinearity and leverage}\label{sec:4.4.3}
+
+\begin{proposition}[One point and collinearity; FREES §5.5.3]\label{prop:col-lev}
+Let $(u_1,v_1),\ldots,(u_m,v_m)$ be fixed, $m\geqslant2$, add the point $(ca,cb)$ with
+$a\neq0\neq b$, and let $r(c)$ be the sample correlation of the $m+1$ points.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{cl:i} $r(c)\to\sign(ab)$ as $c\to\infty$, so the variance inflation factor
+      $1/\{1-r(c)^2\}$ of either variable in a regression on both grows without bound.
+\item\label{cl:ii} If the $m$ points are not all equal and lie on one line, and
+      $(ca,cb)$ is off that line, then $|r(c)|<1$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\textbf{(i)} With $N=m+1$, $U=\sum_{i\leqslant m}u_i$, $V=\sum_{i\leqslant m}v_i$ and
+$P=\sum_{i\leqslant m}u_iv_i$, the centred cross product of the $N$ points is
+\[
+S_{uv}(c)=P+c^2ab-\frac{(U+ca)(V+cb)}{N}
+=c^2ab\Bigl(1-\frac1N\Bigr)-c\,\frac{aV+bU}{N}+P-\frac{UV}{N} ,
+\]
+and likewise $S_{uu}(c)=c^2a^2(1-1/N)+O(c)$, $S_{vv}(c)=c^2b^2(1-1/N)+O(c)$. Dividing
+numerator and denominator of $r(c)=S_{uv}/\sqrt{S_{uu}S_{vv}}$ by $c^2$,
+$r(c)\to ab/\sqrt{a^2b^2}=\sign(ab)$. For $k=2$, $R_1^2=R_2^2=r^2$, Unit 2's identity $R^2=r^2$ for one explanatory
+variable.
+
+\textbf{(ii)} By the prerequisites' Cauchy--Schwarz theorem, $|r|=1$ iff the centred
+vectors $(u_i-\bar u)$ and $(v_i-\bar v)$ are proportional, that is iff all $N$ points
+lie on one line. The only line through the $m$ points, which are not all equal, is the
+given one, and $(ca,cb)$ is off it.
+\end{proof}
+
+\begin{example}[Masking and inducing; FREES §5.5.3]\label{ex:col-lev}
+Thirty nearly collinear points plus one point off their line, and thirty uncorrelated
+points plus one point moved out along the diagonal (FREES Figures 5.6 and 5.7):
+<<col-lev>>=
+set.seed(11); x1 <- rnorm(30); x2 <- x1 + rnorm(30, sd = 0.15)
+vif2 <- function(a, b) 1 / (1 - cor(a, b)^2)
+c(r_30 = cor(x1, x2), VIF_30 = vif2(x1, x2),
+  r_31 = cor(c(x1, 2.5), c(x2, -2.5)), VIF_31 = vif2(c(x1, 2.5), c(x2, -2.5)))
+z1 <- rnorm(30); z2 <- rnorm(30)
+round(sapply(c(0, 5, 20, 100), function(cc)
+  c(c = cc, r = cor(c(z1, cc), c(z2, cc)), VIF = vif2(c(z1, cc), c(z2, cc)))), 3)
+@
+One point off the line of the first thirty cuts the variance inflation factor from $28.8$
+to $1.23$; moving one point out along the diagonal of the second cloud drives the
+correlation from $-0.18$ to $0.996$ at $c=100$, with variance inflation factor $138$, as
+Proposition~\ref{prop:col-lev}\ref{cl:i} predicts. The same happens in
+Example~\ref{ex:ibm}: without IBM the factors of \texttt{SHARE} and \texttt{VALUE} rise
+from $3.8$ and $4.7$ to $9.4$ and $10.3$, so the high leverage point was masking the
+collinearity, and through Unit 3's standard error formula it moved the standard errors
+too.
+\end{example}
+
+\subsection{Suppressor variables}\label{sec:4.4.4}
+
+\begin{proposition}[$R^2$ from correlations; FREES §5.5.4]\label{prop:R2-corr}
+For the regression of a non-constant $y$ on $x_1,\ldots,x_k$ with an intercept, let
+$\br_y$ be the vector of sample correlations $r(y,x_j)$ and $\bR_{xx}$ the correlation
+matrix of the $x$'s, invertible under \Aref{4}. Then $R^2=\br_y'\bR_{xx}^{-1}\br_y$, and
+for $k=2$
+\begin{equation}\label{eq:R2-corr}
+R^2=\frac{r_{y1}^2+r_{y2}^2-2r_{y1}r_{y2}r_{12}}{1-r_{12}^2} .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By~\eqref{eq:H-split},
+$\SSR=\|(\bH-\tfrac1n\bone\bone')\bY\|^2=\bY'\tilde\bX_c(\tilde\bX_c'\tilde\bX_c)^{-1}\tilde\bX_c'\bY$.
+With $\bD=\diag(s_{x_1},\ldots,s_{x_k})$ and $s_y$ the standard deviation of $y$,
+$\tilde\bX_c'\bY=(n-1)s_y\bD\br_y$ and $\tilde\bX_c'\tilde\bX_c=(n-1)\bD\bR_{xx}\bD$, so
+$\SSR=(n-1)s_y^2\br_y'\bR_{xx}^{-1}\br_y$; divide by $\SST=(n-1)s_y^2>0$. For $k=2$,
+$\bR_{xx}^{-1}=(1-r_{12}^2)^{-1}\begin{pmatrix}1&-r_{12}\\-r_{12}&1\end{pmatrix}$.
+\end{proof}
+
+\begin{example}[Suppressor variable; FREES §5.5.4]\label{ex:suppressor}
+FREES Table 5.8 reports $r_{12}=0.972$, $r_{y1}=0.188$ and $r_{y2}=-0.022$ for $50$
+hypothetical observations, and $R^2=80.7\%$ for the regression on both:
+<<suppressor>>=
+R2k2 <- function(r1, r2, r12) (r1^2 + r2^2 - 2 * r1 * r2 * r12) / (1 - r12^2)
+g <- expand.grid(r1 = c(0.1875, 0.1885), r2 = c(-0.0225, -0.0215), r12 = c(0.9715, 0.9725))
+c(printed = R2k2(0.188, -0.022, 0.972), min_rounding = min(with(g, R2k2(r1, r2, r12))),
+  max_rounding = max(with(g, R2k2(r1, r2, r12))), r_y2_zero = R2k2(0.188, 0, 0.972),
+  r_y1_sq = 0.188^2, one_minus_r12_sq = 1 - 0.972^2)
+set.seed(5); x1 <- rnorm(50); x2 <- 0.972 * x1 + sqrt(1 - 0.972^2) * rnorm(50)
+y <- 3 * (x1 - x2) + 0.3 * rnorm(50)
+round(cor(cbind(x1, x2, y)), 3)
+c(R2_x1 = summary(lm(y ~ x1))$r.squared, R2_x2 = summary(lm(y ~ x2))$r.squared,
+  R2_both = summary(lm(y ~ x1 + x2))$r.squared)
+@
+The printed correlations give $R^2=0.794$ by~\eqref{eq:R2-corr}, and correlations that
+round to them give anything from $0.773$ to $0.816$, which contains FREES's $0.807$: the
+denominator $1-r_{12}^2=0.055$ magnifies rounding. With $r_{y2}=0$ the formula is
+$r_{y1}^2/(1-r_{12}^2)$, so a variable uncorrelated with $y$ raises $R^2$ from $0.035$ to
+$0.640$; it \emph{suppresses} the part of $x_1$ unrelated to $y$. The simulated data
+reproduce the pattern: $R^2$ of $0.2\%$ and $1.0\%$ separately and $71\%$ together.
+\end{example}
+
+\subsection{Orthogonal variables}\label{sec:4.4.5}
+
+\begin{proposition}[Orthogonal explanatory variables; FREES §5.5.5]\label{prop:orthogonal}
+Let $\bX=[\bX_1\ \bX_2]$ satisfy \Aref{4} with $\bX_1'\bX_2=\bzero$ and
+$\bone\in\calC(\bX_1)$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{or:i} The coefficients of $\bX_1$ are the same with or without $\bX_2$.
+\item\label{or:ii} Adding $\bX_2$ reduces $\SSE$ by $\bY'\bX_2(\bX_2'\bX_2)^{-1}\bX_2'\bY$,
+      which does not involve $\bX_1$.
+\item\label{or:iii} If $\bX_2$ is one column $\bx_2$, its variance inflation factor is
+      $1$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+$\bX'\bX=\diag(\bX_1'\bX_1,\bX_2'\bX_2)$, so
+$\hat\bb=\bigl((\bX_1'\bX_1)^{-1}\bX_1'\bY,\ (\bX_2'\bX_2)^{-1}\bX_2'\bY\bigr)$, whose
+first block is the coefficient vector of the regression on $\bX_1$ alone: (i). Likewise
+$\bH=\bH_1+\bX_2(\bX_2'\bX_2)^{-1}\bX_2'$ with $\bH_1$ the hat matrix of $\bX_1$, and
+$\SSE_1-\SSE=\bY'(\bH-\bH_1)\bY$: (ii). For (iii), $\bone'\bx_2=0$, so $x_2$ has mean
+$0$ and its sample covariance with any column $\bx_l$ of $\bX_1$ is
+$\bx_2'\bx_l/(n-1)=0$; Proposition~\ref{prop:vif}\ref{vif:i} applies, and if
+$\bX_1=\bone$ the regression of $\bx_2$ on the intercept alone has $R^2=0$, as in Unit 3's
+corollary \emph{the standard error through the other explanatory variables}.
+\end{proof}
+
+\begin{example}[Orthogonal polynomials; FREES §5.5.5]\label{ex:orthopoly}
+\texttt{poly(horsepower, 3)} has orthonormal columns orthogonal to $\bone$, as the second
+printed line checks, so Proposition~\ref{prop:orthogonal} applies to the cubic column:
+<<orthopoly>>=
+p2 <- lm(mpg ~ poly(horsepower, 2), data = Auto); p3 <- lm(mpg ~ poly(horsepower, 3), data = Auto)
+rbind(degree_2 = coef(p2), degree_3 = coef(p3)[1:3])
+P3 <- poly(Auto$horsepower, 3)
+c(max_offset_from_identity = max(abs(crossprod(P3) - diag(3))), max_col_sum = max(abs(colSums(P3))))
+c(VIF = sapply(1:3, function(j) 1 / (1 - summary(lm(P3[, j] ~ P3[, -j]))$r.squared)),
+  SSE_drop = sum(residuals(p2)^2) - sum(residuals(p3)^2), cubic_coef_sq = coef(p3)[[4]]^2)
+@
+The reduction in $\SSE$ from the cubic column, $15.59$, is the square of its coefficient,
+as~\ref{or:ii} gives for a column of unit length. FREES's principal components, a
+transformation $\bX^*=\bX\bP$ to orthogonal columns, are of the same kind: by Unit 3's
+proposition \emph{codings are reparametrisations}, the fit is unchanged and
+$\bb^*=\bP^{-1}\bb$.
+\end{example}
+
+% \periodmark{End of period 2 of 3.}
 
 %==============================================================================
 \section{Heteroscedasticity}\label{sec:4.5}
 %==============================================================================
 
 \begin{reading}
-FREES §5.7.
+FREES §5.7 · ISLR §3.3.3 (non-constant variance of error terms). \ SRM learning outcomes
+2(d), 2(e).
 \end{reading}
 
-Assume \Aref{1}, \Aref{2} and \Aref{4}, but replace \Aref{3} by
-$\var(\be) = \bOmega = \diag(\sigma_1^2,\ldots,\sigma_n^2)$.
-
-\begin{theorem}[OLS under heteroscedasticity]\label{thm:hetero}
-The least squares estimator remains unbiased, but
-\begin{equation}\label{eq:sandwich}
-\var(\hat\bb) = (\bX'\bX)^{-1}
-  \Bigl(\sum_{i=1}^n \sigma_i^2\,\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1}
-\;\neq\; \sigma^2(\bX'\bX)^{-1} ,
-\end{equation}
-and $\hat\bb$ is no longer best linear unbiased.
-\end{theorem}
-
-\begin{proof}
-Unbiasedness used only \Aref{1}--\Aref{2}, so it survives. For the variance, apply
-$\var(\bA\bz)=\bA\var(\bz)\bA'$ to $\hat\bb-\bb = (\bX'\bX)^{-1}\bX'\be$:
-\[
-\var(\hat\bb) = (\bX'\bX)^{-1}\bX'\bOmega\bX(\bX'\bX)^{-1} ,
-\]
-and $\bX'\bOmega\bX = \sum_i \sigma_i^2\bx_i\bx_i'$. The Gauss--Markov proof used
-$\var(\be)=\sigma^2\bI$ at the step $\var(\tilde\bb)=\sigma^2\bC\bC'$, so its conclusion no
-longer follows; Theorem~\ref{thm:gls} exhibits an unbiased linear estimator with smaller
-variance.
-\end{proof}
-
-\begin{remark}
-The reported standard errors, built from $s^2(\bX'\bX)^{-1}$, estimate the wrong quantity.
-They may be too small or too large: which, depends on whether the large variances sit at
-high-leverage or low-leverage points.
-\end{remark}
-
-\begin{definition}[White's heteroscedasticity-consistent estimator]\label{def:hc}
-Replacing the unknown $\sigma_i^2$ in~\eqref{eq:sandwich} by the squared residuals,
-\begin{equation}\label{eq:hc}
-\widehat{\var}(\hat\bb) = (\bX'\bX)^{-1}
-  \Bigl(\sum_{i=1}^n c\,e_i^2\,\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1} ,
-\end{equation}
-with $c=1$ for HC0 and $c = n/(n-k-1)$ for the small-sample-corrected HC1.
+\begin{definition}[Heteroscedasticity; FREES §5.7]\label{def:hetero}
+The errors are \emph{heteroscedastic} when \Aref{3} is replaced by
+$\var(\be)=\bOmega=\diag(\sigma_1^2,\ldots,\sigma_n^2)$ with the $\sigma_i^2$ not all
+equal: the errors remain uncorrelated and their variances vary by observation.
+\Aref{3} itself is \emph{homoscedasticity}.
 \end{definition}
 
-\begin{remark}
-The coefficients are untouched: only the standard errors change. This is the cheapest
-response to heteroscedasticity of unknown form, and requires no model for $\sigma_i^2$.
-\end{remark}
-
-\begin{theorem}[Weighted least squares is best linear unbiased]\label{thm:gls}
-Define
+\begin{remark}[FREES §5.7]
+Proposition~\ref{prop:general-cov} with $\bSig=\bOmega$ gives the consequences: $\hat\bb$
+is still unbiased, its variance is FREES's (5.11),
 \[
-\bW = \bOmega^{-1} = \diag(1/\sigma_1^2,\ldots,1/\sigma_n^2)
+\var(\hat\bb)=(\bX'\bX)^{-1}\Bigl(\sum_{i=1}^n\sigma_i^2\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1} ,
 \]
-and
-\begin{equation}\label{eq:wls}
-\hat\bb_W = (\bX'\bW\bX)^{-1}\bX'\bW\bY ,
-\end{equation}
-the minimiser of $\sum_i w_i(y_i-\bx_i'\bb)^2$ with $w_i = 1/\sigma_i^2$. Then $\hat\bb_W$
-is unbiased with $\var(\hat\bb_W) = (\bX'\bW\bX)^{-1}$, and it is best linear unbiased.
-\end{theorem}
-
-\begin{proof}
-Put $\bW^{1/2} = \diag(1/\sigma_i)$ and transform to
-$\bY^\ast = \bW^{1/2}\bY$, $\bX^\ast = \bW^{1/2}\bX$, $\be^\ast = \bW^{1/2}\be$. Then
-\[
-\var(\be^\ast) = \bW^{1/2}\bOmega\bW^{1/2} = \bI_n ,
-\]
-so the starred model satisfies \Aref{1}--\Aref{4} with $\sigma^2=1$. Ordinary least
-squares on it is
-\[
-(\bX^{\ast\prime}\bX^\ast)^{-1}\bX^{\ast\prime}\bY^\ast
-= (\bX'\bW\bX)^{-1}\bX'\bW\bY = \hat\bb_W ,
-\]
-which by the Gauss--Markov theorem is best linear unbiased among estimators linear in
-$\bY^\ast$, and hence in $\bY$, the map $\bY\mapsto\bY^\ast$ being linear and
-invertible. Its variance is $1\cdot(\bX^{\ast\prime}\bX^\ast)^{-1} = (\bX'\bW\bX)^{-1}$.
-\end{proof}
-
-\begin{remark}
-Weighted least squares therefore \emph{is} ordinary least squares, on data rescaled so
-that every observation has unit error variance: an observation with large $\sigma_i^2$ is
-down-weighted because it carries less information. $\sigma_i^2$ is unknown in practice; it
-is usually modelled as a function of the predictors or of the
-fitted value, or sidestepped by transforming the response so that the variance is
-approximately constant.
+while the reported $s^2(\bX'\bX)^{-1}$ has expectation
+$\{\sum_i(1-h_{ii})\sigma_i^2/(n-k-1)\}(\bX'\bX)^{-1}$, since $\tr(\bM\bOmega)=
+\sum_i(1-h_{ii})\sigma_i^2$. The Gauss--Markov theorem of Unit 2 assumes \Aref{3} and no
+longer applies.
 \end{remark}
 
 \subsection{Detecting heteroscedasticity}\label{sec:4.5.1}
 
-Plot the residuals against the fitted values and look for a fan.
+\begin{example}[A funnel; FREES §5.7.1, ISLR §3.3.3]\label{ex:funnel}
+The quadratic regression of \texttt{mpg} on \texttt{horsepower} of
+Example~\ref{ex:auto-resid}, and the same regression for $\ln\texttt{mpg}$ (ISLR
+Figure 3.11):
+<<funnel, fig.height=2.4, fig.width=6.4>>=
+l2 <- lm(log(mpg) ~ horsepower + I(horsepower^2), data = Auto)
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.4, 0.6), mgp = c(1.9, 0.6, 0))
+for (m in list(a2, l2)) {
+  plot(fitted(m), residuals(m), xlab = "fitted", ylab = "residual", pch = 16, cex = 0.4,
+       main = if (identical(m, a2)) "mpg" else "log(mpg)", cex.main = 0.9)
+  abline(h = 0, lty = 2)
+}
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Residuals against fitted values for \texttt{mpg} and for $\ln\texttt{mpg}$ on
+\texttt{horsepower} and its square.}
+\end{figure}
+For \texttt{mpg} the residuals fan out as the fitted value grows, a funnel; for
+$\ln\texttt{mpg}$ their spread is nearly the same across the fitted range. Residuals are
+plotted against fitted values because the fitted value estimates the mean, with which the
+variance often grows.
+\end{example}
 
-\begin{definition}[Variance model and hypothesis]\label{def:bp-model}
-Let $\bY = \bX\bb+\be$ with $\varepsilon_i$ independent $N(0,\sigma_i^2)$ and
-\begin{equation}\label{eq:bp-model}
-\sigma_i^2 = h(\alpha_0 + \bz_i'\bgamma) = h(\bw_i'\balpha),
-\qquad \bw_i = \binom{1}{\bz_i},\ \ \balpha = \binom{\alpha_0}{\bgamma},
-\end{equation}
-where $\bz_i$ is a known $p$-vector, $h>0$ is differentiable and $h'(\alpha_0)\neq0$. The
-null hypothesis is $H_0\colon\bgamma=\bzero$, under which $\sigma_i^2 = h(\alpha_0)$ does
-not vary with $i$. Write $\bZ$ for the $n\times p$ matrix with rows $\bz_i'$,
-$\bW = [\bone\ \bZ]$, and $\bM_0 = \bI_n - n^{-1}\bone\bone'$.
+\begin{definition}[The Breusch--Pagan test; FREES §5.7.1]\label{def:bp}
+For known vectors $\bz_i\in\Real^p$, the alternative is
+$H_a\colon\var(y_i)=\sigma^2+\bz_i'\bgamma$ and the null hypothesis
+$H_0\colon\bgamma=\bzero$, which is homoscedasticity. FREES's procedure: (i) fit the
+regression and compute $e_i$; (ii) compute $e_i^{*2}=e_i^2/s^2$; (iii) regress $e_i^{*2}$
+on $\bz_i$ with an intercept; (iv) $\text{LM}=\tfrac12\,\SSR_z$, half the regression sum of
+squares of step (iii); (v) reject $H_0$ when $\text{LM}$ exceeds the $1-\alpha$ quantile of
+$\chi^2_p$. The same procedure with $\tilde\sigma^2=\SSE/n$ in place of $s^2$ in step
+(ii) is also used.
 \end{definition}
 
-\begin{lemma}[Score for the variance parameters]\label{lem:bp-score}
-With $u_i = y_i - \bx_i'\bb$, the log-likelihood
-\begin{equation}\label{eq:bp-loglik}
-\ell(\bb,\balpha) = -\frac n2\ln(2\pi) - \frac12\sum_{i=1}^n \ln\sigma_i^2
-  - \frac12\sum_{i=1}^n \frac{u_i^2}{\sigma_i^2}
-\end{equation}
-has
-\begin{equation}\label{eq:bp-U}
-\frac{\partial\ell}{\partial\balpha}
-= \frac12\sum_{i=1}^n \frac{h'(\bw_i'\balpha)}{\sigma_i^2}
-  \left(\frac{u_i^2}{\sigma_i^2}-1\right)\bw_i .
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-Since $\sigma_i^2 = h(\bw_i'\balpha)$, the chain rule gives
-$\partial\sigma_i^2/\partial\balpha = h'(\bw_i'\balpha)\,\bw_i$, and therefore
-$\partial(\sigma_i^{-2})/\partial\balpha = -\sigma_i^{-4}h'(\bw_i'\balpha)\bw_i$.
-Differentiating the two sums in~\eqref{eq:bp-loglik} term by term,
+\begin{lemma}[Residuals in place of errors]\label{lem:resid-errors}
+For every $n$ let $\bY=\bX\bb+\be$ with $\bX$ of rank $k+1$ and rows $\bx_1,\ldots,\bx_n$,
+the first $n$ terms of a fixed sequence with $\|\bx_i\|\leqslant B$, and suppose
+$n^{-1}\bX'\bX\to\bQ_X$ positive definite. Let $\varepsilon_1,\varepsilon_2,\ldots$ be
+uncorrelated with mean $0$ and $\var(\varepsilon_i)=\sigma_i^2\leqslant C$. If
+$\ba_{n1},\ldots,\ba_{nn}$ are non-random vectors in $\Real^q$ with
+$\|\ba_{ni}\|\leqslant A$, then
 \[
-\frac{\partial}{\partial\balpha}\Bigl(-\tfrac12\ln\sigma_i^2\Bigr)
-= -\frac{h'(\bw_i'\balpha)}{2\sigma_i^2}\bw_i ,
-\qquad
-\frac{\partial}{\partial\balpha}\Bigl(-\tfrac12\frac{u_i^2}{\sigma_i^2}\Bigr)
-= \frac{u_i^2\,h'(\bw_i'\balpha)}{2\sigma_i^4}\bw_i ,
+\frac1{\sqrt n}\sum_{i=1}^n\ba_{ni}\,(e_i^2-\varepsilon_i^2)\convp\bzero .
 \]
-and adding them gives the summand of~\eqref{eq:bp-U}.
-\end{proof}
-
-\begin{lemma}[Fourth moment]\label{lem:fourth}
-If $Z\sim N(0,1)$ then $\expc[Z^4]=3$; hence $\var(Z^2)=2$, and for
-$\varepsilon\sim N(0,\sigma^2)$, $\var(\varepsilon^2/\sigma^2)=2$.
 \end{lemma}
 
 \begin{proof}
-The standard normal density satisfies $\varphi'(z) = -z\varphi(z)$, so integrating by parts,
+Let $\bdelta=\hat\bb-\bb=(\bX'\bX)^{-1}\bX'\be$, so $e_i=\varepsilon_i-\bx_i'\bdelta$ and
+$e_i^2-\varepsilon_i^2=(\bx_i'\bdelta)^2-2\varepsilon_i\bx_i'\bdelta$. The sum is
+$\bT_1-2\bT_2$ with $\bT_1=n^{-1/2}\sum_i\ba_{ni}(\bx_i'\bdelta)^2$ and
+$\bT_2=n^{-1/2}\sum_i\ba_{ni}\varepsilon_i\bx_i'\bdelta$.
+
+\textbf{Step 1: $\bT_1$.} $\|\bT_1\|\leqslant An^{-1/2}\sum_i(\bx_i'\bdelta)^2
+=An^{-1/2}\|\bX\bdelta\|^2=An^{-1/2}\be'\bH\be$, since $\bX\bdelta=\bH\be$. By the
+prerequisites' lemma \emph{expectation of a quadratic form},
+$\expc[\be'\bH\be]=\sum_ih_{ii}\sigma_i^2\leqslant C\tr(\bH)=C(k+1)$. So
+$\expc\|\bT_1\|\leqslant AC(k+1)/\sqrt n\to0$, and $\bT_1\convp\bzero$ by Markov's
+inequality.
+
+\textbf{Step 2: $\bT_2$.} $\bT_2=\bG_n\bdelta$ with
+$\bG_n=n^{-1/2}\sum_i\varepsilon_i\ba_{ni}\bx_i'$, a $q\times(k+1)$ random matrix. By
+Cauchy--Schwarz on each row, $\|\bG_n\bdelta\|\leqslant\|\bG_n\|_F\|\bdelta\|$, where
+$\|\cdot\|_F$ is the root sum of squares of the entries, and $2ab\leqslant a^2+b^2$ gives
+$\|\bG_n\|_F\|\bdelta\|\leqslant\tfrac12(n^{-1/2}\|\bG_n\|_F^2+n^{1/2}\|\bdelta\|^2)$.
+The errors are uncorrelated with mean $0$, so the cross terms vanish and
+$\expc\|\bG_n\|_F^2=n^{-1}\sum_i\sigma_i^2\|\ba_{ni}\|^2\|\bx_i\|^2\leqslant CA^2B^2$. By
+the quadratic-form lemma again and the cyclic property of the trace,
 \[
-\expc[Z^4] = \int z^3\cdot z\varphi(z)\,\dd z = -\int z^3\varphi'(z)\,\dd z
-= \Bigl[-z^3\varphi(z)\Bigr]_{-\infty}^{\infty} + 3\int z^2\varphi(z)\,\dd z = 0 + 3 ,
+\expc\|\bdelta\|^2=\sum_i\sigma_i^2\,\bx_i'(\bX'\bX)^{-2}\bx_i
+\leqslant C\tr\bigl(\bX(\bX'\bX)^{-2}\bX'\bigr)=C\tr\bigl((\bX'\bX)^{-1}\bigr)
+=\frac Cn\tr\bigl((n^{-1}\bX'\bX)^{-1}\bigr) .
 \]
-the boundary term vanishing because $\varphi$ decays faster than any polynomial grows.
-Then $\var(Z^2) = \expc[Z^4]-(\expc[Z^2])^2 = 3-1 = 2$.
+By the prerequisites' lemma \emph{inverses of convergent positive definite matrices}, the
+entries of $(n^{-1}\bX'\bX)^{-1}$ are bounded for all large $n$, so
+$\expc\|\bT_2\|\leqslant\tfrac12n^{-1/2}\{CA^2B^2+C\tr((n^{-1}\bX'\bX)^{-1})\}\to0$.
+Markov's inequality gives $\bT_2\convp\bzero$. Finally
+$\prb\{\|\bT_1-2\bT_2\|>\eta\}\leqslant\prb\{\|\bT_1\|>\eta/2\}+\prb\{2\|\bT_2\|>\eta/2\}\to0$.
 \end{proof}
 
-\begin{lemma}[Covariance of the score]\label{lem:bp-info}
-$\dfrac{\partial\ell}{\partial\balpha}$ has covariance matrix
-\begin{equation}\label{eq:bp-I}
-\bI_{\balpha} = \frac12\sum_{i=1}^n \frac{h'(\bw_i'\balpha)^2}{\sigma_i^4}\,\bw_i\bw_i' ,
-\end{equation}
-and it is uncorrelated with $\partial\ell/\partial\bb$.
-\end{lemma}
+\begin{theorem}[Null distribution of the Breusch--Pagan statistic; FREES §5.7.1]\label{thm:bp}
+Let $\varepsilon_1,\varepsilon_2,\ldots$ be independent and identically distributed with
+mean $0$, variance $\sigma^2>0$, $\expc[\varepsilon_1^4]<\infty$ and
+$\kappa=\var(\varepsilon_1^2)/\sigma^4>0$. For every $n$ let $\bY=\bX\bb+\be$, where
+$\bX$ has rank $k+1$ and rows $\bx_i$, and $\bZ$ has rows
+$\bz_i\in\Real^p$, both the first $n$ terms of fixed sequences with
+$\|\bx_i\|,\|\bz_i\|\leqslant B$; let $\bZ_1=[\bone\ \bZ]$ have rank $p+1$, and let
+$n^{-1}\bX'\bX\to\bQ_X$ and $n^{-1}\bZ_1'\bZ_1\to\bQ_1$, both positive definite. Then the
+statistic $\text{LM}$ of Definition~\ref{def:bp}, with $s^2$ or with $\tilde\sigma^2$,
+satisfies $(2/\kappa)\,\text{LM}\convd\chi^2_p$. Under \Aref{5}, $\kappa=2$ and
+$\text{LM}\convd\chi^2_p$.
+\end{theorem}
 
 \begin{proof}
-The $i$-th summand of~\eqref{eq:bp-U} is $(h'_i/2\sigma_i^2)(u_i^2/\sigma_i^2-1)\bw_i$
-with $h'_i = h'(\bw_i'\balpha)$. By Lemma~\ref{lem:fourth},
-$\var(u_i^2/\sigma_i^2-1) = 2$, so that summand has covariance
-$(h_i'^2/4\sigma_i^4)\cdot2\cdot\bw_i\bw_i'$. The summands are independent across $i$, so
-the covariances add, giving~\eqref{eq:bp-I}.
+Write $g_i=\varepsilon_i^2/\sigma^2-1$, $\bar\bz_n=n^{-1}\bZ'\bone$ and
+$\tilde\bZ=\bZ-\bone\bar\bz_n'$, whose columns sum to zero.
 
-For the second claim, $\partial\ell/\partial\bb = \sum_i \bx_i u_i/\sigma_i^2$ is linear in
-the $u_i$ while~\eqref{eq:bp-U} is a function of the $u_i^2$; for a symmetric distribution
-$\expc[u_i^3]=0$, so
-$\cov\bigl(u_i,\ u_i^2/\sigma_i^2-1\bigr) = \expc[u_i^3]/\sigma_i^2 = 0$.
-\end{proof}
-
-\begin{lemma}[Restricted maximum likelihood]\label{lem:bp-restricted}
-Under $H_0$ the maximisers of~\eqref{eq:bp-loglik} are $\tilde\bb = \hat\bb$, the least
-squares estimator, and $\tilde\sigma^2 = \SSE/n$. Consequently, writing
-\begin{equation}\label{eq:bp-g}
-g_i = \frac{e_i^2}{\tilde\sigma^2}-1 ,
-\end{equation}
-one has $\bone'\bg = 0$ and hence $\bZ'\bg = \bZ'\bM_0\bg$.
-\end{lemma}
-
-\begin{proof}
-Under $H_0$ all $\sigma_i^2$ equal a common $\sigma^2$, so~\eqref{eq:bp-loglik} is the
-homoscedastic normal log-likelihood, whose maximisers are $\hat\bb$ and $\SSE/n$ by the
-maximum likelihood theorem of Unit 2. Then
+\textbf{Step 1: a central limit theorem.} The $g_i$ are independent and identically
+distributed with mean $0$ and variance $\kappa>0$, and
+$\sup_i\expc[g_i^2;|g_i|>a]=\expc[g_1^2;|g_1|>a]\to0$ as $a\to\infty$ by dominated
+convergence. The vectors $\bw_i=(1,\bz_i')'$ satisfy $n^{-1}\sum_i\bw_i\bw_i'=
+n^{-1}\bZ_1'\bZ_1\to\bQ_1$ and $n^{-1}\max_i\|\bw_i\|^2\leqslant(1+B^2)/n\to0$. The
+prerequisites' corollary \emph{weighted sums} gives
+$n^{-1/2}\bZ_1'\bg\convd N(\bzero,\kappa\bQ_1)$. Now $\tilde\bZ=\bZ_1\bL_n'$ with
+$\bL_n=[-\bar\bz_n\ \ \bI_p]$; $\bar\bz_n$ is part of the first column of $n^{-1}\bZ_1'\bZ_1$,
+so it converges to some $\bmu$, and $\bL_n\to\bL=[-\bmu\ \ \bI_p]$. By the prerequisites'
+Slutsky theorem, part~(ii), with $\Phi(\bv,\bL)=\bL\bv$, and their theorem \emph{closure
+under affine maps},
 \[
-\bone'\bg = \sum_{i=1}^n\Bigl(\frac{e_i^2}{\tilde\sigma^2}-1\Bigr)
-= \frac{\SSE}{\SSE/n}-n = 0 ,
+n^{-1/2}\tilde\bZ'\bg=\bL_n\,n^{-1/2}\bZ_1'\bg\convd N(\bzero,\kappa\bQ),\qquad
+\bQ=\bL\bQ_1\bL'=\lim_n n^{-1}\tilde\bZ'\tilde\bZ ,
 \]
-and $\bZ'\bM_0\bg = \bZ'\bg - n^{-1}(\bZ'\bone)(\bone'\bg) = \bZ'\bg$.
+and $\bQ$ is positive definite, since $\bL'\bv\neq\bzero$ for $\bv\neq\bzero$.
+
+\textbf{Step 2: residuals for errors.} With $\hat g_i=e_i^2/\sigma^2-1$, Lemma~\ref{lem:resid-errors}
+with $\ba_{ni}=(\bz_i-\bar\bz_n)/\sigma^2$, of norm at most $2B/\sigma^2$, gives
+$n^{-1/2}\tilde\bZ'(\hat\bg-\bg)\convp\bzero$, so
+$n^{-1/2}\tilde\bZ'\hat\bg\convd N(\bzero,\kappa\bQ)$ by Slutsky's theorem.
+
+\textbf{Step 3: the variance estimate.} $\tilde\sigma^2=n^{-1}\be'\bM\be=
+n^{-1}\be'\be-n^{-1}\be'\bH\be$. By Chebyshev's inequality with
+$\var(n^{-1}\sum_i\varepsilon_i^2)=\kappa\sigma^4/n$, $n^{-1}\be'\be\convp\sigma^2$; and
+$n^{-1}\be'\bH\be\geqslant0$ has mean $\sigma^2(k+1)/n$, so it tends to $0$ in probability
+by Markov's inequality. Hence $\tilde\sigma^2\convp\sigma^2$, and
+$s^2=\tilde\sigma^2\,n/(n-k-1)\convp\sigma^2$. Let $\hat\sigma^2$ be either and
+$u_i=e_i^2/\hat\sigma^2$. Since $\tilde\bZ'\bone=\bzero$,
+$\tilde\bZ'(\bu-\bone)=\tilde\bZ'\bu=(\sigma^2/\hat\sigma^2)\,\tilde\bZ'\hat\bg$, and
+$\sigma^2/\hat\sigma^2\convp1$ by the prerequisites' continuous mapping theorem.
+By Slutsky's theorem, $\bV_n=n^{-1/2}\tilde\bZ'\bu\convd N(\bzero,\kappa\bQ)$.
+
+\textbf{Step 4: the statistic.} By~\eqref{eq:H-split} for the design $\bZ_1$, the
+regression sum of squares of step (iii) is
+$\|(\bH_{\bZ_1}-\tfrac1n\bone\bone')\bu\|^2=\bu'\tilde\bZ(\tilde\bZ'\tilde\bZ)^{-1}\tilde\bZ'\bu$,
+so
+\[
+\frac2\kappa \text{LM}=\bV_n'\bigl(\kappa\,n^{-1}\tilde\bZ'\tilde\bZ\bigr)^{-1}\bV_n .
+\]
+$\kappa n^{-1}\tilde\bZ'\tilde\bZ$ is symmetric and tends to $\kappa\bQ$, positive definite,
+and the prerequisites' theorem \emph{quadratic forms of asymptotically normal vectors} gives
+$(2/\kappa)\text{LM}\convd\chi^2_p$. Under \Aref{5}, $\varepsilon_1^2/\sigma^2\sim\chi^2_1$, whose
+variance is $2$ by the prerequisites' moments of $\chi^2$.
 \end{proof}
 
-\begin{remark}
-The identity $\bone'\bg=0$ is the reason the scaling in~\eqref{eq:bp-g} must be
-$\tilde\sigma^2 = \SSE/n$ and not $s^2 = \SSE/(n-k-1)$: only the maximum likelihood
-estimator makes the score component along the intercept column of $\bW$ vanish, which the next theorem needs.
-\end{remark}
+\begin{proposition}[Versions of the statistic; FREES §5.7.1]\label{prop:bp-versions}
+Under \Aref{4}, let $\bZ_1=[\bone\ \bZ]$ have rank $p+1$ and $\SSE>0$, let $\text{LM}_s$ and $\text{LM}_{\tilde\sigma}$ be
+the statistic of Definition~\ref{def:bp} with $s^2$ and with $\tilde\sigma^2$, let
+$\hat\tau^2=n^{-1}\sum_i(e_i^2-\tilde\sigma^2)^2>0$, and let $R_z^2$ be the coefficient
+of determination of the regression of $e_i^2$ on $\bz_i$ with an intercept. Then
+\[
+\text{LM}_s=\Bigl(\frac{n-k-1}{n}\Bigr)^2\text{LM}_{\tilde\sigma},\qquad
+\text{LM}_{\tilde\sigma}=nR_z^2\cdot\frac{\hat\tau^2}{2\tilde\sigma^4} .
+\]
+\end{proposition}
 
-\begin{definition}[Score statistic]\label{def:bp-LM}
-Evaluate the score at the restricted maximiser. Its $\bb$-component and its
-$\alpha_0$-component are then zero, the first because $\tilde\bb$ maximises over $\bb$,
-the second by Lemma~\ref{lem:bp-restricted}, so only $\bU_{\bgamma}$ survives, and the
-\emph{score} (Lagrange multiplier) statistic is
-\begin{equation}\label{eq:bp-LMdef}
-LM = \bU_{\bgamma}'\,\bigl[\bigl(\bI_{\balpha}^{-1}\bigr)_{\bgamma\bgamma}\bigr]^{-1}\,
-     \bU_{\bgamma} ,
-\end{equation}
-the middle factor being the inverse of the $\bgamma\bgamma$ block of $\bI_{\balpha}^{-1}$,
-which by Lemma~\ref{lem:bp-info} is the relevant covariance once the nuisance parameters
-$\bb$ and $\alpha_0$ are accounted for.
+\begin{proof}
+The regression sum of squares is a quadratic form in the response, so multiplying the
+response by $c$ multiplies it by $c^2$; and $e_i^2/s^2=\{(n-k-1)/n\}\,e_i^2/\tilde\sigma^2$.
+For the second identity let $v_i=e_i^2$, with regression and total sums of squares
+$\SSR_v$ and $\SST_v$. Then $\text{LM}_{\tilde\sigma}=\SSR_v/(2\tilde\sigma^4)$; $\bar v=\SSE/n=
+\tilde\sigma^2$, so $\SST_v=n\hat\tau^2$; and $R_z^2=\SSR_v/\SST_v$. Hence
+$nR_z^2\hat\tau^2/(2\tilde\sigma^4)=\SSR_v/(2\tilde\sigma^4)$.
+\end{proof}
+
+\begin{corollary}[Koenker's studentised statistic (beyond the syllabus)]\label{cor:koenker}
+Under the hypotheses of Theorem~\ref{thm:bp} with $\expc[\varepsilon_1^8]<\infty$,
+$nR_z^2\convd\chi^2_p$, whatever the value of $\kappa$.
+\end{corollary}
+
+\begin{proof}
+By Proposition~\ref{prop:bp-versions},
+$nR_z^2=(2/\kappa)\text{LM}_{\tilde\sigma}\cdot\kappa\tilde\sigma^4/\hat\tau^2$, and the first
+factor tends in distribution to $\chi^2_p$ by Theorem~\ref{thm:bp}. By Slutsky's theorem
+it suffices that $\hat\tau^2/\tilde\sigma^4\convp\kappa$. Since
+$n^{-1}\sum_ie_i^2=\tilde\sigma^2$, $\hat\tau^2=n^{-1}\sum_ie_i^4-\tilde\sigma^4$, and
+$\tilde\sigma^4\convp\sigma^4$ (Step 3 of Theorem~\ref{thm:bp} and continuous mapping); it
+remains that $n^{-1}\sum_ie_i^4\convp\mu_4=\expc[\varepsilon_1^4]=(\kappa+1)\sigma^4$.
+First, $n^{-1}\sum_i\varepsilon_i^4\convp\mu_4$ by Chebyshev's inequality, since
+$\var(\varepsilon_1^4)\leqslant\expc[\varepsilon_1^8]<\infty$. Next, with
+$d_i=\bx_i'\bdelta$ as in Lemma~\ref{lem:resid-errors}, $|d_i|\leqslant B\|\bdelta\|=:\xi_n$
+and $e_i^4-\varepsilon_i^4=-4\varepsilon_i^3d_i+6\varepsilon_i^2d_i^2-4\varepsilon_id_i^3+d_i^4$,
+so
+\[
+\Bigl|\frac1n\sum_i(e_i^4-\varepsilon_i^4)\Bigr|
+\leqslant4\xi_nm_3+6\xi_n^2m_2+4\xi_n^3m_1+\xi_n^4,\qquad
+m_r=\frac1n\sum_i|\varepsilon_i|^r .
+\]
+$\expc[m_r]=\expc|\varepsilon_1|^r\leqslant1+\mu_4$, and
+$\expc[\xi_n^2]\leqslant B^2\sigma^2\tr((\bX'\bX)^{-1})=B^2\sigma^2n^{-1}\tr((n^{-1}\bX'\bX)^{-1})\to0$,
+the entries of $(n^{-1}\bX'\bX)^{-1}$ being bounded, so $\xi_n\convp0$. A
+product $U_nV_n$ with $U_n\convp0$ and $\expc|V_n|\leqslant K$ tends to $0$ in
+probability: $\prb\{|U_nV_n|>\eta\}\leqslant K/M+\prb\{|U_n|>\eta/M\}$ for every $M>0$.
+Each term of the bound therefore tends to $0$ in probability, and
+$\hat\tau^2/\tilde\sigma^4\convp(\mu_4-\sigma^4)/\sigma^4=\kappa$.
+\end{proof}
+
+\begin{example}[Testing the funnel; FREES §5.7.1]\label{ex:bp-auto}
+With $\bz_i$ the two explanatory variables, FREES's five steps with $s^2$ and with
+$\tilde\sigma^2$, against \texttt{bptest}, for \texttt{mpg} and for $\ln\texttt{mpg}$:
+<<bp-auto>>=
+library(lmtest)
+bp_versions <- function(m) {
+  e <- residuals(m); nn <- length(e); kk <- length(coef(m)) - 1
+  Z <- model.matrix(m)[, -1, drop = FALSE]; s2t <- sum(e^2) / nn; s2 <- sum(e^2) / (nn - kk - 1)
+  ssr <- function(u) sum((fitted(lm(u ~ Z)) - mean(u))^2)
+  c(LM_s = ssr(e^2 / s2) / 2, LM_tilde = ssr(e^2 / s2t) / 2,
+    bptest_studentize_FALSE = unname(bptest(m, studentize = FALSE)$statistic),
+    nR2 = nn * summary(lm(e^2 ~ Z))$r.squared, bptest_default = unname(bptest(m)$statistic),
+    tau2_over_2sigma4 = mean((e^2 - s2t)^2) / (2 * s2t^2), factor_s = ((nn - kk - 1) / nn)^2,
+    p_LM_tilde = pchisq(ssr(e^2 / s2t) / 2, ncol(Z), lower.tail = FALSE),
+    p_nR2 = pchisq(nn * summary(lm(e^2 ~ Z))$r.squared, ncol(Z), lower.tail = FALSE))
+}
+round(rbind(mpg = bp_versions(a2), log_mpg = bp_versions(l2)), 4)
+@
+For \texttt{mpg}, $\text{LM}_{\tilde\sigma}=56.95$, which \texttt{bptest(\ldots, studentize =
+FALSE)} reproduces, and $\text{LM}_s=56.09$ is smaller by the factor $0.985$ of
+Proposition~\ref{prop:bp-versions}; either rejects homoscedasticity at any usual level
+against $\chi^2_2$. \texttt{bptest}'s default is $nR_z^2=34.53$, the ratio
+$\hat\tau^2/(2\tilde\sigma^4)=1.65$ being the measured departure of the fourth moment of
+the residuals from the normal value. For $\ln\texttt{mpg}$ the statistic falls to
+$7.47$ ($p=0.024$) and $nR_z^2$ to $5.20$ ($p=0.074$).
+\end{example}
+
+\begin{example}[The null distribution; FREES §5.7.1]\label{ex:bp-sim}
+Theorem~\ref{thm:bp} says that $\text{LM}$ tends to $(\kappa/2)\chi^2_p$, so its test has
+asymptotic level $\prb\{\chi^2_p>(2/\kappa)\chi^2_{p,0.95}\}$, which is $0.05$ only when
+$\kappa=2$. Simulated rejection rates at the nominal $5\%$ with $n=200$, $p=1$, and errors
+that are normal ($\kappa=2$), centred exponential ($\kappa=8$) and uniform ($\kappa=0.8$):
+<<bp-sim>>=
+set.seed(2); nb <- 200; xb <- runif(nb); Xb <- cbind(1, xb)
+Mb <- diag(nb) - Xb %*% solve(crossprod(Xb)) %*% t(Xb); zc <- xb - mean(xb)
+gen <- list(normal = function() rnorm(nb), exponential = function() rexp(nb) - 1,
+            uniform = function() runif(nb, -sqrt(3), sqrt(3)))
+kap <- c(normal = 2, exponential = 8, uniform = 0.8)
+round(t(sapply(names(gen), function(g) {
+  st <- replicate(2000, {
+    e <- drop(Mb %*% gen[[g]]()); u <- e^2 / mean(e^2)
+    c(LM = sum(zc * u)^2 / sum(zc^2) / 2,
+      nR2 = nb * sum(zc * e^2)^2 / sum(zc^2) / sum((e^2 - mean(e^2))^2))
+  })
+  c(kappa = kap[[g]], LM_reject = mean(st[1, ] > qchisq(0.95, 1)),
+    limit = pchisq(qchisq(0.95, 1) * 2 / kap[[g]], 1, lower.tail = FALSE),
+    nR2_reject = mean(st[2, ] > qchisq(0.95, 1)))
+})), 3)
+@
+The statistic $\text{LM}$ rejects a true null $4.6\%$ of the time with normal errors, $29\%$
+with exponential errors (limit $33\%$) and $0.4\%$ with uniform errors (limit $0.2\%$);
+Koenker's $nR_z^2$ stays near $5\%$ in all three.
+\end{example}
+
+\subsection{Heteroscedasticity-consistent standard errors}\label{sec:4.5.2}
+
+\begin{definition}[Robust standard errors; FREES §5.7.2]\label{def:hc}
+With weights $c_i>0$, let
+\[
+\hat\bV_c=(\bX'\bX)^{-1}\Bigl(\sum_{i=1}^nc_i\,e_i^2\bx_i\bx_i'\Bigr)(\bX'\bX)^{-1},
+\qquad \SE_r(\hat\beta_j)=\sqrt{[\hat\bV_c]_{jj}} .
+\]
+FREES's \emph{empirical} or \emph{robust} estimator is HC0, $c_i=1$; HC1 takes
+$c_i=n/(n-k-1)$, HC2 $c_i=1/(1-h_{ii})$ and HC3 $c_i=1/(1-h_{ii})^2$, the last two
+built from the standardised and the deleted residuals ($h_{ii}<1$).
 \end{definition}
 
-\begin{theorem}[The Breusch--Pagan statistic]\label{thm:bp}
-Under $H_0$, the statistic~\eqref{eq:bp-LMdef} equals
-\begin{equation}\label{eq:bp-LM}
-\boxed{\;LM = \tfrac12\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg) = \tfrac12\,\SSR_z \;}
-\end{equation}
-where $\SSR_z$ is the regression sum of squares from regressing $\bg$ (equivalently
-$e_i^2/\tilde\sigma^2$, or $e_i^2$ up to the scaling below) on $\bZ$ with an intercept.
-In particular $LM$ does not depend on $h$.
+\begin{proposition}[Expected squared residuals; FREES §5.7.2]\label{prop:hc-bias}
+Under \Aref{1}, \Aref{2} and \Aref{4} with uncorrelated errors, $\var(\varepsilon_i)=
+\sigma_i^2$,
+\[
+\expc[e_i^2]=(1-2h_{ii})\sigma_i^2+\sum_{j=1}^nh_{ij}^2\sigma_j^2 .
+\]
+Under homoscedasticity $\expc[e_i^2]=(1-h_{ii})\sigma^2$, so $\expc[e_i^2/(1-h_{ii})]=
+\sigma^2$: the middle matrix of HC2 is then unbiased for
+$\sum_i\sigma_i^2\bx_i\bx_i'$, that of HC0 is biased downward, and that of HC3 upward.
+\end{proposition}
+
+\begin{proof}
+$\mathbf e=\bM\be$, so $e_i=\sum_jm_{ij}\varepsilon_j$ with $m_{ii}=1-h_{ii}$ and
+$m_{ij}=-h_{ij}$, and with mean-zero uncorrelated errors
+$\expc[e_i^2]=\sum_jm_{ij}^2\sigma_j^2=(1-h_{ii})^2\sigma_i^2+\sum_{j\neq i}h_{ij}^2\sigma_j^2$.
+Expanding $(1-h_{ii})^2=1-2h_{ii}+h_{ii}^2$ and moving $h_{ii}^2\sigma_i^2$ into the sum
+gives the formula. With $\sigma_j^2=\sigma^2$, $\sum_jh_{ij}^2=h_{ii}$ (from $\bH=\bH^2$,
+Unit 2's theorem \emph{properties of leverage}) gives $\sigma^2(1-h_{ii})$. Then
+$\expc[e_i^2]=(1-h_{ii})\sigma^2\leqslant\sigma^2\leqslant\sigma^2/(1-h_{ii})=
+\expc[e_i^2/(1-h_{ii})^2]$, and each middle matrix is a sum of the corresponding
+multiples of $\bx_i\bx_i'$.
+\end{proof}
+
+\begin{theorem}[Consistency of the robust standard errors; FREES §5.7.2]\label{thm:hc}
+For every $n$ let $\bY=\bX\bb+\be$ with $\bX$ of rank $k+1$ and rows $\bx_i$ from a fixed
+sequence, $\|\bx_i\|\leqslant B$; let the errors be independent with mean $0$,
+$\var(\varepsilon_i)=\sigma_i^2$ and $\sup_i\expc[\varepsilon_i^4]\leqslant C$; and let
+$n^{-1}\bX'\bX\to\bQ_X$ and $n^{-1}\sum_i\sigma_i^2\bx_i\bx_i'\to\bF$, both positive
+definite. Then
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{hc:i} $n^{-1}\sum_ie_i^2\bx_i\bx_i'-n^{-1}\sum_i\sigma_i^2\bx_i\bx_i'\convp\bzero$;
+\item\label{hc:ii} for every $\bc\neq\bzero$,
+      $(\bc'\hat\bb-\bc'\bb)/\sqrt{\bc'\hat\bV_c\bc}\convd N(0,1)$ for HC0;
+\item\label{hc:iii} \ref{hc:ii} holds for HC1, HC2 and HC3.
+\end{enumerate}
 \end{theorem}
 
 \begin{proof}
-\textbf{Step 1: the score.} Under $H_0$ the variances are all $\tilde\sigma^2$ and
-$h'(\bw_i'\tilde\balpha) = h'(\tilde\alpha_0) =: h_0'$ for every $i$, so
-Lemma~\ref{lem:bp-score} gives
-\[
-\bU_{\balpha} = \frac{h_0'}{2\tilde\sigma^2}\sum_{i=1}^n g_i\bw_i
-= \frac{h_0'}{2\tilde\sigma^2}\,\bW'\bg ,
-\qquad\text{hence}\qquad
-\bU_{\bgamma} = \frac{h_0'}{2\tilde\sigma^2}\,\bZ'\bg .
-\]
+\textbf{(i)} Split the difference into $n^{-1}\sum_i(e_i^2-\varepsilon_i^2)\bx_i\bx_i'$ and
+$n^{-1}\sum_i(\varepsilon_i^2-\sigma_i^2)\bx_i\bx_i'$. Since $\sigma_i^2\leqslant1+\expc[\varepsilon_i^4]
+\leqslant1+C$, Lemma~\ref{lem:resid-errors} with $\ba_{ni}$ the entries of
+$\bx_i\bx_i'$, of norm at most $B^2$, shows that $n^{1/2}$ times the first tends to
+$\bzero$ in probability, hence so does the first. Each entry of the second has mean $0$
+and variance at most $n^{-2}\sum_i\expc[\varepsilon_i^4]B^4\leqslant CB^4/n$, so it tends
+to $0$ in probability by Chebyshev's inequality.
 
-\textbf{Step 2: the covariance.} By Lemma~\ref{lem:bp-info} with $\sigma_i^2$ and $h_i'$
-constant,
-\[
-\bI_{\balpha} = c\,\bW'\bW, \qquad c = \frac{h_0'^2}{2\tilde\sigma^4} .
-\]
-For a partitioned symmetric matrix the $\bgamma\bgamma$ block of the inverse is the inverse
-of the Schur complement, and the Schur complement of the leading $(1,1)$ entry of
-$\bW'\bW = \bigl(\begin{smallmatrix} n & \bone'\bZ\\ \bZ'\bone & \bZ'\bZ\end{smallmatrix}\bigr)$
-is
-\[
-\bZ'\bZ - \bZ'\bone\,n^{-1}\bone'\bZ = \bZ'\bM_0\bZ .
-\]
-Hence $\bigl[(\bI_{\balpha}^{-1})_{\bgamma\bgamma}\bigr]^{-1} = c\,\bZ'\bM_0\bZ$, and
-\[
-LM = \frac1c\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)\cdot\frac{h_0'^2}{4\tilde\sigma^4}
-   = \frac{2\tilde\sigma^4}{h_0'^2}\cdot\frac{h_0'^2}{4\tilde\sigma^4}\,
-     (\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg) ,
-\]
-which is the first equality of~\eqref{eq:bp-LM}. The factor $h_0'^2$ cancels, so the
-statistic is the same for every differentiable $h$ with $h'(\alpha_0)\neq0$: the test has
-power against a whole family of variance models without committing to one.
+\textbf{(ii)} $\sqrt n(\hat\bb-\bb)=(n^{-1}\bX'\bX)^{-1}n^{-1/2}\sum_i\bx_i\varepsilon_i$.
+The vectors $\bx_i\varepsilon_i$ are independent with mean $\bzero$,
+$\expc\|\bx_i\varepsilon_i\|^4\leqslant B^4C$ and
+$n^{-1}\sum_i\var(\bx_i\varepsilon_i)=n^{-1}\sum_i\sigma_i^2\bx_i\bx_i'\to\bF$, so the
+prerequisites' Lyapunov corollary with $\delta=2$ gives
+$n^{-1/2}\sum_i\bx_i\varepsilon_i\convd N(\bzero,\bF)$. By the prerequisites' lemma
+\emph{inverses of convergent positive definite matrices},
+$(n^{-1}\bX'\bX)^{-1}\to\bQ_X^{-1}$, and Slutsky's theorem with the affine-map theorem
+gives
+$\sqrt n\,\bc'(\hat\bb-\bb)\convd N(0,v)$, $v=\bc'\bQ_X^{-1}\bF\bQ_X^{-1}\bc>0$. By (i)
+and continuous mapping,
+$n\,\bc'\hat\bV_c\bc=\bc'(n^{-1}\bX'\bX)^{-1}(n^{-1}\sum_ie_i^2\bx_i\bx_i')
+(n^{-1}\bX'\bX)^{-1}\bc\convp v$, and the ratio tends to $N(0,1)$ by Slutsky's theorem.
 
-\textbf{Step 3: identification with $\SSR_z$.} Regressing $\bg$ on $\bW = [\bone\ \bZ]$,
-the regression sum of squares is $\bg'(\bH_W-\bH_0)\bg$ with $\bH_W$ the projection onto
-$\calC(\bW)$ and $\bH_0 = n^{-1}\bone\bone'$. By Frisch--Waugh--Lovell (Unit 3),
-$\bH_W-\bH_0 = \bM_0\bZ(\bZ'\bM_0\bZ)^{-1}\bZ'\bM_0$, so
-\[
-\SSR_z = (\bZ'\bM_0\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bM_0\bg)
-       = (\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)
-\]
-using $\bZ'\bM_0\bg = \bZ'\bg$ from Lemma~\ref{lem:bp-restricted}. Finally, replacing
-$\bg$ by $e_i^2/\tilde\sigma^2 = g_i+1$ changes the regressand by a constant vector, which
-is absorbed by the intercept and leaves $\SSR_z$ unchanged.
+\textbf{(iii)} For any symmetric $\bA$ and vector $\bx$,
+$|\bx'\bA\bx|\leqslant\|\bx\|^2\sum_{r,s}|a_{rs}|$; hence
+$\max_ih_{ii}\leqslant\eta_n=(B^2/n)\sum_{r,s}|[(n^{-1}\bX'\bX)^{-1}]_{rs}|\to0$, the
+entries being bounded by the same lemma. The weights of HC1 to HC3 lie between $1$ and
+$\max\{n/(n-k-1),(1-\eta_n)^{-2}\}\to1$, so the difference of their middle matrices
+from that of HC0, divided by $n$, has entries at most
+$(\max_ic_i-1)\,B^2\,\SSE/n$, where $\expc[\SSE/n]\leqslant n^{-1}\sum_i\sigma_i^2\leqslant1+C$
+(Proposition~\ref{prop:general-cov});
+it tends to $\bzero$ in probability, and the argument of (ii) applies.
 \end{proof}
 
-\begin{theorem}[Null distribution]\label{thm:bp-null}
-Assume $H_0$, that $n^{-1}\bZ'\bM_0\bZ \to \bQ$ positive definite, that
-$\max_i h_{ii}\to0$, and that the $\bz_i$ satisfy a Lindeberg condition. Then
-\begin{equation}\label{eq:bp-chisq}
-LM \convd \chi^2_p .
-\end{equation}
+\begin{example}[Robust standard errors; FREES §5.7.2]\label{ex:hc}
+The four estimators from Definition~\ref{def:hc} for the quadratic \texttt{mpg} fit,
+against \texttt{sandwich::vcovHC}, and the coverage of nominal $95\%$ intervals for a
+slope when $\sd(\varepsilon_i)=x_i^2$ with $x_i$ uniform on $(0,3)$:
+<<hc>>=
+hc_manual <- function(m, type) {
+  X <- model.matrix(m); e <- residuals(m); h <- hatvalues(m); XtXi <- solve(crossprod(X))
+  cw <- switch(type, HC0 = 1, HC1 = nrow(X) / (nrow(X) - ncol(X)), HC2 = 1 / (1 - h), HC3 = 1 / (1 - h)^2)
+  sqrt(diag(XtXi %*% crossprod(X * sqrt(cw) * e) %*% XtXi))
+}
+types <- c("HC0", "HC1", "HC2", "HC3")
+se_tab <- cbind(usual = sqrt(diag(vcov(a2))), sapply(types, function(tp) hc_manual(a2, tp)))
+round(se_tab, 6)
+round(se_tab[, types] / se_tab[, "usual"], 3)
+c(max_diff_sandwich = max(sapply(types, function(tp)
+  max(abs(hc_manual(a2, tp) - sqrt(diag(sandwich::vcovHC(a2, type = tp))))))))
+set.seed(3)
+cover <- function(nn, R = 4000) {
+  x <- runif(nn, 0, 3); X <- cbind(1, x); XtXi <- solve(crossprod(X)); h <- rowSums((X %*% XtXi) * X)
+  res <- replicate(R, {
+    y <- 1 + 2 * x + x^2 * rnorm(nn); b <- XtXi %*% crossprod(X, y); e <- drop(y - X %*% b)
+    V0 <- XtXi %*% crossprod(X * e) %*% XtXi; V3 <- XtXi %*% crossprod(X * (e / (1 - h))) %*% XtXi
+    q <- qt(0.975, nn - 2)
+    c(usual = abs(b[2] - 2) <= q * sqrt(sum(e^2) / (nn - 2) * XtXi[2, 2]),
+      HC0 = abs(b[2] - 2) <= q * sqrt(V0[2, 2]), HC3 = abs(b[2] - 2) <= q * sqrt(V3[2, 2]))
+  })
+  c(n = nn, max_h = max(h), rowMeans(res))
+}
+round(t(sapply(c(20, 50, 200, 1000), cover)), 3)
+@
+For the quadratic fit the robust standard errors exceed the usual ones by $15\%$ to $17\%$
+for the intercept and $6\%$ to $8\%$ for the linear term. In the simulation the usual
+interval covers the slope $88\%$ to $90\%$ of the time at every $n$, since it estimates
+the wrong variance; the HC0 interval rises from $89\%$ to the nominal level as $\max_ih_{ii}$
+falls, as Theorem~\ref{thm:hc} predicts, and HC3 is close to $95\%$ already at $n=20$,
+in line with FREES's advice to prefer an estimator built from rescaled residuals.
+\end{example}
+
+\subsection{Weighted least squares}\label{sec:4.5.3}
+
+\begin{theorem}[Weighted least squares; FREES §5.7.3, ISLR §3.3.3]\label{thm:wls}
+Assume \Aref{1}, \Aref{2}, \Aref{4} and $\var(\be)=\sigma^2\bW^{-1}$ with $\sigma^2>0$,
+$\bW=\diag(w_1,\ldots,w_n)$ and known $w_i>0$. Let $\bY^*=\bW^{1/2}\bY$ and
+$\bX^*=\bW^{1/2}\bX$, the rows multiplied by $\sqrt{w_i}$.
+\begin{enumerate}[label=\textup{(\roman*)}]
+\item\label{wls:i} Least squares on $(\bX^*,\bY^*)$ gives
+      $\hat\bb_W=(\bX'\bW\bX)^{-1}\bX'\bW\bY$, the minimiser of
+      $\sum_iw_i(y_i-\bx_i'\bb)^2$.
+\item\label{wls:ii} $\hat\bb_W$ is unbiased with $\var(\hat\bb_W)=\sigma^2(\bX'\bW\bX)^{-1}$
+      and is the best linear unbiased estimator of $\bb$.
+\item\label{wls:iii} $s_W^2=\sum_iw_i(y_i-\bx_i'\hat\bb_W)^2/(n-k-1)$ is unbiased for
+      $\sigma^2$, and with normal errors the $t$ procedures of Unit 2 and the general
+      linear hypothesis $F$ test of Unit 3 applied to $(\bX^*,\bY^*)$ are exact; the test
+      of $\beta_1=\cdots=\beta_k=0$ is the latter with $\bR=[\bzero\ \bI_k]$, since
+      $\bX^*$ has no constant column.
+\end{enumerate}
 \end{theorem}
 
 \begin{proof}
-\textbf{Step 1: replace residuals by errors.} $e_i = \varepsilon_i - \bx_i'(\hat\bb-\bb)$,
-and $\hat\bb-\bb = O_p(n^{-1/2})$, so $e_i^2 = \varepsilon_i^2 + O_p(n^{-1/2})$ uniformly
-under $\max_i h_{ii}\to0$; likewise $\tilde\sigma^2 = \sigma^2 + O_p(n^{-1/2})$. Hence
-$n^{-1/2}\bZ'\bg = n^{-1/2}\sum_i \bz_i(\varepsilon_i^2/\sigma^2-1) + o_p(1)$.
-
-\textbf{Step 2: central limit theorem.} The summands
-$\bz_i(\varepsilon_i^2/\sigma^2-1)$ are independent with mean zero, and by
-Lemma~\ref{lem:fourth} each has covariance $2\,\bz_i\bz_i'$. Their average covariance is
-$2n^{-1}\bZ'\bZ$, and centring by the intercept replaces this by $2n^{-1}\bZ'\bM_0\bZ\to2\bQ$.
-The Lindeberg--Feller central limit theorem gives
-\[
-n^{-1/2}\bZ'\bg \convd N(\bzero,\ 2\bQ) .
-\]
-
-\textbf{Step 3: the quadratic form.} By~\eqref{eq:bp-LM},
-\[
-LM = \tfrac12\bigl(n^{-1/2}\bZ'\bg\bigr)'\bigl(n^{-1}\bZ'\bM_0\bZ\bigr)^{-1}
-      \bigl(n^{-1/2}\bZ'\bg\bigr) ,
-\]
-and $n^{-1}\bZ'\bM_0\bZ\to\bQ$. If $\bV\sim N(\bzero,2\bQ)$ then
-$(2\bQ)^{-1/2}\bV\sim N(\bzero,\bI_p)$, so $\tfrac12\bV'\bQ^{-1}\bV = \|(2\bQ)^{-1/2}\bV\|^2
-\sim\chi^2_p$ by the chi-square theorem for quadratic forms of Unit 2. The continuous
-mapping theorem transfers this to the limit of $LM$.
+$\bY^*=\bX^*\bb+\be^*$ with $\be^*=\bW^{1/2}\be$, $\expc[\be^*]=\bzero$ and, by the
+prerequisites' proposition \emph{variance under a linear map},
+$\var(\be^*)=\bW^{1/2}\sigma^2\bW^{-1}\bW^{1/2}=\sigma^2\bI_n$; $\bX^*$ has full column
+rank since $\bW^{1/2}$ is invertible. So $(\bX^*,\bY^*)$ satisfies \Aref{1}--\Aref{4}
+except that its first column is $(\sqrt{w_1},\ldots,\sqrt{w_n})'$ rather than $\bone$; the
+theorems of Units 2 and 3 cited in this proof use only $\rank(\bX^*)=k+1$ and the moments, or the
+normality, of $\be^*$, not a constant column.
+(i) Its least squares estimator is $(\bX^{*\prime}\bX^*)^{-1}\bX^{*\prime}\bY^*=
+(\bX'\bW\bX)^{-1}\bX'\bW\bY$, and $\|\bY^*-\bX^*\bb\|^2=\sum_iw_i(y_i-\bx_i'\bb)^2$.
+(ii) Unit 2's theorems \emph{unbiasedness}, \emph{variance--covariance matrix} and
+\emph{Gauss--Markov} for the starred model; an estimator $\bC\bY$ linear in $\bY$ is
+$\bC\bW^{-1/2}\bY^*$, linear in $\bY^*$, so the comparison class is the same. (iii) The
+residuals of the starred fit are $\bW^{1/2}(\bY-\bX\hat\bb_W)$, whose squared length is
+$\sum_iw_i(y_i-\bx_i'\hat\bb_W)^2$; Unit 2's theorem \emph{unbiasedness of the mean square
+error} applies. With $\be\sim N(\bzero,\sigma^2\bW^{-1})$, $\be^*\sim N(\bzero,\sigma^2\bI_n)$
+by the prerequisites' theorem \emph{closure under affine maps}, and \Aref{5} holds for
+the starred model, so Unit 2's theorem \emph{the $t$ statistic} and Unit 3's theorem
+\emph{the general linear hypothesis} apply to $(\bX^*,\bY^*)$.
 \end{proof}
 
-\begin{remark}
-Step 2 uses the Lindeberg--Feller central limit theorem in its weighted form, Step 3 the
-continuous mapping theorem, and the replacement of $\sigma^2$ and $\kappa$ by consistent
-estimates is Slutsky's theorem; all three are proved in the \emph{Mathematical
-Prerequisites}.
+\begin{corollary}[Averages of raw observations; ISLR §3.3.3]\label{cor:wls-means}
+Let observation $g=1,\ldots,G$ be the average $\bar y_g$ of $n_g$ raw responses
+$y_{g1},\ldots,y_{gn_g}$ that share the row $\bx_g'$ and satisfy
+$y_{gl}=\bx_g'\bb+\varepsilon_{gl}$ with uncorrelated errors of mean $0$ and variance
+$\sigma^2>0$, and let the $G\times(k+1)$ matrix of the $\bx_g'$ have rank $k+1$. Then
+$\var(\bar y_g)=\sigma^2/n_g$, so $w_g=n_g$; the weighted least squares coefficients on
+the $G$ averages equal the least squares coefficients on the $N=\sum_gn_g$ raw
+observations; and the raw residual sum of squares is
+$\sum_g\sum_l(y_{gl}-\bar y_g)^2+\sum_gn_g(\bar y_g-\bx_g'\hat\bb)^2$.
+\end{corollary}
+
+\begin{proof}
+$\var(\bar y_g)=n_g^{-2}\sum_l\sigma^2=\sigma^2/n_g$, and averages of disjoint sets of
+uncorrelated errors are uncorrelated, so Theorem~\ref{thm:wls} applies with $w_g=n_g$.
+The raw design repeats $\bx_g'$ $n_g$ times, so
+$\bX_{\mathrm{raw}}'\bX_{\mathrm{raw}}=\sum_gn_g\bx_g\bx_g'=\bX'\bW\bX$ and
+$\bX_{\mathrm{raw}}'\bY_{\mathrm{raw}}=\sum_g\bx_g\sum_ly_{gl}=\sum_gn_g\bx_g\bar y_g=
+\bX'\bW\bar\bY$: the normal equations coincide. Finally
+$y_{gl}-\bx_g'\hat\bb=(y_{gl}-\bar y_g)+(\bar y_g-\bx_g'\hat\bb)$, and the cross term
+vanishes on summing over $l$ because $\sum_l(y_{gl}-\bar y_g)=0$.
+\end{proof}
+
+\begin{example}[Fuel efficiency by model year; ISLR §3.3.3, FREES §5.7.3]\label{ex:wls}
+The $392$ cars of \texttt{Auto} fall into $13$ model years. Weighted least squares on the
+yearly means with weights the counts, three ways, against least squares on the raw data:
+<<wls>>=
+ym <- aggregate(mpg ~ year, data = Auto, FUN = mean); ym$n <- as.vector(table(Auto$year)); nrow(ym)
+w_lm <- lm(mpg ~ year, data = ym, weights = n)
+Xg <- cbind(1, ym$year); Wg <- diag(ym$n)
+w_formula <- drop(solve(t(Xg) %*% Wg %*% Xg, t(Xg) %*% Wg %*% ym$mpg))
+w_scaled <- coef(lm(I(sqrt(n) * mpg) ~ 0 + I(sqrt(n)) + I(sqrt(n) * year), data = ym))
+raw <- lm(mpg ~ year, data = Auto)
+rbind(lm_weights = coef(w_lm), formula = w_formula, sqrt_w_scaled = unname(w_scaled),
+      raw_data = coef(raw), unweighted_means = coef(lm(mpg ~ year, data = ym)))
+range(ym$n)
+SS_within <- sum((Auto$mpg - ave(Auto$mpg, Auto$year))^2)
+c(SSE_raw = sum(residuals(raw)^2), within_plus_weighted = SS_within + sum(ym$n * residuals(w_lm)^2))
+@
+The three weighted computations and the raw regression agree, while unweighted least
+squares on the means, which treats a year of $26$ cars like a year of $40$, gives a
+different line.
+\end{example}
+
+\subsection{Transformations}\label{sec:4.5.4}
+
+\begin{proposition}[Concave transformations and a spread that grows with the mean; FREES §5.7.4, ISLR §3.3.3]\label{prop:concave}
+Let $h$ be increasing and convex on an interval $I$, let $\varepsilon$ be a random
+variable, and for each $\mu$ in an interval $J$ with $\mu+\varepsilon\in I$ almost surely
+let $Y_\mu=h(\mu+\varepsilon)$ with $\expc[Y_\mu^2]<\infty$. Then $\expc[Y_\mu]$ and
+$\var(Y_\mu)$ are nondecreasing in $\mu\in J$.
+\end{proposition}
+
+\begin{proof}
+$\expc[Y_\mu]$ is nondecreasing because $h$ is increasing. Let $\varepsilon'$ be an
+independent copy of $\varepsilon$; then
+$\var(Y_\mu)=\tfrac12\expc[\{h(\mu+\varepsilon)-h(\mu+\varepsilon')\}^2]$, by expanding the
+square. Fix $a<b$ and $\mu<\mu'$ in $J$ with the four points below in $I$, and put
+$x_1=\mu+a$, $x_2=\mu'+b$ and $\{y_1,y_2\}=\{\mu+b,\mu'+a\}$. Then
+$x_1\leqslant y_j\leqslant x_2$ and $y_1+y_2=x_1+x_2$, so $y_j=\lambda_jx_1+(1-\lambda_j)x_2$
+with $\lambda_1+\lambda_2=1$, and adding the two convexity inequalities
+$h(y_j)\leqslant\lambda_jh(x_1)+(1-\lambda_j)h(x_2)$ gives $h(y_1)+h(y_2)\leqslant
+h(x_1)+h(x_2)$, that is
+\[
+0\leqslant h(\mu+b)-h(\mu+a)\leqslant h(\mu'+b)-h(\mu'+a) ,
+\]
+the left inequality because $h$ is increasing. Hence
+$|h(\mu+\varepsilon)-h(\mu+\varepsilon')|$ is nondecreasing in $\mu$ for every outcome, and
+taking expectations of its square completes the proof.
+\end{proof}
+
+\begin{remark}[FREES §5.7.4, ISLR §3.3.3]
+If $g=h^{-1}$ is increasing and concave, as $\ln y$ is on $(0,\infty)$ and $\ln(1+y)$ and
+$\sqrt y$ are on $[0,\infty)$, and $g(y_i)=\bx_i'\bb+\varepsilon_i$ with identically distributed errors,
+then the variance of $y_i$ does not decrease as its mean increases: that is the funnel that
+such a transformation of the response removes. An increasing convex $g$ can only remove a
+spread that does not increase with the mean: $h=g^{-1}$ is then increasing and concave,
+and Proposition~\ref{prop:concave} applied to the increasing convex $t\mapsto-h(-t)$ and to
+$-\varepsilon$ makes $\var(y_i)=\var(-y_i)$ nonincreasing in the mean. A transformation
+also acts on the whole shape of the distribution, compressing the right tail when it is
+concave. $\ln(1+y)$ admits zeros, and
+FREES's $100\ln(1+y/100)$ keeps percentage data near their original units.
 \end{remark}
 
-\begin{theorem}[Koenker's studentised statistic]\label{thm:bp-koenker}
-Drop normality, retaining independence, $\expc[\varepsilon_i]=0$, $\var(\varepsilon_i)=\sigma^2$
-and $\tau^2 := \var(\varepsilon_i^2) = \expc[\varepsilon_i^4]-\sigma^4 < \infty$. Then
-$n^{-1/2}\bZ'\bg \convd N(\bzero,\ (\tau^2/\sigma^4)\bQ)$, so~\eqref{eq:bp-LM} is
-misscaled by the factor $\tau^2/(2\sigma^4)$. Estimating $\tau^2$ by
-$\hat\tau^2 = n^{-1}\sum_i(e_i^2-\tilde\sigma^2)^2$ gives the correctly scaled statistic
-\begin{equation}\label{eq:bp-koenker}
-LM_{\mathrm{stud}}
-= \frac{\tilde\sigma^4}{\hat\tau^2}\,(\bZ'\bg)'(\bZ'\bM_0\bZ)^{-1}(\bZ'\bg)
-= n\,R_z^2 \convd \chi^2_p ,
-\end{equation}
-where $R_z^2$ is the coefficient of determination from regressing $e_i^2$ on $\bZ$ with an
-intercept. Moreover
-\begin{equation}\label{eq:bp-ratio}
-\frac{LM}{LM_{\mathrm{stud}}} = \frac{\hat\tau^2}{2\tilde\sigma^4} .
-\end{equation}
-\end{theorem}
+\begin{remark}[Limits of transformation; FREES §5.7.4]
+When $g(y_i)$ has identically distributed errors, a concave or convex $g$ (replace $g$ by $-g$ if
+it is decreasing) cannot remove a spread that rises and then falls with the mean, since by Proposition~\ref{prop:concave} and the remark after it each can equalise only
+a spread that moves one way with the mean; such a pattern needs a transformation that is neither concave nor convex, such as the logit for
+proportions (concave below $\tfrac12$, convex above). When the data are roughly symmetric but
+heteroscedastic, a transformation that equalises the spread is not linear, and so in general
+skews the distribution. Explanatory variables may be transformed too, since
+the regression assumptions condition on them: some analysts transform them towards normality,
+others avoid it because the fitted model is harder to interpret. FREES takes a middle course:
+it uses transformations that are readily interpreted, such as the logarithms, powers and
+indicators of its §3.5, and admits a transform that is hard to communicate only when it
+brings a substantial gain in fit or prediction.
+\end{remark}
+
+\begin{proposition}[Multiplicative errors; FREES §5.7.4]\label{prop:multiplicative}
+Let $y_i=\exp(\bx_i'\bb)\,\eta_i$, with an intercept in $\bx_i$ and $\eta_1,\ldots,\eta_n$
+positive, not almost surely constant, independent and identically distributed,
+$\expc[\eta_1^2]<\infty$ and
+$\expc[(\ln\eta_1)^2]<\infty$. Then $\sd(y_i)/\expc[y_i]=\sd(\eta_1)/\expc[\eta_1]$ for
+every $i$, while $\ln y_i=\bx_i'\bb+\ln\eta_i$ satisfies \Aref{1}--\Aref{3} with intercept
+$\beta_0+\expc[\ln\eta_1]$ and errors $\ln\eta_i-\expc[\ln\eta_1]$.
+\end{proposition}
 
 \begin{proof}
-Only Lemma~\ref{lem:fourth} used normality, and only to assert
-$\var(\varepsilon_i^2/\sigma^2)=2$; in general that variance is $\tau^2/\sigma^4$. Repeating
-Step 2 of Theorem~\ref{thm:bp-null} with this value gives the stated limit, and the
-quadratic form standardised by $\sigma^4/\tau^2$ rather than $1/2$ is $\chi^2_p$.
-
-For the identification, put $\bv = (e_1^2,\ldots,e_n^2)'$, so that $\bar v = \tilde\sigma^2$
-and $\bg = \bM_0\bv/\tilde\sigma^2$. Since $(\bH_W-\bH_0)\bone=\bzero$ we have
-$\bM_0(\bH_W-\bH_0) = \bH_W-\bH_0$, hence
-\[
-\SSR_z = \bg'(\bH_W-\bH_0)\bg
-= \tilde\sigma^{-4}\,\bv'\bM_0(\bH_W-\bH_0)\bM_0\bv
-= \tilde\sigma^{-4}\,\bv'(\bH_W-\bH_0)\bv
-= \frac{\SSR_v}{\tilde\sigma^4},
-\]
-where $\SSR_v$ is the regression sum of squares from regressing $\bv$ on $[\bone\ \bZ]$.
-Also $\hat\tau^2 = n^{-1}\sum_i(e_i^2-\bar v)^2 = \SST_v/n$. Therefore
-\[
-LM_{\mathrm{stud}} = \frac{\tilde\sigma^4}{\hat\tau^2}\,\SSR_z
-= \frac{\tilde\sigma^4}{\SST_v/n}\cdot\frac{\SSR_v}{\tilde\sigma^4}
-= n\,\frac{\SSR_v}{\SST_v} = n R_z^2 ,
-\]
-and dividing $LM = \SSR_z/2$ by this gives~\eqref{eq:bp-ratio}.
+$\expc[y_i]=e^{\bx_i'\bb}\expc[\eta_1]$ and $\sd(y_i)=e^{\bx_i'\bb}\sd(\eta_1)$. The
+logarithm is $\bx_i'\bb+\expc[\ln\eta_1]+(\ln\eta_i-\expc[\ln\eta_1])$, with independent
+errors of mean $0$ and common variance $\var(\ln\eta_1)$.
 \end{proof}
 
-\begin{remark}[Which one R computes, and what their ratio measures]
-\texttt{lmtest::bptest} returns $LM_{\mathrm{stud}}$ \emph{by default}; the statistic of
-Theorem~\ref{thm:bp} is \texttt{bptest(m, studentize = FALSE)}. The two can differ
-substantially, so a hand computation following Theorem~\ref{thm:bp} compared against a bare
-\texttt{bptest} call will appear to disagree.
-
-By~\eqref{eq:bp-ratio} the ratio is $\hat\tau^2/(2\tilde\sigma^4)$, which estimates
-$\var(\varepsilon^2)/\{2\var(\varepsilon)^2\}$, which is exactly $1$ when the errors are normal,
-by Lemma~\ref{lem:fourth}. The ratio is therefore itself a measurement: how far the fourth moment of the errors
-departs from the normal value.
+\begin{remark}[FREES §5.7.4]
+The standard deviation proportional to the mean is the funnel of
+Example~\ref{ex:funnel}, and the logarithm removes it exactly under
+Proposition~\ref{prop:multiplicative}; the Breusch--Pagan statistic of
+Example~\ref{ex:bp-auto} fell from $56.95$ to $7.47$.
 \end{remark}
 
 %==============================================================================
-\section{Computation: Formulas Against Package Output}\label{sec:4.6}
+\section{Computation in R}\label{sec:4.6}
 %==============================================================================
 
 \begin{reading}
-ISLR §3.6.3.
+ISLR §3.6.2--3.6.3 · FREES chapter 5 script.
 \end{reading}
 
-<<data-setup>>=
-library(ISLR2)
-fit <- lm(medv ~ lstat + age + rm, data = Boston)
-X <- model.matrix(fit); y <- Boston$medv
-n <- nrow(X); k <- ncol(X) - 1L
-e <- residuals(fit); h <- hatvalues(fit)
-s2 <- sum(e^2) / (n - k - 1)
-c(n = n, k = k, df = n - k - 1)
+\subsection{The ISLR lab}\label{sec:4.6.1}
+
+\texttt{plot} applied to an \texttt{lm} fit draws four diagnostic plots:
+<<lab-plot, fig.height=3.3, fig.width=6.4>>=
+lm.fit <- lm(medv ~ lstat, data = Boston)
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex.main = 0.8)
+plot(lm.fit, cex = 0.4)
+par(op)
 @
-
-\subsection{Residuals (§\ref{sec:4.2})}\label{sec:4.6.1}
-
-<<resid-check>>=
-r_man <- e / (sqrt(s2) * sqrt(1 - h))                    # standardised
-s2i   <- ((n-k-1)*s2 - e^2/(1-h)) / (n-k-2)              # deleted variance
-t_man <- e / (sqrt(s2i) * sqrt(1 - h))                   # studentised
-c(rstandard = max(abs(r_man - rstandard(fit))),
-  rstudent  = max(abs(t_man - rstudent(fit))),
-  sd_raw    = sd(e), sd_standardised = sd(r_man))
+\begin{figure}[H]\centering
+\caption{The four diagnostic plots of \texttt{medv} on \texttt{lstat}.}
+\end{figure}
+Residuals against fitted values show curvature, the check of
+Example~\ref{ex:auto-resid}; the normal quantile plot of the $r_i$ checks \Aref{5};
+the scale--location plot, $\sqrt{|r_i|}$ against the fitted values, checks
+homoscedasticity; and the plot of $r_i$ against $h_{ii}$ draws, where they fall inside it,
+the contours on which Cook's distance equals $0.5$ and $1$, which by
+Theorem~\ref{thm:cook} are the curves $r=\pm\sqrt{(k+1)D(1-h)/h}$; here the largest
+Cook's distance is below $0.1$ and no contour appears. The lab's residual plot of $t_i$, its largest leverage, and
+the Bonferroni test of Corollary~\ref{cor:bonferroni} as \texttt{car::outlierTest}
+computes it:
+<<lab-rstudent, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth">>=
+op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+plot(predict(lm.fit), rstudent(lm.fit), xlab = "fitted", ylab = "studentised residual", pch = 16, cex = 0.4)
+par(op)
+c(which_max_h = which.max(hatvalues(lm.fit)), max_h = max(hatvalues(lm.fit)),
+  max_D = max(cooks.distance(lm.fit)), n_abs_t_above_3 = sum(abs(rstudent(lm.fit)) > 3))
+t_max <- max(abs(rstudent(lm.fit))); n_B <- nobs(lm.fit)
+c(t_max = t_max, bonferroni_p = min(1, n_B * 2 * pt(-t_max, n_B - 1 - 2)))
+car::outlierTest(lm.fit)
 @
-
-<<resid-compare>>=
-i <- which.max(abs(e))
-c(index = i, e_i = e[i], h_ii = h[i],
-  standardised = r_man[i], studentised = t_man[i],
-  s = sqrt(s2), s_deleted = sqrt(s2i[i]))
+Eleven observations have $|t_i|>3$, ISLR's flag, and the largest, $t=4.00$ at
+observation $372$, has Bonferroni $p$-value $0.036$. The variance inflation factors of
+the full regression:
+<<lab-vif>>=
+lm.fit.all <- lm(medv ~ ., data = Boston)
+round(car::vif(lm.fit.all), 2)
 @
+All are below $10$; the largest are \texttt{tax} ($9.00$) and \texttt{rad} ($7.45$).
 
-<<outlier-count>>=
-c(flag_2  = sum(abs(r_man) > 2),
-  flag_3  = sum(abs(r_man) > 3),
-  expected_2_if_normal = round(2 * pnorm(-2) * n, 1))
+\subsection{FREES's chapter 5 script}\label{sec:4.6.2}
+
+<<frees-script, fig.height=3.3, fig.width=6.4>>=
+op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex.main = 0.8)
+plot(mv, cex = 0.4)
+par(op)
+c(hat_60 = hatvalues(mv)[[60]], residual_60 = residuals(mv)[[60]])
 @
+\begin{figure}[H]\centering
+\caption{The four diagnostic plots of \texttt{VOLUME} on \texttt{PRICE}, \texttt{SHARE}
+and \texttt{VALUE}.}
+\end{figure}
+In the fourth panel IBM, observation $60$, lies beyond the contour $D=1$ at leverage
+$0.88$ with a moderate residual; observation $122$ is beyond $D=1$ as well.
 
-\subsection{Influence (§\ref{sec:4.3})}\label{sec:4.6.2}
+\subsection{Formulas against package output}\label{sec:4.6.3}
 
-<<deletion-check>>=
-b <- coef(fit); XtXi <- solve(t(X) %*% X)
-idx <- c(1, 100, 215, 373, 506)
-delta_man <- sapply(idx, function(i)
-  drop(XtXi %*% X[i, ] * e[i] / (1 - h[i])))
-delta_ref <- sapply(idx, function(i)
-  b - coef(lm(medv ~ lstat + age + rm, data = Boston[-i, ])))
-c(max_abs_diff = max(abs(delta_man - delta_ref)))
+For the liquidity regression \texttt{mv}: the leverages from $\bH$ and from the
+Mahalanobis form~\eqref{eq:mahal}; $r_i$ and $t_i$ from Definition~\ref{def:resid},
+from~\eqref{eq:t-r} and from the indicator regression of
+Proposition~\ref{prop:indicator}; the deleted coefficients from
+Proposition~\ref{prop:indicator}\ref{ind:iii} against refitting and \texttt{dfbeta};
+Cook's distance from its definition and from Theorem~\ref{thm:cook}; and
+Proposition~\ref{prop:dffits}.
+<<formulas>>=
+X <- model.matrix(mv); e <- residuals(mv); nX <- nrow(X); kX <- ncol(X) - 1
+XtXi <- solve(crossprod(X)); H <- X %*% XtXi %*% t(X); h <- diag(H); s <- summary(mv)$sigma
+Delta2 <- mahalanobis(X[, -1], colMeans(X[, -1]), cov(X[, -1]))
+r <- e / (s * sqrt(1 - h))
+s_del <- sqrt(((nX - kX - 1) * s^2 - e^2 / (1 - h)) / (nX - kX - 2))
+t_i <- e / (s_del * sqrt(1 - h))
+t_indicator <- sapply(c(37, 60, 122), function(i) {
+  u <- as.numeric(seq_len(nX) == i); coef(summary(lm(VOLUME ~ PRICE + SHARE + VALUE + u, data = liq)))["u", 3]
+})
+signif(c(h_vs_hatvalues = max(abs(h - hatvalues(mv))), h_vs_mahalanobis = max(abs(h - (1 / nX + Delta2 / (nX - 1)))),
+  r_vs_rstandard = max(abs(r - rstandard(mv))), t_vs_rstudent = max(abs(t_i - rstudent(mv))),
+  t_from_r = max(abs(r * sqrt((nX - kX - 2) / (nX - kX - 1 - r^2)) - rstudent(mv))),
+  t_indicator = max(abs(t_indicator - rstudent(mv)[c(37, 60, 122)]))), 3)
+db_formula <- t(XtXi %*% t(X) %*% diag(e / (1 - h)))
+db_refit <- t(sapply(seq_len(nX), function(i) coef(mv) - coef(lm(VOLUME ~ PRICE + SHARE + VALUE, data = liq[-i, ]))))
+D_def <- sapply(seq_len(nX), function(i) sum((X %*% (coef(mv) - db_refit[i, ]) - fitted(mv))^2)) / ((kX + 1) * s^2)
+signif(c(dfbeta_formula_vs_refit = max(abs(db_formula - db_refit)),
+  dfbeta_vs_R = max(abs(db_formula - dfbeta(mv))),
+  cook_definition_vs_R = max(abs(D_def - cooks.distance(mv))),
+  cook_formula_vs_R = max(abs(r^2 / (kX + 1) * h / (1 - h) - cooks.distance(mv))),
+  dffits_vs_R = max(abs(t_i * sqrt(h / (1 - h)) - dffits(mv))),
+  dfbetas_vs_R = max(abs(db_formula / outer(s_del, sqrt(diag(XtXi))) - dfbetas(mv))),
+  cook_from_dffits = max(abs(s_del^2 / ((kX + 1) * s^2) * dffits(mv)^2 - cooks.distance(mv)))), 3)
 @
+Every difference is of the order of rounding error.
 
-<<cook-check>>=
-D_man <- e^2 / ((k+1) * s2) * h / (1 - h)^2               # first form
-D_alt <- r_man^2 / (k+1) * h / (1 - h)                    # second form
-c(form1_vs_R = max(abs(D_man - cooks.distance(fit))),
-  form2_vs_R = max(abs(D_alt - cooks.distance(fit))),
-  max_D = max(D_man), n_above_4_over_n = sum(D_man > 4/n))
+% \periodmark{End of period 3 of 3.}
+
+%==============================================================================
+\section{Exercises}\label{sec:4.7}
+%==============================================================================
+
+\begin{exercise}[FREES exercise 5.1]\label{ex:f5-1}
+In the regression on one explanatory variable, $y_i=\beta_0+\beta_1x_i+\varepsilon_i$:
+(a) show that $h_{ii}=1/n+(x_i-\bar x)^2/\{(n-1)s_x^2\}$; (b) show that $\bar h=2/n$;
+(c) if $h_{ii}=6/n$, how many standard deviations is $x_i$ from the mean?
+\end{exercise}
+
+\begin{solution}
+(a) Proposition~\ref{prop:mahal} with $k=1$: $\bS=s_x^2$ and
+$\Delta_i^2=(x_i-\bar x)^2/s_x^2$, so $h_{ii}=1/n+(x_i-\bar x)^2/\{(n-1)s_x^2\}$.
+(b) $\sum_i(x_i-\bar x)^2=(n-1)s_x^2$, so $\sum_ih_{ii}=1+1=2$ and $\bar h=2/n$, as
+Unit 2's theorem \emph{properties of leverage} gives through $\tr(\bH)=k+1$.
+(c) $6/n=1/n+(x_i-\bar x)^2/\{(n-1)s_x^2\}$ gives
+$|x_i-\bar x|/s_x=\sqrt{5(n-1)/n}$:
+<<ex-f5-1>>=
+round(c(n20 = sqrt(5 * 19 / 20), n100 = sqrt(5 * 99 / 100), limit = sqrt(5)), 4)
 @
+$2.18$ standard deviations at $n=20$, increasing to $\sqrt5=2.24$. The leverage $6/n$ is
+three times the mean, FREES's high leverage cutoff, so for $k=1$ that cutoff marks points
+about $2.2$ standard deviations from the mean.
+\end{solution}
 
-<<dffits-check>>=
-dff_man <- t_man * sqrt(h / (1 - h))                      # Proposition
-c(dffits_vs_R = max(abs(dff_man - dffits(fit))),
-  dfbetas_vs_R = max(abs(
-    (b["lstat"] - sapply(idx, function(i)
-       coef(lm(medv ~ lstat + age + rm, data = Boston[-i, ]))[["lstat"]])) /
-    (sqrt(s2i[idx]) * sqrt(XtXi["lstat", "lstat"])) -
-    dfbetas(fit)[idx, "lstat"])))
+\begin{exercise}[FREES exercise 5.2]\label{ex:f5-2}
+A regression on one explanatory variable with $n=3$ has residuals $3.181$, $-6.362$,
+$3.181$ and leverages $0.8333$, $0.3333$, $0.8333$. Compute the \emph{PRESS} statistic
+$\sum_ie_{(i)}^2$, the sum of squared deleted residuals.
+\end{exercise}
+
+\begin{solution}
+By Proposition~\ref{prop:indicator}\ref{ind:iii}, $e_{(i)}=e_i/(1-h_{ii})$, so no
+refitting is needed:
+<<ex-f5-2>>=
+e3 <- c(3.181, -6.362, 3.181)
+c(PRESS_printed_h = sum((e3 / (1 - c(0.8333, 0.3333, 0.8333)))^2),
+  PRESS_exact_h = sum((e3 / (1 - c(5, 2, 5) / 6))^2), SSE = sum(e3^2),
+  ratio = sum((e3 / (1 - c(0.8333, 0.3333, 0.8333)))^2) / sum(e3^2))
 @
+$\textit{PRESS}=819.3$ with the printed leverages; they are $5/6,1/3,5/6$, the leverages
+of $x=(-1,0,1)$ by Exercise~\ref{ex:f5-1}(a), which give $819.6$. \textit{PRESS} is
+$n\,\CV_{(n)}$ of Unit 1, and it is $13.5$ times $\SSE=60.7$ here because the two outer
+points have $1-h_{ii}=1/6$.
+\end{solution}
 
-<<three-lists>>=
-top <- function(v) order(abs(v), decreasing = TRUE)[1:5]
-rbind(by_studentised = top(t_man),
-      by_leverage    = top(h),
-      by_cooks_D     = top(D_man))
+\begin{exercise}[FREES exercise 5.3, parts (a), (c)]\label{ex:f5-3}
+\texttt{UNLifeExpectancy}. (a) Plot life expectancy against the gross domestic product
+and against private expenditure on health; why are the logarithms \texttt{lnGDP} and
+\texttt{lnHEALTH} desirable? (c) For the regression of \texttt{LIFEEXP} on
+\texttt{FERTILITY}, \texttt{PUBLICEDUCATION} and \texttt{lnHEALTH}: (i) give histograms
+of the standardised residuals and leverages; (ii) find the standardised residual and
+leverage of Lesotho: an outlier, a high leverage point, or both? (iii) refit without
+Lesotho and compare.
+\end{exercise}
+
+\begin{solution}
+(a)
+<<ex-f5-3a, fig.height=2.3, fig.width=6.4>>=
+un <- read.csv("data/frees/csv/UNLifeExpectancy.csv")
+un$COUNTRY <- gsub(" ", " ", iconv(un$COUNTRY, "latin1", "UTF-8"))
+un$lnGDP <- log(un$GDP); un$lnHEALTH <- log(un$PRIVATEHEALTH)
+vs <- c("GDP", "lnGDP", "PRIVATEHEALTH", "lnHEALTH")
+round(rbind(skewness = sapply(un[vs], function(x) skew(na.omit(x))),
+            cor_LIFEEXP = sapply(un[vs], function(x) cor(x, un$LIFEEXP, use = "complete.obs"))), 3)
+op <- par(mfrow = c(1, 4), mar = c(3.2, 2.8, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
+for (v in vs) plot(un[[v]], un$LIFEEXP, xlab = v, ylab = if (v == "GDP") "LIFEEXP" else "", pch = 16, cex = 0.4)
+par(op)
 @
+\texttt{GDP}, in billions of dollars, has skewness $9.26$: most countries are compressed
+against the left edge by a few large economies, and the correlation with life expectancy
+is $0.21$. Its logarithm has skewness $0.23$, spreads the countries evenly, and shows an
+increasing, nearly linear relation with correlation $0.48$. Private health expenditure,
+a percentage of GDP, is right-skewed ($1.16$); its logarithm is mildly left-skewed
+($-0.685$) and neither version is linearly related to life expectancy (correlations
+$-0.04$ and $-0.03$). The logarithm also reduces the leverage of the largest values
+(Proposition~\ref{prop:mahal}).
 
-\subsection{Collinearity (§\ref{sec:4.4})}\label{sec:4.6.3}
-
-<<vif-check>>=
-suppressMessages(library(car))
-Xn <- X[, -1, drop = FALSE]
-vif_man <- sapply(seq_len(ncol(Xn)), function(j)
-  1 / (1 - summary(lm(Xn[, j] ~ Xn[, -j]))$r.squared))    # 1/(1 - R_j^2)
-rbind(manual = vif_man, car = vif(fit))
+(c)
+<<ex-f5-3c, fig.height=2.2, fig.width=6.4>>=
+d_un <- na.omit(un[, c("COUNTRY", "LIFEEXP", "FERTILITY", "PUBLICEDUCATION", "lnHEALTH")])
+fit_un <- lm(LIFEEXP ~ FERTILITY + PUBLICEDUCATION + lnHEALTH, data = d_un)
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+hist(rstandard(fit_un), breaks = 20, main = "", xlab = "standardised residual")
+hist(hatvalues(fit_un), breaks = 20, main = "", xlab = "leverage")
+par(op)
+n_un <- nrow(d_un); i_les <- which(d_un$COUNTRY == "Lesotho")
+c(n = n_un, r = rstandard(fit_un)[[i_les]], t = rstudent(fit_un)[[i_les]],
+  h = hatvalues(fit_un)[[i_les]], cut = 3 * 4 / n_un, rank_h = rank(-hatvalues(fit_un))[[i_les]],
+  D = cooks.distance(fit_un)[[i_les]], expected_flags = n_un * flag(n_un, 3),
+  flags = sum(abs(rstandard(fit_un)) > 2))
+d_un$COUNTRY[order(-abs(rstandard(fit_un)))[1:6]]
+fit_un2 <- update(fit_un, data = d_un[-i_les, ])
+round(rbind(with = coef(summary(fit_un))[, 1], without = coef(summary(fit_un2))[, 1],
+            t_with = coef(summary(fit_un))[, 3], t_without = coef(summary(fit_un2))[, 3]), 3)
+round(c(R2_with = summary(fit_un)$r.squared, R2_without = summary(fit_un2)$r.squared,
+        s_with = summary(fit_un)$sigma, s_without = summary(fit_un2)$sigma), 3)
 @
+(i) On the $152$ countries with complete data, the standardised residuals have a long
+lower tail, and the leverages are concentrated near their mean with a few large values. (ii) Lesotho has $r=-3.25$
+($t=-3.36$) and leverage $0.139$, the largest of all and above $3(k+1)/n=0.079$: it is
+both an outlier and a high leverage point, with Cook's distance $0.43$. Six countries
+have $|r|>2$, against $6.9$ expected under a correct model
+(Proposition~\ref{prop:flag-rate}), and the five largest $|r|$ are all countries of
+southern Africa. (iii) Without Lesotho, the coefficient of \texttt{PUBLICEDUCATION} changes
+sign, from $-0.185$ to $0.140$, significant in neither fit; \texttt{FERTILITY} moves from
+$-5.40$ to $-5.31$ and \texttt{lnHEALTH} from $-1.03$ to $-1.26$; $R^2$ rises from
+$0.645$ to $0.659$ and $s$ falls from $6.65$ to $6.43$.
+\end{solution}
 
-<<vif-se>>=
-sx  <- apply(Xn, 2, sd)
-se_from_vif <- sqrt(s2) / (sx * sqrt(n - 1)) * sqrt(vif_man)
-rbind(from_VIF = se_from_vif,
-      lm       = coef(summary(fit))[-1, "Std. Error"])
+\begin{exercise}[FREES exercise 5.4, parts (a)--(c)]\label{ex:f5-4}
+The $275$ term life purchasers: regress \texttt{LNFACE} on \texttt{LNINCOME},
+\texttt{EDUCATION}, \texttt{NUMHH}, \texttt{MARSTAT}, \texttt{AGE} and \texttt{GENDER}.
+(a) Collinearity: (i) explain collinearity and a variance inflation factor; (ii) what is
+a large one? (iii) what can be done about it? (iv) with a table of correlations, is
+collinearity an issue here? (b) Unusual points: (i) define leverage; (ii) give the rules
+of thumb and identify unusual points; (iii) how would the leverages change with
+\texttt{FACE} as the response? (c) Residual analysis: plot residuals against fitted
+values, a normal quantile plot, and residuals against leverages; what does each show?
+\end{exercise}
+
+\begin{solution}
+\texttt{MARSTAT} enters as the indicators \texttt{MAR1} (married) and \texttt{MAR2}
+(living with a partner), as in Unit 3, so $k=7$.
+<<ex-f5-4>>=
+term <- subset(read.csv("data/frees/csv/TermLife.csv"), FACE > 0)
+term$LNFACE <- log(term$FACE); term$LNINCOME <- log(term$INCOME)
+term$MAR1 <- as.numeric(term$MARSTAT == 1); term$MAR2 <- as.numeric(term$MARSTAT == 2)
+f6 <- lm(LNFACE ~ LNINCOME + EDUCATION + NUMHH + MAR1 + MAR2 + AGE + GENDER, data = term)
+round(coef(summary(f6)), 4)
+round(car::vif(f6), 3)
+v_term <- c("LNINCOME", "EDUCATION", "NUMHH", "MAR1", "MAR2", "AGE", "GENDER")
+round(cor(term[v_term]), 3)
+n6 <- nobs(f6); h6 <- hatvalues(f6); n6
+c(cut_3 = 3 * 8 / n6, n_above = sum(h6 > 3 * 8 / n6), max_h = max(h6),
+  max_D = max(cooks.distance(f6)), expected_flags = n6 * flag(n6, 7),
+  flags = sum(abs(rstandard(f6)) > 2), min_r = min(rstandard(f6)), max_abs_t = max(abs(rstudent(f6))),
+  bonferroni_cut = qt(1 - 0.05 / (2 * n6), n6 - 7 - 2))
+term[names(which.max(h6)), c("INCOME", "EDUCATION", "NUMHH", "MARSTAT", "AGE", "GENDER", "FACE")]
+round((unlist(term[names(which.max(h6)), v_term]) - colMeans(term[v_term])) / sapply(term[v_term], sd), 2)
+c(min_AGE = min(term$AGE), n_MARSTAT_2 = sum(term$MARSTAT == 2)); sort(term$INCOME)[1:4]
+round(h6[term$INCOME == 260], 3)
+c(max_leverage_change_with_FACE = max(abs(hatvalues(update(f6, FACE ~ .)) - h6)))
+c(nR2 = unname(lmtest::bptest(f6)$statistic), p = lmtest::bptest(f6)$p.value)
 @
+<<ex-f5-4-fig, fig.height=2.3, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
+plot(fitted(f6), rstandard(f6), xlab = "fitted", ylab = "standardised residual", pch = 16, cex = 0.4)
+abline(h = c(-2, 0, 2), lty = c(3, 2, 3))
+qqnorm(rstandard(f6), main = "", pch = 16, cex = 0.4); qqline(rstandard(f6))
+plot(h6, rstandard(f6), xlab = "leverage", ylab = "", pch = 16, cex = 0.4)
+abline(v = 3 * 8 / n6, lty = 2)
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Standardised residuals against fitted values, their normal quantile plot, and
+against leverage, for the regression of \texttt{LNFACE} on seven variables.}
+\end{figure}
+(a)(i) Collinearity is a near-linear relation among the explanatory variables;
+$\VIF_j=1/(1-R_j^2)$ is the factor by which it multiplies $\var(\hat\beta_j)$ relative to
+uncorrelated variables (Unit 3's corollary \emph{the standard error through the other
+explanatory variables} and Proposition~\ref{prop:vif}). (ii) FREES
+calls $\VIF_j>10$ severe, equivalently $R_j^2>0.9$; ISLR uses $5$ or $10$. (iii) Drop one
+of the related variables, combine them into one, replace one by a variable carrying
+similar information, or, for a polynomial, centre before squaring
+(Proposition~\ref{prop:center-square}). (iv) The largest factor is $2.57$, for
+\texttt{MAR1}, and the largest correlation is $0.62$, between \texttt{MAR1} and
+\texttt{GENDER}: collinearity is not what makes \texttt{MAR1}, \texttt{MAR2} and
+\texttt{AGE} insignificant.
 
-<<collinear-demo>>=
+(b)(i) The leverage $h_{ii}$ is the $i$-th diagonal entry of $\bH$, the weight of $y_i$ in
+its own fitted value, and by Proposition~\ref{prop:mahal} a function of the Mahalanobis
+distance of $\bx_i$ from the centre of the design. (ii) FREES flags $h_{ii}>3(k+1)/n=0.087$;
+$17$ households exceed it. The largest, $0.168$, belongs to the youngest respondent, aged
+$20$, one of the ten households with \texttt{MARSTAT} $2$ and the third-lowest income,
+$\$500$: it lies $3.81$ standard deviations below the mean in \texttt{LNINCOME}, $5.14$
+above in \texttt{MAR2} and $2.26$ below in \texttt{AGE}, unusual jointly as
+Proposition~\ref{prop:mahal} measures; the two households with income $\$260$ have
+leverages $0.119$ and $0.107$. No Cook's
+distance exceeds $0.15$. (iii) Leverages depend on $\bX$ alone, so with \texttt{FACE} as
+the response they are unchanged, as the zero difference confirms.
+
+(c) Against the fitted values the standardised residuals show no trend; $11$ exceed $2$ in
+absolute value, against $12.5$ expected (Proposition~\ref{prop:flag-rate}). The quantile
+plot follows the line except in the lower tail, where the smallest residual is $-3.89$;
+its studentised residual, $3.99$ in absolute value, exceeds the Bonferroni cutoff $3.80$
+of Corollary~\ref{cor:bonferroni}. Koenker's statistic $17.8$ on $7$ degrees of freedom
+($p=0.013$) indicates some heteroscedasticity that the plot does not show. Against leverage,
+no point combines a large residual with a large leverage, as the small Cook's distances
+confirm.
+\end{solution}
+
+\begin{exercise}[ISLR §3.7, exercise 14]\label{ex:i-14}
+(a) After \texttt{set.seed(1)}, generate $x_1$ uniform on $(0,1)$,
+$x_2=0.5x_1+\delta/10$ and $y=2+2x_1+0.3x_2+\varepsilon$ for $100$ observations, with
+$\delta$ and $\varepsilon$ standard normal (the commands open the solution); write the
+model and its coefficients.
+(b) What is the correlation of \texttt{x1} and \texttt{x2}? Plot them. (c) Regress
+\texttt{y} on both: compare the estimates with the true coefficients; can
+$H_0\colon\beta_1=0$ and $H_0\colon\beta_2=0$ be rejected? (d) Regress on \texttt{x1}
+only; (e) on \texttt{x2} only. (f) Do (c)--(e) contradict each other? (g) Add the
+mismeasured observation \texttt{x1} $=0.1$, \texttt{x2} $=0.8$, \texttt{y} $=6$ and refit
+(c)--(e): is it an outlier, a high leverage point, or both, in each model?
+\end{exercise}
+
+\begin{solution}
+(a) $y=\beta_0+\beta_1x_1+\beta_2x_2+\varepsilon$ with $\beta_0=2$, $\beta_1=2$,
+$\beta_2=0.3$ and $\varepsilon\sim N(0,1)$.
+<<ex-i-14, fig.height=2.2, fig.width=6.4, out.width="0.5\\linewidth">>=
 set.seed(1)
-Boston$lstat2 <- Boston$lstat + rnorm(n, sd = 0.01)      # almost a copy
-m_col <- lm(medv ~ lstat + lstat2 + age + rm, data = Boston)
-rbind(
-  se  = c(base = coef(summary(fit))["lstat", "Std. Error"],
-          with_copy = coef(summary(m_col))["lstat", "Std. Error"]),
-  t   = c(coef(summary(fit))["lstat", "t value"],
-          coef(summary(m_col))["lstat", "t value"]))
-c(R2_base = summary(fit)$r.squared, R2_col = summary(m_col)$r.squared,
-  VIF_lstat = vif(m_col)[["lstat"]])
+x1 <- runif(100); x2 <- 0.5 * x1 + rnorm(100) / 10; y <- 2 + 2 * x1 + 0.3 * x2 + rnorm(100)
+op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
+plot(x1, x2, pch = 16, cex = 0.5)
+par(op)
+c(cor_x1_x2 = cor(x1, x2), VIF = 1 / (1 - cor(x1, x2)^2))
+fits14 <- list(both = lm(y ~ x1 + x2), x1_only = lm(y ~ x1), x2_only = lm(y ~ x2))
+lapply(fits14, function(m) round(coef(summary(m)), 4))
 @
-
-\subsection{Heteroscedasticity (§\ref{sec:4.5})}\label{sec:4.6.4}
-
-<<hetero-setup>>=
-set.seed(2)
-nh   <- 300
-xh   <- runif(nh, 1, 10)
-sig  <- 0.5 * xh                                          # true sd_i
-yh   <- 2 + 1.5 * xh + rnorm(nh, sd = sig)
-mh   <- lm(yh ~ xh)
-c(beta_true = 1.5, beta_hat = coef(mh)[["xh"]])           # still unbiased
+(b) The correlation is $0.835$, and the scatter plot is an increasing band.
+(c) $\hat\beta_0=2.13$, $\hat\beta_1=1.44$ and $\hat\beta_2=1.01$: $\beta_0$ is well
+estimated, $\beta_1$ and $\beta_2$ poorly, with standard errors $0.72$ and $1.13$ inflated
+by $\VIF=3.30$ (Proposition~\ref{prop:vif}). $H_0\colon\beta_1=0$ is rejected at $5\%$,
+barely ($p=0.049$); $H_0\colon\beta_2=0$ is not ($p=0.38$). (d) Alone, \texttt{x1} has
+slope $1.98$ with $t=4.99$, and (e) \texttt{x2} has slope $2.90$ with $t=4.58$: both
+reject $H_0$. (f) No: the simple slope of \texttt{x2} estimates $\beta_2$ plus $\beta_1$
+times the slope of \texttt{x1} on \texttt{x2} (Unit 3's omitted variable theorem), which
+is far from $0$; and in (c) each variable is tested given the other, with standard errors
+inflated by the collinearity (Proposition~\ref{prop:col-facts}), so each $t$ ratio is
+small although the two jointly matter.
+<<ex-i-14g>>=
+x1 <- c(x1, 0.1); x2 <- c(x2, 0.8); y <- c(y, 6)
+fits14g <- list(both = lm(y ~ x1 + x2), x1_only = lm(y ~ x1), x2_only = lm(y ~ x2))
+lapply(fits14g, function(m) round(coef(summary(m)), 4))
+round(sapply(fits14g, function(m) c(t_101 = rstudent(m)[[101]], h_101 = hatvalues(m)[[101]],
+  h_over_mean = hatvalues(m)[[101]] / (length(coef(m)) / 101),
+  cut = 3 * length(coef(m)) / 101, D_101 = cooks.distance(m)[[101]])), 4)
+c(cor_after = cor(x1, x2), VIF_after = 1 / (1 - cor(x1, x2)^2))
 @
-
-<<bp-identities>>=
-suppressMessages({library(lmtest); library(sandwich)})
-eh   <- residuals(mh); SSEh <- sum(eh^2)
-s2t  <- SSEh / nh                              # restricted MLE, Lemma 4.14
-g    <- eh^2 / s2t - 1
-Z    <- cbind(xh); M0 <- diag(nh) - matrix(1/nh, nh, nh)
-c(one_prime_g   = sum(g),                      # = 0
-  Ztg_eq_ZtM0g  = max(abs(t(Z) %*% g - t(Z) %*% M0 %*% g)))
-@
-
-<<bp-three-forms>>=
-LM_quad <- 0.5 * as.numeric(t(t(Z) %*% g) %*% solve(t(Z) %*% M0 %*% Z) %*% (t(Z) %*% g))
-aux     <- lm(g ~ Z)
-LM_SSR  <- sum((fitted(aux) - mean(g))^2) / 2  # SSR_z / 2
-c(quadratic_form = LM_quad, SSR_z_over_2 = LM_SSR,
-  bptest_orig    = bptest(mh, studentize = FALSE)$statistic[["BP"]],
-  p_value        = pchisq(LM_quad, df = ncol(Z), lower.tail = FALSE))
-@
-
-The statistic does not depend on $h$: the same $LM$ arises whether the variance model is
-$\sigma_i^2 = \alpha_0+\bz_i'\bgamma$, $\exp(\alpha_0+\bz_i'\bgamma)$, or any other
-differentiable $h$, because $h_0'$ cancelled in Step 2 of the proof. Nothing in the
-computation above refers to $h$ at all.
-
-<<bp-koenker>>=
-v     <- eh^2
-auxv  <- lm(v ~ Z)
-SSRv  <- sum((fitted(auxv) - mean(v))^2); SSTv <- sum((v - mean(v))^2)
-tau2  <- SSTv / nh                             # estimate of var(eps^2)
-c(n_R2_z        = nh * SSRv / SSTv,
-  LM_stud_defn  = (s2t^2 / tau2) * 2 * LM_quad,
-  bptest_default = bptest(mh)$statistic[["BP"]],
-  SSR_z         = 2 * LM_SSR, SSR_v_over_s2t4 = SSRv / s2t^2)
-@
-
-<<bp-ratio>>=
-c(ratio_observed = LM_quad / (nh * SSRv / SSTv),
-  tau2_over_2s4  = tau2 / (2 * s2t^2),         # equation (14)
-  tau2_over_s4   = tau2 / s2t^2,               # = 2 under normality
-  p_orig = bptest(mh, studentize = FALSE)$p.value,
-  p_stud = bptest(mh)$p.value)
-@
-
-Both reject overwhelmingly, but they are not the same statistic. The ratio is
-$\hat\tau^2/(2\tilde\sigma^4)$ exactly, as~\eqref{eq:bp-ratio} requires, and
-$\hat\tau^2/\tilde\sigma^4$ is well above the value $2$ that Lemma~\ref{lem:fourth} gives
-under normality: the squared residuals are more dispersed than a normal error would produce, so the
-studentised form is the one to report.
-
-<<wls-check>>=
-Xh <- cbind(1, xh)
-w  <- 1 / sig^2
-b_wls <- drop(solve(t(Xh) %*% diag(w) %*% Xh, t(Xh) %*% diag(w) %*% yh))
-m_wls <- lm(yh ~ xh, weights = w)
-Xs <- sqrt(w) * Xh; ys <- sqrt(w) * yh
-b_scaled <- drop(solve(t(Xs) %*% Xs, t(Xs) %*% ys))
-rbind(closed_form = b_wls, lm_weights = coef(m_wls), rescaled_OLS = b_scaled)
-@
-
-<<wls-efficiency>>=
-V_hc1 <- vcovHC(mh, type = "HC1")
-rbind(OLS = coef(summary(mh))[, "Std. Error"],
-      HC1 = sqrt(diag(V_hc1)),
-      WLS = coef(summary(m_wls))[, "Std. Error"])
-@
-
-The WLS standard errors are the smallest, as Theorem~\ref{thm:gls} requires; OLS with HC1
-is honest about its uncertainty but does not recover the lost efficiency.
-
-%==============================================================================
-\section{Pitfalls}\label{sec:4.7}
-%==============================================================================
-
-\subsection{Deleting an observation because it is influential}\label{sec:4.7.1}
-
-Influence is a reason to investigate, not to delete: an unusual observation may be the
-most informative one.
-
-<<pitfall-delete>>=
-i_max <- which.max(D_man)
-m_drop <- lm(medv ~ lstat + age + rm, data = Boston[-i_max, ])
-rbind(with = coef(fit), without = coef(m_drop),
-      pct_change = 100 * (coef(m_drop) - coef(fit)) / abs(coef(fit)))
-@
-
-\textbf{Diagnostic.} Report the fit with and without the point and let the size of the
-change speak.
-\textbf{Fix.} Delete only for a documented reason, such as a recording error or a unit that
-does not belong to the population of interest.
-
-\subsection{Treating a high-leverage point as an error}\label{sec:4.7.2}
-
-Leverage depends on $\bX$ alone, so a high-leverage point may be perfectly well fitted and
-carry no influence at all.
-
-<<pitfall-leverage>>=
-lev_top <- order(h, decreasing = TRUE)[1:5]
-round(cbind(leverage = h[lev_top], studentised = t_man[lev_top],
-            cooks_D = D_man[lev_top]), 4)
-@
-
-\textbf{Diagnostic.} Large $h_{ii}$ with small $|t_i|$ and small $D_i$.
-\textbf{Fix.} Judge influence by $D_i$ or DFFITS, which combine both ingredients
-(Theorem~\ref{thm:cook}).
-
-\subsection{Reading collinearity off pairwise correlations}\label{sec:4.7.3}
-
-A variable can be nearly a linear combination of several others while correlating weakly
-with each.
-
-<<pitfall-pairwise>>=
-set.seed(3)
-z1 <- rnorm(200); z2 <- rnorm(200); z3 <- z1 + z2 + rnorm(200, sd = 0.05)
-yz <- z1 + z2 + rnorm(200)
-mz <- lm(yz ~ z1 + z2 + z3)
-c(cor_z1_z3 = cor(z1, z3), cor_z2_z3 = cor(z2, z3),
-  max_pairwise = max(abs(cor(cbind(z1, z2, z3))[upper.tri(diag(3))])))
-vif(mz)
-@
-
-\textbf{Diagnostic.} Pairwise correlations near $0.7$ but VIFs in the hundreds.
-\textbf{Fix.} VIF, which regresses each predictor on \emph{all} the others.
-
-\subsection{Ignoring heteroscedasticity because the coefficients look fine}\label{sec:4.7.4}
-
-The point estimates are unbiased (Theorem~\ref{thm:hetero}); it is the standard errors,
-and therefore every $t$, $p$ and interval, that are wrong.
-
-<<pitfall-hetero>>=
-ci_ols <- confint(mh)["xh", ]
-ci_hc1 <- coefci(mh, vcov. = vcovHC(mh, type = "HC1"))["xh", ]
-rbind(OLS = ci_ols, HC1 = ci_hc1,
-      width = c(diff(ci_ols), diff(ci_hc1)))
-@
-
-\textbf{Diagnostic.} Compare the two sets of standard errors; a material gap means the
-usual formula is not to be trusted.
-\textbf{Fix.} Report HC1, or model the variance and use weighted least squares.
-
-%==============================================================================
-\section{Exercises}\label{sec:4.8}
-%==============================================================================
-
-\begin{exercise}\label{ex:standardise}
-Explain why raw residuals are not comparable across observations, and why the studentised
-residual, not the standardised one, is used to test whether an observation is an outlier.
-\end{exercise}
-
-\begin{solution}
-By the residual-variance theorem of Unit 2, $\var(e_i)=\sigma^2(1-h_{ii})$, which varies with $i$: a
-high-leverage point has a residual that is small by construction, so comparing raw
-residuals confuses a well-fitted point with a high-leverage one.
-
-Standardising by $s\sqrt{1-h_{ii}}$ equalises the variances but leaves $e_i$ in both
-numerator and denominator, since observation $i$ contributes to $s$. A genuine outlier
-inflates $s$ and so shrinks its own $r_i$, masking itself. The studentised residual uses
-$s_{(i)}$, computed without observation $i$, so the observation affects only the numerator;
-it has an exact $t_{n-k-2}$ distribution and is the correct test statistic.
+(g) In the regression on both, the new point has leverage $0.415$, fourteen times the mean
+and far above $3(k+1)/n=0.089$, and $t=2.11$: a high leverage point and a mild outlier,
+with Cook's distance $1.02$. It lies off the band of the other points
+(Proposition~\ref{prop:mahal}), lowers the correlation to $0.739$, and reverses the
+conclusions of (c): $\hat\beta_1=0.54$ is no longer significant while $\hat\beta_2=2.51$
+is ($p=0.006$). On \texttt{x1} alone its leverage $0.033$ is below $0.059$ but $t=3.44$:
+an outlier. On \texttt{x2} alone its leverage $0.101$ exceeds $0.059$ and $t=1.14$: a
+high leverage point, not an outlier.
 \end{solution}
 
-\begin{exercise}\label{ex:cook-num}
-A regression has $n=100$, $k=4$, $s = 3.2$. An observation has $e_i = 9.1$ and
-$h_{ii}=0.22$. Compute its standardised residual and Cook's distance, and say whether each
-exceeds its conventional flag.
+\begin{exercise}[SOA sample question 14]\label{ex:soa-14}
+The spread of the residuals of an ordinary least squares fit increases with the predicted
+values, and the observed responses range from $0$ to $100$. Which transformations of the
+response may make the variance of the residuals more constant? I.~The logarithm of one
+plus the response. II.~The square root. III.~The logit. (A) None; (B) I and II only;
+(C) I and III only; (D) II and III only; (E) the correct answer is not given by (A),
+(B), (C) or (D).
 \end{exercise}
 
 \begin{solution}
-\[
-r_i = \frac{9.1}{3.2\sqrt{1-0.22}} = \frac{9.1}{3.2(0.8832)} = 3.22 ,
-\]
-which exceeds $2$: an outlier by the usual convention. By~\eqref{eq:cook-form},
-\[
-D_i = \frac{r_i^2}{k+1}\cdot\frac{h_{ii}}{1-h_{ii}}
-    = \frac{10.37}{5}\cdot\frac{0.22}{0.78} = 2.074(0.2821) = 0.585 .
-\]
-Against the flag $D_i>1$ this is not influential; against the more sensitive $4/n = 0.04$
-it is. Its leverage $0.22$ also exceeds $2(k+1)/n = 0.10$, so the observation is unusual in
-both respects and worth examining.
-\end{solution}
-
-\begin{exercise}\label{ex:deletion}
-Derive $y_i - \bx_i'\hat\bb^{(-i)} = e_i/(1-h_{ii})$ from the deletion identity, and use it
-to explain why $\SSE_{(i)} = \SSE - e_i^2/(1-h_{ii})$.
-\end{exercise}
-
-\begin{solution}
-From~\eqref{eq:deletion}, $\bx_i'(\hat\bb-\hat\bb^{(-i)}) = h_{ii}e_i/(1-h_{ii})$, so
-\[
-y_i - \bx_i'\hat\bb^{(-i)} = e_i + \frac{h_{ii}e_i}{1-h_{ii}}
-= e_i\Bigl(1+\frac{h_{ii}}{1-h_{ii}}\Bigr) = \frac{e_i}{1-h_{ii}} .
-\]
-
-For the second claim, the deleted fit minimises the sum of squares over the remaining
-$n-1$ observations. Its residual sum of squares is the full-sample $\SSE$ less the
-contribution of observation $i$, adjusted for the fact that the remaining fit no longer
-accommodates it; the algebra gives exactly $\SSE - e_i^2/(1-h_{ii})$, which makes
-Theorem~\ref{thm:s2i} computable without refitting.
-\end{solution}
-
-\begin{exercise}\label{ex:vif-num}
-In a model with four predictors, regressing $x_2$ on the other three gives $R_2^2 = 0.94$.
-Compute $\VIF_2$, and state the factor by which collinearity has widened the confidence
-interval for $\beta_2$ relative to an orthogonal design.
-\end{exercise}
-
-\begin{solution}
-$\VIF_2 = 1/(1-0.94) = 16.7$, above the conventional flag of $10$.
-
-By~\eqref{eq:se-vif} the standard error carries $\sqrt{\VIF_2}$, so the interval is
-$\sqrt{16.7} = 4.08$ times wider than it would be were $x_2$ orthogonal to the others. The
-point estimate is unaffected: collinearity costs precision, not unbiasedness.
-\end{solution}
-
-\begin{exercise}\label{ex:collinear-consequences}
-Two predictors have $\VIF = 30$ each; both $t$ statistics are below $1$, yet the overall
-$F$ is $85$ on $2$ and $200$ degrees of freedom. Is this a contradiction? What would you do?
-\end{exercise}
-
-\begin{solution}
-Not a contradiction. The individual $t$ tests ask whether each variable adds anything
-\emph{given the other}, and with $\VIF=30$ the two carry nearly the same information, so
-neither adds much once the other is present. The $F$ asks whether the pair together adds
-anything, and it plainly does. The estimates are individually imprecise and strongly
-correlated with each other.
-
-Options: keep both, since prediction is unharmed and the pair is jointly significant; drop
-one, if they measure the same construct; combine them into a single index; or shrink with
-ridge regression (Unit 6). What is not defensible is concluding from the $t$ statistics
-that neither variable matters.
-\end{solution}
-
-\begin{exercise}\label{ex:hetero-consequences}
-Under heteroscedasticity, which of the following remain valid: unbiasedness of $\hat\bb$;
-$\var(\hat\bb) = \sigma^2(\bX'\bX)^{-1}$; the Gauss--Markov theorem; the $t$ distribution
-of the usual statistic?
-\end{exercise}
-
-\begin{solution}
-Only unbiasedness. Its proof used \Aref{1}--\Aref{2} alone
-(Theorem~\ref{thm:hetero}).
-
-The variance formula fails, being replaced by the sandwich~\eqref{eq:sandwich}.
-Gauss--Markov fails, since its proof used $\var(\be)=\sigma^2\bI$; weighted least squares
-is the efficient estimator instead (Theorem~\ref{thm:gls}). The usual $t$ statistic fails
-because its denominator estimates the wrong variance, so its $p$-values are wrong in an
-unknown direction. HC1 standard errors repair this without touching the estimates.
-\end{solution}
-
-\begin{exercise}\label{ex:wls}
-Show that weighted least squares with $w_i = 1/\sigma_i^2$ is ordinary least squares on the
-data $(y_i/\sigma_i,\ \bx_i/\sigma_i)$, and explain the weighting intuitively.
-\end{exercise}
-
-\begin{solution}
-The transformation is Theorem~\ref{thm:gls}: with $\bW^{1/2}=\diag(1/\sigma_i)$, the
-starred model has $\var(\be^\ast)=\bI$ and OLS on it gives
-$(\bX'\bW\bX)^{-1}\bX'\bW\bY$, which is $\hat\bb_W$.
-
-Dividing observation $i$ by $\sigma_i$ puts every observation on a common
-noise scale. An observation with large $\sigma_i$ says little about the regression line and
-receives a small weight $1/\sigma_i^2$; a precise observation receives a large one. Least
-squares weights all observations equally, which is right only when they are equally
-informative.
-\end{solution}
-
-\begin{exercise}\label{ex:which-diagnostic}
-For each symptom, name the assumption at risk and one remedy: (a) residuals curve as a
-function of the fitted values; (b) residual spread widens with the fitted value;
-(c) one observation has $D_i = 4$; (d) two predictors have $\VIF = 45$.
-\end{exercise}
-
-\begin{solution}
-(a) \Aref{1}, linearity. Add a quadratic term or transform a variable (Unit 3 §3.4).
-
-(b) \Aref{3}, constant variance. Report HC1 standard errors, use weighted least squares, or
-transform the response (§\ref{sec:4.5}).
-
-(c) No assumption. Influence is not a violation; investigate the observation, report the
-fit with and without it, and delete only for a documented reason.
-
-(d) \Aref{4} is not violated, $\bX'\bX$ being still invertible, but it is nearly so. Drop or
-combine one of the pair, or shrink (Unit 6).
-\end{solution}
-
-\begin{exercise}\label{ex:computational}
-In R: (a) verify Cook's distance from~\eqref{eq:cook-form} against
-\texttt{cooks.distance}; (b) confirm the deletion identity against explicit refits;
-(c) compare OLS, HC1 and WLS standard errors on heteroscedastic data.
-\end{exercise}
-
-\begin{solution}
-(a) is §\ref{sec:4.6.2}, (b) the first chunk there, (c) §\ref{sec:4.6.4}. In (c), weighted
-least squares is smallest on both coefficients, as Theorem~\ref{thm:gls} requires, because
-it is the only one of the three that uses the true $\sigma_i^2$. HC1 and OLS do not order
-each other: HC1 is larger than OLS on the slope and smaller on the intercept, which is the
-point of it. HC1 is not an inflated OLS standard error but an estimate of a different
-quantity, the true sampling variability, and that can lie on either side of the one the
-constant-variance formula reports.
+$g(y)=\ln(1+y)$ and $g(y)=\sqrt y$ are increasing and concave on $[0,\infty)$, with
+increasing convex inverses $h(t)=e^t-1$ and $h(t)=t^2$ on $g([0,\infty))$. By
+Proposition~\ref{prop:concave}, if $g(y_i)$ follows a linear model with identically
+distributed errors, the variance of $y_i$ is nondecreasing in its mean, the pattern
+described, and the transformation returns the model to constant variance; so I and II are
+true. $\ln(1+y)$ is defined at $y=0$, where $\ln y$ is not. III is false:
+$\logit(y)=\ln\{y/(1-y)\}$ is defined only for $0<y<1$, and even for $y/100$ it is
+infinite at the observed values $0$ and $100$. I and II only: (B).
 \end{solution}
 
 \end{document}

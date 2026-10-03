@@ -42,19 +42,31 @@ knitr::opts_chunk$set(fig.path = "figs/unit12-")
 %==============================================================================
 
 \begin{reading}
-ISLR §8.2.1.
+ISLR §8.2.1 (both reading lists). \ SRM learning outcome 4(c).
 \end{reading}
+
+\begin{remark}[ISLR §8.2.1]
+A tree has high variance: two halves of one data set can give very different trees. Averaging
+$B$ independent observations of variance $\sigma^2$ gives variance $\sigma^2/B$, and bootstrap
+aggregation, or \emph{bagging}, imitates that by averaging trees fitted to bootstrap samples of
+the one training set. The members are not independent, and the next theorem measures what
+their correlation costs. Bagging, random forests and boosting are \emph{ensemble} methods: each
+combines many building-block models, which ISLR calls \emph{weak learners} because each alone
+may predict only moderately well, into one predictor. For bagging and forests the members are
+large, low-bias trees whose weakness is their variance; for boosting they are small trees whose
+weakness is their bias.
+\end{remark}
 
 \subsection{Averaging}\label{sec:12.1.1}
 
 \begin{theorem}[Variance of an average of equicorrelated predictors]\label{thm:avg}
-Let $Z_1,\ldots,Z_B$ have common variance $\sigma^2$ and common pairwise correlation
+Let $Z_1,\ldots,Z_B$ have common variance $\sigma^2>0$ and common pairwise correlation
 $\rho$. Then
 \begin{equation}\label{eq:avg}
 \var\Bigl(\frac1B\sum_{b=1}^{B}Z_b\Bigr)
 \;=\;\rho\,\sigma^2\;+\;\frac{1-\rho}{B}\,\sigma^2 ,
 \end{equation}
-and necessarily $\rho\geqslant-1/(B-1)$. For $\rho\geqslant0$ the right side decreases in
+and, if $B\geqslant2$, necessarily $\rho\geqslant-1/(B-1)$. For $\rho\geqslant0$ the right side decreases in
 $B$ to the limit $\rho\sigma^2$.
 \end{theorem}
 
@@ -73,12 +85,13 @@ $\rho\geqslant0$ only the second term of~\eqref{eq:avg} depends on $B$ and it de
 
 \begin{remark}
 The second term of~\eqref{eq:avg} is what averaging removes and it vanishes at rate $1/B$,
-so the number of members is not a tuning parameter: more is never worse. The first term is
+so, for an average of numbers (a regression, or averaged class probabilities), the number
+of members is not a tuning parameter: more is never worse. The first term is
 what averaging cannot touch.
 \end{remark}
 
 \begin{corollary}[The same identity for sample moments]\label{cor:avg-sample}
-Let $\bQ$ be an $M\times B$ matrix, $\hat s_b^2$ the sample variance of its $b$th column
+Let $\bQ$ be an $M\times B$ matrix with $M,B\geqslant2$, $\hat s_b^2$ the sample variance of its $b$th column
 and $\hat c$ the average of the $B(B-1)/2$ distinct sample covariances between columns.
 Then the sample variance of the row means is exactly
 \begin{equation}\label{eq:avg-sample}
@@ -105,7 +118,7 @@ independent randomisations of one procedure.
 
 \begin{definition}[Bagging]\label{def:bagging}
 Let $\calD^{\ast1},\ldots,\calD^{\ast B}$ be independent bootstrap samples of the training
-data (Unit 1) and let $\hat f^{\ast b}$ be the predictor fitted to $\calD^{\ast b}$. The
+data (Unit 1's definition of the bootstrap) and let $\hat f^{\ast b}$ be the predictor fitted to $\calD^{\ast b}$. The
 \emph{bagged} predictor is
 \begin{equation}\label{eq:bagging}
 \hat f_{\mathrm{bag}}(\bx)=\frac1B\sum_{b=1}^{B}\hat f^{\ast b}(\bx)
@@ -116,10 +129,10 @@ pruned.
 \end{definition}
 
 \begin{proposition}[Bagging moves variance, not bias]\label{prop:bag-bias}
-The $\hat f^{\ast b}(\bx)$ are identically distributed, so
+For regression (or averaged class probabilities), the $\hat f^{\ast b}(\bx)$ are identically distributed, so
 $\expc[\hat f_{\mathrm{bag}}(\bx)]=\expc[\hat f^{\ast1}(\bx)]$: the ensemble has exactly
-the bias of one of its members. Its variance is~\eqref{eq:avg} and is strictly smaller
-than a member's whenever $\rho<1$.
+the bias of one of its members. Its variance is~\eqref{eq:avg} and, for $\sigma^2>0$, is strictly smaller
+than a member's whenever $\rho<1$ and $B\geqslant2$.
 \end{proposition}
 
 \begin{proof}
@@ -141,6 +154,15 @@ Proposition~\ref{prop:bag-bias} says the averaging introduces no bias; it does n
 bagged predictor has the bias of a tree fitted to $\calD$. Resampling makes the members differ, and paying a little bias for that is the trade bagging makes.
 \end{remark}
 
+\begin{remark}[ISLR §8.2.1]
+ISLR grows the $B$ trees deep and unpruned, so each has high variance and low bias, and notes
+that $B$ is not a critical parameter: a very large $B$ does not overfit, and $B=100$ already
+suffices in its example. For regression, or for averaged class probabilities, that is
+Theorem~\ref{thm:avg}: the variance decreases in $B$ and the
+bias, by Proposition~\ref{prop:bag-bias}, does not depend on it. For a qualitative response the
+bagged prediction is the majority vote, which the next proposition examines.
+\end{remark}
+
 \begin{proposition}[Majority vote under independence]\label{prop:vote}
 Fix $\bx$ and suppose the $B$ classifiers are independent and each correct with probability
 $\pi>\tfrac12$. Then the majority vote is correct with probability at least
@@ -152,7 +174,7 @@ $\pi>\tfrac12$. Then the majority vote is correct with probability at least
 \begin{proof}
 The number $N$ of correct classifiers is binomial with mean $B\pi$ and variance
 $B\pi(1-\pi)$. The vote is wrong only if $N\leqslant B/2$, that is
-$N-B\pi\leqslant-B(\pi-\tfrac12)$, and Chebyshev's inequality (prerequisites) bounds that
+$N-B\pi\leqslant-B(\pi-\tfrac12)$, and the prerequisites' theorem \emph{Markov, Chebyshev} bounds that
 probability by $B\pi(1-\pi)/\{B(\pi-\tfrac12)\}^2$.
 \end{proof}
 
@@ -161,16 +183,18 @@ The hypothesis is independence, and ensemble members built from one data set are
 independent: that is what $\rho>0$ means. Proposition~\ref{prop:vote} is therefore an
 account of why voting could help, not a guarantee that it does, and the size of $\rho$
 decides how much of the promised gain survives. The same caution applies
-to~\eqref{eq:avg}, where $\rho\sigma^2$ is the part that no amount of voting removes.
+to~\eqref{eq:avg}, where $\rho\sigma^2$ is the part that no amount of averaging removes.
 \end{remark}
 
 \subsection{Out-of-bag estimation}\label{sec:12.1.3}
 
 \begin{definition}[Out-of-bag prediction]\label{def:oob}
-Let $\calO_i=\{b:(\bx_i,y_i)\notin\calD^{\ast b}\}$ and $B_i=|\calO_i|$. The
-\emph{out-of-bag} prediction for observation $i$ is
+Let $\calO_i=\{b:\text{index } i \text{ is not drawn into }\calD^{\ast b}\}$ and $B_i=|\calO_i|$. For
+the $i$ with $B_i\geqslant1$, the \emph{out-of-bag} prediction for observation $i$ is
 $\hat f_{\mathrm{oob}}(\bx_i)=B_i^{-1}\sum_{b\in\calO_i}\hat f^{\ast b}(\bx_i)$, and the
-out-of-bag error is $n^{-1}\sum_i\{y_i-\hat f_{\mathrm{oob}}(\bx_i)\}^2$.
+out-of-bag error is the average of $\{y_i-\hat f_{\mathrm{oob}}(\bx_i)\}^2$ over those $i$.
+For classification, $\hat f_{\mathrm{oob}}(\bx_i)$ is the majority vote over $\calO_i$ and
+the out-of-bag error is the misclassification rate.
 \end{definition}
 
 \begin{theorem}[What out-of-bag estimates]\label{thm:oob}
@@ -178,34 +202,55 @@ out-of-bag error is $n^{-1}\sum_i\{y_i-\hat f_{\mathrm{oob}}(\bx_i)\}^2$.
 \item\label{oob:i} $\expc[B_i]=B(1-1/n)^n$, which increases to $B/e\approx0.368B$.
 \item\label{oob:ii} Every tree averaged in $\hat f_{\mathrm{oob}}(\bx_i)$ was fitted
       without $(\bx_i,y_i)$, so the prediction is out of sample.
-\item\label{oob:iii} Conditionally on $B_i=B'$, the out-of-bag prediction has the same
-      bias as the full ensemble and, under the hypotheses of Theorem~\ref{thm:avg},
-      variance larger by
+\item\label{oob:iii} Conditionally on $B_i=B'$, idealise the $B'$ out-of-bag members as
+      $B'$ members distributed like all the others (ignoring that a bootstrap sample
+      drawn from the $n-1$ observations other than $i$ differs from one drawn from all
+      $n$), and evaluate at a new point $\bx_0$ independent of the data. Then their
+      average has the same mean as the full ensemble and, under the hypotheses of
+      Theorem~\ref{thm:avg}, variance larger by
       \begin{equation}\label{eq:oob-gap}
       (1-\rho)\sigma^2\Bigl(\frac1{B'}-\frac1B\Bigr) ,
       \end{equation}
-      so its mean squared error exceeds the full ensemble's by that amount, of order
-      $(e-1)(1-\rho)\sigma^2/B$.
+      so its mean squared error at $\bx_0$ exceeds the full ensemble's by that amount,
+      of order $(e-1)(1-\rho)\sigma^2/B$. No comparison holds between
+      $\hat f_{\mathrm{oob}}(\bx_i)$ and $\hat f_{\mathrm{bag}}(\bx_i)$, whose members
+      include trees that have seen $(\bx_i,y_i)$. If the observations are iid, then,
+      since $(\bx_i,y_i)$ is independent of the other $n-1$ observations and unseen by
+      the out-of-bag members (part~\ref{oob:ii}), the $i$th term of the out-of-bag
+      error is distributed as the squared error at a new point of an average of $B_i$
+      members each fitted to $n$ draws with replacement from those $n-1$ observations; the
+      idealisation identifies this with the situation at $\bx_0$.
 \end{enumerate}
 \end{theorem}
 
 \begin{proof}
-\ref{oob:i} By the out-of-bag fraction proposition of Unit 1 each bootstrap sample misses
+\ref{oob:i} By Unit 1's proposition \emph{out-of-bag fraction} each bootstrap sample misses
 $(\bx_i,y_i)$ with probability $(1-1/n)^n$, and $B_i$ counts $B$ independent such events.
 
 \ref{oob:ii} is Definition~\ref{def:oob}.
 
-\ref{oob:iii} The members are identically distributed, so an average of any $B'$ of them
-has the common mean and, by Theorem~\ref{thm:avg} with $B'$ in place of $B$, variance
+\ref{oob:iii} Under the idealisation of the statement the $B'$ out-of-bag members are
+identically distributed with the others, so at $\bx_0$ their average has the common mean and, by Theorem~\ref{thm:avg} with $B'$ in place of $B$, variance
 $\rho\sigma^2+(1-\rho)\sigma^2/B'$. Subtracting the same expression with $B$
 gives~\eqref{eq:oob-gap}. Two predictors with the same expectation differ in mean squared
 error by exactly their difference in variance. Substituting $B'=B/e$
 gives $(1-\rho)\sigma^2(e-1)/B$.
 \end{proof}
 
+\begin{remark}[ISLR §8.2.1]
+ISLR's account: each bagged tree uses about two thirds of the observations, the remaining
+third are its out-of-bag observations, and averaging the roughly $B/3$ out-of-bag predictions
+of observation $i$ gives a valid test prediction for it. Part~\ref{oob:i} is the precise
+fraction, $(1-1/n)^n\to e^{-1}=0.368$. ISLR adds that for large $B$ the out-of-bag error is
+virtually the leave-one-out cross-validation error of the bagged model, which
+part~\ref{oob:ii} makes plausible but does not prove: no tree in the average has seen observation $i$. It costs no refitting,
+which is why it is the error estimate used for bagged models on large data sets.
+\end{remark}
+
 \begin{remark}
-So the out-of-bag error is honest about being out of sample and is biased \emph{upward} as
-an estimate of the full ensemble's error, by an amount that vanishes like $1/B$. At $B=500$ that correction is negligible beside the variability of the estimate itself: on
+So the out-of-bag error is honest about being out of sample and, under the idealisation of
+part~\ref{oob:iii}, is biased \emph{upward} as an estimate of the full ensemble's error at a
+new point, by an amount that vanishes like $1/B$. At $B=500$ that correction is negligible beside the variability of the estimate itself: on
 one split of \texttt{Boston} the out-of-bag and test errors differ by a factor of $1.8$, and
 averaged over twenty-five splits by $12\%$.
 \end{remark}
@@ -214,7 +259,8 @@ averaged over twenty-five splits by $12\%$.
 
 \begin{definition}[Mean decrease in impurity]\label{def:mdi}
 For a tree $T$ let $\Delta(t)=R(t)-R(t_L)-R(t_R)$ be the cost reduction at internal node
-$t$ (Unit 11), non-negative by the refinement property. The \emph{impurity importance} of
+$t$, non-negative because the costs of Unit 11 refine (Unit 11's proposition \emph{the three
+costs of this unit refine}). The \emph{impurity importance} of
 predictor $j$ in $T$ is $\sum\{\Delta(t):t\text{ splits on }j\}$, and in an ensemble it is
 the average of that over the members.
 \end{definition}
@@ -224,32 +270,41 @@ the average of that over the members.
 \sum_{t\ \mathrm{internal}}\Delta(t)\;=\;R(r)-R(T) ,
 \end{equation}
 $r$ being the root. So the impurity importances of all predictors sum to the total cost the
-tree removes, and dividing by $R(r)-R(T)$ turns them into shares.
+tree removes, and, when $R(r)>R(T)$, dividing by $R(r)-R(T)$ turns them into shares.
 \end{proposition}
 
 \begin{proof}
-Write $I$ for the internal nodes and $L$ for the leaves. Every node except the root is a
+Write $I$ for the internal nodes and $\calL$ for the leaves. Every node except the root is a
 child of exactly one internal node, so
-$\sum_{t\in I}\{R(t_L)+R(t_R)\}=\sum_{t\neq r}R(t)=\sum_{t\in I}R(t)-R(r)+\sum_{t\in L}R(t)$.
-Subtracting this from $\sum_{t\in I}R(t)$ leaves $R(r)-\sum_{t\in L}R(t)=R(r)-R(T)$.
+$\sum_{t\in I}\{R(t_L)+R(t_R)\}=\sum_{t\neq r}R(t)=\sum_{t\in I}R(t)-R(r)+\sum_{t\in \calL}R(t)$.
+Subtracting this from $\sum_{t\in I}R(t)$ leaves $R(r)-\sum_{t\in \calL}R(t)=R(r)-R(T)$.
 \end{proof}
+
+\begin{remark}[ISLR §8.2.1]
+Bagging improves accuracy at the expense of interpretability: the result is no longer one tree.
+ISLR's summary is a \emph{variable importance} measure: for a regression tree, the total
+decrease in the residual sum of squares due to splits on a predictor, averaged over the $B$
+trees; for a classification tree, the same with the Gini index. That is
+Definition~\ref{def:mdi} with the node cost of Unit 11, and Proposition~\ref{prop:mdi} turns
+it into shares.
+\end{remark}
 
 \begin{definition}[Permutation importance]\label{def:perm}
 Let $\calE$ be a set of observations not used in fitting and $L$ the loss. The
 \emph{permutation importance} of predictor $j$ is
 \begin{equation}\label{eq:perm}
-\frac1{|\calE|}\sum_{i\in\calE}L\bigl(y_i,\hat f(\bx_i^{\pi(j)})\bigr)
+\frac1{|\calE|}\sum_{i\in\calE}L\bigl(y_i,\hat f(\bx_i^{(j)})\bigr)
 -\frac1{|\calE|}\sum_{i\in\calE}L\bigl(y_i,\hat f(\bx_i)\bigr) ,
 \end{equation}
-where $\bx^{\pi(j)}$ is $\bx$ with the $j$th coordinate replaced by that of a randomly
-chosen member of $\calE$. In a bagged ensemble $\calE$ is taken to be the out-of-bag set of
+where $\bx^{(j)}$ is $\bx$ with the $j$th coordinate replaced by its entry in a uniformly random
+permutation of the $j$th column of $\calE$. In a bagged ensemble $\calE$ is taken to be the out-of-bag set of
 each tree.
 \end{definition}
 
 \begin{proposition}[A useless predictor has zero permutation importance]\label{prop:perm}
 If $X_j$ is independent of $(Y,X_{-j})$ and the observations are independent and
 identically distributed, then permuting the $j$th column leaves the joint law of $\calE$
-unchanged, so the population version of~\eqref{eq:perm} is $0$.
+unchanged, so the expectation of~\eqref{eq:perm}, over $\calE$ and the permutation, is $0$.
 \end{proposition}
 
 \begin{proof}
@@ -262,37 +317,44 @@ in~\eqref{eq:perm} have the same expectation.
 \begin{remark}
 No such statement holds for Definition~\ref{def:mdi}. A predictor independent of the
 response still offers cutpoints, and the best of many cutpoints reduces the training cost
-by a positive amount; a predictor offering more distinct cutpoints reduces it by more.
-So impurity importance is positive for pure noise and increases with the number of values the predictor takes; on four noise variables the
+by a positive amount; a predictor offering more distinct cutpoints tends to reduce it by more.
+So impurity importance is positive for pure noise and tends to increase with the number of candidate splits the predictor offers ($n-1$ for a
+continuous predictor, $2^{k-1}-1$ for a $k$-level factor); on four noise variables the
 impurity importances differ elevenfold.
 \end{remark}
+
+% \periodmark{End of period 1 of 3.}
 
 %==============================================================================
 \section{Random Forests}\label{sec:12.2}
 %==============================================================================
 
 \begin{reading}
-ISLR §8.2.2.
+ISLR §8.2.2 (both reading lists). \ SRM learning outcomes 4(c), 4(d).
 \end{reading}
 
 \subsection{Decorrelation}\label{sec:12.2.1}
 
-Theorem~\ref{thm:avg} leaves $\rho\sigma^2$ standing however large $B$ is. Bagged trees
-are correlated for a plain reason: each is grown greedily from a resample of the same data,
-so if one predictor dominates the first split it dominates it in nearly every member, and
-the trees agree near the top.
+\begin{remark}[ISLR §8.2.2]
+Theorem~\ref{thm:avg} leaves $\rho\sigma^2$ standing however large $B$ is. Bagged trees are
+correlated for a plain reason: each is grown greedily from a resample of the same data, so if
+one strong predictor dominates the first split it dominates it in nearly every member, and the
+trees agree near the top. Averaging highly correlated quantities does not reduce the variance
+by much. A random forest forces the trees apart.
+\end{remark}
 
 \begin{definition}[Random forest]\label{def:rf}
 A \emph{random forest} is bagging with one change: at every split, a uniformly random
 subset of $m$ of the $p$ predictors is drawn, independently of everything else, and the
 split may use only those $m$. Taking $m=p$ recovers bagging. The default is
-$m=\lfloor p/3\rfloor$ for regression and $m=\lfloor\sqrt p\rfloor$ for classification.
+$m=\lfloor p/3\rfloor$ for regression and $m=\lfloor\sqrt p\rfloor$ for classification in
+\texttt{randomForest}; ISLR takes $m\approx\sqrt p$.
 \end{definition}
 
 \begin{proposition}[Availability]\label{prop:avail}
 At any given split a fixed predictor is among the $m$ candidates with probability $m/p$.
-Along a path of $d$ consecutive splits it is available at none of them with probability
-$(1-m/p)^d$, and at least once with probability $1-(1-m/p)^d$.
+Along a path of $\ell$ consecutive splits it is available at none of them with probability
+$(1-m/p)^\ell$, and at least once with probability $1-(1-m/p)^\ell$.
 \end{proposition}
 
 \begin{proof}
@@ -303,25 +365,78 @@ $\binom{p-1}{m-1}/\binom pm=m/p$. The draws at distinct splits are independent.
 \begin{remark}
 With $p=13$ and $m=4$ a given predictor is available at $30.8\%$ of splits, and the chance
 that the dominant one is shut out of all three splits nearest the root is
-$(9/13)^3=0.332$. A third of the trees are therefore forced to start somewhere else, which
-is the mechanism by which $\rho$ falls.
+$(9/13)^3=0.332$. In a third of the trees it is therefore absent from the first three splits
+along a path, and in $9/13=69\%$ it cannot be the root split, which
+is the mechanism by which $\rho$ falls. ISLR's phrasing: on average $(p-m)/p$ of the splits
+do not even consider the strong predictor.
 \end{remark}
 
 \begin{remark}[The trade-off, read off~\eqref{eq:avg}]
 Both quantities in Theorem~\ref{thm:avg} depend on $m$. Lowering $m$ lowers $\rho$, which
 lowers the floor $\rho\sigma^2$; it also removes candidates from every split, which can
-only raise the training cost of each tree and generally raises $\sigma^2$. The ensemble's
+only raise the cost of each split taken by itself (a greedy tree as a whole can end up
+better or worse) and generally raises $\sigma^2$. The ensemble's
 limiting variance is the product $\rho(m)\sigma^2(m)$ of a term that increases in $m$ and
 one that decreases, and nothing here says which effect wins. Nor is variance the whole error: restricting the candidates also changes the bias. Measured
 on a simulated design, the variance is smallest at $m=1$, the squared bias smallest at
-$m=p$, and their sum smallest in between. The choice of $m$ is made by the out-of-bag error.
+$m=p$, and their sum flat over the upper half of the range. The choice of $m$ is made by the out-of-bag error.
+ISLR adds that a small $m$ typically helps when there are many correlated predictors; its
+illustration, $15$ cancer classes predicted from $500$ gene expressions, uses data not
+distributed with the book.
+\end{remark}
+
+\begin{example}[Bagging and random forests on \texttt{Heart}; ISLR Figures 8.8--8.9]
+\label{ex:heart}
+The $297$ complete records of ISLR's \texttt{Heart} data, $13$ predictors and the response
+\texttt{AHD}, heart disease or not; $150$ for training. Bagging is \texttt{mtry = 13}, the
+forest \texttt{mtry = 4}, close to $\sqrt{13}$:
+<<heart>>=
+suppressMessages(library(randomForest))
+H <- na.omit(read.csv("data/islr/Heart.csv", stringsAsFactors = TRUE)[, -1])
+set.seed(1); ht <- sample(nrow(H), 150)
+hfit <- function(m) randomForest(AHD ~ ., H, subset = ht, mtry = m, ntree = 300,
+  xtest = H[-ht, names(H) != "AHD"], ytest = H$AHD[-ht])
+set.seed(1); hb <- hfit(13); hr <- hfit(4)
+rbind(bagging = c(test = hb$test$err.rate[300, 1], oob = hb$err.rate[300, 1]),
+      forest  = c(test = hr$test$err.rate[300, 1], oob = hr$err.rate[300, 1]))
+set.seed(1); hall <- randomForest(AHD ~ ., H, mtry = 13, ntree = 300)
+round(sort(importance(hall)[, 1], decreasing = TRUE)[1:6], 1)
+@
+At $300$ trees the forest's test error, $16.3\%$, is below bagging's $17.0\%$, the ordering of
+ISLR's Figure 8.8. The two out-of-bag errors are both $33/150=22.0\%$: they are estimates from
+the $150$ training records and cannot separate the two methods at this size. The Gini
+importances of the bagged trees put \texttt{Thal}, \texttt{Ca} and \texttt{ChestPain} first, in
+the order of ISLR's Figure 8.9.
+\end{example}
+
+\begin{figure}[H]\centering
+<<heart-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
+op <- par(mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
+plot(1:300, hb$test$err.rate[, 1], type = "l", lwd = 2, col = "#1E3A8A", ylim = c(0.1, 0.35),
+     xlab = "number of trees", ylab = "error rate")
+lines(1:300, hr$test$err.rate[, 1], lwd = 2, col = "#B45309")
+lines(1:300, hb$err.rate[, 1], lwd = 2, lty = 3, col = "#1E3A8A")
+lines(1:300, hr$err.rate[, 1], lwd = 2, lty = 3, col = "#B45309")
+legend("topright", bty = "n", cex = 0.8, lwd = 2, lty = c(1, 1, 3, 3),
+       col = c("#1E3A8A", "#B45309", "#1E3A8A", "#B45309"),
+       legend = c("test: bagging", "test: forest", "OOB: bagging", "OOB: forest"))
+par(op)
+@
+\caption{Example~\ref{ex:heart}, ISLR's Figure 8.8 redrawn: test and out-of-bag error against
+the number of trees, for bagging and for the forest.}\label{fig:heart}
+\end{figure}
+
+\begin{remark}
+In Figure~\ref{fig:heart} each curve settles once $B$ is a few dozen, apart from fluctuations
+of a few test cases. For a majority vote this is an observation, not
+Theorem~\ref{thm:avg}, which concerns averages of numbers.
 \end{remark}
 
 \subsection{What decorrelation costs}\label{sec:12.2.2}
 
 \begin{remark}
 Restricting the candidate set is not free, and the case where it hurts is the one Unit 11
-used to show greedy growing fail. For the exclusive-or truth every single split has zero
+used to show greedy growing fail. For the checkerboard truth every single split has zero
 population gain, and the structure appears only when a split on $x_1$ is followed by one on
 $x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. On a box truth in two of six coordinates, bagging reaches a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
 truth the two are indistinguishable. Decorrelation helps when the members are similar for a
@@ -330,8 +445,8 @@ bad reason and hurts when they are similar because the problem requires it.
 
 \begin{remark}
 Two properties of a single tree survive the averaging and one does not. Monotone
-invariance of the predictors and the direct handling of categorical variables (Unit 11)
-hold for every member, hence for the ensemble. Interpretability does not: the object is
+invariance of the predictors (Unit 10's proposition \emph{monotone invariance}) and the
+direct handling of categorical variables (Unit 11) hold for every member, hence for the ensemble. Interpretability does not: the object is
 now several hundred trees and the only summaries left are the importance measures of §\ref{sec:12.1.4}.
 \end{remark}
 
@@ -340,12 +455,19 @@ now several hundred trees and the only summaries left are the importance measure
 %==============================================================================
 
 \begin{reading}
-ISLR §8.2.3.
+ISLR §8.2.3 (both reading lists). ISLR §8.2.4--8.2.5 (Bayesian additive regression trees) are
+excluded by the syllabus. \ SRM learning outcome 4(c).
 \end{reading}
+
+\begin{remark}[ISLR §8.2.3]
+Bagging fits its trees independently and averages them. Boosting grows them sequentially, each
+fitted to the residuals the previous ones left, and adds a shrunken copy of each: the model
+\emph{learns slowly}.
+\end{remark}
 
 \subsection{Fitting the residuals}\label{sec:12.3.1}
 
-\begin{definition}[Boosting for regression]\label{def:boost}
+\begin{definition}[Boosting for regression; ISLR Algorithm 8.2]\label{def:boost}
 Fix a shrinkage parameter $\lambda\in(0,1]$, a number of rounds $B$, and a class $\calG$ of
 base learners, here trees with $d$ splits. Set $\hat f^{(0)}\equiv0$ and $r_i^{(0)}=y_i$.
 For $b=1,\ldots,B$, fit $\hat g^{(b)}\in\calG$ to the data $(\bx_i,r_i^{(b-1)})$ and put
@@ -355,37 +477,57 @@ For $b=1,\ldots,B$, fit $\hat g^{(b)}\in\calG$ to the data $(\bx_i,r_i^{(b-1)})$
 r_i^{(b)}=r_i^{(b-1)}-\lambda\hat g^{(b)}(\bx_i) .
 \end{equation}
 The output is $\hat f^{(B)}=\lambda\sum_{b\leqslant B}\hat g^{(b)}$. No resampling is
-involved and the members are built in sequence.
+involved and the members are built in sequence. A tree with $d$ splits has $d+1$ leaves.
 \end{definition}
+
+\begin{remark}[ISLR §8.2.3]
+ISLR names three tuning parameters. The number of trees $B$: unlike bagging and random forests,
+boosting can overfit if $B$ is too large, although slowly if at all, and $B$ is chosen by
+cross-validation. The shrinkage $\lambda$, typically $0.01$ or $0.001$; a very small $\lambda$
+needs a very large $B$. The number of splits $d$, the \emph{interaction depth}: often $d=1$
+works well, each tree a stump, and the boosted model is then additive.
+\end{remark}
 
 \begin{proposition}[Why the residuals]\label{prop:stagewise}
 With squared error loss, the stagewise problem
 $\min_{g\in\calG}\sum_i\{y_i-\hat f^{(b-1)}(\bx_i)-g(\bx_i)\}^2$ is exactly the least
 squares fit of $g$ to the current residuals $r_i^{(b-1)}$, and
-$r_i^{(b)}=y_i-\hat f^{(b)}(\bx_i)$ holds at every stage.
+$r_i^{(b)}=y_i-\hat f^{(b)}(\bx_i)$ holds at every stage. If, moreover, $\hat g^{(b)}$ is
+fitted to all $n$ residuals by least squares on its leaves (each leaf value the mean of the
+residuals in it), then $\|r^{(b)}\|^2=\|r^{(b-1)}\|^2-\lambda(2-\lambda)\|\hat g^{(b)}\|^2
+\leqslant\|r^{(b-1)}\|^2$, where $\hat g^{(b)}$ stands for the vector
+$(\hat g^{(b)}(\bx_i))_{i\leqslant n}$: the training error does not increase in $b$.
 \end{proposition}
 
 \begin{proof}
 The objective is $\sum_i\{r_i^{(b-1)}-g(\bx_i)\}^2$ by the definition of the residual, which
 is the least squares criterion for $g$ against $r^{(b-1)}$. The second claim follows by
 induction: it holds at $b=0$, and subtracting the two lines of~\eqref{eq:boost} preserves
-it.
+it. For the third, by Unit 10's proposition \emph{a tree is a linear model on indicators} the
+leaf-mean fit $\hat g^{(b)}$ is the orthogonal projection of $r^{(b-1)}$ on the span of the
+leaf indicators, so $\langle r^{(b-1)},\hat g^{(b)}\rangle=\|\hat g^{(b)}\|^2$ and
+$\|r^{(b-1)}-\lambda\hat g^{(b)}\|^2=\|r^{(b-1)}\|^2-2\lambda\|\hat g^{(b)}\|^2
++\lambda^2\|\hat g^{(b)}\|^2$, which is the identity; $\lambda(2-\lambda)\geqslant0$ for
+$\lambda\in(0,1]$.
 \end{proof}
 
 \begin{remark}
 Boosting therefore has nothing to do with the variance argument of §\ref{sec:12.1}. Bagging
 averages members fitted to the same target and lowers the second term of~\eqref{eq:avg};
-boosting adds members fitted to what is left over, and each one lowers the training error.
+boosting adds members fitted to what is left over, and each one lowers the training error
+(Proposition~\ref{prop:stagewise}).
 It is a device against bias, and the base learner is chosen small for that reason where
 bagging chooses it large.
 \end{remark}
 
 \subsection{Boosting a linear learner}\label{sec:12.3.2}
 
-The base learner in Definition~\ref{def:boost} is a tree, whose splits depend on the
-response, so the map from data to fit is not linear and cannot be written as a matrix. If
-the learner is replaced by a fixed linear smoother the whole procedure collapses to one
-matrix, and everything about $\lambda$ and $B$ can be read off its spectrum.
+\begin{remark}
+The base learner in Definition~\ref{def:boost} is a tree, whose splits depend on the response,
+so the map from data to fit is not linear and cannot be written as a matrix. If the learner is
+replaced by a fixed linear smoother the whole procedure collapses to one matrix, and everything
+about $\lambda$ and $B$ can be read off its spectrum.
+\end{remark}
 
 \begin{theorem}[The boosting operator]\label{thm:boost-op}
 Let $\bS$ be symmetric with eigenvalues $s_1,\ldots,s_n$ in $[0,1]$, and take the base
@@ -397,7 +539,8 @@ learner to be $\br\mapsto\bS\br$. Then for every $B\geqslant0$
 \end{equation}
 The boosting operator is symmetric with eigenvalues $1-(1-\lambda s_k)^{B}$, which for
 $\lambda\in(0,1]$ increase in $B$ from $0$ to $1$ at every $k$ with $s_k>0$ and stay at $0$
-where $s_k=0$. Hence
+where $s_k=0$. Hence its trace, the effective degrees of freedom of Unit 6's definition
+\emph{linear smoother and effective degrees of freedom},
 \begin{equation}\label{eq:boost-edf}
 \df(B)=\sum_{k=1}^{n}\bigl\{1-(1-\lambda s_k)^{B}\bigr\}
 \end{equation}
@@ -412,7 +555,7 @@ $\br^{(b)}=\br^{(b-1)}-\lambda\bS\br^{(b-1)}=(\bI-\lambda\bS)\br^{(b-1)}$, which
 first identity; and $\hat\bff^{(b)}=\by-\br^{(b)}$ throughout by
 Proposition~\ref{prop:stagewise}, which gives the second.
 
-By the spectral theorem (prerequisites) write $\bS=\bU\diag(s_k)\bU'$ with $\bU$
+By the prerequisites' \emph{spectral theorem} write $\bS=\bU\diag(s_k)\bU'$ with $\bU$
 orthogonal. Then $(\bI-\lambda\bS)^{B}=\bU\diag\{(1-\lambda s_k)^{B}\}\bU'$ and the
 boosting operator is $\bU\diag\{1-(1-\lambda s_k)^{B}\}\bU'$, symmetric with the stated
 eigenvalues. For $\lambda\in(0,1]$ and $s_k\in[0,1]$ one has $1-\lambda s_k\in[0,1)$
@@ -431,7 +574,7 @@ being asked to stop.
 \end{remark}
 
 \begin{corollary}[$\lambda$ and $B$ trade off]\label{cor:lambdaB}
-Fix an eigenvalue $s>0$ and a target level $c\in(0,1)$. The number of rounds needed for
+Fix an eigenvalue $s>0$ with $\lambda s<1$ and a target level $c\in(0,1)$. The number of rounds needed for
 $1-(1-\lambda s)^{B}=c$ is
 \begin{equation}\label{eq:lambdaB}
 B=\frac{\ln(1-c)}{\ln(1-\lambda s)}\ \sim\ \frac{-\ln(1-c)}{\lambda s}
@@ -443,7 +586,7 @@ required, and the two parameters are close to a single one.
 
 \begin{proof}
 Solve $(1-\lambda s)^{B}=1-c$ by taking logarithms. As $\lambda\downarrow0$,
-$\ln(1-\lambda s)=-\lambda s+O(\lambda^2)$ by Taylor's theorem (prerequisites).
+$\ln(1-\lambda s)=-\lambda s+O(\lambda^2)$ by the prerequisites' theorem \emph{Taylor with Lagrange remainder}.
 \end{proof}
 
 \subsection{Depth and interaction}\label{sec:12.3.3}
@@ -459,7 +602,8 @@ $\hat f^{(B)}(\bx)=\sum_{j=1}^{p}g_j(x_j)$.
 \begin{proof}
 A leaf of $T$ is reached by following at most $d$ splits, so its box is an intersection of
 at most $d$ half-lines and its indicator is a function of the at most $d$ coordinates those
-splits used. By Unit 11 the tree is a sum of leaf constants times such indicators, which is
+splits used. By Unit 10's proposition \emph{a tree is a linear model on indicators}, the tree
+is a sum of leaf constants times such indicators, which is
 the first claim. For $d=1$ each of the two leaves involves one coordinate, the same one, so
 a stump is a function of a single $x_j$; a sum of such functions collects into
 $\sum_jg_j(x_j)$, and~\eqref{eq:boost} produces exactly such a sum.
@@ -485,17 +629,109 @@ allowed to represent, and Corollary~\ref{cor:additive} turns it into something c
 and depth two, \eqref{eq:mixed} is $7\times10^{-15}$ and $0.79$.
 \end{remark}
 
+\begin{remark}[The hyperparameters; SRM learning outcome 4(c)]
+\begin{itemize}
+\item Bagging: the number of trees $B$, a computing budget and not a tuning parameter
+      (Theorem~\ref{thm:avg}, for regression or averaged class probabilities); the trees are grown deep and not pruned.
+\item Random forests: $B$ as for bagging, and the number $m$ of candidate predictors per split,
+      chosen by the out-of-bag error (the remark on the trade-off after
+      Proposition~\ref{prop:avail}); $m=p$ is bagging.
+\item Boosting: the number of rounds $B$, a genuine tuning parameter chosen by
+      cross-validation (by analogy with Theorem~\ref{thm:boost-op}, which is proved for a
+      linear learner); the shrinkage $\lambda$, nearly one
+      parameter with $B$ (as Corollary~\ref{cor:lambdaB} shows for a linear learner); the interaction depth $d$, which bounds
+      the order of the interactions the model can represent (Proposition~\ref{prop:depth}).
+\end{itemize}
+\end{remark}
+
+% \periodmark{End of period 2 of 3.}
+
 %==============================================================================
-\section{Computation: Formulas Against Package Output}\label{sec:12.4}
+\section{Computation in R}\label{sec:12.4}
 %==============================================================================
 
 \begin{reading}
-ISLR §8.3.3--8.3.4.
+ISLR §8.3.3--8.3.4 (labs); §8.3.5 (Bayesian additive regression trees) is excluded by the
+syllabus. \ SRM learning outcomes 4(c), 4(d).
 \end{reading}
+
+\subsection{The ISLR labs}\label{sec:comp-labs}
+
+\begin{example}[Bagging and random forests on \texttt{Boston}; ISLR §8.3.3]\label{ex:lab-bag}
+The training half of Unit 11's \texttt{Boston} lab, $p=12$ predictors, ISLR's seeds:
+<<lab-bag>>=
+suppressMessages({library(ISLR2); library(randomForest); library(gbm)})
+set.seed(1); train <- sample(1:nrow(Boston), nrow(Boston) / 2)
+tmse <- function(f, ...)
+  mean((predict(f, newdata = Boston[-train, ], ...) - Boston$medv[-train])^2)
+set.seed(1)
+bag.boston <- randomForest(medv ~ ., Boston, subset = train, mtry = 12,
+                           importance = TRUE)
+bag25 <- randomForest(medv ~ ., Boston, subset = train, mtry = 12, ntree = 25)
+set.seed(1)
+rf.boston <- randomForest(medv ~ ., Boston, subset = train, mtry = 6,
+                          importance = TRUE)
+c(bagging = tmse(bag.boston), bagging_25_trees = tmse(bag25),
+  forest_m6 = tmse(rf.boston))
+round(importance(rf.boston)[order(-importance(rf.boston)[, 1]), ], 1)[1:5, ]
+@
+ISLR's numbers are reproduced: the bagged test mean squared error is $23.42$, about two thirds
+of the $35.29$ of the single tree in Unit 11's lab; $25$ trees give $25.75$; the forest with
+$m=6$ gives $20.07$. Both importance columns put \texttt{rm} and \texttt{lstat} far ahead.
+\texttt{IncNodePurity} is Definition~\ref{def:mdi}. \texttt{\%IncMSE} is
+Definition~\ref{def:perm} on each tree's out-of-bag set, averaged over trees and divided by its
+standard error across trees.
+\end{example}
+
+\begin{example}[Boosting on \texttt{Boston}; ISLR §8.3.4]\label{ex:lab-boost}
+<<lab-boost>>=
+set.seed(1)
+boost.boston <- gbm(medv ~ ., data = Boston[train, ], distribution = "gaussian",
+                    n.trees = 5000, interaction.depth = 4)
+head(summary(boost.boston, plotit = FALSE), 4)
+boost2 <- gbm(medv ~ ., data = Boston[train, ], distribution = "gaussian",
+              n.trees = 5000, interaction.depth = 4, shrinkage = 0.2)
+c(default_shrinkage = formals(gbm)$shrinkage,
+  boosting = tmse(boost.boston, n.trees = 5000),
+  boosting_shrinkage_0.2 = tmse(boost2, n.trees = 5000))
+@
+\texttt{rm} and \texttt{lstat} again dominate, with $44.5\%$ and $32.7\%$ of the relative
+influence, which is Definition~\ref{def:mdi} normalised to sum to $100$
+(Proposition~\ref{prop:mdi}). The test mean squared error is $18.39$, below the forest's, and
+$16.55$ with $\lambda=0.2$, both ISLR's. ISLR describes the default shrinkage as $0.001$; the
+package default is $0.1$, and it is $0.1$ that reproduces $18.39$. Two further defaults of
+\texttt{gbm} depart from Definition~\ref{def:boost}: \texttt{bag.fraction = 0.5} fits each
+tree to a random half of the training data (stochastic boosting, which is why a seed is
+needed), and the fit starts from the mean of $y$ rather than $0$; both change the numbers,
+not the method.
+\end{example}
+
+\begin{figure}[H]\centering
+<<pdp-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
+for (v in c("rm", "lstat")) {
+  g <- plot(boost.boston, i.var = v, n.trees = 5000, return.grid = TRUE)
+  plot(g[[1]], g[[2]], type = "l", lwd = 2, col = "#1E3A8A", xlab = v,
+       ylab = "partial dependence") }
+par(op)
+@
+\caption{Example~\ref{ex:lab-boost}, ISLR's partial dependence plots: the boosted fit as a
+function of \texttt{rm} and of \texttt{lstat}, averaged over the other predictors.}
+\label{fig:pdp}
+\end{figure}
+
+\begin{remark}
+A partial dependence plot, Figure~\ref{fig:pdp}, averages the fitted function over the observed
+values of the other predictors. The predicted median value rises with \texttt{rm} and falls with
+\texttt{lstat}, the two dominant variables; a boosted model of depth $4$ need not be additive
+(Proposition~\ref{prop:depth}), so each curve is an average and not a component of the fit.
+\end{remark}
+
+\subsection{The simulated design}\label{sec:comp-design}
 
 \texttt{Boston} from \texttt{ISLR2} again, and a simulated design in which the truth is
 known: $p=10$ predictors, one with coefficient $4$, four with coefficient $1$, five with
-coefficient $0$. Simulation makes $\sigma^2$ and $\rho$ of Theorem~\ref{thm:avg} measurable, since both are variances over the draw of the training set and a single data
+coefficient $0$. Simulation makes $\sigma^2$ and $\rho$ of Theorem~\ref{thm:avg} measurable, since both are moments over the draw of the training set and a single data
 set supplies only one draw.
 
 <<setup-data>>=
@@ -508,7 +744,7 @@ c(p = p, n_train = ntr, strong = beta[1], moderate = beta[2],
   noise_predictors = sum(beta == 0))
 @
 
-\subsection{The variance identity (§\ref{sec:12.1.1})}\label{sec:12.4.1}
+\subsection{The variance identity (§\ref{sec:12.1.1})}\label{sec:comp-var}
 
 The matrix $\bQ$ has one row per simulated training set and one column per tree of a forest
 fitted to it, evaluated at a fixed test point.
@@ -530,7 +766,7 @@ c(identity_max_gap = max(abs(per[1, ] - per[2, ])),
   average_ensemble_variance = mean(per[2, ]))
 @
 
-\subsection{Out-of-bag error (§\ref{sec:12.1.3})}\label{sec:12.4.2}
+\subsection{Out-of-bag error (§\ref{sec:12.1.3})}\label{sec:comp-oob}
 
 <<oob-one>>=
 set.seed(1); n <- nrow(Boston); tr <- sample(n, n/2)
@@ -554,11 +790,13 @@ c(mean_oob = mean(R[, 1]), mean_test = mean(R[, 2]),
   ratio = mean(R[, 1])/mean(R[, 2]), sd_of_test_mse = sd(R[, 2]))
 @
 
-Averaged, the out-of-bag error sits $12\%$ above the test error, the direction
-Theorem~\ref{thm:oob}\ref{oob:iii} predicts, and the standard deviation of the test error
-across splits is large enough to explain the single-split discrepancy on its own.
+Averaged, the out-of-bag error sits $12\%$ above the test error, a gap that the $1/B$ term
+of Theorem~\ref{thm:oob}\ref{oob:iii} cannot produce at $B=300$; with a paired $t$ of
+$2.0$ over the $25$ splits it is at the edge of noise, and the standard deviation of the test error
+across splits is about a third of the single-split discrepancy, which is therefore an unusual draw rather than
+typical noise; it is still not the bias of part~\ref{oob:iii}, whose $1/B$ term is far smaller.
 
-\subsection{Decorrelation (§\ref{sec:12.2.1})}\label{sec:12.4.3}
+\subsection{Decorrelation (§\ref{sec:12.2.1})}\label{sec:comp-decorr}
 
 <<decorrelation>>=
 summ <- function(mt) { A <- fitall(mt)
@@ -575,9 +813,9 @@ Single trees improve as $m$ grows, $\sigma^2$ falling by more than half from $m=
 $m=p$; they also become more alike, $\rho$ rising fourfold. The ensemble variance follows
 $\rho$ and is smallest at $m=1$, so on variance alone the most restricted forest wins. It
 does not win on error: the squared bias falls by a factor of seven over the same range,
-because trees denied the strong predictor fit the truth worse, and the sum of the two is
-smallest at $m=7$. That is Unit 1's decomposition applied to the tuning parameter, and
-neither term alone locates the optimum.
+because trees denied the strong predictor fit the truth worse, and the total falls steeply
+to about $m=6$ and is flat, within simulation noise, from there to $m=p$. That is Unit 1's decomposition applied to the tuning parameter:
+on variance alone the most restricted forest would be chosen, which is far from the best.
 
 \begin{figure}[H]\centering
 <<decorr-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
@@ -606,11 +844,13 @@ par(op)
 \caption{Left: as more predictors are made available at each split the individual trees get
 better (solid, left axis) and more alike (dashed, right axis), which is the whole of
 Definition~\ref{def:rf}. Right, on a logarithmic scale: the ensemble's variance rises with
-$m$ and its squared bias falls, so the total turns. Neither term alone locates the best
-$m$.}\label{fig:decorr}
+$m$ and its squared bias falls, and the total flattens.}\label{fig:decorr}
 \end{figure}
 
-\subsection{Variable importance (§\ref{sec:12.1.4})}\label{sec:12.4.4}
+Figure~\ref{fig:decorr} repeats the computation for every $m$ from $1$ to $p$ in a separate
+simulation run, so away from $m=1,2,3$ it differs from the table by simulation noise.
+
+\subsection{Variable importance (§\ref{sec:12.1.4})}\label{sec:comp-imp}
 
 <<mdi-telescope>>=
 suppressMessages(library(tree))
@@ -632,7 +872,7 @@ round(head(im[order(-im[, 2]), ], 5), 1)
 @
 
 \subsection{Bagging, forests and boosting compared (§\ref{sec:12.2.2})}
-\label{sec:12.4.5}
+\label{sec:comp-compare}
 
 The comparison is against the noise-free truth, so what is measured is approximation error
 and not the irreducible part.
@@ -657,13 +897,14 @@ t(sapply(c("linear", "boxes"), function(kind) {
     linear = mse(predict(lm(y ~ . - truth, a), e))) }))
 @
 
-On the linear truth the linear model is an order of magnitude better than any ensemble,
-which is Unit 11's staircase theorem: no amount of averaging repairs an approximation
-error. On the box truth the ordering reverses completely, and the forest with $m=2$ is more
+On the linear truth the linear model is an order of magnitude better than any ensemble.
+For bagging most of that error is variance, the floor $\rho\sigma^2$ of
+Theorem~\ref{thm:avg}, together with a smaller squared bias; a correctly specified linear
+model has no bias and little variance. On the box truth the linear model falls to last place, and the forest with $m=2$ is more
 than three times worse than plain bagging, because hiding coordinates makes the pairing of
 a split on $x_1$ with a split on $x_2$ rarer.
 
-\subsection{Boosting (§\ref{sec:12.3})}\label{sec:12.4.6}
+\subsection{Boosting (§\ref{sec:12.3})}\label{sec:comp-boost}
 
 The projection on a fixed six-cell partition is a linear smoother.
 
@@ -703,7 +944,8 @@ t(sapply(c(0.01, 0.02, 0.05), function(lam) {
     lambda_times_B = lam*Bs[which.min(mse)], min_mse = min(mse)) }))
 @
 
-The products are $17$, $16$ and $15$ and the three minima agree to three decimal places:
+The products are $17$, $16$ and $15$ and the three minima, $0.1927$, $0.1926$ and $0.1924$,
+differ by less than $0.0004$:
 a fivefold change in the shrinkage buys nothing except a fivefold change in the running
 time.
 
@@ -752,11 +994,12 @@ along a logarithmic axis, and their minima occur at nearly equal
 $\lambda B$.}\label{fig:boost}
 \end{figure}
 
-%==============================================================================
-\section{Pitfalls}\label{sec:12.5}
-%==============================================================================
+Figure~\ref{fig:boost} draws the effective degrees of freedom of the boosting operator and the test
+error against rounds for the three shrinkages.
 
-\subsection{Treating the number of trees as a tuning parameter}\label{sec:12.5.1}
+\subsection{Ensembles in practice}\label{sec:comp-practice}
+
+\subsubsection*{Treating the number of trees as a tuning parameter}
 
 By Theorem~\ref{thm:avg} the ensemble variance decreases in $B$ and nothing in bagging
 increases with it, so $B$ is a computing budget. Boosting is the opposite case, and the two
@@ -780,14 +1023,13 @@ The bagging row falls and flattens; the boosting row falls, reaches its minimum 
 rounds, and then climbs. Averaging over ten forests makes the first row monotone:
 a single forest at $B=5$ is too variable to read.
 
-\textbf{Diagnostic.} A cross-validation loop over the number of trees in a random forest, or
+The symptom is a cross-validation loop over the number of trees in a random forest, or
 a boosted model reported at whatever $B$ the software defaulted to.
-\textbf{Fix.} For bagging and forests, raise $B$ until the out-of-bag error stops moving and
-stop thinking about it. For boosting, $B$ must be chosen, because
-Theorem~\ref{thm:boost-op} says the fit keeps moving towards the saturated fit of the base
+For bagging and forests, raise $B$ until the out-of-bag error stops moving. For boosting, $B$ must be chosen: by analogy with
+Theorem~\ref{thm:boost-op}, which is proved for a linear learner, the fit keeps moving towards the saturated fit of the base
 learner and~\eqref{eq:boost-edf} keeps growing.
 
-\subsection{Reading impurity importance as evidence}\label{sec:12.5.2}
+\subsubsection*{Reading impurity importance as evidence}
 
 Proposition~\ref{prop:perm} gives permutation importance a zero for a useless predictor.
 Nothing of the sort holds for the impurity measure of Definition~\ref{def:mdi}. Below, the
@@ -805,26 +1047,29 @@ rfn <- randomForest(y ~ ., dn, ntree = 500, importance = TRUE)
 round(importance(rfn), 2)
 @
 
-\textbf{Diagnostic.} An importance ranking that reproduces the ranking of the predictors by
-number of distinct values.
-\textbf{Fix.} Report permutation importance, and read impurity importance as a description
+The symptom is an importance ranking that reproduces the ranking of the predictors by
+number of candidate splits ($2^{19}-1$, $499$, $7$ and $1$ here).
+Report permutation importance, and read impurity importance as a description
 of how the trees were built rather than of the population. Here the twenty-level factor
 scores eleven times the binary one on impurity while the response is independent of both;
-the permutation column separates them by less than a factor of two.
+the permutation column separates them by less than a factor of two. Its four values, $2.7$
+to $4.1$, are noise about the zero of Proposition~\ref{prop:perm}: each is divided by an
+across-tree standard error that ignores the dependence between trees, and across seeds they
+change sign.
 
-\subsection{Comparing out-of-bag with test error on one split}\label{sec:12.5.3}
+\subsubsection*{Comparing out-of-bag with test error on one split}
 
-§\ref{sec:12.4.2} found a factor of $1.8$ on one split of \texttt{Boston} and $1.12$
+§\ref{sec:comp-oob} found a factor of $1.8$ on one split of \texttt{Boston} and $1.12$
 averaged over twenty-five. The first number is noise.
 
-\textbf{Diagnostic.} A claim that the out-of-bag error is optimistic or pessimistic, based
+The symptom is a claim that the out-of-bag error is optimistic or pessimistic, based
 on one split.
-\textbf{Fix.} The standard deviation of the test error across splits is printed in
-§\ref{sec:12.4.2} and is large enough to account for the gap. Theorem~\ref{thm:oob} says
+The standard deviation of the test error across splits is printed in
+§\ref{sec:comp-oob}; the gap on one split is an unusual but possible draw. Theorem~\ref{thm:oob}\ref{oob:iii}, under its idealisation, says
 the direction of the bias is upward and its size is of order $1/B$, which at $B=300$ is
 far below the split-to-split variability, so a single comparison cannot detect it.
 
-\subsection{Bagging a low-variance learner}\label{sec:12.5.4}
+\subsubsection*{Bagging a low-variance learner}
 
 <<pitfall-bag-lm>>=
 set.seed(9)
@@ -839,15 +1084,16 @@ c(single_lm = mean(Rl[, 1]), bagged_lm = mean(Rl[, 2]),
   bagged_tree = mean(Rl[, 3]), bagging_gain = mean(Rl[, 1])/mean(Rl[, 2]))
 @
 
-\textbf{Diagnostic.} Bagging applied to a method that was not unstable to begin with.
-\textbf{Fix.} By Proposition~\ref{prop:bag-bias} bagging removes $(1-\rho)\sigma^2(1-1/B)$
-and no more. A least squares fit on $400$ observations with six predictors has small
-$\sigma^2$ and its bootstrap replicates are nearly identical, so $\rho$ is close to one and
-there is almost nothing to remove. Averaged over twenty training sets the bagged linear
+The symptom is bagging applied to a method that was not unstable to begin with.
+By Proposition~\ref{prop:bag-bias} bagging removes $(1-\rho)\sigma^2(1-1/B)$
+and no more. That proposition compares the ensemble with a member, a fit to a bootstrap sample. For
+least squares a member has about twice the variance of the fit to $\calD$ and two members
+have correlation about $\tfrac12$, so bagging removes about half a member's variance and
+returns to the single fit: there is no instability for it to remove. Averaged over twenty training sets the bagged linear
 model is not better than the single one at all, while both beat the bagged trees by a
 factor of thirteen. Bagging is a variance device and needs a variance to work on.
 
-\subsection{Boosting without holding anything out}\label{sec:12.5.5}
+\subsubsection*{Boosting without holding anything out}
 
 <<pitfall-boost-overfit>>=
 set.seed(10); ab <- sim("boxes", 300); eb <- sim("boxes", 2000)
@@ -862,197 +1108,287 @@ rbind(rounds = Bx,
         mean((predict(gb, eb, n.trees = b) - eb$y)^2)))
 @
 
-\textbf{Diagnostic.} A training error that keeps falling while the model is declared to be
+The symptom is a training error that keeps falling while the model is declared to be
 improving.
-\textbf{Fix.} The training error of a boosted model decreases in $B$ by construction, since
-each round fits the current residuals, so it carries no information about when to stop.
+The training error of a boosted model fitted to all the training data (here
+\texttt{bag.fraction = 1}) does not increase in $B$, by Proposition~\ref{prop:stagewise}, so it carries no information about when to stop.
 Choose $B$ by cross-validation or a held-out set. The test column turns while the training
 column does not.
 
+% \periodmark{End of period 3 of 3.}
+
 %==============================================================================
-\section{Exercises}\label{sec:12.6}
+\section{Exercises}\label{sec:12.5}
 %==============================================================================
 
-\begin{exercise}\label{ex:avg}
-An ensemble member has prediction variance $\sigma^2=9$ at a given point and the members
-have pairwise correlation $\rho=0.4$. Find the variance of an average of $10$, of $100$ and
-of infinitely many. What fraction of a single member's variance can averaging remove?
+\begin{exercise}[ISLR §8.4, exercise 2]\label{ex:i8-2}
+Explain, from Algorithm 8.2, why boosting with depth-one trees (stumps) leads to an additive
+model $f(X)=\sum_{j=1}^{p}f_j(X_j)$.
 \end{exercise}
 
 \begin{solution}
-By Theorem~\ref{thm:avg}, $\var=\rho\sigma^2+(1-\rho)\sigma^2/B=3.6+5.4/B$: at $B=10$ it is
-$4.14$, at $B=100$ it is $3.654$, and the limit is $3.6$.
-
-Averaging can remove at most $(1-\rho)\sigma^2=5.4$, which is $60\%$ of the single member's
-$9$; the remaining $40\%$ is the floor $\rho\sigma^2$. Note also that $B=10$ already
-achieves $4.14$ against a limit of $3.6$, so nine tenths of the available reduction is
-bought by the first ten members. That is why $B$ is a computing budget and not a tuning
-parameter.
+By Definition~\ref{def:boost} the output is $\hat f^{(B)}=\lambda\sum_{b\leqslant B}\hat
+g^{(b)}$. A stump has one split, on some coordinate $j(b)$, and two leaves, so $\hat g^{(b)}(\bx)$
+takes one value when $x_{j(b)}<s_b$ and another otherwise: it is a function of $x_{j(b)}$ alone
+(Proposition~\ref{prop:depth} with $d=1$). Grouping the rounds by the coordinate they split on,
+\[
+\hat f^{(B)}(\bx)=\sum_{j=1}^{p}f_j(x_j),\qquad
+f_j(x_j)=\lambda\sum_{b:\,j(b)=j}\hat g^{(b)}(\bx),
+\]
+each $f_j$ a step function of $x_j$, and $f_j\equiv0$ for a coordinate never split on. By
+Corollary~\ref{cor:additive} the fitted function then has every second difference across two
+coordinates exactly $0$: no interaction can be represented.
 \end{solution}
 
-\begin{exercise}\label{ex:rho}
-Why does a random forest with $m<p$ often beat bagging, and why is it not guaranteed to?
+\begin{exercise}[ISLR §8.4, exercise 5]\label{ex:i8-5}
+Ten bootstrap samples give the estimates $0.1$, $0.15$, $0.2$, $0.2$, $0.55$, $0.6$, $0.6$,
+$0.65$, $0.7$, $0.75$ of $\Pr(\text{Red}\mid X)$ at a given $X$, the other class being Green.
+Classify $X$ by majority vote and by the average probability.
 \end{exercise}
 
 \begin{solution}
-By Theorem~\ref{thm:avg} the limiting variance is $\rho\sigma^2$. Restricting each split to
-$m$ of the $p$ predictors makes the trees less alike, so $\rho$ falls; §\ref{sec:12.4.3}
-measures $\rho$ rising from $0.029$ at $m=1$ to $0.127$ at $m=p$ on the simulated design.
-
-It is not guaranteed because the same restriction removes candidates from every split and
-so raises $\sigma^2$, which the same table shows falling from $17.5$ to $7.8$ as $m$ grows,
-and because variance is not the whole error. On that design the ensemble variance is
-smallest at $m=1$ and the squared bias smallest at $m=p$, and the sum is smallest at $m=7$:
-the optimum is a property of the data and no argument here locates it.
-§\ref{sec:12.4.5} exhibits an outright failure: on an exclusive-or truth in two
-coordinates the structure needs a split on $x_1$ followed by one on $x_2$, and hiding
-coordinates makes that pairing rarer, so $m=2$ is three times worse than bagging.
+<<i8-5>>=
+pr <- c(0.1, 0.15, 0.2, 0.2, 0.55, 0.6, 0.6, 0.65, 0.7, 0.75)
+c(votes_for_red = sum(pr > 0.5), average_probability = mean(pr))
+@
+Six of the ten trees classify $X$ as Red, so the majority vote of Definition~\ref{def:bagging}
+says Red. The average probability is $0.45<0.5$, so averaging the probabilities says Green. The
+two rules differ because four trees are confident Greens ($0.1$ to $0.2$) and the six Reds are
+only mildly confident ($0.55$ to $0.75$).
 \end{solution}
 
-\begin{exercise}\label{ex:oob}
-With $n=1000$ and $B=500$, how many trees on average is an out-of-bag prediction an average
-of? Is the out-of-bag error optimistic or pessimistic for the full ensemble, and by roughly
-how much?
+\begin{exercise}[ISLR §8.4, exercise 7]\label{ex:i8-7}
+For \texttt{Boston}, plot the test error of random forests with \texttt{mtry} $p$, $p/2$ and
+$\sqrt p$ against the number of trees up to $500$, and describe the result.
 \end{exercise}
 
 \begin{solution}
-By Theorem~\ref{thm:oob}\ref{oob:i} the expected number is $B(1-1/n)^n=500(0.9995)^{1000}$,
-which is $500(0.3677)=183.8$, close to $B/e=183.9$.
-
-It is pessimistic. The out-of-bag prediction has the same bias as the full ensemble and
-larger variance, by $(1-\rho)\sigma^2(1/184-1/500)=(1-\rho)\sigma^2(0.00343)$ from
-part~\ref{oob:iii}. Relative to the ensemble's own variance $\rho\sigma^2+(1-\rho)\sigma^2/500$
-that is a small correction, and it vanishes like $1/B$. §\ref{sec:12.4.2} measures $12\%$ on
-\texttt{Boston} at $B=300$, which also contains whatever the data contribute beyond the
-formula.
+The training half of Example~\ref{ex:lab-bag}, $p=12$:
+<<i8-7, fig.width=6.4, fig.height=2.6>>=
+set.seed(1)
+e7 <- sapply(c(12, 6, 3), function(m)
+  randomForest(medv ~ ., Boston[train, ], mtry = m, ntree = 500,
+    xtest = Boston[-train, -13], ytest = Boston$medv[-train])$test$mse)
+colnames(e7) <- c("m=12", "m=6", "m=3"); rownames(e7) <- paste0("B=", 1:500)
+round(e7[c(10, 50, 100, 250, 500), ], 2)
+cl7 <- c("#1E3A8A", "#B45309", "#15803D"); par(mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
+matplot(1:500, e7, type = "l", lty = 1, lwd = 2, col = cl7, ylim = c(15, 35),
+        xlab = "number of trees", ylab = "test mean squared error")
+legend("topright", bty = "n", lwd = 2, col = cl7, legend = colnames(e7))
+@
+All three curves fall steeply over the first few dozen trees and then flatten, as
+Theorem~\ref{thm:avg} predicts. At $500$ trees the test errors are $23.5$ for bagging ($m=p$),
+$20.1$ for $m=p/2$ and $18.7$ for $m=\sqrt p\approx3$: on this split the most decorrelated
+forest is best, the ordering of ISLR's Figure 8.10.
 \end{solution}
 
-\begin{exercise}\label{ex:mdi}
-A random forest reports impurity importances $40, 25, 20, 15$ for four predictors, summing
-to $100$. What do these numbers mean, and what would you check before reporting them as
-evidence that the first predictor matters most?
+\begin{exercise}[ISLR §8.4, exercise 8, parts (d) and (e)]\label{ex:i8-8}
+Continue Unit 11's \texttt{Carseats} regression (the same training set of $200$ stores):
+(d) bag the trees, give the test mean squared error and the important variables; (e) fit random
+forests, give the test mean squared error and the important variables, and describe the effect
+of $m$. Part (f), BART, is excluded by the syllabus.
 \end{exercise}
 
 \begin{solution}
-By Proposition~\ref{prop:mdi} the impurity gains of a tree sum to $R(\text{root})-R(T)$, the
-total cost the tree removes, so the four numbers are shares of the fit the ensemble
-achieved, averaged over trees. They describe how the trees were built.
-
-What to check is the number of distinct values each predictor takes. A predictor with many
-cutpoints reduces the training cost by more than one with few, whatever its relation to the
-response, and §\ref{sec:12.5.2} shows four predictors independent of the response scoring
-$65, 49, 16, 6$ purely by cardinality. Permutation importance has no such defect:
-by Proposition~\ref{prop:perm} a predictor independent of $(Y,X_{-j})$ has population
-importance exactly zero. Report that, or at least both.
+<<i8-8>>=
+set.seed(1); tr8 <- sample(nrow(Carseats), 200)
+mse8 <- function(m) mean((predict(m, Carseats[-tr8, ]) - Carseats$Sales[-tr8])^2)
+top4 <- function(f) round(importance(f)[order(-importance(f)[, 1]), ], 1)[1:4, ]
+set.seed(1)
+b8 <- randomForest(Sales ~ ., Carseats, subset = tr8, mtry = 10, importance = TRUE)
+c(bagging_test_mse = mse8(b8)); top4(b8)
+set.seed(1)
+round(sapply(1:10, function(m)
+  mse8(randomForest(Sales ~ ., Carseats, subset = tr8, mtry = m))), 2)
+set.seed(1)
+f8 <- randomForest(Sales ~ ., Carseats, subset = tr8, mtry = 3, importance = TRUE)
+c(forest_m3_test_mse = mse8(f8)); top4(f8)
+@
+(d) Bagging gives a test mean squared error of $2.61$, against $4.92$ for the single tree of
+Unit 11; \texttt{Price} and \texttt{ShelveLoc} are by far the most important on both measures,
+then \texttt{CompPrice} and \texttt{Age}. (e) The test error falls steeply from $4.80$ at $m=1$
+to about $2.7$ at $m=5$ and is flat beyond, $2.58$ to $2.67$, bagging ($m=10$) included; the
+default $m=\lfloor10/3\rfloor=3$ gives $2.96$. The same four variables lead. Here the
+decorrelation of Definition~\ref{def:rf} buys nothing: with only two strong predictors, a small
+$m$ mostly denies the trees the predictors they need, which raises the bias faster than it
+lowers $\rho$.
 \end{solution}
 
-\begin{exercise}\label{ex:vote}
-Twenty-one classifiers each get a given observation right with probability $0.6$. Bound the
-probability the majority vote is right if they are independent. Why is the bound not
-available for a bagged ensemble?
+\begin{exercise}[ISLR §8.4, exercise 10]\label{ex:i8-10}
+For \texttt{Hitters}: (a) remove the players with no salary and log-transform it; (b) train on
+the first $200$; (c), (d) boost $1000$ trees over a range of shrinkages $\lambda$ and plot the
+training and test mean squared errors; (e) compare the test error with two methods of ISLR
+chapters 3 and 6; (f) name the most important predictors; (g) give the test error of bagging.
 \end{exercise}
 
 \begin{solution}
-By Proposition~\ref{prop:vote} the failure probability is at most
-$\pi(1-\pi)/\{B(\pi-\tfrac12)^2\}=0.24/\{21(0.01)\}=1.14$, which is vacuous: Chebyshev
-gives nothing at these numbers, and $B>24$ is needed before the bound says anything. The exact
-binomial probability of at least eleven successes is $0.826$, so the vote does help; the
-bound is simply weak.
-
-For a bagged ensemble the hypothesis fails outright. The members are fitted to resamples of
-one data set and are positively correlated, which is what $\rho>0$ in
-Theorem~\ref{thm:avg} records. A correlated vote behaves like a smaller independent vote,
-and in the extreme $\rho=1$ all members agree and the ensemble is one classifier.
+<<i8-10>>=
+suppressMessages(library(glmnet))
+Hi <- na.omit(Hitters); Hi$Salary <- log(Hi$Salary); trh <- 1:200
+hm <- function(f, d, ...) mean((predict(f, d, ...) - d$Salary)^2)
+lams <- 10^seq(-3, -0.2, length.out = 15)
+e10 <- t(sapply(lams, function(l) { set.seed(1)
+  g <- gbm(Salary ~ ., Hi[trh, ], distribution = "gaussian", n.trees = 1000,
+           shrinkage = l)
+  c(lambda = l, train = hm(g, Hi[trh, ], n.trees = 1000),
+    test = hm(g, Hi[-trh, ], n.trees = 1000)) }))
+round(e10[c(1, 4, 7, 10, 11, 13, 15), ], 4)
+X <- model.matrix(Salary ~ ., Hi)[, -1]
+set.seed(1); cvl <- cv.glmnet(X[trh, ], Hi$Salary[trh], alpha = 1)
+set.seed(1); bgh <- randomForest(Salary ~ ., Hi[trh, ], mtry = 19)
+c(least_squares = hm(lm(Salary ~ ., Hi[trh, ]), Hi[-trh, ]),
+  lasso = mean((predict(cvl, X[-trh, ], s = "lambda.min") - Hi$Salary[-trh])^2),
+  best_boosting = min(e10[, "test"]), bagging = hm(bgh, Hi[-trh, ]))
+set.seed(1)
+gh <- gbm(Salary ~ ., Hi[trh, ], distribution = "gaussian", n.trees = 1000,
+          shrinkage = 0.01)
+head(summary(gh, plotit = FALSE), 5)
+@
+The errors are tabulated above in place of the plots asked for in (c) and (d), at seven of
+the fifteen values of $\lambda$. (c) The training error falls monotonically in $\lambda$, from $0.36$ to $0.002$: a larger step
+fits the training data faster (as Corollary~\ref{cor:lambdaB} shows for a linear learner). (d) The test error falls to its
+minimum $0.250$ near $\lambda=0.06$ and rises again, to $0.40$ at $\lambda=0.63$: at a fixed
+$B=1000$ a large $\lambda$ overfits. (e) Least squares gives $0.49$ and the lasso $0.47$, about
+twice boosting's best. (f) The career statistics lead: \texttt{CAtBat}, \texttt{CHits},
+\texttt{CRBI}, \texttt{CWalks}, \texttt{CRuns}. (g) Bagging gives $0.230$, slightly better than
+boosting's best on this split.
 \end{solution}
 
-\begin{exercise}\label{ex:boost-op}
-Boosting is run with a base learner that projects onto a fixed subspace of dimension $r$,
-with shrinkage $\lambda$. What is the fit after $B$ rounds, what does it converge to, and
-what are its effective degrees of freedom?
+\begin{exercise}[ISLR §8.4, exercise 11]\label{ex:i8-11}
+For \texttt{Caravan}: (a) train on the first $1000$ observations; (b) boost $1000$ trees with
+$\lambda=0.01$ for \texttt{Purchase} and name the most important predictors; (c) predict a
+purchase when the estimated probability exceeds $20\%$, give the confusion matrix and the
+fraction of predicted purchasers who do purchase, and compare with logistic regression.
 \end{exercise}
 
 \begin{solution}
-By Theorem~\ref{thm:boost-op} the fit is $\{\bI-(\bI-\lambda\bS)^B\}\by$. A projection has
-eigenvalues $1$ with multiplicity $r$ and $0$ otherwise, so the boosting operator has
-eigenvalues $1-(1-\lambda)^B$ on the subspace and $0$ off it. The fit is therefore
-$\{1-(1-\lambda)^B\}\bS\by$, a shrunken version of the projection, converging to $\bS\by$
-itself.
-
-The effective degrees of freedom are $r\{1-(1-\lambda)^B\}$, rising from $0$ to $r$. So
-boosting a fixed linear learner adds nothing the learner could not already do; it only
-controls how far along the way the fit is stopped. What makes boosting trees different is
-that the base learner is refitted to the current residuals each round, so the subspace
-itself changes.
+<<i8-11>>=
+Cv <- Caravan; Cv$P <- as.numeric(Cv$Purchase == "Yes"); Cv$Purchase <- NULL
+trc <- 1:1000
+set.seed(1); gc <- suppressWarnings(gbm(P ~ ., Cv[trc, ], distribution = "bernoulli",
+                                         n.trees = 1000, shrinkage = 0.01))
+head(summary(gc, plotit = FALSE), 4)
+pb <- predict(gc, Cv[-trc, ], n.trees = 1000, type = "response")
+tb <- table(predicted = pb > 0.2, observed = Cv$P[-trc]); tb
+lg <- suppressWarnings(glm(P ~ ., Cv[trc, ], family = binomial))
+pl <- suppressWarnings(predict(lg, Cv[-trc, ], type = "response"))
+tl <- table(predicted = pl > 0.2, observed = Cv$P[-trc]); tl
+c(boosting = tb[2, 2] / sum(tb[2, ]), logistic = tl[2, 2] / sum(tl[2, ]))
+@
+(b) \texttt{PPERSAUT} (contribution to car policies), \texttt{MKOOPKLA} (purchasing power class)
+and \texttt{MOPLHOOG} (higher education) lead. (c) Boosting predicts $156$ purchasers in the
+$4822$ test customers, of whom $33$, that is $21.2\%$, purchase; logistic regression predicts
+$408$, of whom $58$, or $14.2\%$, purchase. Both beat the $6\%$ base rate. Boosting's list is
+the more precise. The logistic fit, with $85$ predictors on $1000$ observations and few
+purchases, gives warnings of fitted probabilities numerically $0$ or $1$.
 \end{solution}
 
-\begin{exercise}\label{ex:lambdaB}
-A boosted model with $\lambda=0.05$ is best at $B=300$ rounds. Roughly what $B$ would be
-best at $\lambda=0.005$, and why does the answer matter in practice?
+\begin{exercise}[ISLR §8.4, exercise 12]\label{ex:i8-12}
+Apply boosting, bagging and random forests to a data set of your choice and compare with a
+linear model. (BART, also asked for, is excluded by the syllabus.)
 \end{exercise}
 
 \begin{solution}
-By Corollary~\ref{cor:lambdaB} the product $\lambda B$ is nearly constant, so ten times
-smaller shrinkage needs about ten times the rounds: $B\approx3000$.
-§\ref{sec:12.4.6} measures the products $17$, $16$ and $15$ at $\lambda=0.01$, $0.02$ and
-$0.05$, with essentially the same minimum error at all three.
-
-It matters because the two parameters are close to one parameter, so searching both on a
-grid mostly wastes computation, and because the cost of the fit is linear in $B$: the small
-shrinkage that is often recommended buys nothing here except a tenfold longer run. The
-right reading of Corollary~\ref{cor:lambdaB} is that $\lambda$ should be as large as the
-error curve tolerates.
+\texttt{mpg} in \texttt{Auto} on the seven numeric predictors, half for training:
+<<i8-12>>=
+Au <- Auto[, names(Auto) != "name"]
+set.seed(1); ta <- sample(nrow(Au), nrow(Au) / 2)
+am <- function(f, ...) mean((predict(f, Au[-ta, ], ...) - Au$mpg[-ta])^2)
+set.seed(1)
+round(c(linear = am(lm(mpg ~ ., Au[ta, ])),
+  bagging = am(randomForest(mpg ~ ., Au[ta, ], mtry = 7)),
+  forest = am(randomForest(mpg ~ ., Au[ta, ])),
+  boosting = am(gbm(mpg ~ ., Au[ta, ], distribution = "gaussian", n.trees = 2000,
+                    shrinkage = 0.01, interaction.depth = 2), n.trees = 2000)), 2)
+@
+The three ensembles have test errors $7.0$ to $7.4$, against $9.9$ for least squares: the
+relation of \texttt{mpg} to weight, horsepower and displacement is curved, and a linear model in
+the raw predictors carries that curvature as bias, which averaging does not touch
+(Proposition~\ref{prop:bag-bias}) but trees can follow.
 \end{solution}
 
-\begin{exercise}\label{ex:depth}
-A boosted ensemble is fitted with \texttt{interaction.depth = 1}. What class of functions
-can it represent, and how would you confirm on a fitted object that it is in that class?
+\begin{exercise}[SOA sample question 10]\label{ex:soa-10}
+Which statements about random forests are true? I. If the number of predictors used at each
+split equals the total number available, the result is the same as bagging. II. When building
+a specific tree, the same subset of predictors is used at each split. III. Random forests are
+an improvement over bagging because the trees are decorrelated. (A) none; (B) I and II only;
+(C) I and III only; (D) II and III only; (E) none of (A)--(D).
 \end{exercise}
 
 \begin{solution}
-By Proposition~\ref{prop:depth} a stump is a function of a single coordinate, so a sum of
-stumps is additive: $\hat f(\bx)=\sum_jg_j(x_j)$, with no interaction terms of any order.
-
-Corollary~\ref{cor:additive} makes it checkable exactly. Evaluate the fitted function at
-the four corners of a rectangle in coordinates $1$ and $2$, holding the rest fixed, and form
-$\hat f(a,b)-\hat f(a,b')-\hat f(a',b)+\hat f(a',b')$. For an additive function every term
-cancels and the answer is exactly zero. §\ref{sec:12.4.6} gets $7\times10^{-15}$ at depth
-one and $0.79$ at depth two.
+I is true: $m=p$ is bagging (Definition~\ref{def:rf}). II is false: a fresh subset is drawn at
+every split. III is true: decorrelation lowers $\rho$ and with it the floor $\rho\sigma^2$ of
+Theorem~\ref{thm:avg}. (C).
 \end{solution}
 
-\begin{exercise}\label{ex:when}
-A response is exactly linear in its predictors. Rank a linear model, bagging, a random
-forest and boosting, and say what changes if the truth is a partition into boxes instead.
+\begin{exercise}[SOA sample question 41]\label{ex:soa-41}
+For a random forest with $p$ features and $m$ selected at each split, which are true?
+I. When $m=p$, random forest and bagging are the same procedure. II. $(p-m)/p$ is the
+probability a split will not consider the strongest predictor. III. The typical choice of $m$
+is $p/2$. (A) none; (B) I and II only; (C) I and III only; (D) II and III only; (E) none of
+(A)--(D).
 \end{exercise}
 
 \begin{solution}
-On the linear truth the linear model wins by a wide margin: §\ref{sec:12.4.5} measures
-$0.006$ against $0.056$ to $0.069$ for the three ensembles, a factor of ten. The reason is
-Unit 11's staircase theorem, that a piecewise-constant fit approximating a linear function
-with $J$ boxes carries an error of order $J^{-2/p}$. That error is bias, and
-Proposition~\ref{prop:bag-bias} says averaging does not touch bias.
-
-On the box truth the ordering reverses: the linear model is worst at $4.08$, bagging best
-at $0.36$, boosting $0.58$, and the forest with $m=2$ at $1.27$ suffers for the reason of
-Exercise~\ref{ex:rho}. The general lesson is that ensembles change the variance term and
-the base learner decides the bias term, so the choice between trees and a linear model is
-made before any ensembling is considered.
+I is true (Definition~\ref{def:rf}). II is true: by Proposition~\ref{prop:avail} a fixed
+predictor is a candidate at a split with probability $m/p$, so it is not considered with
+probability $1-m/p=(p-m)/p$. III is false: the typical choices are $\sqrt p$ and $p/3$. (B).
 \end{solution}
 
-\begin{exercise}\label{ex:computational}
-In R: (a) verify the variance identity of Corollary~\ref{cor:avg-sample} on a forest's
-individual tree predictions; (b) measure $\rho$ and $\sigma^2$ as functions of \texttt{mtry};
-(c) verify that boosting a fixed projection gives $\{\bI-(\bI-\lambda\bS)^B\}\by$.
+\begin{exercise}[SOA sample question 74]\label{ex:soa-74}
+In a random forest, $m$ predictors are sampled from the $p$. Which are true? I. They are
+sampled with replacement. II. They are sampled without replacement. III. A fresh sample is
+selected for each split. IV. A fresh sample is selected for each tree, but not for each split.
+(A) only I and III; (B) only I and IV; (C) only II and III; (D) only II and IV; (E) fewer than
+two are true.
 \end{exercise}
 
 \begin{solution}
-(a) is §\ref{sec:12.4.1}, where the gap is at machine precision because
-Corollary~\ref{cor:avg-sample} is an algebraic identity about sample moments; (b) is
-§\ref{sec:12.4.3}; (c) is §\ref{sec:12.4.6}, agreeing to $4\times10^{-15}$.
+Definition~\ref{def:rf} draws a subset of $m$ distinct predictors, so without replacement (II;
+with replacement fewer than $m$ distinct predictors could be offered), and draws it afresh at
+every split (III). (C).
+\end{solution}
 
-The point to watch in (b) is that $\rho$ and $\sigma^2$ are variances over the draw of the
-\emph{training set}, not over the trees within one forest. Conditionally on the data the
-members of a forest are independent, so estimating $\rho$ requires many training sets, which
-is why that section works on simulated data rather than on \texttt{Boston}.
+\begin{exercise}[SOA sample questions 68 and 69]\label{ex:soa-68}
+A boosted regression tree with $\lambda=0.08$ and one numeric predictor $x$ uses trees with a
+single split. The first tree, fitted to all the training data, predicts $125.4$ when $x<17.5$
+and $350.5$ when $x\geqslant17.5$. Three training observations are $(x,y)=(15.2,139)$,
+$(12.9,156)$, $(23.6,289)$. Calculate (Q68) the updated residuals and (Q69) the updated
+predictions. Choices for both: (A) $(-406.1,-389.1,-31.1)$; (B) $(-211.4,-194.4,163.6)$;
+(C) $(10.0,10.0,28.0)$; (D) $(111.0,128.0,279.0)$; (E) $(129.0,146.0,261.0)$.
+\end{exercise}
+
+\begin{solution}
+By Definition~\ref{def:boost}, $\hat f^{(0)}=0$ and $r^{(0)}=y$, and~\eqref{eq:boost} adds
+$\lambda\hat g^{(1)}$ to the fit and subtracts it from the residuals:
+<<soa-68>>=
+x <- c(15.2, 12.9, 23.6); y <- c(139, 156, 289); g1 <- ifelse(x < 17.5, 125.4, 350.5)
+rbind(residuals = y - 0.08 * g1, predictions = 0 + 0.08 * g1)
+@
+Q68: $(129.0,146.0,261.0)$, (E). Q69: $(10.0,10.0,28.0)$, (C). The two add up to $y$, as
+Proposition~\ref{prop:stagewise} requires.
+\end{solution}
+
+\begin{exercise}[SOA sample question 39]\label{ex:soa-39}
+To predict $y$ from $x$ in the data plotted below, which statement about a generalized linear
+model (GLM) or a random forest is true?
+\begin{center}\includegraphics[width=0.45\linewidth]{../srm/assets/figs/srm_q39.pdf}\end{center}
+(A) A random forest is appropriate because the data contain only quantitative variables.
+(B) A random forest is appropriate because the data do not follow a straight line. (C) A GLM is
+not appropriate because the variance of $y$ given $x$ is not constant. (D) A random forest is
+appropriate because there is a clear relationship between $y$ and $x$. (E) A GLM is appropriate
+because it can accommodate polynomial relationships.
+\end{exercise}
+
+\begin{solution}
+The points lie close to a quadratic with constant spread, so the model
+$y=\beta_0+\beta_1x+\beta_2x^2+\varepsilon$, linear in the coefficients, fits it, and a GLM
+(here the normal linear model) is appropriate: (E). (A) is no reason: trees handle qualitative
+predictors directly and gain nothing from quantitative ones. (B) and (D) are not reasons either: a
+smooth curve is what a tree approximates worst, by a staircase whose error Unit 11's theorem
+\emph{approximating a linear function by boxes} quantifies, and a curve that a polynomial GLM
+fits is by itself no reason to prefer a forest. (C) is false: the spread looks
+constant.
 \end{solution}
 
 \end{document}

@@ -1,7 +1,6 @@
 # Local agent/session state (never publish)
 .codex-home/
 **/.codex-home/
-**/.claude/settings.local.json
 
 # Editor and operating-system files
 .DS_Store
@@ -51,3 +50,30 @@ _minted*/
 
 # Local packaging output
 /dist/
+
+# Not published
+/syllabus/
+
+# srm/: srm.pdf and what compiling it reads (latexmk -recorder): srm.tex, srm_body.tex,
+# assets/preamble.srm.tex and the figures, which Units 11-12 also include
+/srm/*
+!/srm/srm.tex
+!/srm/srm_body.tex
+!/srm/srm.pdf
+!/srm/assets/
+/srm/assets/*
+!/srm/assets/preamble.srm.tex
+!/srm/assets/figs/
+
+# note/: the units and prereq (.Rnw, .pdf), the two headers they load, build.py, Sweave.sty
+# (the knitted units load it) and the data
+/note/*
+!/note/unit[0-9][0-9].Rnw
+!/note/unit[0-9][0-9].pdf
+!/note/prereq.Rnw
+!/note/prereq.pdf
+!/note/asm_preamble.tex
+!/note/asm_knitr_setup.R
+!/note/build.py
+!/note/Sweave.sty
+!/note/data/
