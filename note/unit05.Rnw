@@ -17,6 +17,15 @@
 
 \newcommand{\Errin}{\mathrm{Err}_{\mathrm{in}}}
 
+% \needroom{f}: a new slide starts here unless the fraction f of the slide is still free.
+% For use between top-level blocks only, not inside an example, a proof or a solution.
+\newcommand{\needroom}[1]{\par\ifdim\dimexpr\pagegoal-\pagetotal\relax<#1\textheight\newpage\fi}
+% keepends: inside it the first and the last line of a code block stay with their neighbours,
+% so a slide break cannot leave one statement of a block alone.
+\makeatletter
+\newenvironment{keepends}{\clubpenalty\@M\widowpenalty\@M\@clubpenalty\@M}{}
+\makeatother
+
 \title{\color{hdrBG}\bfseries\Huge Variable Selection and Dimension Reduction}
 \author{}\date{}
 
@@ -196,7 +205,7 @@ the practical limit of best subset selection at about $p=40$.
 The ten predictors of \texttt{Balance} give $p=11$ candidates, \texttt{Region} having
 three levels. Every subset is fitted, and \texttt{regsubsets} finds the same best
 subsets:
-<<credit-all, fig.height=2.5, fig.width=6.4>>=
+<<credit-all>>=
 Xc <- model.matrix(Balance ~ ., Credit)[, -1]; yc <- Credit$Balance
 n_c <- nrow(Xc); p_c <- ncol(Xc); tss_c <- sum((yc - mean(yc))^2)
 subsets <- unlist(lapply(1:p_c, function(d) combn(p_c, d, simplify = FALSE)), recursive = FALSE)
@@ -209,6 +218,14 @@ f_c <- summary(regsubsets(Balance ~ ., data = Credit, nvmax = 11, method = "forw
 c(regsubsets_vs_all_fits = max(abs(b_c$rss - best_rss)))
 vars <- function(w, d) paste(colnames(w)[-1][w[d, -1]], collapse = ", ")
 for (d in 1:4) cat(d, "best:   ", vars(b_c$which, d), "\n  forward:", vars(f_c$which, d), "\n")
+@
+The best one-, two- and three-predictor models are also the forward ones; at $d=4$ best
+subset selection drops \texttt{Rating} for \texttt{Limit} and \texttt{Cards}, which
+forward selection cannot do, and the best three-predictor model is not contained in the
+best four-predictor model, so best subset sequences need not be nested. The best
+$R^2$ is $0.7458$, $0.8751$ and $0.9499$ with one, two and three predictors and $0.9551$
+with all eleven.
+<<credit-all-plot, fig.height=2.95, fig.width=6.4, fig.show="hold">>=
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.6, 0.6, 0.6), mgp = c(2, 0.6, 0))
 plot(d_all, rss_all / 1e6, pch = 16, cex = 0.3, col = "grey50", xlab = "number of predictors",
      ylab = "RSS (millions)")
@@ -222,12 +239,6 @@ par(op)
 \caption{$\RSS$ and $R^2$ of the $2047$ non-null models for \texttt{Balance}; the red
 curves join the best model of each size (ISLR Figure 6.1).}
 \end{figure}
-The best one-, two- and three-predictor models are also the forward ones; at $d=4$ best
-subset selection drops \texttt{Rating} for \texttt{Limit} and \texttt{Cards}, which
-forward selection cannot do, and the best three-predictor model is not contained in the
-best four-predictor model, so best subset sequences need not be nested. The best
-$R^2$ is $0.7458$, $0.8751$ and $0.9499$ with one, two and three predictors and $0.9551$
-with all eleven.
 \end{example}
 
 \subsection{Data snooping}\label{sec:5.1.2}
@@ -251,6 +262,8 @@ FREES's chapter 5 script draws $n=100$ responses and $50$ candidates, all indepe
 standard normal, so every slope is zero. It fits all $50$, then runs the stepwise
 algorithm with the BIC criterion (R's \texttt{step} with $k=\ln n$); the $t$-ratio
 algorithm of Definition~\ref{def:frees-step} is run with FREES's two cutoffs:
+
+\begin{keepends}
 <<snooping>>=
 set.seed(1237)
 snoop <- as.data.frame(matrix(rnorm(100 * 50), ncol = 50))
@@ -284,6 +297,7 @@ for (cut in c(2, 1.645)) {
   print(round(fit_summary(lm(reformulate(v, "y"), data = snoop)), 4))
 }
 @
+\end{keepends}
 The fit on all $50$ candidates has $F=1.2642$ on $(50,49)$ degrees of freedom and
 $p=0.2066$, in agreement with the null. BIC stepwise selection and the $t$-ratio algorithm
 with cutoff $2$ both keep \texttt{obs27}, \texttt{obs29} and \texttt{obs32}, whose overall
@@ -650,7 +664,9 @@ $\rho\tau^2+(1-\rho)\tau^2/K$, larger than $\tau^2/K$; $\SE_d$ sets a scale for 
 \begin{example}[$C_p$, BIC and adjusted $R^2$; ISLR §6.1.3, Figure 6.2]\label{ex:credit-criteria}
 For the best models of Example~\ref{ex:credit-subsets}, with $\hat\sigma^2$ the mean square
 error of the model with all eleven candidates:
-<<credit-criteria, fig.height=2.3, fig.width=6.4>>=
+
+\begin{keepends}
+<<credit-criteria, fig.height=2.3, fig.width=6.4, fig.show="hold">>=
 s2_c <- summary(lm(Balance ~ ., data = Credit))$sigma^2; d_c <- 1:11
 cp_c <- (b_c$rss + 2 * d_c * s2_c) / n_c; bic_c <- (b_c$rss + log(n_c) * d_c * s2_c) / n_c
 c(sigma2_hat = s2_c, Cp_min = which.min(cp_c), BIC_min = which.min(bic_c),
@@ -668,6 +684,7 @@ for (v in list(list(cp_c, "Cp", which.min), list(bic_c, "BIC", which.min),
 }
 par(op)
 @
+\end{keepends}
 \begin{figure}[H]\centering
 \caption{$C_p$, BIC and $R_a^2$ of the best \texttt{Credit} model of each size; crosses
 mark the selected sizes (ISLR Figure 6.2).}
@@ -688,7 +705,7 @@ after Proposition~\ref{prop:relations} are $\sqrt2=1.414$ and $\sqrt{\ln n}=2.44
 A validation subsample of one quarter of the observations, and ten-fold
 cross-validation, with the search of Definition~\ref{def:validation} rerun inside each
 training set:
-<<credit-cv, fig.height=2.3, fig.width=6.4>>=
+<<credit-cv>>=
 pred_d <- function(fit, newdata, d) {
   cf <- coef(fit, id = d); drop(model.matrix(Balance ~ ., newdata)[, names(cf)] %*% cf) }
 set.seed(1); tr_c <- sample(n_c, 3 * n_c / 4)
@@ -702,6 +719,13 @@ cv_c <- rowMeans(mse_c); se_c <- apply(mse_c, 1, sd) / sqrt(10)
 round(rbind(validation = val_c, CV = cv_c, SE = se_c))
 c(validation_min = which.min(val_c), CV_min = which.min(cv_c),
   one_SE = min(which(cv_c <= min(cv_c) + se_c[which.min(cv_c)])))
+@
+The validation subsample selects four predictors and cross-validation six, and the
+one-standard-error rule reduces six to four; ISLR's split and folds, which are not
+reproducible, gave six, six and three. From four predictors on, the cross-validation errors lie between
+$9944$ and $10{,}104$, with standard errors of $500$ to $574$; the three-predictor model's
+$10{,}802$ exceeds the one-standard-error bound $9944+500$.
+<<credit-cv-plot, fig.height=2.7, fig.width=6.4, fig.show="hold">>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.8, 0.6, 0.4), mgp = c(2.2, 0.6, 0))
 plot(d_c, sqrt(bic_c), type = "b", pch = 16, cex = 0.6, xlab = "number of predictors", ylab = "square root of BIC")
 points(which.min(bic_c), sqrt(min(bic_c)), col = "blue", pch = 4, cex = 2, lwd = 2)
@@ -715,11 +739,6 @@ par(op)
 \caption{Square roots of BIC, of the validation error and of the ten-fold
 cross-validation error for the best \texttt{Credit} model of each size (ISLR Figure 6.3).}
 \end{figure}
-The validation subsample selects four predictors and cross-validation six, and the
-one-standard-error rule reduces six to four; ISLR's split and folds, which are not
-reproducible, gave six, six and three. From four predictors on, the cross-validation errors lie between
-$9944$ and $10{,}104$, with standard errors of $500$ to $574$; the three-predictor model's
-$10{,}802$ exceeds the one-standard-error bound $9944+500$.
 \end{example}
 
 % \periodmark{End of period 1 of 3.}
@@ -748,6 +767,7 @@ $\bz_m=\bX\bphi_m$, with entries $z_{im}=\sum_j\phi_{jm}x_{ij}$, is the $m$th
 \emph{score vector}.
 \end{definition}
 
+\needroom{0.35}
 \begin{theorem}[Principal components are eigenvectors; ISLR §12.2.1]\label{thm:pca}
 Let $\bS=\bV\bLam\bV'$ with $\bV=[\bv_1\ \cdots\ \bv_p]$ orthogonal and
 $\bLam=\diag(\lambda_1,\ldots,\lambda_p)$, $\lambda_1\geqslant\cdots\geqslant\lambda_p$,
@@ -1003,7 +1023,7 @@ a two-dimensional view of the observations.
 Arrests per $100{,}000$ residents for \texttt{Murder}, \texttt{Assault} and \texttt{Rape},
 and the percentage urban \texttt{UrbanPop}, for the $50$ states, standardised; signs are
 set as in ISLR Table 12.1.
-<<usarrests, fig.height=3.1, fig.width=6.4>>=
+<<usarrests>>=
 pr <- prcomp(USArrests, scale = TRUE)
 s_islr <- c(sign(pr$rotation["Murder", 1]), sign(pr$rotation["UrbanPop", 2]), 1, 1)
 pr$rotation <- sweep(pr$rotation, 2, s_islr, "*"); pr$x <- sweep(pr$x, 2, s_islr, "*")
@@ -1017,17 +1037,7 @@ round(pr_u$sdev^2 / sum(pr_u$sdev^2), 4)
 rbind(PC1_high = names(sort(pr$x[, 1], decreasing = TRUE))[1:3],
       PC1_low = names(sort(pr$x[, 1]))[1:3], PC2_high = names(sort(pr$x[, 2], decreasing = TRUE))[1:3],
       PC2_low = names(sort(pr$x[, 2]))[1:3])
-op <- par(mfrow = c(1, 2), mar = c(3.2, 3.2, 3, 3), mgp = c(2, 0.6, 0), cex = 0.6)
-biplot(pr, scale = 0, cex = 0.7, xlabs = abbreviate(rownames(USArrests), 4))
-biplot(pr_u, scale = 0, cex = 0.7, xlabs = abbreviate(rownames(USArrests), 4))
-par(op)
 @
-\begin{figure}[H]\centering
-\caption{Biplots of the first two principal components of \texttt{USArrests}: state
-scores (abbreviated names, bottom and left axes) and loading vectors (arrows, top and
-right axes). Left, standardised variables (ISLR Figure 12.1); right, unscaled (ISLR
-Figure 12.4).}
-\end{figure}
 The first loading vector puts nearly equal weights, $0.5359$, $0.5832$ and $0.5434$, on
 the three crime rates and $0.2782$ on \texttt{UrbanPop}: it measures overall serious
 crime, highest in Florida, Nevada and California and lowest in North Dakota, Vermont and
@@ -1037,7 +1047,19 @@ two components explain proportions $0.6201$ and $0.2474$ of the variance, $0.867
 together. Unscaled, \texttt{Assault}, with variance $6945.17$ against at most $209.52$ for
 the others, receives the first loading $0.9952$, and the first component explains a
 proportion $0.9655$ of the variance, as Proposition~\ref{prop:scaling} predicts.
-<<usarrests-scree, fig.height=2.3, fig.width=6.4>>=
+<<usarrests-biplot, fig.height=3.0, fig.width=6.4, fig.show="hold">>=
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.2, 3, 3), mgp = c(2, 0.6, 0), cex = 0.6)
+biplot(pr, scale = 0, cex = 0.7, xlabs = abbreviate(rownames(USArrests), 4))
+biplot(pr_u, scale = 0, expand = 0.9, cex = 0.7, xlabs = abbreviate(rownames(USArrests), 4))
+par(op)
+@
+\begin{figure}[H]\centering
+\caption{Biplots of the first two principal components of \texttt{USArrests}: state
+scores (abbreviated names, bottom and left axes) and loading vectors (arrows, top and
+right axes). Left, standardised variables (ISLR Figure 12.1); right, unscaled (ISLR
+Figure 12.4).}
+\end{figure}
+<<usarrests-scree, fig.height=2.6, fig.width=6.4, fig.show="hold">>=
 pve_us <- pr$sdev^2 / sum(pr$sdev^2)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.2, 0.6, 0))
 plot(pve_us, type = "b", ylim = c(0, 1), xlab = "principal component", ylab = "PVE", pch = 16, xaxt = "n")
@@ -1075,6 +1097,7 @@ $\hat\theta_0,\hat\btheta$ and implied slopes $\hat\bb=\bPhi\hat\btheta$,
 $\hat\beta_j=\sum_m\hat\theta_m\phi_{jm}$.
 \end{definition}
 
+\needroom{0.45}
 \begin{proposition}[Dimension reduction constrains the slopes; ISLR §6.3]\label{prop:dimred}
 Let $[\bone\ \bZ]$ have full column rank.
 \begin{enumerate}[label=\textup{(\roman*)}]
@@ -1251,7 +1274,7 @@ no better than PCR. $M$ is chosen by cross-validation.
 The standardised coefficients $\hat\bb(M)$ of Theorem~\ref{thm:pcr}\ref{pcr:ii}, the share
 of each component in $R^2$, and ten-fold cross-validation of \texttt{pcr} and
 \texttt{plsr}:
-<<credit-pcr, fig.height=2.4, fig.width=6.4>>=
+<<credit-pcr>>=
 Xs_c <- scale(Xc); sv_c <- svd(Xs_c); th_c <- drop(crossprod(sv_c$u, yc)) / sv_c$d
 B_c <- sapply(1:11, function(M) drop(sv_c$v[, 1:M, drop = FALSE] %*% th_c[1:M]))
 round(rbind(PVE = sv_c$d^2 / sum(sv_c$d^2), R2_share = (sv_c$d * th_c)^2 / tss_c), 4)
@@ -1264,17 +1287,7 @@ c(PCR_min = which.min(cvs[1, ]) - 1, PLS_min = which.min(cvs[2, ]) - 1)
 round(drop(R2(pls_c, estimate = "train")$val)[2:4], 4)
 signif(c(coef_vs_pcr = max(abs(B_c - drop(coef(pcr_c, ncomp = 1:11)))),
   M11_vs_lm = max(abs(B_c[, 11] / attr(Xs_c, "scaled:scale") - coef(lm(Balance ~ ., data = Credit))[-1]))), 3)
-op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.2, 0.6, 0))
-matplot(1:11, t(B_c), type = "l", lty = 1, col = c(2, 4, 3, rep("grey60", 8)), xlab = "number of components",
-        ylab = "standardised coefficient")
-legend("topleft", c("Income", "Limit", "Rating"), col = c(2, 4, 3), lty = 1, bty = "n", cex = 0.7)
-plot(0:11, cvs[1, ] / 1e3, type = "b", pch = 16, cex = 0.6, xlab = "number of components", ylab = "CV MSE (thousands)")
-par(op)
 @
-\begin{figure}[H]\centering
-\caption{PCR on \texttt{Credit}: standardised coefficients against $M$, and ten-fold
-cross-validation error (ISLR Figure 6.20).}
-\end{figure}
 The share of component $m$ in $R^2$ is $(\bu_m'\bY)^2/\TSS$
 (Theorem~\ref{thm:pcr}\ref{pcr:ii}): $0.5807$ for the first, which carries a proportion
 $0.2505$ of the predictor variance; below $0.06$ for each of the second to the ninth; and
@@ -1288,6 +1301,21 @@ the minimum at $M=10$. PLS reaches $11{,}617$ with three directions and its mini
 $10{,}245$, with ten; its first three directions give $R^2=0.6967$, $0.8653$ and
 $0.9495$. Theorem~\ref{thm:pcr}\ref{pcr:ii} reproduces the \texttt{pcr} coefficients, and
 $M=11$ the least squares slopes, to rounding error.
+
+\begin{keepends}
+<<credit-pcr-plot, fig.height=3.0, fig.width=6.4, fig.show="hold">>=
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.2, 0.6, 0))
+matplot(1:11, t(B_c), type = "l", lty = 1, col = c(2, 4, 3, rep("grey60", 8)),
+        xlab = "number of components", ylab = "standardised coefficient")
+legend("topleft", c("Income", "Limit", "Rating"), col = c(2, 4, 3), lty = 1, bty = "n", cex = 0.7)
+plot(0:11, cvs[1, ] / 1e3, type = "b", pch = 16, cex = 0.6, xlab = "number of components", ylab = "CV MSE (thousands)")
+par(op)
+@
+\end{keepends}
+\begin{figure}[H]\centering
+\caption{PCR on \texttt{Credit}: standardised coefficients against $M$, and ten-fold
+cross-validation error (ISLR Figure 6.20).}
+\end{figure}
 \end{example}
 
 % \periodmark{End of period 2 of 3.}
@@ -1584,7 +1612,9 @@ explanatory variables, a selection of the first kind.
 \begin{example}[Extrapolation, truncation and imputation; FREES Figures 6.1, 6.4]\label{ex:region}
 A quadratic mean $2+3x-0.5x^2$ sampled on $1\leqslant x\leqslant3$ and a line fitted;
 the truncated sample of Example~\ref{ex:truncation}; and a mean imputation:
-<<region, fig.height=2.5, fig.width=6.4>>=
+
+\begin{keepends}
+<<region, fig.height=2.9, fig.width=6.4, fig.show="hold">>=
 set.seed(5); xr <- runif(50, 1, 3); yr <- 2 + 3 * xr - 0.5 * xr^2 + rnorm(50, sd = 0.25)
 cc <- coef(lm(I(xr^2) ~ xr)); q_x <- function(x0) x0^2 - cc[[1]] - cc[[2]] * x0
 round(c(bias_at_2 = 0.5 * q_x(2), bias_at_8 = 0.5 * q_x(8), sum_q = sum(q_x(xr))), 4)
@@ -1602,6 +1632,7 @@ abline(1, 1, lty = 2); abline(lm(yt[kt] ~ xt[kt]), col = "red"); abline(lm(pmax(
 abline(h = 6, col = "grey70", lty = 3)
 par(op)
 @
+\end{keepends}
 \begin{figure}[H]\centering
 \caption{Left: a line fitted on $1\leqslant x\leqslant3$ (red) to a quadratic mean
 (dashed), extrapolated (FREES Figure 6.1). Right: the true line (dashed), the least
@@ -1653,7 +1684,9 @@ and BIC also select $10$ and $6$, BIC no more than $C_p$ as
 Proposition~\ref{prop:relations}\ref{re:ii} requires of these two forms. The BIC model
 contains \texttt{AtBat}, \texttt{Hits}, \texttt{Walks}, \texttt{CRBI},
 \texttt{DivisionW} and \texttt{PutOuts}.
-<<lab-plots, fig.height=3.4, fig.width=6.4>>=
+
+\begin{keepends}
+<<lab-plots, fig.height=3.4, fig.width=6.4, out.width="0.64\\linewidth", fig.show="hold">>=
 op <- par(mfrow = c(2, 2), mar = c(3.0, 3.8, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(reg.summary$rss / 1e6, xlab = "", ylab = "RSS (millions)", type = "l")
 plot(reg.summary$adjr2, xlab = "", ylab = "Adjusted RSq", type = "l")
@@ -1664,15 +1697,19 @@ plot(reg.summary$bic, xlab = "Number of Variables", ylab = "BIC", type = "l")
 points(6, reg.summary$bic[6], col = "red", cex = 2, pch = 20)
 par(op)
 @
+\end{keepends}
 \begin{figure}[H]\centering
 \caption{$\RSS$, $R_a^2$, $C_p^{\mathrm F}$ and the \texttt{regsubsets} BIC of the best
 \texttt{Hitters} model of each size, with the selected sizes in red.}
 \end{figure}
-<<lab-plotbic, fig.height=3.6, fig.width=6.4>>=
+
+\begin{keepends}
+<<lab-plotbic, fig.height=3.6, fig.width=6.4, out.width="0.68\\linewidth", out.extra="trim={0 0 0 65bp},clip", fig.show="hold">>=
 op <- par(cex = 0.8)
 plot(regfit.full, scale = "bic", mar = c(6.2, 3.6, 0.6, 0.6))
 par(op)
 @
+\end{keepends}
 \begin{figure}[H]\centering
 \caption{\texttt{plot(regfit.full, scale = "bic")}: each row is the best model of one
 size, its predictors shaded, the rows ordered by BIC.}
@@ -1693,6 +1730,8 @@ Forward selection agrees with best subset selection for one to six predictors, a
 lab states; at seven the three procedures give three different models. The validation
 set approach, with the search run on the training observations only, and the lab's own
 \texttt{predict} method:
+
+\begin{keepends}
 <<lab-val>>=
 set.seed(1)
 train <- sample(c(TRUE, FALSE), nrow(Hitters), replace = TRUE)
@@ -1718,10 +1757,11 @@ predict.regsubsets <- function(object, newdata, id, ...) {
 regfit.best <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
 coef(regfit.best, 7)
 @
+\end{keepends}
 The validation error is smallest at seven predictors; the best seven-predictor model on
 all the data differs from the one found on the training half. Ten-fold
 cross-validation, with best subset selection inside each training set:
-<<lab-cv, fig.height=2.3, fig.width=6.4, out.width="0.62\\linewidth">>=
+<<lab-cv>>=
 k <- 10
 n <- nrow(Hitters)
 set.seed(1)
@@ -1737,15 +1777,20 @@ for (j in 1:k) {
 mean.cv.errors <- apply(cv.errors, 2, mean)
 round(mean.cv.errors)
 which.min(mean.cv.errors)
+@
+\needroom{0.15}
+<<lab-cv-plot, fig.height=2.5, fig.width=6.4, fig.show="hold">>=
 op <- par(mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.2, 0.6, 0))
 plot(mean.cv.errors, type = "b", xlab = "number of predictors", ylab = "CV error")
 par(op)
-reg.best <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
-coef(reg.best, 10)
 @
 \begin{figure}[H]\centering
 \caption{Ten-fold cross-validation error of best subset selection on \texttt{Hitters}.}
 \end{figure}
+<<lab-cv-best>>=
+reg.best <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
+coef(reg.best, 10)
+@
 Cross-validation selects ten predictors, as in the lab.
 
 \subsection{The ISLR lab: PCR and PLS}\label{sec:5.6.2}
@@ -1772,7 +1817,16 @@ mean((pcr.pred - y.test)^2)
 pcr.fit <- pcr(y ~ x, scale = TRUE, ncomp = 5)
 round(drop(R2(pcr.fit, estimate = "train")$val)[-1], 4)
 @
-<<lab-pcr-plot, fig.height=2.3, fig.width=6.4, out.width="0.62\\linewidth">>=
+The root mean squared cross-validation error is $452.0$ with no
+component; the lab's example $352.8$, the value at four components,
+is the MSE $124{,}468$. The minimum, $339.2$, is at $M=18$, one short of least squares
+($339.6$ at $M=19$, Theorem~\ref{thm:pcr}\ref{pcr:v}), and one component gives $351.9$. One component
+explains $38.31\%$ of the variance of the predictors. On the training half,
+cross-validation selects $M=5$, with test MSE $142{,}812$; refitted on all the data, the
+five components explain proportions $0.4063$ to $0.4490$ of the variance of
+\texttt{Salary} as they are added, each adding its share
+(Theorem~\ref{thm:pcr}\ref{pcr:ii}).
+<<lab-pcr-plot, fig.height=2.7, fig.width=6.4, out.width="0.62\\linewidth", fig.show="hold">>=
 op <- par(mar = c(3.2, 3.8, 1.6, 0.6), mgp = c(2.2, 0.6, 0))
 set.seed(2); validationplot(pcr(Salary ~ ., data = Hitters, scale = TRUE, validation = "CV"),
                             val.type = "MSEP", main = "")
@@ -1783,15 +1837,6 @@ par(op)
 the number of components: the cross-validation estimate (solid) and its bias-corrected
 version \texttt{adjCV} (dashed).}
 \end{figure}
-The root mean squared cross-validation error is $452.0$ with no
-component; the lab's example $352.8$, the value at four components,
-is the MSE $124{,}468$. The minimum, $339.2$, is at $M=18$, one short of least squares
-($339.6$ at $M=19$, Theorem~\ref{thm:pcr}\ref{pcr:v}), and one component gives $351.9$. One component
-explains $38.31\%$ of the variance of the predictors. On the training half,
-cross-validation selects $M=5$, with test MSE $142{,}812$; refitted on all the data, the
-five components explain proportions $0.4063$ to $0.4490$ of the variance of
-\texttt{Salary} as they are added, each adding its share
-(Theorem~\ref{thm:pcr}\ref{pcr:ii}).
 <<lab-pls>>=
 set.seed(1)
 pls.fit <- plsr(Salary ~ ., data = Hitters, subset = train, scale = TRUE, validation = "CV")
@@ -1914,6 +1959,8 @@ For \texttt{USArrests} and \texttt{Hitters}: principal components by \texttt{eig
 the best approximation of Theorem~\ref{thm:closest}, PCR by
 Theorem~\ref{thm:pcr} against \texttt{pcr}, and PLS by the deflation of
 Definition~\ref{def:pls} against \texttt{plsr}:
+
+\begin{keepends}
 <<formulas-pca>>=
 Xu <- scale(USArrests); nu <- nrow(Xu); Su <- crossprod(Xu) / nu
 eu <- eigen(Su); su <- svd(Xu); pu <- prcomp(USArrests, scale = TRUE)
@@ -1944,6 +1991,7 @@ signif(c(weight1 = max(abs(abs(plsH$loading.weights[, 1]) - abs(wH) / sqrt(sum(w
   scores_orthogonal = max(abs(crossprod(ZH[, 1:5])[upper.tri(diag(5))])) / max(colSums(ZH[, 1:5]^2)),
   M19_vs_lm = max(abs(fit_pls(19) - fitted(lm(Salary ~ ., data = Hitters))))), 3)
 @
+\end{keepends}
 \texttt{eigen}, \texttt{svd} and \texttt{prcomp} agree up to
 sign and the divisor, and the error of the rank-two approximation is
 $n(\lambda_3+\lambda_4)$, to rounding error; for a random $4\times2$ matrix with
@@ -2005,6 +2053,8 @@ A stepwise regression algorithm suggests \texttt{LNINCOME}, \texttt{EDUCATION},
 \end{exercise}
 
 \begin{solution}
+
+\begin{keepends}
 <<ex-f5-4d>>=
 term <- subset(read.csv("data/frees/csv/TermLife.csv"), FACE > 0)
 term$LNFACE <- log(term$FACE); term$LNINCOME <- log(term$INCOME); term$MARSTAT <- factor(term$MARSTAT)
@@ -2013,6 +2063,7 @@ nobs(full_t); formula(step(full_t, trace = 0)); formula(step(full_t, trace = 0, 
 term$MAR1 <- as.numeric(term$MARSTAT == 1); term$MAR2 <- as.numeric(term$MARSTAT == 2)
 formula(step(lm(LNFACE ~ LNINCOME + EDUCATION + NUMHH + MAR1 + MAR2 + AGE + GENDER, data = term), trace = 0))
 @
+\end{keepends}
 With \texttt{MARSTAT} as one factor, \texttt{step} selects the four variables of the
 statement under both the AIC and the BIC form; with its two indicators as separate
 candidates, the AIC form also keeps \texttt{MAR2}. (i) Stepwise regression searches
@@ -2072,7 +2123,9 @@ chosen by ISLR's $C_p$ and BIC, with $\hat\sigma^2$ from the model with all ten 
 the \texttt{regsubsets} statistics $C_p^{\mathrm F}$, which ranks all models as $C_p$ does
 (Proposition~\ref{prop:forms}\ref{fo:i}), and the log form of BIC, which ranks models of
 equal size as BIC does (Proposition~\ref{prop:relations}\ref{re:i}); and by $R_a^2$:
-<<ex-i6-8, fig.height=2.3, fig.width=6.4>>=
+
+\begin{keepends}
+<<ex-i6-8>>=
 set.seed(1); X8 <- rnorm(100); eps8 <- rnorm(100)
 Y8 <- 3 + 2 * X8 - 3 * X8^2 + 0.3 * X8^3 + eps8
 D8 <- data.frame(y = Y8, poly(X8, 10, raw = TRUE)); names(D8) <- c("y", paste0("x", 1:10))
@@ -2084,25 +2137,31 @@ fits8 <- lapply(c("exhaustive", "forward", "backward"), function(m)
   regsubsets(y ~ ., data = D8, nvmax = 10, method = m))
 t(sapply(fits8, choose, s2 = s2_8))
 lapply(fits8, function(f) round(coef(f, 3), 4))
+@
+\end{keepends}
+All five criteria choose three predictors under each search. Best subset and forward
+selection choose $X$, $X^2$ and $X^7$, with coefficients $2.3562$, $-3.1651$ and $0.0105$,
+and backward selection $X$, $X^2$ and $X^9$: the small cubic term $0.3X^3$ is represented
+by a higher odd power.
+<<ex-i6-8-plot, fig.height=2.3, fig.width=6.4, fig.show="hold">>=
 s8 <- summary(fits8[[1]]); d8 <- 1:10
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.8, 0.6, 0.4), mgp = c(2.2, 0.6, 0))
 plot((s8$rss + 2 * d8 * s2_8) / 100, type = "b", pch = 16, cex = 0.6, xlab = "number of predictors", ylab = "Cp")
 plot((s8$rss + log(100) * d8 * s2_8) / 100, type = "b", pch = 16, cex = 0.6, xlab = "number of predictors", ylab = "BIC")
 plot(s8$adjr2, type = "b", pch = 16, cex = 0.6, xlab = "number of predictors", ylab = "adjusted R-squared")
 par(op)
-D8$y <- 3 + 7 * X8^7 + eps8
-s2_7 <- summary(lm(y ~ ., data = D8))$sigma^2
-f7 <- regsubsets(y ~ ., data = D8, nvmax = 10); choose(f7, s2_7)
-round(coef(f7, 1), 4); round(coef(f7, 2), 4)
 @
 \begin{figure}[H]\centering
 \caption{ISLR's $C_p$ and BIC and $R_a^2$ of the best model of each size for the cubic
 of part (b).}
 \end{figure}
-All five criteria choose three predictors under each search. Best subset and forward
-selection choose $X$, $X^2$ and $X^7$, with coefficients $2.3562$, $-3.1651$ and $0.0105$,
-and backward selection $X$, $X^2$ and $X^9$: the small cubic term $0.3X^3$ is represented
-by a higher odd power. For $Y=3+7X^7+\varepsilon$, both forms of BIC choose the true model,
+<<ex-i6-8f>>=
+D8$y <- 3 + 7 * X8^7 + eps8
+s2_7 <- summary(lm(y ~ ., data = D8))$sigma^2
+f7 <- regsubsets(y ~ ., data = D8, nvmax = 10); choose(f7, s2_7)
+round(coef(f7, 1), 4); round(coef(f7, 2), 4)
+@
+For $Y=3+7X^7+\varepsilon$, both forms of BIC choose the true model,
 with coefficients $2.959$ and $7.001$, while $C_p$ and $C_p^{\mathrm F}$ add $X^2$, ISLR's
 BIC choosing no more predictors than its $C_p$ as Proposition~\ref{prop:relations}\ref{re:ii}
 requires; $R_a^2$ chooses four predictors.
@@ -2116,7 +2175,10 @@ $M$. (f) The same for PLS. (g) How accurately can the number of applications be
 predicted, and do the test errors differ much?
 \end{exercise}
 
+\needroom{0.22}
 \begin{solution}
+
+\begin{keepends}
 <<ex-i6-9>>=
 set.seed(1); tr9 <- sample(nrow(College), nrow(College) / 2); te9 <- College[-tr9, ]
 ls9 <- lm(Apps ~ ., data = College, subset = tr9)
@@ -2133,6 +2195,7 @@ test9 <- c(LS = mse9(predict(ls9, te9)), PCR = mse9(drop(predict(pcr9, te9, ncom
 round(test9)
 c(test_R2_LS = 1 - test9[["LS"]] / mean((te9$Apps - mean(College$Apps[tr9]))^2))
 @
+\end{keepends}
 Cross-validation selects all $17$ components for both PCR and PLS,
 so by Theorem~\ref{thm:pcr}\ref{pcr:v} and Proposition~\ref{prop:pls}\ref{pls:iv} both
 fits are the least squares fit, and the three test errors coincide at $1{,}135{,}758$.
@@ -2152,9 +2215,12 @@ with the true one? (g) Plot $\sqrt{\sum_j(\beta_j-\hat\beta_j^r)^2}$ against the
 and compare with (d).
 \end{exercise}
 
+\needroom{0.22}
 \begin{solution}
 Five of the twenty coefficients are set to zero:
-<<ex-i6-10, fig.height=2.3, fig.width=6.4>>=
+
+\begin{keepends}
+<<ex-i6-10>>=
 set.seed(1); X10 <- matrix(rnorm(1000 * 20), 1000); colnames(X10) <- paste0("x", 1:20)
 beta10 <- rnorm(20); beta10[c(3, 4, 9, 10, 19)] <- 0
 Y10 <- drop(X10 %*% beta10 + rnorm(1000)); tr10 <- sample(1000, 100)
@@ -2168,6 +2234,15 @@ round(t(res10), 3)
 c(test_min = which.min(res10[, "test"]), dist_min = which.min(res10[, "coef_dist"]))
 setdiff(colnames(X10)[beta10 != 0], names(coef(f10, 15))[-1]); setdiff(names(coef(f10, 15))[-1], colnames(X10)[beta10 != 0])
 round(beta10, 3); round(coef(f10, 15)["x4"], 3)
+@
+\end{keepends}
+The training MSE decreases at every size (Proposition~\ref{prop:search}\ref{se:iv});
+the test MSE is smallest, $1.285$, at $15$ predictors, the number of nonzero
+coefficients, and the coefficient distance is smallest, $0.467$, at the same size. The
+$15$-predictor model contains $14$ of the $15$ true predictors and \texttt{x4}, whose
+coefficient is $0$ and receives $0.203$, in place of \texttt{x1}, whose coefficient
+$0.235$ is the smallest nonzero one in absolute value.
+<<ex-i6-10-plot, fig.height=2.65, fig.width=6.4, fig.show="hold">>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.8, 0.6, 0.4), mgp = c(2.2, 0.6, 0))
 for (v in colnames(res10)) plot(res10[, v], type = "b", pch = 16, cex = 0.6, xlab = "size r", ylab = v)
 par(op)
@@ -2175,12 +2250,7 @@ par(op)
 \begin{figure}[H]\centering
 \caption{Training MSE, test MSE and coefficient distance of the best model of each size.}
 \end{figure}
-The training MSE decreases at every size (Proposition~\ref{prop:search}\ref{se:iv});
-the test MSE is smallest, $1.285$, at $15$ predictors, the number of nonzero
-coefficients, and the coefficient distance is smallest, $0.467$, at the same size. The
-$15$-predictor model contains $14$ of the $15$ true predictors and \texttt{x4}, whose
-coefficient is $0$ and receives $0.203$, in place of \texttt{x1}, whose coefficient
-$0.235$ is the smallest nonzero one in absolute value. The curves of (d) and (g) have the
+The curves of (d) and (g) have the
 same shape: the estimates closest to $\beta$ predict best.
 \end{solution}
 
@@ -2437,12 +2507,15 @@ $91.90$; (E) Model III, AIC $93.93$.
 \begin{solution}
 The syllabus form of AIC (Definition~\ref{def:criteria}) takes $\hat\sigma^2$ from the
 model with all six predictors, $9.4582^2$:
+
+\begin{keepends}
 <<ex-soa-70>>=
 rss70 <- c(183663.30, 8826.47, 8319.59); d70 <- c(1, 2, 6); rse70 <- c(43.2911, 9.5391, 9.4582)
 round(rbind(AIC_full_sigma = (rss70 + 2 * d70 * rse70[3]^2) / 100,
             AIC_own_sigma = (rss70 + 2 * d70 * rse70^2) / 100,
             rse_from_rss = sqrt(rss70 / (100 - d70 - 1))), 4)
 @
+\end{keepends}
 Model II has the smallest AIC, $91.84$: (C). The values $1{,}838.42$ and $93.93$ of (A)
 and (E) are the AIC of Models I and III, which are larger. The values of (B) and (D),
 $1{,}874.12$ and $91.90$, result from using each model's own residual variance in place

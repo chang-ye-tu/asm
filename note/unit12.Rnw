@@ -15,6 +15,16 @@
 \renewcommand\theexercise {12.\arabic{exercise}}
 \renewcommand\thefigure   {12.\arabic{figure}}
 
+% Slide breaks. fancyvrb puts \clubpenalty after the first line of a block and \widowpenalty
+% before its last, so with both at 10000 a code or output block never leaves one line alone at
+% the foot or the head of a slide (a table header cut off from its rows, a last row carried
+% over). The statement of an exercise is not split at all.
+\makeatletter
+\AtBeginEnvironment{Verbatim}{\clubpenalty\@M\widowpenalty\@M}
+\AtBeginEnvironment{minted}{\clubpenalty\@M\widowpenalty\@M}
+\AtBeginEnvironment{exercise}{\interlinepenalty\@M}
+\makeatother
+
 \title{\color{hdrBG}\bfseries\Huge Ensembles}
 \author{}\date{}
 
@@ -438,7 +448,7 @@ Theorem~\ref{thm:avg}, which concerns averages of numbers.
 Restricting the candidate set is not free, and the case where it hurts is the one Unit 11
 used to show greedy growing fail. For the checkerboard truth every single split has zero
 population gain, and the structure appears only when a split on $x_1$ is followed by one on
-$x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. On a box truth in two of six coordinates, bagging reaches a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
+$x_2$; a forest that hides $x_2$ from most splits makes that pairing rarer. On a box truth in two of six coordinates, bagging reaches, on one draw, a squared error of $0.36$ against $1.27$ for a forest with $m=2$, while on a linear
 truth the two are indistinguishable. Decorrelation helps when the members are similar for a
 bad reason and hurts when they are similar because the problem requires it.
 \end{remark}
@@ -820,7 +830,7 @@ on variance alone the most restricted forest would be chosen, which is far from 
 \begin{figure}[H]\centering
 <<decorr-fig, echo=FALSE, fig.width=6.4, fig.height=2.8>>=
 set.seed(1); tabm <- t(sapply(1:10, summ))
-op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 3.2), cex = 0.85)
+op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.8, 4), cex = 0.85)
 plot(tabm[, "mtry"], tabm[, "sigma2"], type = "b", pch = 16, lwd = 2,
      col = "#1E3A8A", xlab = "m", ylab = expression(sigma^2),
      main = "one tree")
@@ -1164,7 +1174,7 @@ $\sqrt p$ against the number of trees up to $500$, and describe the result.
 
 \begin{solution}
 The training half of Example~\ref{ex:lab-bag}, $p=12$:
-<<i8-7, fig.width=6.4, fig.height=2.6>>=
+<<i8-7, fig.width=5.2, fig.height=2.3, out.width="0.48\\linewidth">>=
 set.seed(1)
 e7 <- sapply(c(12, 6, 3), function(m)
   randomForest(medv ~ ., Boston[train, ], mtry = m, ntree = 500,
@@ -1371,13 +1381,17 @@ Proposition~\ref{prop:stagewise} requires.
 
 \begin{exercise}[SOA sample question 39]\label{ex:soa-39}
 To predict $y$ from $x$ in the data plotted below, which statement about a generalized linear
-model (GLM) or a random forest is true?
-\begin{center}\includegraphics[width=0.45\linewidth]{../srm/assets/figs/srm_q39.pdf}\end{center}
+model (GLM) or a random forest is true?\\[1mm]
+\begin{minipage}{0.50\linewidth}\centering
+\includegraphics[width=\linewidth]{../srm/assets/figs/srm_q39.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.47\linewidth}
 (A) A random forest is appropriate because the data contain only quantitative variables.
 (B) A random forest is appropriate because the data do not follow a straight line. (C) A GLM is
 not appropriate because the variance of $y$ given $x$ is not constant. (D) A random forest is
 appropriate because there is a clear relationship between $y$ and $x$. (E) A GLM is appropriate
 because it can accommodate polynomial relationships.
+\end{minipage}
 \end{exercise}
 
 \begin{solution}

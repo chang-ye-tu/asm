@@ -18,6 +18,14 @@
 \title{\color{hdrBG}\bfseries\Huge Multiple Regression I: Matrix Theory}
 \author{}\date{}
 
+% A code or output block never leaves its first or its last line alone on a slide.
+\AtBeginEnvironment{Verbatim}{\clubpenalty=10000 \widowpenalty=10000 }
+\AtBeginEnvironment{MintedVerbatim}{\clubpenalty=10000 \widowpenalty=10000 }
+% A solution that opens with code keeps its label on the slide of the code.
+\makeatletter
+\newcommand{\keepwithcode}{\nopagebreak\global\@nobreaktrue}
+\makeatother
+
 \begin{document}
 
 <<setup, include=FALSE>>=
@@ -60,7 +68,7 @@ descr <- function(v) c(mean = mean(v), median = median(v), sd = sd(v), min = min
 round(rbind(POP = descr(lottery$POP), SALES = descr(lottery$SALES)), 1)
 @
 <<lottery-fig, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.2, 1.4), mgp = c(1.9, 0.6, 0))
 hist(lottery$POP, breaks = 15, main = "", xlab = "POP", col = "grey85", border = "white")
 hist(lottery$SALES, breaks = 15, main = "", xlab = "SALES", col = "grey85", border = "white")
 plot(lottery$POP, lottery$SALES, xlab = "POP", ylab = "SALES", pch = 16, cex = 0.7)
@@ -171,7 +179,7 @@ In dollars the points cluster in the lower left corner and the relation is far f
 linear; in logarithms a line is a reasonable summary. The correlation matrix
 summarises the pairwise scatter plots: each entry is a pairwise linear association and
 cannot show how the response depends on several variables jointly.
-<<termlife-pairs, fig.height=3.0, fig.width=4.0, out.width="0.58\\linewidth", echo=FALSE>>=
+<<termlife-pairs, fig.height=3.0, fig.width=4.0, out.width="0.54\\linewidth", echo=FALSE>>=
 pairs(term[, c("NUMHH", "EDUCATION", "LNINCOME", "LNFACE")], pch = 16, cex = 0.35,
       col = "grey30", gap = 0.3)
 @
@@ -1637,7 +1645,7 @@ c(s = summary(fit_capm)$sigma, R2 = summary(fit_capm)$r.squared,
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 plot(1:60, capm$LINCOLN, type = "l", xlab = "month (from January 1986)", ylab = "monthly return")
 lines(1:60, capm$MARKET, lty = 2)
-legend("topright", c("LINCOLN", "MARKET"), lty = 1:2, bty = "n", cex = 0.7)
+legend("top", c("LINCOLN", "MARKET"), lty = 1:2, bty = "n", cex = 0.7, horiz = TRUE)
 plot(capm$MARKET, capm$LINCOLN, xlab = "MARKET", ylab = "LINCOLN", pch = 16, cex = 0.6)
 abline(fit_capm)
 par(op)
@@ -1784,9 +1792,9 @@ the high leverage point B would lower $R^2$.
 The point at the upper left of the scatter plot is the ZIP code containing Kenosha, on
 the Illinois border, whose sales are far above what its population predicts.
 <<kenosha>>=
-i_ken <- which.max(residuals(fit_lot))
+i_ken <- unname(which.max(residuals(fit_lot)))
 c(row = i_ken, POP = lottery$POP[i_ken], SALES = lottery$SALES[i_ken],
-  std_resid = rstandard(fit_lot)[i_ken], leverage = hatvalues(fit_lot)[i_ken])
+  std_resid = rstandard(fit_lot)[[i_ken]], leverage = hatvalues(fit_lot)[[i_ken]])
 fit_ken <- lm(SALES ~ POP, data = lottery[-i_ken, ])
 round(rbind(with_Kenosha = one_fit_lot <- c(coef(fit_lot), s = s_lot,
                 R2_pct = 100 * summary(fit_lot)$r.squared,
@@ -1795,7 +1803,7 @@ round(rbind(with_Kenosha = one_fit_lot <- c(coef(fit_lot), s = s_lot,
                 R2_pct = 100 * summary(fit_ken)$r.squared,
                 t_b1 = coef(summary(fit_ken))["POP", "t value"])), 3)
 @
-<<kenosha-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+<<kenosha-fig, fig.height=2.3, fig.width=6.4, out.width="0.7\\linewidth", echo=FALSE>>=
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.6, 0.6), mgp = c(1.9, 0.6, 0))
 qqnorm(rstandard(fit_lot), main = "all 50 ZIP codes", cex = 0.6); qqline(rstandard(fit_lot))
 qqnorm(rstandard(fit_ken), main = "without Kenosha", cex = 0.6); qqline(rstandard(fit_ken))
@@ -1826,6 +1834,7 @@ FREES §2.8 · ISLR §3.6.1--3.6.3.
 
 FREES §2.8 annotates the output of Excel, SAS and R for the lottery regression; every
 printed quantity is a formula of this unit.
+\pagebreak
 <<lottery-output>>=
 summary(fit_lot)
 anova(fit_lot)
@@ -1857,8 +1866,11 @@ regression and error rows of the ANOVA table, the total row being their sum.
 The \texttt{Boston} data of \texttt{ISLR2}: the median house value \texttt{medv} of
 $506$ census tracts with $12$ predictors, among them \texttt{lstat}, the percentage of
 households of low socioeconomic status.
-<<lab-slr>>=
+<<lab-slr-fit>>=
 lm.fit <- lm(medv ~ lstat, data = Boston)
+@
+\pagebreak
+<<lab-slr>>=
 summary(lm.fit)
 names(lm.fit)
 coef(lm.fit)
@@ -1890,7 +1902,7 @@ The residuals bend: negative in the middle, positive at both ends, so the relati
 linear. Leverage is computed by \texttt{hatvalues}, and \texttt{which.max} names the
 observation with the largest.
 <<lab-leverage>>=
-c(max_leverage = max(hatvalues(lm.fit)), at = which.max(hatvalues(lm.fit)),
+c(max_leverage = max(hatvalues(lm.fit)), at = unname(which.max(hatvalues(lm.fit))),
   mean_leverage = 2 / 506, lstat_there = Boston$lstat[which.max(hatvalues(lm.fit))],
   max_lstat = max(Boston$lstat))
 @
@@ -2066,10 +2078,11 @@ c(r = cor(xa, ya), b1 = 11/86, b0 = 13/3 - 11/86); coef(lm(ya ~ xa))
 For $x=(-2,-1,0,1,2)$ and $y=x^2=(4,1,0,1,4)$: (a) graph the data; (b) check that $r=0$.
 \end{exercise}
 
-\begin{solution}
-<<ex-f2-2, fig.height=2.4, fig.width=3.0, out.width="0.4\\linewidth">>=
+\begin{solution}\keepwithcode
+<<ex-f2-2, fig.height=2.4, fig.width=3.6, out.width="0.33\\linewidth", echo=-3>>=
 xq <- -2:2; yq <- xq^2
 c(r = cor(xq, yq), cross_products = sum((xq - mean(xq)) * (yq - mean(yq))))
+par(mar = c(4, 4, 0.5, 0.5))
 plot(xq, yq, pch = 16, xlab = "x", ylab = "y")
 @
 (b) $\bar x=0$ and $\bar y=2$, so $\sum_i(x_i-\bar x)(y_i-\bar y)=\sum_ix_i(y_i-2)
@@ -2141,8 +2154,8 @@ the two slopes share the sign of $r$. For $r\neq0$, drawn on the same axes the s
 $1/b_{x|y}=s_y/(rs_x)$, and the ratio of the first slope to it is $r^2$: the lines
 coincide iff $r^2=1$, and otherwise the regression of $y$ on $x$ is the flatter. In
 standard units the fitted line is $\hat v=ru$, so a value one standard deviation above
-average in $x$ is predicted $|r|<1$ standard deviations above average in $y$, the
-regression toward the mean of Unit 1.
+average in $x$ is predicted $r$ standard deviations from the average in $y$, above it when
+$r>0$ and below it when $r<0$, and $|r|\leqslant1$: the regression toward the mean of Unit 1.
 \end{solution}
 
 \begin{exercise}[FREES exercise 2.7]\label{ex:f2-7}
@@ -2208,7 +2221,7 @@ against \texttt{SQRFOOT}; (c) regressions of \texttt{TPY} on \texttt{NUMBED}, of
 of the slope. Part 2: refit \texttt{TPY} on \texttt{NUMBED} for 2001.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f2-10>>=
 nh <- read.csv("data/frees/csv/WiscNursingHome.csv")
 nh0 <- subset(nh, CRYEAR == 2000); nh1 <- subset(nh, CRYEAR == 2001)
@@ -2350,7 +2363,7 @@ $b_0\approx3.0$, $b_1\approx0.5$, $s\approx1.237$, $R^2\approx0.677$ in each cas
 (c) draw the four scatter plots; (d) discuss.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f2-19>>=
 an <- read.csv("data/frees/csv/AnscombesData.csv")
 round(sapply(an[, -1], function(v) c(mean = mean(v), sd = sd(v))), 3)
@@ -2390,7 +2403,7 @@ estimate and $95\%$ and $99\%$ confidence intervals for the expected change in
 same converted to patient years, and a $90\%$ interval.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f2-20>>=
 nh1$LOGTPY <- log(nh1$TPY); nh1$LOGNUMBED <- log(nh1$NUMBED)
 round(rbind(LOGTPY = descr(nh1$LOGTPY), LOGNUMBED = descr(nh1$LOGNUMBED)), 3)
@@ -2409,7 +2422,7 @@ rbind(log_scale_95 = predict(fit_nh, nd_nh, interval = "prediction"),
       patient_years_95 = exp(predict(fit_nh, nd_nh, interval = "prediction")),
       patient_years_90 = exp(predict(fit_nh, nd_nh, interval = "prediction", level = 0.90)))
 @
-<<ex-f2-20-fig, fig.height=2.4, fig.width=6.4, out.width="0.5\\linewidth", echo=FALSE>>=
+<<ex-f2-20-fig, fig.height=2.4, fig.width=4.6, out.width="0.5\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 plot(nh1$LOGNUMBED, nh1$LOGTPY, xlab = "LOGNUMBED", ylab = "LOGTPY", pch = 16, cex = 0.5)
 abline(fit_nh)
@@ -2443,7 +2456,7 @@ residual; (ii) its share of $\SSE$; (iii) the definition of a high leverage poin
 (iv) whether Inktomi is one.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f2-21>>=
 ipo <- read.csv("data/frees/csv/IPO.csv"); ipo <- ipo[complete.cases(ipo[, c("RETURN", "REV")]), ]
 round(t(sapply(ipo[, c("RETURN", "REV", "LnREV")], descr)), 3)
@@ -2489,7 +2502,7 @@ multiple of $s$; (d) test at $5\%$ the prior hypothesis that the slope is $-6.0$
 the alternative that it is greater, with an approximate $p$-value.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f2-22>>=
 un <- read.csv("data/frees/csv/UNLifeExpectancy.csv")
 fit_un <- lm(LIFEEXP ~ FERTILITY, data = un)
@@ -2541,7 +2554,7 @@ Total      & $633{,}600$ & $99$ & \\
 \bottomrule
 \end{tabular}
 \end{center}
-(c) $R^2=393{,}600/633{,}600=0.621$, above $R_a^2$ as always when $k\geqslant1$.
+(c) $R^2=393{,}600/633{,}600=0.621$, above $R_a^2$ as always when $k\geqslant1$ and $R^2<1$.
 \end{solution}
 
 \begin{exercise}[FREES exercise 3.2]\label{ex:f3-2}
@@ -2624,7 +2637,7 @@ without observation 11: is \texttt{MEDSCHYR} significant? (j) Refit (f) without
 observation 9.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f3-4>>=
 round(t(sapply(lottery[, -1], descr)), 2)
 c(z_MEDSCHYR_11 = (lottery$MEDSCHYR[11] - mean(lottery$MEDSCHYR)) / sd(lottery$MEDSCHYR),
@@ -2643,7 +2656,7 @@ round(coef(summary(fit_l3_no11))["MEDSCHYR", ], 4); c(crit = qt(0.975, 45))
 @
 <<ex-f3-4-fig, fig.height=3.6, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
 pairs(lottery[, c("SALES", "POP", "MEDHVL", "MEDSCHYR", "PRCRENT", "MEDINC")],
-      pch = 16, cex = 0.35, gap = 0.3, cex.labels = 0.9)
+      pch = 16, cex = 0.35, gap = 0.3, cex.labels = 1, oma = c(2, 2, 2, 2))
 @
 (a) Observation 11 is $5.8$ standard deviations above the mean in \texttt{MEDSCHYR} and
 $3.4$ in \texttt{MEDHVL}. (b) \texttt{POP} ($0.886$), \texttt{MEDHVL} ($0.572$) and
@@ -2678,7 +2691,7 @@ variables are most correlated with \texttt{LNEXPENSES}? (d) A box plot of
 \texttt{GPWCOMM} increases by $\$1$, at the medians.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f3-5>>=
 naic <- read.csv("data/frees/csv/NAICExpense.csv")
 skew <- function(v) mean((v - mean(v))^3) / mean((v - mean(v))^2)^1.5
@@ -2700,13 +2713,14 @@ mG <- median(naic$GPWCOMM); mE <- median(naic$EXPENSES)
 c(median_GPWCOMM = mG, median_EXPENSES = mE,
   dEXPENSES_per_dollar = coef(fit_n8)[["LNGPWCOMM"]] * (1 + mE) / (1 + mG))
 @
-<<ex-f3-5-fig, fig.height=2.4, fig.width=6.4, out.width="0.45\\linewidth", echo=FALSE>>=
+<<ex-f3-5-fig, fig.height=2.4, fig.width=4.2, out.width="0.42\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 boxplot(LNEXPENSES ~ GROUP, data = L, col = "grey85", xlab = "GROUP", ylab = "LNEXPENSES")
 par(op)
 @
-(a) Every dollar variable is heavily skewed to the right, with skewness between $5.6$
-and $7.2$ and means several times the medians; expenses, both losses and both premium
+(a) Expenses, the losses, the premiums, assets and cash are heavily skewed to the right,
+with skewness between $5.6$ and $7.2$ and means several times the medians, while the two wage
+variables are nearly symmetric, with skewness $0.80$ and $0.22$; expenses, both losses and both premium
 variables take negative values for a few companies, so the plain logarithm is
 undefined for them, and \texttt{AGENTWAGE} is missing for $19$ companies. (b) The
 shifted logarithm $\ln(1+x)$ is defined for every value here, the smallest being
@@ -2732,7 +2746,7 @@ scale. (c) Is \texttt{PUBLICEDUCATION} significant? State the hypotheses, the cr
 and the decision.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-f3-6>>=
 un$lnHEALTH <- log(un$PRIVATEHEALTH)
 fit_un3 <- lm(LIFEEXP ~ FERTILITY + PUBLICEDUCATION + lnHEALTH, data = un)
@@ -2845,7 +2859,7 @@ $95\%$ confidence and prediction intervals. (b) Plot the data with the line. (c)
 Diagnostic plots.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-i-8>>=
 fit_hp <- lm(mpg ~ horsepower, data = Auto)
 round(coef(summary(fit_hp)), 4)
@@ -2855,7 +2869,7 @@ c(R2 = summary(fit_hp)$r.squared, RSE = summary(fit_hp)$sigma, mean_mpg = mean(A
 rbind(confidence = predict(fit_hp, data.frame(horsepower = 98), interval = "confidence"),
       prediction = predict(fit_hp, data.frame(horsepower = 98), interval = "prediction"))
 @
-<<ex-i-8-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+<<ex-i-8-fig, fig.height=2.3, fig.width=6.4, out.width="0.74\\linewidth", echo=FALSE>>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.4, 0.6), mgp = c(1.9, 0.6, 0))
 plot(Auto$horsepower, Auto$mpg, xlab = "horsepower", ylab = "mpg", pch = 16, cex = 0.4)
 abline(fit_hp, col = "#B45309", lwd = 2)
@@ -2883,18 +2897,20 @@ which predictors are significant, what does the \texttt{year} coefficient say;
 (d) diagnostic plots: large residuals, high leverage points.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-i-9>>=
 A <- Auto[, names(Auto) != "name"]
 round(cor(A), 2)
 fit_auto <- lm(mpg ~ ., data = A)
 round(coef(summary(fit_auto)), 4)
 c(R2 = summary(fit_auto)$r.squared, F = summary(fit_auto)$fstatistic[["value"]],
-  max_std_resid = max(abs(rstandard(fit_auto))), at = which.max(abs(rstandard(fit_auto))),
-  max_leverage = max(hatvalues(fit_auto)), at_lev = which.max(hatvalues(fit_auto)), flag = 2 * 8 / 392)
+  max_std_resid = max(abs(rstandard(fit_auto))),
+  at = unname(which.max(abs(rstandard(fit_auto)))),
+  max_leverage = max(hatvalues(fit_auto)),
+  at_lev = unname(which.max(hatvalues(fit_auto))), flag = 2 * 8 / 392)
 @
-<<ex-i-9-fig, fig.height=3.6, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
-pairs(A, pch = 16, cex = 0.25, gap = 0.2, cex.labels = 0.8)
+<<ex-i-9-fig, fig.height=3.8, fig.width=6.4, out.width="0.8\\linewidth", echo=FALSE>>=
+pairs(A, pch = 16, cex = 0.25, gap = 0.2, cex.labels = 1, oma = c(2, 2, 2, 2))
 @
 <<ex-i-9-fig2, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.4, 0.6), mgp = c(1.9, 0.6, 0))
@@ -2988,7 +3004,7 @@ it improve the fit? (h)--(i) repeat with less noise (variance $0.01$) and more n
 (variance $1$); (j) the confidence intervals for $\beta_0$, $\beta_1$ in the three cases.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-i-13>>=
 sim_fit <- function(sd_eps) {
   set.seed(1); x <- rnorm(100); eps <- rnorm(100, sd = sd_eps); y <- -1 + 0.5 * x + eps
@@ -3030,7 +3046,7 @@ predictors: for which can $H_0\colon\beta_j=0$ be rejected? (c) Plot the simple
 coefficients against the multiple ones.
 \end{exercise}
 
-\begin{solution}
+\begin{solution}\keepwithcode
 <<ex-i-15>>=
 preds <- setdiff(names(Boston), "crim")
 uni <- t(sapply(preds, function(v) { m <- lm(as.formula(paste("crim ~", v)), data = Boston)
@@ -3040,11 +3056,11 @@ multi <- coef(summary(fit_crim))[-1, c(1, 4)]
 round(cbind(simple = uni[, "coef"], p_simple = uni[, "p"], multiple = multi[, 1], p_multiple = multi[, 2]), 4)
 c(R2_multiple = summary(fit_crim)$r.squared)
 @
-<<ex-i-15-fig, fig.height=2.6, fig.width=6.4, out.width="0.5\\linewidth", echo=FALSE>>=
-op <- par(mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
+<<ex-i-15-fig, fig.height=2.6, fig.width=5.2, out.width="0.52\\linewidth", echo=FALSE>>=
+op <- par(mar = c(3.2, 3.4, 0.6, 0.8), mgp = c(1.9, 0.6, 0))
 plot(uni[, "coef"], multi[, 1], xlab = "simple regression coefficient", ylab = "multiple regression coefficient",
-     pch = 16)
-text(uni[, "coef"], multi[, 1], preds, pos = 4, cex = 0.6)
+     pch = 16, cex.lab = 0.85)
+text(uni["nox", "coef"], multi["nox", 1], "nox", pos = 2, cex = 0.8)
 abline(0, 1, lty = 2)
 par(op)
 @
@@ -3140,7 +3156,7 @@ F=\frac{(\TSS-\RSS)/1}{\RSS/(n-2)}=\frac{240{,}000}{250{,}000/98}=94.08 \quad\te
 \]
 which is (C). The other options are the same ratio with the wrong residual degrees of
 freedom, $96$, $97$, $99$ and $100$ in place of $n-2=98$. Two checks: by
-Proposition~\ref{prop:t2F}, $t(b_1)=\sqrt{94.08}=9.70$, and by
+Proposition~\ref{prop:t2F}, $|t(b_1)|=\sqrt{94.08}=9.70$, and by
 Exercise~\ref{ex:f2-9} this is the pooled two-sample $t$ statistic comparing the mean
 claims of the two sexes; and $R^2=1-250/490=0.4898$ reproduces $F$
 through~\eqref{eq:F}.

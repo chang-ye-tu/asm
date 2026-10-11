@@ -77,3 +77,8 @@ _minted*/
 !/note/build.py
 !/note/Sweave.sty
 !/note/data/
+
+# Never published, wherever they are and whatever a rule above allows
+*_script.*
+*_script/
+script_src/

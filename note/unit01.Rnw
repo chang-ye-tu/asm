@@ -134,6 +134,7 @@ parents' height, the average of the father's height and $1.08$ times the mother'
 in inches (FREES Table 1.1). With $Y$ the child's height and $X$ the parents' index, the
 mean of $Y$ within each class of $X$ estimates the $f^\ast$ of
 Proposition~\ref{prop:regfn}.
+\tcbbreak
 <<galton>>=
 galton <- read.csv("data/frees/csv/Galton.csv")
 sum(galton$NUMBER)
@@ -306,8 +307,8 @@ c(mean_in_dollars = 1000 * exp(mean(lclaims)),
 The mean logarithmic claim, $0.48$, is $\$1{,}617$. The normal curve with $\mu=\bar y$
 and $\sigma=s_y$ summarises the distribution by two numbers; its 75th percentile,
 $\bar y+0.675\,s_y=1.22$, is close to the sample's $1.17$.
-<<massbi-fig, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+<<massbi-fig, fig.height=3.3, fig.width=6.4, out.width="0.75\\linewidth", echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(lclaims, breaks = 32, freq = FALSE, main = "log claims, 32 bins", col = "grey85",
      border = "white")
 curve(dnorm(x, mean(lclaims), sd(lclaims)), add = TRUE)
@@ -363,9 +364,10 @@ x1 <- 10000 * rchisq(500, df = 2)
 tr <- list(original = x1, sqrt = sqrt(x1), log = log(x1), neg_reciprocal = -1 / x1)
 round(sapply(tr, skew), 3)
 @
-<<chisq-transforms-fig, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
-for (nm in names(tr)) hist(tr[[nm]], breaks = 16, main = nm, col = "grey85", border = "white")
+<<chisq-transforms-fig, fig.height=3.3, fig.width=6.4, out.width="0.7\\linewidth", echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.0, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+for (nm in names(tr)) hist(tr[[nm]], breaks = 16, main = nm, xlab = "", col = "grey85",
+                           border = "white")
 par(op)
 @
 \begin{figure}[H]\centering
@@ -463,11 +465,12 @@ how flexible a curve is: for a least-squares fit it is the number of fitted coef
 polynomial degree plus one in the simulation below.
 \end{remark}
 
-<<setup-sim, include=FALSE>>=
+<<setup-sim>>=
 f     <- function(x) sin(2 * x) + 0.5 * x      # a known truth
 sigma <- 0.5
 @
 
+\newpage
 <<train-test>>=
 set.seed(4)
 dtr <- data.frame(x = runif(80, -3, 3));    dtr$y <- f(dtr$x) + rnorm(80, sd = sigma)
@@ -674,8 +677,7 @@ te <- data.frame(x = runif(nte, -3, 3)); te$y <- rbinom(nte, 1, eta(te$x))
 bayes_exp <- mean(pmin(eta(te$x), 1 - eta(te$x)))  # expected Bayes error rate
 bayes <- mean((eta(te$x) > 0.5) != te$y)           # realised Bayes error rate
 Ks  <- c(1, 3, 5, 15, 45, 105)
-err <- t(sapply(Ks, function(K) c(
-  K = K,
+err <- t(sapply(Ks, function(K) c(K = K,
   train = mean(class::knn(tr["x"], tr["x"], tr$y, k = K) != tr$y),
   test  = mean(class::knn(tr["x"], te["x"], tr$y, k = K) != te$y))))
 cbind(round(err, 4), bayes = round(bayes, 4), bayes_exp = round(bayes_exp, 4))
@@ -1030,7 +1032,7 @@ summary(Auto[, c("mpg", "cylinders", "horsepower", "weight", "origin")])
 plots instead of a scatterplot; \texttt{hist} and \texttt{pairs} give a histogram and a
 scatterplot matrix.
 
-<<auto-plots, fig.height=2.8, fig.width=6.4, echo=FALSE>>=
+<<auto-plots, fig.height=2.8, fig.width=6.4, out.width="0.92\\linewidth", echo=FALSE>>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 1.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(as.factor(Auto$cylinders), Auto$mpg, col = "grey85", varwidth = TRUE,
      xlab = "cylinders", ylab = "mpg")
@@ -1071,8 +1073,7 @@ cubic, and the two splits give different numbers for every model, which is drawb
 \texttt{lm}, and \texttt{cv.glm} from \texttt{boot} cross-validates it.
 
 <<loocv>>=
-library(boot)
-glm.fit <- glm(mpg ~ horsepower, data = Auto)
+library(boot); glm.fit <- glm(mpg ~ horsepower, data = Auto)
 c(glm = coef(glm.fit), lm = coef(lm(mpg ~ horsepower, data = Auto)))
 cv.glm(Auto, glm.fit)$delta                     # LOOCV: both components agree
 cv.error <- sapply(1:10, function(i)
@@ -1196,7 +1197,7 @@ The five curves, drawn as functions of the polynomial degree: the squared bias, 
 test MSE and irreducible error at $x_0=1$ come from the simulation in §\ref{sec:1.2.2}
 (training sets of $60$ observations), and the training MSE, averaged over the training
 points, from the simulation in §\ref{sec:1.2.1} ($80$ observations):
-<<ex-curves, fig.height=2.8, fig.width=6.4, echo=FALSE>>=
+<<ex-curves, fig.height=2.8, fig.width=6.4, out.width="0.62\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.4, 3.4, 1, 0.6), mgp = c(1.9, 0.6, 0))
 matplot(bv[, "degree"], cbind(bv[, c("bias2", "variance", "sum")], sigma^2),
         type = "b", pch = 16, lty = 1, col = c("#1D4ED8", "#B45309", "#B91C1C", "grey40"),
@@ -1278,7 +1279,7 @@ hard to summarise.
 
 \begin{exercise}[ISLR §2.4, exercise 7]\label{ex:islr-2-7}
 The training set below has three predictors and a qualitative response.
-\begin{center}
+\begin{ctab}
 \begin{tabular}{lrrrl}
 \toprule
 Obs. & $X_1$ & $X_2$ & $X_3$ & $Y$ \\
@@ -1291,7 +1292,7 @@ Obs. & $X_1$ & $X_2$ & $X_3$ & $Y$ \\
 6 & 1 & 1 & 1 & Red \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{ctab}
 (a) Compute the Euclidean distance from each observation to the test point
 $X_1=X_2=X_3=0$. (b) Give the prediction with $K=1$ and with $K=3$, with reasons. (c) If
 the Bayes decision boundary is highly non-linear, should the best $K$ be large or small?
@@ -1329,14 +1330,19 @@ In \texttt{ISLR2} the college names are already row names, so the \texttt{read.c
 \texttt{rownames} steps of the printed exercise are not needed. The numerical summary
 below is abridged: it covers the first six of the $18$ columns, and its printed output is
 truncated; \texttt{summary(college)} gives all of them.
-<<ex-college-1, output.lines=12>>=
+<<ex-college-1>>=
 college <- ISLR2::College
 dim(college)
+@
+\tcbbreak
+<<ex-college-1b, output.lines=12>>=
 summary(college[, 1:6])
 @
-<<ex-college-2, fig.height=3.6, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
-pairs(college[, 1:10], pch = 16, cex = 0.25, gap = 0.2, cex.labels = 0.9)
+<<ex-college-2, fig.height=4.1, fig.width=8, out.width="0.92\\linewidth", echo=FALSE>>=
+pairs(college[, 1:10], pch = 16, cex = 0.25, gap = 0.2, cex.labels = 1,
+      oma = c(2.5, 2.5, 2.5, 2.5))
 @
+\tcbbreak
 <<ex-college-3>>=
 college$Elite <- factor(ifelse(college$Top10perc > 50, "Yes", "No"))
 table(college$Elite)
@@ -1348,7 +1354,7 @@ plot(college$Elite, college$Outstate, xlab = "Elite", ylab = "Outstate", col = "
 par(op)
 @
 <<ex-college-4, fig.height=3.2, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 1.2), mgp = c(1.9, 0.6, 0))
 hist(college$Apps, breaks = 10, main = "Apps, 10 bins", col = "grey85", border = "white")
 hist(college$Apps, breaks = 60, main = "Apps, 60 bins", col = "grey85", border = "white")
 hist(college$Grad.Rate, breaks = 10, main = "Grad.Rate, 10 bins", col = "grey85", border = "white")
@@ -1390,7 +1396,7 @@ stats <- function(d) rbind(min = sapply(d, min), max = sapply(d, max),
 stats(Auto[, quant])                                     # (b), (c)
 stats(Auto[-(10:85), quant])                             # (d)
 @
-<<ex-auto-2, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
+<<ex-auto-2, fig.height=2.3, fig.width=6.4, echo=FALSE>>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 plot(Auto$weight, Auto$mpg, pch = 16, cex = 0.4, xlab = "weight", ylab = "mpg")
 plot(Auto$year, Auto$mpg, pch = 16, cex = 0.4, xlab = "year", ylab = "mpg")
@@ -1430,7 +1436,7 @@ crime rate \texttt{crim}, eleven tract characteristics (zoning, industry, the Ch
 river indicator, nitrogen oxides, rooms, age, distance to employment centres, highway
 access, tax rate, pupil--teacher ratio, lower-status share) and the median home value
 \texttt{medv}.
-<<ex-boston-2, fig.height=3.4, fig.width=6.4, out.width="0.7\\linewidth", echo=FALSE>>=
+<<ex-boston-2, fig.height=3.4, fig.width=6.4, out.width="0.62\\linewidth", echo=FALSE>>=
 pairs(B[, c("crim", "rad", "tax", "lstat", "medv", "dis")], pch = 16, cex = 0.25, gap = 0.2)
 @
 (b), (c) Crime is highest in tracts with high highway accessibility, high tax rates,
@@ -1458,7 +1464,8 @@ lower-status share ($23.0$) and slightly more rooms ($5.68$). The lowest-value t
 pupil--teacher ratios at the top of their ranges, a high crime rate and lower-status share,
 few rooms and is close to the employment centres: every predictor points the same way.
 <<ex-boston-5>>=
-c(rooms_over_7 = sum(B$rm > 7), rooms_over_8 = sum(B$rm > 8))
+c(rooms_over_7 = sum(B$rm > 7),
+  rooms_over_8 = sum(B$rm > 8))
 round(rbind(over_8 = colMeans(B[B$rm > 8, ]), all = colMeans(B)), 2)
 @
 (h) The tracts averaging more than eight rooms have far higher median home values, lower
@@ -1490,14 +1497,14 @@ round(rbind(inpatient  = c(raw = skew(inp),  sqrt = skew(sqrt(inp)),  log = skew
             outpatient = c(raw = skew(outp), sqrt = skew(sqrt(outp)), log = skew(log(outp)))), 3)
 @
 <<ex-frees-1-1b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(1, 3), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(inp, breaks = 30, main = "EXPENDIP", col = "grey85", border = "white")
 boxplot(inp, main = "box plot, EXPENDIP")
 qqnorm(inp, main = "qq plot, EXPENDIP"); qqline(inp)
 par(op)
 @
 <<ex-frees-1-1c, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(sqrt(inp), breaks = 30, main = "square root of EXPENDIP", col = "grey85", border = "white")
 qqnorm(sqrt(inp), main = "qq plot, square root"); qqline(sqrt(inp))
 hist(log(inp), breaks = 30, main = "log EXPENDIP", col = "grey85", border = "white")
@@ -1505,7 +1512,7 @@ qqnorm(log(inp), main = "qq plot, log"); qqline(log(inp))
 par(op)
 @
 <<ex-frees-1-1d, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(1, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(outp, breaks = 40, main = "EXPENDOP", col = "grey85", border = "white")
 hist(log(outp), breaks = 40, main = "log EXPENDOP", col = "grey85", border = "white")
 par(op)
@@ -1542,7 +1549,7 @@ round(sapply(nh2001[, c("TPY", "NUMBED", "SQRFOOT")], descr_na), 2)
 c(log_TPY_2000 = skew(log(nh2000$TPY)), log_TPY_2001 = skew(log(nh2001$TPY)))
 @
 <<ex-frees-1-2b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(2, 3), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(nh2000$TPY, breaks = 30, main = "TPY, 2000", col = "grey85", border = "white")
 qqnorm(nh2000$TPY, main = "qq plot, TPY 2000"); qqline(nh2000$TPY)
 hist(log(nh2000$TPY), breaks = 30, main = "log TPY, 2000", col = "grey85", border = "white")
@@ -1575,7 +1582,7 @@ paid <- auto_claims$PAID
 round(rbind(PAID = descr(paid), LNPAID = descr(log(paid))), 3)
 @
 <<ex-frees-1-3b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(1, 3), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(paid, breaks = 40, main = "PAID", col = "grey85", border = "white")
 hist(log(paid), breaks = 40, main = "LNPAID", col = "grey85", border = "white")
 qqnorm(log(paid), main = "qq plot, LNPAID"); qqline(log(paid))
@@ -1602,12 +1609,12 @@ plot \texttt{LNTOTCHG} against \texttt{TOTCHG}.
 hosp <- read.csv("data/frees/csv/HospitalCosts.csv")
 round(rbind(TOTCHG = descr(hosp$TOTCHG), LNTOTCHG = descr(log(hosp$TOTCHG))), 3)
 @
-<<ex-frees-1-4b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+<<ex-frees-1-4b, fig.height=3.3, fig.width=6.4, out.width="0.72\\linewidth", echo=FALSE>>=
+op <- par(mfrow = c(2, 3), mar = c(3.1, 3.4, 1.8, 1.2), mgp = c(1.9, 0.6, 0))
 hist(hosp$TOTCHG, breaks = 40, main = "TOTCHG", col = "grey85", border = "white")
 qqnorm(hosp$TOTCHG, main = "qq plot, TOTCHG"); qqline(hosp$TOTCHG)
 plot(hosp$TOTCHG, log(hosp$TOTCHG), pch = 16, cex = 0.4, main = "LNTOTCHG against TOTCHG",
-     xlab = "TOTCHG", ylab = "LNTOTCHG")
+     cex.main = 1, xlab = "TOTCHG", ylab = "LNTOTCHG")
 hist(log(hosp$TOTCHG), breaks = 40, main = "LNTOTCHG", col = "grey85", border = "white")
 qqnorm(log(hosp$TOTCHG), main = "qq plot, LNTOTCHG"); qqline(log(hosp$TOTCHG))
 boxplot(log(hosp$TOTCHG), main = "box plot, LNTOTCHG")
@@ -1643,18 +1650,19 @@ round(rbind(n        = tapply(bi$LOSS, bi$ATTORNEY, length),
             skew     = tapply(bi$LOSS, bi$ATTORNEY, skew),
             skew_log = tapply(log(bi$LOSS), bi$ATTORNEY, skew)), 3)
 @
-<<ex-frees-1-5b, fig.height=2.4, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 3), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+<<ex-frees-1-5b, fig.height=2.4, fig.width=6.4, out.width="0.92\\linewidth", echo=FALSE>>=
+op <- par(mfrow = c(1, 3), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(bi$LOSS, breaks = 40, main = "LOSS", col = "grey85", border = "white")
 qqnorm(bi$LOSS, main = "qq plot, LOSS"); qqline(bi$LOSS)
 boxplot(log(LOSS) ~ ATTORNEY, data = bi, main = "log LOSS by ATTORNEY", col = "grey85")
 par(op)
 @
 <<ex-frees-1-5c, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 for (a in 1:2) {
   v <- log(bi$LOSS[bi$ATTORNEY == a])
-  hist(v, breaks = 30, main = paste("log LOSS, ATTORNEY =", a), col = "grey85", border = "white")
+  hist(v, breaks = 30, main = paste("log LOSS, ATTORNEY =", a), xlab = "", col = "grey85",
+       border = "white")
   qqnorm(v, main = paste("qq plot, log LOSS, ATTORNEY =", a)); qqline(v)
 }
 par(op)
@@ -1687,8 +1695,8 @@ c(companies = nrow(naic), nonpositive = sum(naic$EXPENSES <= 0))
 expenses <- naic$EXPENSES[naic$EXPENSES > 0]
 round(rbind(EXPENSES = descr(expenses), log = descr(log(expenses))), 3)
 @
-<<ex-frees-1-6b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+<<ex-frees-1-6b, fig.height=3.3, fig.width=6.4, out.width="0.6\\linewidth", echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(expenses, breaks = 40, main = "EXPENSES", col = "grey85", border = "white")
 qqnorm(expenses, main = "qq plot, EXPENSES"); qqline(expenses)
 hist(log(expenses), breaks = 40, main = "log EXPENSES", col = "grey85", border = "white")
@@ -1717,7 +1725,7 @@ le <- un$LIFEEXP
 round(rbind(LIFEEXP = descr(le), log = descr(log(le)), squared = descr(le^2)), 3)
 @
 <<ex-frees-1-7b, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(2, 2), mar = c(3.1, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 hist(le, breaks = 25, main = "LIFEEXP", col = "grey85", border = "white")
 qqnorm(le, main = "qq plot, LIFEEXP"); qqline(le)
 hist(log(le), breaks = 25, main = "log LIFEEXP", col = "grey85", border = "white")
@@ -1838,7 +1846,7 @@ set.seed(1)
 xs <- rnorm(100); ys <- xs - 2*xs^2 + rnorm(100)
 ds <- data.frame(x = xs, y = ys)
 @
-<<ex-cv-1-fig, fig.height=2.6, fig.width=5, echo=FALSE>>=
+<<ex-cv-1-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
 op <- par(mar = c(3.2, 3.2, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(xs, ys, pch = 16, cex = 0.5, xlab = "x", ylab = "y"); par(op)
 @
@@ -1912,14 +1920,19 @@ with probability $1/n$ and is not $j$ with probability $1-1/n$. (b) The same, th
 being identically distributed. (c) The $n$ draws are independent, so the probability that
 none of them is $j$ is the product of $n$ factors $1-1/n$, which is Step 1 of
 Proposition~\ref{prop:oob}.
-<<ex-boot-prob, fig.height=2.4, fig.width=5>>=
+<<ex-boot-prob>>=
 nn <- c(5, 100, 10000)
 rbind(n = nn, P_in = 1 - (1 - 1/nn)^nn, limit = 1 - exp(-1))     # (d), (e), (f)
+@
+\tcbbreak
+<<ex-boot-prob-fig, fig.height=2.6, fig.width=6.4, out.width="0.56\\linewidth", fig.show='hold'>>=
 op <- par(mar = c(3.2, 3.2, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 n_grid <- 1:100000
 plot(n_grid, 1 - (1 - 1/n_grid)^n_grid, log = "x", type = "l", ylim = c(0.6, 1),
-     xlab = "n", ylab = "P(observation j in sample)"); abline(h = 1 - exp(-1), lty = 2)
+     xlab = "n", ylab = "P(j in sample)"); abline(h = 1 - exp(-1), lty = 2)
 par(op)
+@
+<<ex-boot-prob-sim>>=
 set.seed(1)
 store <- replicate(10000, sum(sample(1:100, replace = TRUE) == 4) > 0)
 mean(store)                                                       # (h)
@@ -1972,7 +1985,7 @@ distribution, whose variance is $\hat\sigma^2=n^{-1}\sum_i(x_i-\bar x)^2$, so th
 bootstrap standard deviation of the mean is $\hat\sigma/\sqrt n=\sqrt{(n-1)/n}\,s/\sqrt n$,
 and $\sqrt{505/506}=0.999$; the rest is Monte-Carlo error at $B=2000$. (d) The two
 intervals agree to a few hundredths: the bootstrap interval uses the multiplier $2$, the
-$t$ interval $t_{0.975,505}=1.965$. (e)--(h) The median and the tenth percentile are not
+$t$ interval $t_{505,0.975}=1.965$. (e)--(h) The median and the tenth percentile are not
 smooth functions of the sample, and their standard errors involve the unknown population
 density at those quantiles; the bootstrap needs neither. The tenth percentile has the
 largest standard error of the three, the data being sparser in the lower tail than at the

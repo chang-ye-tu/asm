@@ -52,15 +52,27 @@
 
 % Source code highlighting (requires pygmentize; compile with -shell-escape)
 \usepackage[cache=false]{minted}
-\setminted{fontsize=\small, frame=single, framesep=2mm, rulecolor=gray!40,
-  bgcolor=gray!5, breaklines=false, tabsize=2,
+\setminted{fontsize=\small, frame=single, framesep=1.2mm, rulecolor=gray!40,
+  bgcolor=gray!5, breaklines=true, tabsize=2,
   autogobble=true,
   linenos=true,
   numbersep=5pt,
   xleftmargin=2.5em}
 
+% Inside the coloured boxes a list has no space above it, so the frame of a code block sat on
+% the baseline of the line before it ("Solution." rested on the rule). The frame is 0.8mm
+% tighter on each side and the 1.6mm saved goes above it, so a code block is as tall as before.
+\AtBeginEnvironment{minted}{\par\vskip 1.6mm\relax}
+
 \renewcommand{\theFancyVerbLine}{%
   \textcolor{gray!60}{\scriptsize\arabic{FancyVerbLine}}}
+
+% A code or output block that opens an example would otherwise be set on top of the
+% pending heading (the heading is a run-in list label, and the block is a list). The knitr
+% hooks call \flushthmhead first, which puts the heading on a line of its own.
+\makeatletter
+\newcommand{\flushthmhead}{\if@inlabel\leavevmode\par\fi}
+\makeatother
 
 % The course page, the schedule and the exam papers are in Chinese; the notes
 % are in English with Chinese only for administrative furniture. xeCJK is
@@ -109,6 +121,14 @@
 % reintroduce it: there is one PDF per unit.
 \newenvironment{solution}{\par\noindent\textbf{\color{solFR}Solution.}\,}{\hfill\color{solFR}$\blacksquare$\par}
 
+% A breakable box that follows a heading is set one point taller than the space tcolorbox
+% measured for it, so a box that had to fill the rest of the slide moved to the next slide and
+% left the heading behind on a slide of its own. Two points of margin, taken only after a
+% heading, absorb the difference.
+\makeatletter
+\tcbset{every box/.append style={code={\if@nobreak\pgfkeysalso{shrink break goal=2pt}\fi}}}
+\makeatother
+
 % tcolorbox styling for theorem-like environments.
 \tcolorboxenvironment{definition}{enhanced,breakable,colback=defBG,colframe=defFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
 \tcolorboxenvironment{theorem}{enhanced,breakable,colback=thmBG,colframe=thmFR,boxrule=0.6pt,arc=2pt,left=3mm,right=3mm,top=1.5mm,bottom=1.5mm,before skip=5pt,after skip=5pt}
@@ -125,9 +145,13 @@
 %
 % \begin{reading} ... \end{reading} — the required-reading pointer. Goes
 % immediately under a \section, before any prose. One line, no prose.
-\newtcolorbox{reading}{enhanced, breakable, colback=readBG, colframe=readFR!35,
+% The box is one piece and ends like a heading, so that a section heading, its reading box
+% and what they introduce stay on one slide.
+\makeatletter
+\newtcolorbox{reading}{enhanced, colback=readBG, colframe=readFR!35,
   boxrule=0.5pt, arc=1pt, left=3mm, right=3mm, top=1.2mm, bottom=1.2mm,
-  fontupper=\small, before skip=4pt, after skip=6pt}
+  fontupper=\small, before skip=4pt, after={\par\nobreak\vskip 3pt\@afterheading}}
+\makeatother
 
 % NOTE ON HOUSE STYLE. There is deliberately no `motivation`, `suppremark` or
 % `srmbox` environment here, though bda_preamble.tex has the first two. This
@@ -155,6 +179,31 @@
   title=\textbf{#1}, fonttitle=\bfseries,
   attach boxed title to top left={yshift=-2mm,xshift=3mm},
   boxed title style={colback=green!40!black}}
+
+% A plot set inside an example or a solution has its caption in a figure environment of its
+% own right after it. \includegraphics raises a flag and records the height of the plot, the
+% start of any later paragraph lowers the flag, and a figure environment that finds it raised
+% forbids a slide break before its caption, so the caption cannot open the next slide alone.
+% The break is forbidden only when plot and caption together fit on a slide, with 14pt to
+% spare inside a box for its padding at a break: an impossible request makes tcolorbox set an
+% overfull part and lose a colour reset, after which everything outside a box prints white
+% for pages. A plot that fails the test can lose its caption to the next slide: shrink it.
+\makeatletter
+\newif\ifasm@afterplot \newif\ifasm@glue
+\newdimen\asm@plotht
+\let\asm@includegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]{\leavevmode
+  \setbox\z@\hbox{\asm@includegraphics[#1]{#2}}\global\asm@plotht\ht\z@\box\z@
+  \global\asm@afterplottrue}
+\AddToHook{para/begin}{\global\asm@afterplotfalse}
+\AtBeginEnvironment{figure}{\ifasm@afterplot\global\asm@gluetrue\global\asm@afterplotfalse
+  \else\global\asm@gluefalse\fi}
+\newcommand{\asm@captionglue}{\ifasm@glue\global\asm@gluefalse
+  \ifdim\dimexpr\asm@plotht+\ht\@currbox+\dp\@currbox+\intextsep
+      +\ifnum\c@tcblayer>\z@ 14pt\else\z@\fi\relax<\textheight
+    \nobreak\fi\fi}
+\patchcmd{\float@endH}{\vskip\intextsep}{\asm@captionglue\vskip\intextsep}{}{\PackageError{asm}{float patch failed}{}}
+\makeatother
 
 % Centered tabular block; see bda_preamble.tex for the full contract.
 %   \begin{ctab} ... \end{ctab}          % no scaling
@@ -345,7 +394,10 @@
 \setlength{\parskip}{3pt}\setlength{\jot}{4pt}
 
 \usepackage{titlesec}
-\titleformat{\section}{\color{hdrBG}\normalfont\Large\bfseries}{\thesection}{0.7em}{}
-\titleformat{\subsection}{\color{accent}\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+% \color leaves a whatsit on the vertical list, and the glue after a whatsit is a place where
+% a slide may end; \nobreak closes it, so a heading cannot be cut off from a reading box or
+% a heading right above it.
+\titleformat{\section}{\color{hdrBG}\nobreak\normalfont\Large\bfseries}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\color{accent}\nobreak\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
 \titlespacing*{\section}{0pt}{4pt}{2pt}
 \titlespacing*{\subsection}{0pt}{4pt}{1pt}

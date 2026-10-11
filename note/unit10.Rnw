@@ -398,7 +398,7 @@ Figure~\ref{fig:infbond} shows the fitted line and the control chart of the resi
 \end{example}
 
 \begin{figure}[H]\centering
-<<infbond-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+<<infbond-fig, echo=FALSE, fig.width=6.4, fig.height=2.1, out.width="0.62\\linewidth">>=
 op <- par(mfrow = c(1, 2), mar = c(3.4, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.8)
 plot(yb[-Tb], yb[-1], pch = 16, cex = 0.6, xlab = expression(y[t - 1]), ylab = expression(y[t]),
      main = "index against lagged index"); abline(mb, col = "#B45309", lwd = 2)
@@ -540,9 +540,9 @@ $1-(1-\text{level})/2$, that is $0.975$ for a $95\%$ interval.
 <<infbond-fc>>=
 b0b <- coef(mb)[[1]]; b1b <- coef(mb)[[2]]; sb <- summary(mb)$sigma
 fcb <- Reduce(function(prev, k) b0b + b1b * prev, 1:6, accumulate = TRUE, init = yb[Tb])[-1]
-round(cbind(k = 1:6, forecast = fcb,
-            half_width = qt(0.975, Tb - 3) * sb * sqrt(cumsum(b1b^(2 * (0:5)))),
-            limit_mean = b0b / (1 - b1b), limit_half = qt(0.975, Tb - 3) * sb / sqrt(1 - b1b^2)), 4)
+round(cbind(k = 1:6, forecast = fcb, half_width = qt(0.975, Tb - 3) * sb *
+              sqrt(cumsum(b1b^(2 * (0:5)))), limit_mean = b0b / (1 - b1b),
+            limit_half = qt(0.975, Tb - 3) * sb / sqrt(1 - b1b^2)), 4)
 @
 <<infbond-fc-fig, echo=FALSE, fig.width=6.4, fig.height=2.4>>=
 hw <- qt(0.975, Tb - 3) * sb * sqrt(cumsum(b1b^(2 * (0:5))))
@@ -763,9 +763,11 @@ hk <- read.csv("data/frees/csv/HKExchange.csv")$EXHKUS; dh <- diff(hk)
 round(c(sd_diff = sd(dh), se_rk = 1 / sqrt(length(dh))), 4)
 round(acf(dh, lag.max = 10, plot = FALSE)$acf[2:11], 3)
 round(pacf(hk, lag.max = 3, plot = FALSE)$acf[, 1, 1], 3)
-fa <- arima(dh, order = c(2, 0, 0)); fm <- arima(dh, order = c(0, 0, 2))
+fa <- arima(dh, order = c(2, 0, 0))
+fm <- arima(dh, order = c(0, 0, 2))
 tr <- function(f) round(c(coef(f), coef(f) / sqrt(diag(f$var.coef)), s = sqrt(f$sigma2)), 5)
-rbind(ar2 = tr(fa), ma2 = tr(fm))
+tab <- rbind(ar2 = tr(fa), ma2 = tr(fm))
+colnames(tab) <- c("coef1", "coef2", "intercept", "t1", "t2", "t_int", "s"); tab
 lb <- function(f) sapply(c(2, 4, 6, 8, 10), function(K) Box.test(residuals(f), K, "Ljung-Box")$statistic)
 round(rbind(ar2 = lb(fa), ma2 = lb(fm)), 4)
 @
@@ -791,8 +793,8 @@ test $R^2=1-\mathrm{MSE}/V_0$ with $V_0$ the test variance:
 <<nyse>>=
 xd <- scale(data.matrix(NYSE[, c("DJ_return", "log_volume", "log_volatility")]))
 lagm <- function(x, k) rbind(matrix(NA, k, ncol(x)), x[1:(nrow(x) - k), ])
-af <- data.frame(log_volume = xd[, "log_volume"], L1 = lagm(xd, 1), L2 = lagm(xd, 2),
-                 L3 = lagm(xd, 3), L4 = lagm(xd, 4), L5 = lagm(xd, 5))[-(1:5), ]
+af <- data.frame(log_volume = xd[, "log_volume"], L1 = lagm(xd, 1),
+  L2 = lagm(xd, 2), L3 = lagm(xd, 3), L4 = lagm(xd, 4), L5 = lagm(xd, 5))[-(1:5), ]
 itr <- NYSE$train[-(1:5)]; yte <- af[!itr, "log_volume"]; V0 <- var(yte)
 r2 <- function(p) 1 - mean((p - yte)^2) / V0
 afd <- data.frame(day = NYSE[-(1:5), "day_of_week"], af)
@@ -986,7 +988,8 @@ FREES's choice the two procedures differ.
 FREES's quarterly index, 1947 to 2007 Q1, as quarterly percentage changes ($T=240$); exponential
 smoothing started at $\hat s_0=y_1$, and $\text{SS}(w)$ over a grid:
 <<mcpi>>=
-mc <- read.csv("data/frees/csv/MedCPISmooth.csv"); pm <- mc$PerMEDCPI[-1]
+mc <- read.csv("data/frees/csv/MedCPISmooth.csv")
+pm <- mc$PerMEDCPI[-1]
 round(c(T = length(pm), first = mc$value[1], last = tail(mc$value, 1),
         quarterly_growth = (tail(mc$value, 1) / mc$value[1])^(1 / 240) - 1), 4)
 es <- function(y, w, s0 = y[1]) { s <- numeric(length(y)); prev <- s0
@@ -1428,8 +1431,9 @@ conditional Gaussian likelihood from three starting values:
 <<sp-garch, fig.width=6.4, fig.height=2.4>>=
 spd <- read.csv("data/frees/csv/SP500Daily.csv")
 ys <- spd$vwretd[spd$caldt >= 20000101 & spd$caldt <= 20061231]
-par(mar = c(4.2, 4, 0.5, 0.5), cex = 0.8)
-plot(ys, type = "l", col = "grey30", xlab = "trading day, 2000--2006", ylab = "daily return")
+par(mar = c(4.2, 4, 1.2, 0.5), cex = 0.8)
+plot(ys, type = "l", col = "grey30", xlab = "trading day, 2000-2006",
+     ylab = "daily return")
 nll <- function(par) { b0 <- par[1]; th1 <- par[2]; th2 <- par[3]; om <- exp(par[4])
   al <- par[5]; de <- par[6]
   if (al < 0 || de < 0 || al + de >= 1) return(1e10)
@@ -1439,13 +1443,14 @@ nll <- function(par) { b0 <- par[1]; th1 <- par[2]; th2 <- par[3]; om <- exp(par
   0.5 * ll + 0.5 * length(ys) * log(2 * pi) }
 starts <- list(c(5e-4, -0.04, -0.06, log(5e-7), 0.07, 0.92),
                c(3e-4, 0, 0, log(1e-6), 0.10, 0.85), c(4e-4, -0.02, -0.05, log(2e-6), 0.05, 0.90))
-fits <- lapply(starts, function(st) { o <- optim(st, nll, control = list(maxit = 20000, reltol = 1e-12))
-  optim(o$par, nll, method = "BFGS", control = list(maxit = 2000, reltol = 1e-14)) })
-best <- fits[[which.min(sapply(fits, `[[`, "value"))]]
+fits <- lapply(starts, function(st) {
+  o <- optim(st, nll, control = list(maxit = 20000, reltol = 1e-12))
+  optim(o$par, nll, method = "BFGS", control = list(maxit = 2000, reltol = 1e-14))})
+best <- fits[[which.min(sapply(fits, `[[`, "value"))]]; pb <- best$par
 print(sapply(fits, function(f) -f$value), digits = 8)
-pb <- best$par
-signif(c(n = length(ys), beta0 = pb[1], theta1 = pb[2], theta2 = pb[3], omega = exp(pb[4]),
-         alpha_on_e2 = pb[5], delta_on_sigma2 = pb[6], logLik = -best$value), 4)
+signif(c(n = length(ys), beta0 = pb[1], theta1 = pb[2], theta2 = pb[3],
+         omega = exp(pb[4]), alpha_on_e2 = pb[5], delta_on_sigma2 = pb[6],
+         logLik = -best$value), 4)
 @
 The first and third starts reach the same maximum and the second stops $2.5$ lower, on
 the boundary $\alpha+\delta=1$ where the penalty halts the search; several starts guard
@@ -1769,23 +1774,27 @@ into $R_6$, $R_7$. Every region is a box obtained by successive one-coordinate s
 (Definition~\ref{def:split}); Figure~\ref{fig:i8-1} draws both:
 \begin{figure}[H]\centering
 <<i8-1-fig, echo=FALSE, fig.width=6.4, fig.height=2.4>>=
-op <- par(mfrow = c(1, 2), mar = c(2.4, 2.4, 0.6, 0.6), mgp = c(1.3, 0.4, 0), cex = 0.75)
-plot(NA, xlim = c(0, 10), ylim = c(0, 10), xlab = "X1", ylab = "X2", xaxt = "n", yaxt = "n")
+op <- par(mfrow = c(1, 2), mar = c(2.9, 2.9, 0.6, 0.6), mgp = c(1.8, 0.5, 0), cex = 0.75)
+plot(NA, xlim = c(0, 10), ylim = c(0, 10), xlab = "X1", ylab = "X2", xaxt = "n", yaxt = "n",
+     xaxs = "i", yaxs = "i")
 segments(5, 0, 5, 10); segments(0, 4, 5, 4); segments(2, 4, 2, 10); segments(5, 6, 10, 6)
 segments(7, 0, 7, 6); segments(7, 3, 10, 3)
 text(c(2.5, 1, 3.5, 7.5, 6, 8.5, 8.5), c(2, 7, 7, 8, 3, 1.5, 4.5),
      c("R1", "R2", "R3", "R4", "R5", "R6", "R7"))
-axis(1, at = c(2, 5, 7), labels = c("t3", "t1", "t5")); axis(2, at = c(3, 4, 6), labels = c("t6", "t2", "t4"), las = 1, cex.axis = 0.7)
-plot(NA, xlim = c(0, 10), ylim = c(0, 4.2), axes = FALSE, xlab = "", ylab = "")
+axis(1, at = c(2, 5, 7), labels = c("t3", "t1", "t5"))
+axis(2, at = c(3, 4, 6), labels = c("t6", "t2", "t4"), las = 1)
+plot(NA, xlim = c(0, 10), ylim = c(0, 4.3), axes = FALSE, xlab = "", ylab = "")
 segments(c(2.5, 2.5, 7.5, 1.25, 1.25, 3.75, 6.25, 6.25, 8.75, 5.5, 5.5, 7, 6.25, 7.75),
          c(4, 4, 4, 3, 3, 3, 3, 3, 3, 2, 2, 2, 1, 1),
          c(2.5, 7.5, 7.5, 1.25, 3.75, 3.75, 6.25, 8.75, 8.75, 5.5, 7, 7, 6.25, 7.75),
          c(3, 4, 3, 2, 3, 2, 2, 3, 2, 1, 2, 1, 0.3, 0.3))
 segments(c(3, 6.25), c(2, 1), c(4.5, 7.75), c(2, 1))
-text(c(5, 2.5, 7.5, 3.75, 6.25, 7), c(4.15, 3.15, 3.15, 2.15, 2.15, 1.15),
-     c("X1 < t1", "X2 < t2", "X2 < t4", "X1 < t3", "X1 < t5", "X2 < t6"), cex = 0.8)
+text(5, 4.2, "X1 < t1", cex = 0.95)
+text(c(2.5, 3.75), c(3.2, 2.2), c("X2 < t2", "X1 < t3"), pos = 2, offset = 0.3, cex = 0.95)
+text(c(7.5, 6.25, 7), c(3.2, 2.2, 1.2), c("X2 < t4", "X1 < t5", "X2 < t6"), pos = 4, offset = 0.3,
+     cex = 0.95)
 text(c(1.25, 3, 4.5, 8.75, 5.5, 6.25, 7.75), c(1.8, 1.8, 1.8, 1.8, 0.8, 0.1, 0.1),
-     c("R1", "R2", "R3", "R4", "R5", "R6", "R7"), cex = 0.8)
+     c("R1", "R2", "R3", "R4", "R5", "R6", "R7"), cex = 0.95)
 par(op)
 @
 \caption{A seven-region partition from recursive binary splitting and its tree.}\label{fig:i8-1}
@@ -1817,7 +1826,8 @@ Does the month improve the test $R^2$?
 \begin{solution}
 <<i10-9>>=
 mon <- factor(substr(as.character(NYSE$date), 6, 7))[-(1:5)]
-afm <- data.frame(month = mon, af); fitm <- lm(log_volume ~ ., data = afm[itr, ])
+afm <- data.frame(month = mon, af)
+fitm <- lm(log_volume ~ ., data = afm[itr, ])
 round(c(ar5 = r2(predict(fit5, af[!itr, ])), ar5_month = r2(predict(fitm, afm[!itr, ]))), 4)
 @
 The month factor changes the test $R^2$ in the third decimal only; the day of the week

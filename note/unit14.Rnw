@@ -3,6 +3,19 @@
 
 \input{asm_preamble.tex}
 
+% Slide breaks around code and printed output (layout only): no slide begins or ends with a
+% single line of a paragraph, a code block or an output, and a printed output is one piece on
+% the slide of the code that printed it.
+\makeatletter
+\clubpenalty\@M \@clubpenalty\clubpenalty \widowpenalty\@M
+\newif\ifasm@code \newif\ifasm@aftercode
+\AtBeginEnvironment{minted}{\asm@codetrue\@endparpenalty\@M}
+\AfterEndEnvironment{minted}{\global\asm@aftercodetrue}
+\AtBeginEnvironment{Verbatim}{\ifasm@code\else\global\asm@aftercodefalse
+  \fvset{samepage=true}\@beginparpenalty\@M\fi}
+\AddToHook{para/before}{\ifasm@aftercode\global\asm@aftercodefalse\addpenalty{-\@lowpenalty}\fi}
+\makeatother
+
 \fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 14\ \ SVM and Networks}}
 
 \setcounter{theorem}{0}\setcounter{example}{0}
@@ -935,7 +948,7 @@ autoregression on the same five lags. Nothing here is gained by the recurrence.
 \subsection{The simulated data}\label{sec:comp-data}
 
 The quadratic programmes of §\ref{sec:14.2} are solved directly with \texttt{quadprog},
-which minimises $\tfrac12\bd'\bD\bd-\bd_0'\bd$ subject to $\bA'\bd\geqslant\bb_0$, and the
+which minimises $\tfrac12\bd'\bD\bd-\bd_0'\bd$ subject to $\bA'\bd\geqslant\mathbf{b}_0$, and the
 results are checked against \texttt{e1071}. The function \texttt{dualfit} solves the primal
 \eqref{eq:soft}, with $\bx_i'\bx_j$ replaced by $K_{ij}$ through a factorisation $\bK=\bF\bF'$,
 and returns the dual variables $\alpha_i$ as the multipliers of its margin constraints, which
@@ -1232,14 +1245,14 @@ negative. (b) On the same plot, the same for $-2+X_1+2X_2=0$.
 \end{exercise}
 
 \begin{solution}
-<<i9-1, fig.width=4.2, fig.height=2.5>>=
+<<i9-1, fig.width=4.2, fig.height=2.5, out.width="0.5\\linewidth">>=
 par(mar = c(4, 4.2, 0.8, 0.8), cex = 0.85)
 plot(NA, xlim = c(-2, 2), ylim = c(-3, 3), xlab = "X1", ylab = "X2")
 abline(a = 1, b = 3, lwd = 2, col = "#1E3A8A")
 abline(a = 1, b = -1/2, lwd = 2, col = "#B45309")
-text(c(1.3, -1.3), c(-2, 2), c("1+3X1-X2 > 0", "1+3X1-X2 < 0"),
+text(c(1.3, -1.3), c(-2, 2.6), c("1+3X1-X2 > 0", "1+3X1-X2 < 0"),
      col = "#1E3A8A", cex = 0.8)
-text(c(1.2, -1.2), c(2.4, -2.4), c("-2+X1+2X2 > 0", "-2+X1+2X2 < 0"),
+text(c(1.2, -1.35), c(2.4, 0), c("-2+X1+2X2 > 0", "-2+X1+2X2 < 0"),
      col = "#B45309", cex = 0.8)
 @
 (a) The line $X_2=1+3X_1$; $1+3X_1-X_2>0$ below it (to the lower right) and $<0$ above it.
@@ -1358,7 +1371,7 @@ cross-validation errors?
 
 \begin{solution}
 Points uniform on the unit square, the class given by the side of the diagonal, with a strip of
-half-width $0.02$ about the diagonal removed; $1000$ test points without the strip:
+half-width $0.02$ about the diagonal removed; $1000$ test points on the whole square:
 <<i9-6>>=
 set.seed(1); x6 <- matrix(runif(200), 100); y6 <- ifelse(x6[, 2] > x6[, 1], 1, -1)
 k6 <- abs(x6[, 2] - x6[, 1]) > 0.02
@@ -1406,7 +1419,7 @@ rbind(radial = c(unlist(t7r$best.parameters), cv_error = t7r$best.performance),
 (a) The response is \texttt{high} in the code. (b) The linear classifier's cross-validation error is between $8.4\%$ and $9.2\%$ for every \texttt{cost}
 from $0.01$ to $100$, smallest at $1$: the classes are nearly linearly separable and the penalty
 hardly matters. (c) The radial kernel with \texttt{cost} $1$ and $\gamma=1$ does best, about $6.6\%$;
-the best polynomial kernel, degree $3$, does about the same as the linear one. A slightly non-linear
+the best polynomial kernel, degree $3$ (printed under the header \texttt{gamma}), does about the same as the linear one. A slightly non-linear
 boundary helps a little; the differences are within the noise of ten-fold cross-validation on $392$
 cars.
 \end{solution}
@@ -1436,7 +1449,7 @@ t(sapply(c("linear", "radial", "polynomial"), function(k) { set.seed(1)
 (a) The training set is \texttt{tro} in the code. (b), (c) With \texttt{cost} $0.01$ the classifier keeps $435$ of the $800$ training observations as
 support vectors, a very wide margin, and errs on $17.5\%$ of the training and $17.8\%$ of the test
 observations. (d), (e) Cross-validation chooses \texttt{cost} $3.16$, with errors $16.5\%$ and
-$15.2\%$. (f), (g) At \texttt{cost} $0.01$ the radial and polynomial machines classify everything as
+$15.2\%$. (f), (g) At \texttt{cost} $0.01$ the radial and polynomial machines classify almost everything as
 the majority brand, about $38\%$ error; tuned, they reach test errors of $18.5\%$ and $20.4\%$.
 (h) The tuned linear classifier is best on this split: the extra flexibility of the kernels buys
 nothing here.
@@ -1452,8 +1465,8 @@ parameters.
 (a) Four input nodes, each joined to both units of the first layer; each of those joined to all
 three units of the second layer; those three joined to the output. (b) With $g(z)=\max(0,z)$,
 \begin{align*}
-A^{(1)}_k&=g\Bigl(w^{(1)}_{k0}+\sum_{j=1}^4w^{(1)}_{kj}X_j\Bigr),\quad k=1,2;\\
-A^{(2)}_l&=g\Bigl(w^{(2)}_{l0}+\sum_{k=1}^2w^{(2)}_{lk}A^{(1)}_k\Bigr),\quad l=1,2,3;\\
+A^{(1)}_k&=g\Bigl(w^{(1)}_{k0}+\sum_{j=1}^4w^{(1)}_{kj}X_j\Bigr),\quad k=1,2;\displaybreak[0]\\
+A^{(2)}_l&=g\Bigl(w^{(2)}_{l0}+\sum_{k=1}^2w^{(2)}_{lk}A^{(1)}_k\Bigr),\quad l=1,2,3;\displaybreak[0]\\
 f(X)&=\beta_0+\sum_{l=1}^3\beta_lA^{(2)}_l .
 \end{align*}
 (c) For instance with every weight $1$, every offset $0$ and $X=(1,-1,2,0)$: $A^{(1)}_k=g(2)=2$,
@@ -1523,7 +1536,7 @@ from $\beta^0=2.3$ with learning rate $0.1$; (d) repeat from $\beta^0=1.4$.
 \end{exercise}
 
 \begin{solution}
-<<i10-6, fig.width=5, fig.height=2.8>>=
+<<i10-6, fig.width=5, fig.height=2.2, out.width="0.5\\linewidth">>=
 R6 <- function(b) sin(b) + b / 10; dR6 <- function(b) cos(b) + 0.1
 gd6 <- function(b) { path <- b
   repeat { bn <- b - 0.1 * dR6(b); path <- c(path, bn)
@@ -1632,34 +1645,34 @@ the feasible set is $[3-\sqrt{1+u},3+\sqrt{1+u}]$ and $p^\star(u)=(3-\sqrt{1+u})
 
 \begin{exercise}[Boyd and Vandenberghe, exercise 5.5]\label{ex:b5-5}
 Find the dual of the linear programme: minimise $\bc'\bx$ subject to $\bG\bx\leqslant\bh$ and
-$\bA\bx=\bb$, making the implicit constraints explicit.
+$\bA\bx=\mathbf{b}$, making the implicit constraints explicit.
 \end{exercise}
 
 \begin{solution}
-Writing $\bA\bx=\bb$ as two inequalities with multipliers $\boldsymbol{\nu}^+,\boldsymbol{\nu}^-\geqslant\bzero$ and putting
+Writing $\bA\bx=\mathbf{b}$ as two inequalities with multipliers $\boldsymbol{\nu}^+,\boldsymbol{\nu}^-\geqslant\bzero$ and putting
 $\boldsymbol{\nu}=\boldsymbol{\nu}^+-\boldsymbol{\nu}^-$, which is then unrestricted in sign, the Lagrangian is
-$L=\bc'\bx+\blam'(\bG\bx-\bh)+\boldsymbol{\nu}'(\bA\bx-\bb)=(\bc+\bG'\blam+\bA'\boldsymbol{\nu})'\bx-\bh'\blam-\bb'\boldsymbol{\nu}$, affine
-in $\bx$. Its infimum is $-\bh'\blam-\bb'\boldsymbol{\nu}$ if $\bc+\bG'\blam+\bA'\boldsymbol{\nu}=\bzero$ and $-\infty$
-otherwise. The dual is: maximise $-\bh'\blam-\bb'\boldsymbol{\nu}$ subject to $\bc+\bG'\blam+\bA'\boldsymbol{\nu}=\bzero$
+$L=\bc'\bx+\blam'(\bG\bx-\bh)+\boldsymbol{\nu}'(\bA\bx-\mathbf{b})=(\bc+\bG'\blam+\bA'\boldsymbol{\nu})'\bx-\bh'\blam-\mathbf{b}'\boldsymbol{\nu}$, affine
+in $\bx$. Its infimum is $-\bh'\blam-\mathbf{b}'\boldsymbol{\nu}$ if $\bc+\bG'\blam+\bA'\boldsymbol{\nu}=\bzero$ and $-\infty$
+otherwise. The dual is: maximise $-\bh'\blam-\mathbf{b}'\boldsymbol{\nu}$ subject to $\bc+\bG'\blam+\bA'\boldsymbol{\nu}=\bzero$
 and $\blam\geqslant\bzero$, again a linear programme.
 \end{solution}
 
 \begin{exercise}[Boyd and Vandenberghe, exercise 5.27]\label{ex:b5-27}
-Minimise $|\bA\bx-\bb|^2$ subject to $\bG\bx=\bh$, where $\bA\in\Real^{m\times n}$ has rank $n$ and
+Minimise $|\bA\bx-\mathbf{b}|^2$ subject to $\bG\bx=\bh$, where $\bA\in\Real^{m\times n}$ has rank $n$ and
 $\bG\in\Real^{p\times n}$ rank $p$. Give the Karush--Kuhn--Tucker conditions and solve them for
 $\bx^\star$ and the multiplier $\boldsymbol{\nu}^\star$.
 \end{exercise}
 
 \begin{solution}
-The conditions are $2\bA'(\bA\bx^\star-\bb)+\bG'\boldsymbol{\nu}^\star=\bzero$ and $\bG\bx^\star=\bh$ (stationarity
-of $L=|\bA\bx-\bb|^2+\boldsymbol{\nu}'(\bG\bx-\bh)$ and feasibility). With each equality written as
+The conditions are $2\bA'(\bA\bx^\star-\mathbf{b})+\bG'\boldsymbol{\nu}^\star=\bzero$ and $\bG\bx^\star=\bh$ (stationarity
+of $L=|\bA\bx-\mathbf{b}|^2+\boldsymbol{\nu}'(\bG\bx-\bh)$ and feasibility). With each equality written as
 two inequalities with multipliers $\boldsymbol{\nu}^+,\boldsymbol{\nu}^-\geqslant\bzero$ and
 $\boldsymbol{\nu}=\boldsymbol{\nu}^+-\boldsymbol{\nu}^-$, the problem is convex, so by the converse half of the
 prerequisites' theorem \emph{Karush--Kuhn--Tucker} a solution of these conditions is optimal; the
 necessity half is not needed, and Slater's condition fails for the split equalities. The first gives
-$\bx^\star=(\bA'\bA)^{-1}(\bA'\bb-\tfrac12\bG'\boldsymbol{\nu}^\star)$, and substituting into the second,
+$\bx^\star=(\bA'\bA)^{-1}(\bA'\mathbf{b}-\tfrac12\bG'\boldsymbol{\nu}^\star)$, and substituting into the second,
 \[
-\boldsymbol{\nu}^\star=-2\{\bG(\bA'\bA)^{-1}\bG'\}^{-1}\{\bh-\bG(\bA'\bA)^{-1}\bA'\bb\} ,
+\boldsymbol{\nu}^\star=-2\{\bG(\bA'\bA)^{-1}\bG'\}^{-1}\{\bh-\bG(\bA'\bA)^{-1}\bA'\mathbf{b}\} ,
 \]
 the inverse existing because $\bG$ has full row rank and $(\bA'\bA)^{-1}$ is positive definite. So
 $\bx^\star$ is the least squares estimate corrected towards the constraint, the restricted least

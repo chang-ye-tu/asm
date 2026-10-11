@@ -18,6 +18,17 @@
 \title{\color{hdrBG}\bfseries\Huge Decision Trees}
 \author{}\date{}
 
+% Slide breaks. A code or output block is not cut after its first line or before its last, so
+% no header is left without its rows, and a solution paragraph leaves no single line behind. An
+% exercise statement is not cut at all; its figure and options sit in a minipage that closes the
+% paragraph, so they stay on the slide of the statement.
+\makeatletter
+\newcommand{\nostrayline}{\clubpenalty\@M\@clubpenalty\@M\widowpenalty\@M}
+\fvset{formatcom=\nostrayline}
+\AtBeginEnvironment{exercise}{\nostrayline\interlinepenalty\@M}
+\AtBeginEnvironment{solution}{\nostrayline}
+\makeatother
+
 \begin{document}
 
 <<setup, include=FALSE>>=
@@ -985,17 +996,17 @@ c(package_deviance = deviance(tc),
 @
 
 \begin{figure}[H]\centering
-<<impurity-fig, echo=FALSE, fig.width=6.4, fig.height=2.7>>=
+<<impurity-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
 p <- seq(0, 1, length.out = 400)
 op <- par(mar = c(4, 4.2, 1.4, 0.8), cex = 0.85)
 plot(p, sapply(p, function(q) Hf(c(q, 1 - q))), type = "l", lwd = 2,
-     col = "#B45309", ylim = c(0, 0.72), xlab = expression(p),
+     col = "#B45309", ylim = c(0, 1.02), xlab = expression(p),
      ylab = "impurity", main = "")
 lines(p, sapply(p, function(q) Gf(c(q, 1 - q))), lwd = 2, col = "#1E3A8A")
 lines(p, sapply(p, function(q) Mf(c(q, 1 - q))), lwd = 2, col = "grey45")
 lines(p, 2*sapply(p, function(q) Mf(c(q, 1 - q))), lwd = 1, lty = 3,
       col = "grey45")
-legend("topleft", bty = "n", cex = 0.85, lwd = c(2, 2, 2, 1),
+legend("bottom", inset = 0.03, bty = "n", cex = 0.85, lwd = c(2, 2, 2, 1),
        lty = c(1, 1, 1, 3),
        col = c("#B45309", "#1E3A8A", "grey45", "grey45"),
        legend = c("entropy H", "Gini G", "misclassification M", "2M"))
@@ -1114,6 +1125,9 @@ Growing while the gain exceeds a threshold and pruning a large tree are not the 
 procedure. The checkerboard truth of Theorem~\ref{thm:checkerboard} is the extreme case: no
 first split has any population gain at all, so every threshold above zero stops at the root.
 
+% Slide breaks: the code and output blocks of this study are not cut. A table cut in two here
+% lets the next heading move up a slide, and the slide before Figure 11.4 is left nearly empty.
+\fvset{samepage=true}
 <<pitfall-stopping>>=
 set.seed(15); q <- 800; w1 <- runif(q); w2 <- runif(q)
 fw <- as.numeric((w1 > .5) == (w2 > .5))
@@ -1137,6 +1151,7 @@ t(sapply(c(2, 4, 8, 16, 40, 130), function(J) {
   c(requested = J, leaves = sum(pj$frame$var == "<leaf>"),
     mse = mean((predict(pj, dw) - fw)^2)) }))
 @
+\fvset{samepage=false}
 
 The symptom is a tree with one leaf on data whose structure is known to be richer, and
 a fit that improves sharply the moment the stopping rule is loosened.
@@ -1234,11 +1249,18 @@ the first split carries.
 
 \begin{figure}[H]\centering
 <<tree-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
-op <- par(mfrow = c(1, 2), mar = c(0.6, 0.6, 2.0, 0.6), cex = 0.62)
+op <- par(mfrow = c(1, 2), mar = c(0.6, 0.6, 2.8, 0.6), cex = 0.62)
 p5 <- prune.tree(tb, best = 5)
-plot(p5); text(p5, pretty = 0, digits = 3, cex = 1.15)
+splab <- function(tr, cex) {   # the split labels of text(), on a white ground clear of the stems
+  xy <- tree:::treeco(tr); nd <- as.integer(row.names(tr$frame))
+  s <- tree:::labels.tree(tr, pretty = 0)[match(2 * nd, nd)]; i <- !is.na(s)
+  x <- xy$x[i]; y <- xy$y[i] + 0.5 * par("cxy")[2]
+  w <- 0.54 * strwidth(s[i], cex = cex); h <- 0.75 * strheight(s[i], cex = cex)
+  rect(x - w, y - h, x + w, y + h, col = "white", border = NA, xpd = NA)
+  text(x, y, s[i], cex = cex, xpd = NA) }
+plot(p5); text(p5, splits = FALSE, digits = 3, cex = 1.15); splab(p5, 1.15)
 title("Boston, branches drawn to scale", cex.main = 1.35)
-plot(pt, type = "uniform"); text(pt, pretty = 0, cex = 0.9)
+plot(pt, type = "uniform"); text(pt, splits = FALSE, cex = 0.9); splab(pt, 0.9)
 title("Carseats, 9 leaves, uniform", cex.main = 1.35)
 par(op)
 @
@@ -1349,7 +1371,7 @@ Of $100$ policies, $30$ lapsed. Split 1 gives nodes of $20$ (with $12$ lapses) a
 $18$); split 2 gives nodes of $10$ (with $8$) and $90$ (with $22$). Totals are node impurities
 weighted by node size. Which is true? I. Split 1 is preferred on the total Gini index. II. Split
 1 is preferred on the total entropy. III. Split 1 is preferred on the number of classification
-errors. (A) I only; (B) II only; (C) III only; (D) I, II and III; (E) none of these.
+errors. (A) I only; (B) II only; (C) III only; (D) I, II and III; (E) the answer is not among (A)--(D).
 \end{exercise}
 
 \begin{solution}
@@ -1370,7 +1392,7 @@ $0.5611$) and error count ($24$ against $26$), so I, II and III are all false: (
 Which is true of tree pruning? I. Recursive binary splitting can overfit the data. II. A tree
 with more splits tends to have lower variance. III. With cost complexity pruning, $\alpha=0$
 gives a very large tree. (A) none; (B) I and II only; (C) I and III only; (D) II and III only;
-(E) none of these.
+(E) the answer is not among (A)--(D).
 \end{exercise}
 
 \begin{solution}
@@ -1383,12 +1405,17 @@ produced, up to branches that reduce no cost (Corollary~\ref{cor:sequence}). (C)
 
 \begin{exercise}[SOA sample question 26]\label{ex:soa-26}
 In each of the three panels the plane is shaded in two classes. Which can a classification tree
-fit with no error?\\[2pt]
-I \hfill II \hfill III\\
-\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26a.pdf}\hfill
-\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26b.pdf}\hfill
-\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26c.pdf}\\
-(A) I only; (B) II only; (C) III only; (D) I, II and III; (E) none of these.
+fit with no error?\\
+\begin{minipage}{\linewidth}\centering\vspace{3pt}
+\begin{tabular}{@{}c@{\quad}c@{\quad}c@{}}
+I & II & III\\
+\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26a.pdf} &
+\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26b.pdf} &
+\includegraphics[width=0.3\linewidth]{../srm/assets/figs/srm_q26c.pdf}
+\end{tabular}\par
+\raggedright
+(A) I only; (B) II only; (C) III only; (D) I, II and III; (E) the answer is not among (A)--(D).
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1400,7 +1427,7 @@ cuts cannot reproduce exactly. (A).
 \begin{exercise}[SOA sample question 29]\label{ex:soa-29}
 Which considerations may make trees preferable? I. Trees are easily interpretable. II. Trees can
 be displayed graphically. III. Trees are easier to explain than linear regression. (A) none;
-(B) I and II only; (C) I and III only; (D) II and III only; (E) none of these.
+(B) I and II only; (C) I and III only; (D) II and III only; (E) the answer is not among (A)--(D).
 \end{exercise}
 
 \begin{solution}
@@ -1410,12 +1437,18 @@ are all wrong: (E).
 
 \begin{exercise}[SOA sample question 33]\label{ex:soa-33}
 The regression tree below predicts the log claim amount (LCA) from age category
-(\texttt{agecat}) and vehicle age (\texttt{veh\_age}).
-\begin{center}\includegraphics[width=0.55\linewidth]{../srm/assets/figs/srm_q33.pdf}\end{center}
+(\texttt{agecat}) and vehicle age (\texttt{veh\_age}).\\
+\begin{minipage}{\linewidth}\vspace{3pt}
+\begin{minipage}{0.5\linewidth}
+\includegraphics[width=\linewidth,trim=16 30 20 22,clip]{../srm/assets/figs/srm_q33.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.46\linewidth}\raggedright
 Rank the predictions for I (\texttt{agecat} $1$, \texttt{veh\_age} $4$), II (\texttt{agecat}
-$5$, \texttt{veh\_age} $5$) and III (\texttt{agecat} $5$, \texttt{veh\_age} $3$): (A)
-I $<$ II $<$ III; (B) I $<$ III $<$ II; (C) II $<$ I $<$ III; (D) II $<$ III $<$ I; (E) III
-$<$ II $<$ I.
+$5$, \texttt{veh\_age} $5$) and III (\texttt{agecat} $5$, \texttt{veh\_age} $3$):\\[4pt]
+(A) I $<$ II $<$ III;\\ (B) I $<$ III $<$ II;\\ (C) II $<$ I $<$ III;\\ (D) II $<$ III $<$ I;\\
+(E) III $<$ II $<$ I.
+\end{minipage}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1425,15 +1458,15 @@ $\texttt{veh\_age}<3.5$ separates III ($7.771$) from II ($8.028$). So III $<$ II
 \end{solution}
 
 \begin{exercise}[SOA sample question 48]\label{ex:soa-48}
-Which partition represents the tree below (the left branch is the true inequality)?
-\begin{center}\includegraphics[width=0.4\linewidth]{../srm/assets/figs/srm_q48.pdf}\end{center}
-\begin{center}
-(A)\includegraphics[width=0.17\linewidth]{../srm/assets/figs/srm_q48a.pdf}\
-(B)\includegraphics[width=0.17\linewidth]{../srm/assets/figs/srm_q48b.pdf}\
-(C)\includegraphics[width=0.17\linewidth]{../srm/assets/figs/srm_q48c.pdf}\
-(D)\includegraphics[width=0.17\linewidth]{../srm/assets/figs/srm_q48d.pdf}\
-(E)\includegraphics[width=0.17\linewidth]{../srm/assets/figs/srm_q48e.pdf}
-\end{center}
+Which partition represents the tree below (the left branch is the true inequality)?\\
+\begin{minipage}{\linewidth}\centering\vspace{3pt}
+\includegraphics[width=0.34\linewidth]{../srm/assets/figs/srm_q48.pdf}\quad
+(A)\ \includegraphics[width=0.24\linewidth]{../srm/assets/figs/srm_q48a.pdf}\quad
+(B)\ \includegraphics[width=0.24\linewidth]{../srm/assets/figs/srm_q48b.pdf}\\[4pt]
+(C)\ \includegraphics[width=0.24\linewidth]{../srm/assets/figs/srm_q48c.pdf}\quad
+(D)\ \includegraphics[width=0.24\linewidth]{../srm/assets/figs/srm_q48d.pdf}\quad
+(E)\ \includegraphics[width=0.24\linewidth]{../srm/assets/figs/srm_q48e.pdf}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1444,11 +1477,18 @@ has all three in that nesting with C below $t_3$.
 \end{solution}
 
 \begin{exercise}[SOA sample question 51]\label{ex:soa-51}
-The tree below predicts the weight of ducks.
-\begin{center}\includegraphics[width=0.5\linewidth]{../srm/assets/figs/srm_q51.pdf}\end{center}
+The tree below predicts the weight of ducks.\\
+\begin{minipage}[t]{\linewidth}
 Order the predictions for X (wing span $5.5$ cm, male, age $7$), Y ($5.8$ cm, female, age $5$)
-and Z ($5.7$ cm, male, age $8$): (A) X $<$ Y $<$ Z; (B) X $<$ Z $<$ Y; (C) Y $<$ X $<$ Z;
-(D) Y $<$ Z $<$ X; (E) Z $<$ X $<$ Y.
+and Z ($5.7$ cm, male, age $8$):\\[4pt]
+\begin{minipage}{0.68\linewidth}
+\includegraphics[width=\linewidth]{../srm/assets/figs/srm_q51.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.27\linewidth}\raggedright
+(A) X $<$ Y $<$ Z;\\ (B) X $<$ Z $<$ Y;\\ (C) Y $<$ X $<$ Z;\\ (D) Y $<$ Z $<$ X;\\
+(E) Z $<$ X $<$ Y.
+\end{minipage}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1458,19 +1498,23 @@ $>7.5$, male, wing span $>5.3$: $1.25$ kg. So Y $<$ X $<$ Z: (C).
 
 \begin{exercise}[SOA sample question 57]\label{ex:soa-57}
 For the nine observations below and the regression tree shown, calculate the mean response of
-each leaf.
-\begin{center}\small
-\begin{tabular}{c|ccccccccc}
+each leaf.\\
+\begin{minipage}{\linewidth}\vspace{3pt}
+\begin{minipage}{0.4\linewidth}\footnotesize
+\begin{tabular}{@{}c@{\ }|@{\ }c@{\ \ }c@{\ \ }c@{\ \ }c@{\ \ }c@{\ \ }c@{\ \ }c@{\ \ }c@{\ \ }c@{}}
 $R$ & 4.75 & 4.67 & 4.67 & 4.56 & 4.53 & 3.91 & 3.90 & 3.90 & 3.89\\
 $X$ & M & F & M & F & M & F & F & M & M\\
 $Y$ & A & A & D & D & B & C & B & D & B\\
 $Z$ & 2 & 4 & 1 & 3 & 2 & 2 & 5 & 5 & 1
 \end{tabular}
-\end{center}
-\begin{center}\includegraphics[width=0.45\linewidth]{../srm/assets/figs/srm_q57.pdf}\end{center}
-{\raggedright
-(A) $4.39, 4.38, 4.29, 3.90$; (B) $4.26, 4.38, 4.62, 3.90$; (C) $4.26, 4.39, 3.90, 4.29$;
-(D) $4.64, 4.29, 4.38, 3.90$; (E) $4.64, 4.38, 4.39, 3.90$ (for T1, T2, T3, T4).\par}
+\end{minipage}\hfill
+\begin{minipage}{0.58\linewidth}
+\includegraphics[width=\linewidth]{../srm/assets/figs/srm_q57.pdf}
+\end{minipage}\\[4pt]
+\raggedright
+(A)~$4.39, 4.38, 4.29, 3.90$; (B)~$4.26, 4.38, 4.62, 3.90$; (C)~$4.26, 4.39, 3.90, 4.29$;
+(D)~$4.64, 4.29, 4.38, 3.90$; (E)~$4.64, 4.38, 4.39, 3.90$ (for T1, T2, T3, T4).
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1489,9 +1533,15 @@ $(4.67+3.90)/2=4.285$, which R prints as $4.28$ and the answer key rounds to $4.
 
 \begin{exercise}[SOA sample question 63]\label{ex:soa-63}
 For the regression tree below of car-seat sales (thousands), predict sales for a store with
-\texttt{ShelveLoc} Good, \texttt{Price} $120$, \texttt{Age} $57$, \texttt{Advertising} $12$.
-\begin{center}\includegraphics[width=0.5\linewidth]{../srm/assets/figs/srm_q63.pdf}\end{center}
-(A) 4.7; (B) 6.6; (C) 7.4; (D) 9.2; (E) 9.4.
+\texttt{ShelveLoc} Good, \texttt{Price} $120$, \texttt{Age} $57$, \texttt{Advertising} $12$.\\
+\begin{minipage}{\linewidth}\vspace{3pt}
+\begin{minipage}{0.57\linewidth}
+\includegraphics[width=\linewidth,trim=22 16 23 18,clip]{../srm/assets/figs/srm_q63.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.36\linewidth}\raggedright
+(A) 4.7;\\ (B) 6.6;\\ (C) 7.4;\\ (D) 9.2;\\ (E) 9.4.
+\end{minipage}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1501,12 +1551,19 @@ so its left leaf: $9.2$ thousand. (D).
 
 \begin{exercise}[SOA sample question 66]\label{ex:soa-66}
 Which set of regions represents the regression tree below (left branches are the true
-inequalities)?
-\begin{center}\includegraphics[width=0.45\linewidth]{../srm/assets/figs/srm_q66.pdf}\end{center}
-(A) $R_3=\{X_1>5\}$; (B) $R_3=\{X_1>5,X_2\leqslant60\}$; (C) $R_1=\{X_1\leqslant5,X_2>40\}$,
-$R_2=\{X_1\leqslant5,X_2\leqslant40\}$; (D) $R_1=\{X_1\leqslant5,X_2\leqslant40\}$,
-$R_2=\{X_1\leqslant5,X_2>40\}$, $R_3=\{5<X_1\leqslant10\}$, $R_4=\{X_1>10,X_2\leqslant60\}$,
-$R_5=\{X_1>10,X_2>60\}$; (E) as (B) with $R_4$ and $R_5$ exchanged.
+inequalities)?\\
+\begin{minipage}{\linewidth}\vspace{3pt}
+\begin{minipage}{0.41\linewidth}
+\includegraphics[width=\linewidth,trim=22 34 22 28,clip]{../srm/assets/figs/srm_q66.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.56\linewidth}\raggedright
+(A) $R_3=\{X_1>5\}$;\\ (B) $R_3=\{X_1>5,X_2\leqslant60\}$;\\
+(C) $R_1=\{X_1\leqslant5,X_2>40\}$, $R_2=\{X_1\leqslant5,X_2\leqslant40\}$;\\
+(D) $R_1=\{X_1\leqslant5,X_2\leqslant40\}$, $R_2=\{X_1\leqslant5,X_2>40\}$,
+$R_3=\{5<X_1\leqslant10\}$, $R_4=\{X_1>10,X_2\leqslant60\}$, $R_5=\{X_1>10,X_2>60\}$;\\
+(E) as (B) with $R_4$ and $R_5$ exchanged.
+\end{minipage}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}
@@ -1518,9 +1575,16 @@ wrong box and (C) exchanges $R_1$ and $R_2$.
 
 \begin{exercise}[SOA sample question 73]\label{ex:soa-73}
 The plot shows cross-validation, test and training mean squared errors against tree size under
-cost complexity pruning. Determine the size of the optimal pruned tree.
-\begin{center}\includegraphics[width=0.5\linewidth]{../srm/assets/figs/srm_q73.pdf}\end{center}
-(A) 2; (B) 5; (C) 6; (D) 9; (E) 10.
+cost complexity pruning.\\
+\begin{minipage}{\linewidth}\vspace{3pt}
+\begin{minipage}{0.56\linewidth}
+\includegraphics[width=\linewidth]{../srm/assets/figs/srm_q73.pdf}
+\end{minipage}\hfill
+\begin{minipage}{0.4\linewidth}\raggedright
+Determine the size of the optimal pruned tree.\\[4pt]
+(A) 2;\\ (B) 5;\\ (C) 6;\\ (D) 9;\\ (E) 10.
+\end{minipage}
+\end{minipage}
 \end{exercise}
 
 \begin{solution}

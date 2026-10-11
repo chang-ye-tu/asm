@@ -56,7 +56,7 @@ knitr::knit_hooks$set(source = function(x, options) {
   }
   opts_str <- if (length(mopts)) paste0("[", paste(mopts, collapse = ","), "]") else ""
 
-  paste0("\n\\begin{minted}", opts_str, "{", lang, "}\n",
+  paste0("\n\\flushthmhead{}\\begin{minted}", opts_str, "{", lang, "}\n",
          paste(x, collapse = "\n"),
          "\n\\end{minted}\n")
 })
@@ -64,16 +64,16 @@ knitr::knit_hooks$set(source = function(x, options) {
 # Output hooks: route stdout, messages, and warnings through fancyvrb's
 # Verbatim, which coexists with minted more reliably than knitr's defaults.
 knitr::knit_hooks$set(output = function(x, options) {
-  paste0("\n\\begin{Verbatim}[fontsize=\\small,frame=leftline,framesep=2mm]\n",
+  paste0("\n\\flushthmhead{}\\begin{Verbatim}[fontsize=\\small,frame=leftline,framesep=2mm]\n",
          x,
          "\\end{Verbatim}\n")
 })
 knitr::knit_hooks$set(message = function(x, options) {
-  paste0("\n\\begin{Verbatim}[fontsize=\\small,frame=leftline]\n",
+  paste0("\n\\flushthmhead{}\\begin{Verbatim}[fontsize=\\small,frame=leftline]\n",
          x, "\\end{Verbatim}\n")
 })
 knitr::knit_hooks$set(warning = function(x, options) {
-  paste0("\n\\begin{Verbatim}[fontsize=\\small,frame=leftline]\n",
+  paste0("\n\\flushthmhead{}\\begin{Verbatim}[fontsize=\\small,frame=leftline]\n",
          x, "\\end{Verbatim}\n")
 })
 
@@ -86,7 +86,9 @@ local({
     if (!is.null(n <- options$output.lines)) {
       lines <- xfun::split_lines(x)
       if (length(lines) > n) {
-        lines <- c(head(lines, n), "## ... [output truncated]")
+        # the closing "" ends the marker with a newline: without it the marker shares a
+        # line with \end{Verbatim} and fancyvrb drops it
+        lines <- c(head(lines, n), "## ... [output truncated]", "")
       }
       x <- paste(lines, collapse = "\n")
     }

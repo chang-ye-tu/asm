@@ -396,8 +396,9 @@ round(cor(liq[v7]), 3)
 c(cor_AVGT_1overNTRAN = cor(liq$AVGT, 1 / liq$NTRAN))
 @
 \begin{figure}[H]\centering
-<<liq-pairs, fig.height=2.9, fig.width=4.2, out.width="0.6\\linewidth", echo=FALSE>>=
-pairs(liq[v7], pch = 16, cex = 0.3, col = "grey30", gap = 0.25, cex.labels = 0.8)
+<<liq-pairs, fig.height=2.7, fig.width=5.6, echo=FALSE>>=
+pairs(liq[v7], pch = 16, cex = 0.3, col = "grey30", gap = 0.3, cex.labels = 0.9, cex.axis = 0.85,
+      oma = c(2.4, 2.4, 2.4, 2.4))
 @
 \caption{The scatterplot matrix of the seven liquidity variables (FREES Figure 5.2): the curved
 relation of \texttt{AVGT} to \texttt{NTRAN} and the few extreme companies are visible, which the
@@ -450,8 +451,8 @@ $R_v^2=0.69$ and $0.64$ turn these into partial correlations $0.180$ and $0.124$
 skew <- function(x) mean((x - mean(x))^3) / (mean((x - mean(x))^2))^1.5
 round(sapply(c(liq[c("PRICE", "SHARE", "VALUE", "DEBEQ")], list(resid = residuals(m2))), skew), 2)
 @
-<<liq-fig, fig.height=2.2, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 4), mar = c(3.2, 2.6, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
+<<liq-fig, fig.height=1.85, fig.width=5.4, echo=FALSE>>=
+op <- par(mfrow = c(1, 4), mar = c(3.2, 3.0, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
 for (v in c("PRICE", "SHARE", "VALUE", "DEBEQ"))
   plot(liq[[v]], residuals(m2), xlab = v, ylab = if (v == "PRICE") "residual" else "",
        pch = 16, cex = 0.45)
@@ -469,7 +470,7 @@ compressed against the left edge, and no plot shows a trend.
 \begin{example}[Non-linearity; ISLR §3.3.3]\label{ex:auto-resid}
 The regression of \texttt{mpg} on \texttt{horsepower} for the $392$ cars of
 \texttt{Auto}, with and without the square of \texttt{horsepower} (ISLR Figure 3.9):
-<<auto-resid, fig.height=2.4, fig.width=6.4>>=
+<<auto-resid, fig.height=2.4, fig.width=6.4, fig.show="hold">>=
 nrow(Auto)
 a1 <- lm(mpg ~ horsepower, data = Auto)
 a2 <- lm(mpg ~ horsepower + I(horsepower^2), data = Auto)
@@ -583,13 +584,13 @@ track <- t(sapply(c(0, 0.5, 0.9), function(rho) {
 }))
 round(track, 3)
 @
-<<tracking-fig, fig.height=2.2, fig.width=6.4, echo=FALSE>>=
+<<tracking-fig, fig.height=1.85, fig.width=5.4, echo=FALSE>>=
 set.seed(7)
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 1.4, 0.4), mgp = c(1.9, 0.6, 0))
 for (rho in c(0, 0.5, 0.9)) {
   L <- t(chol(rho^abs(outer(1:nT, 1:nT, "-")))); y <- 1 + 0.1 * (1:nT) + drop(L %*% rnorm(nT))
   plot(1:nT, residuals(lm(y ~ I(1:nT))), type = "b", pch = 16, cex = 0.35, xlab = "t",
-       ylab = if (rho == 0) "residual" else "", main = bquote(rho == .(rho)), cex.main = 0.9)
+       ylab = if (rho == 0) "residual" else "", main = bquote(rho == .(rho)), cex.main = 1.2)
   abline(h = 0, lty = 2)
 }
 par(op)
@@ -799,7 +800,7 @@ round(c((Xt[60, ] - colMeans(Xt)) / sqrt(diag(S)), Delta2 = mahalanobis(Xt[60, ]
         h_from_Delta2 = 1 / n + mahalanobis(Xt[60, ], colMeans(Xt), S) / (n - 1),
         h_over_1_minus_h = infl[60, "h"] / (1 - infl[60, "h"])), 4)
 @
-<<ibm-fig, fig.height=2.5, fig.width=6.4, out.width="0.66\\linewidth", echo=FALSE>>=
+<<ibm-fig, fig.height=2.3, fig.width=7.4, out.width="0.62\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(infl[, "h"], infl[, "t"], cex = 0.4 + 3 * sqrt(infl[, "D"] / max(infl[, "D"])),
      xlab = "leverage", ylab = "studentised residual", xlim = c(0, 0.95))
@@ -1256,6 +1257,9 @@ $\bX_1=\bone$ the regression of $\bx_2$ on the intercept alone has $R^2=0$, as i
 corollary \emph{the standard error through the other explanatory variables}.
 \end{proof}
 
+% Layout only: the first part of this box is one line shorter, so that the second block of the
+% printed matrix (its header and two rows) stays together on the next slide.
+{\tcbset{every box/.append style={enlargepage=-17pt}}%
 \begin{example}[Orthogonal polynomials; FREES §5.5.5]\label{ex:orthopoly}
 \texttt{poly(horsepower, 3)} has orthonormal columns orthogonal to $\bone$, as the second
 printed line checks, so Proposition~\ref{prop:orthogonal} applies to the cubic column:
@@ -1272,7 +1276,7 @@ as~\ref{or:ii} gives for a column of unit length. FREES's principal components, 
 transformation $\bX^*=\bX\bP$ to orthogonal columns, are of the same kind: by Unit 3's
 proposition \emph{codings are reparametrisations}, the fit is unchanged and
 $\bb^*=\bP^{-1}\bb$.
-\end{example}
+\end{example}}
 
 % \periodmark{End of period 2 of 3.}
 
@@ -1310,7 +1314,7 @@ longer applies.
 The quadratic regression of \texttt{mpg} on \texttt{horsepower} of
 Example~\ref{ex:auto-resid}, and the same regression for $\ln\texttt{mpg}$ (ISLR
 Figure 3.11):
-<<funnel, fig.height=2.4, fig.width=6.4>>=
+<<funnel, fig.height=2.4, fig.width=6.4, fig.show="hold">>=
 l2 <- lm(log(mpg) ~ horsepower + I(horsepower^2), data = Auto)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.4, 0.6), mgp = c(1.9, 0.6, 0))
 for (m in list(a2, l2)) {
@@ -1501,6 +1505,9 @@ Each term of the bound therefore tends to $0$ in probability, and
 $\hat\tau^2/\tilde\sigma^4\convp(\mu_4-\sigma^4)/\sigma^4=\kappa$.
 \end{proof}
 
+% Layout only: the second slide of this box is 3pt taller, so that the last row of the printed
+% matrix stays on the slide with the rows above it.
+{\tcbset{every box/.append style={enlargepage=0pt/3pt/0pt}}%
 \begin{example}[Testing the funnel; FREES §5.7.1]\label{ex:bp-auto}
 With $\bz_i$ the two explanatory variables, FREES's five steps with $s^2$ and with
 $\tilde\sigma^2$, against \texttt{bptest}, for \texttt{mpg} and for $\ln\texttt{mpg}$:
@@ -1526,7 +1533,7 @@ against $\chi^2_2$. \texttt{bptest}'s default is $nR_z^2=34.53$, the ratio
 $\hat\tau^2/(2\tilde\sigma^4)=1.65$ being the measured departure of the fourth moment of
 the residuals from the normal value. For $\ln\texttt{mpg}$ the statistic falls to
 $7.47$ ($p=0.024$) and $nR_z^2$ to $5.20$ ($p=0.074$).
-\end{example}
+\end{example}}
 
 \begin{example}[The null distribution; FREES §5.7.1]\label{ex:bp-sim}
 Theorem~\ref{thm:bp} says that $\text{LM}$ tends to $(\kappa/2)\chi^2_p$, so its test has
@@ -1639,6 +1646,9 @@ $(\max_ic_i-1)\,B^2\,\SSE/n$, where $\expc[\SSE/n]\leqslant n^{-1}\sum_i\sigma_i
 it tends to $\bzero$ in probability, and the argument of (ii) applies.
 \end{proof}
 
+% Layout only: the second slide of this box is 3pt taller, so that it holds the first four
+% lines of the last code block.
+{\tcbset{every box/.append style={enlargepage=0pt/3pt/0pt}}%
 \begin{example}[Robust standard errors; FREES §5.7.2]\label{ex:hc}
 The four estimators from Definition~\ref{def:hc} for the quadratic \texttt{mpg} fit,
 against \texttt{sandwich::vcovHC}, and the coverage of nominal $95\%$ intervals for a
@@ -1675,7 +1685,7 @@ interval covers the slope $88\%$ to $90\%$ of the time at every $n$, since it es
 the wrong variance; the HC0 interval rises from $89\%$ to the nominal level as $\max_ih_{ii}$
 falls, as Theorem~\ref{thm:hc} predicts, and HC3 is close to $95\%$ already at $n=20$,
 in line with FREES's advice to prefer an estimator built from rescaled residuals.
-\end{example}
+\end{example}}
 
 \subsection{Weighted least squares}\label{sec:4.5.3}
 
@@ -1848,9 +1858,9 @@ ISLR §3.6.2--3.6.3 · FREES chapter 5 script.
 \subsection{The ISLR lab}\label{sec:4.6.1}
 
 \texttt{plot} applied to an \texttt{lm} fit draws four diagnostic plots:
-<<lab-plot, fig.height=3.3, fig.width=6.4>>=
+<<lab-plot, fig.height=3.5, fig.width=6.4, out.width="0.55\\linewidth", fig.show="hold">>=
 lm.fit <- lm(medv ~ lstat, data = Boston)
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex.main = 0.8)
+op <- par(mfrow = c(2, 2), mar = c(3, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 plot(lm.fit, cex = 0.4)
 par(op)
 @
@@ -1866,10 +1876,12 @@ Theorem~\ref{thm:cook} are the curves $r=\pm\sqrt{(k+1)D(1-h)/h}$; here the larg
 Cook's distance is below $0.1$ and no contour appears. The lab's residual plot of $t_i$, its largest leverage, and
 the Bonferroni test of Corollary~\ref{cor:bonferroni} as \texttt{car::outlierTest}
 computes it:
-<<lab-rstudent, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth">>=
+<<lab-rstudent, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth", fig.show="hold">>=
 op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(predict(lm.fit), rstudent(lm.fit), xlab = "fitted", ylab = "studentised residual", pch = 16, cex = 0.4)
 par(op)
+@
+<<lab-outlier>>=
 c(which_max_h = which.max(hatvalues(lm.fit)), max_h = max(hatvalues(lm.fit)),
   max_D = max(cooks.distance(lm.fit)), n_abs_t_above_3 = sum(abs(rstudent(lm.fit)) > 3))
 t_max <- max(abs(rstudent(lm.fit))); n_B <- nobs(lm.fit)
@@ -1887,16 +1899,18 @@ All are below $10$; the largest are \texttt{tax} ($9.00$) and \texttt{rad} ($7.4
 
 \subsection{FREES's chapter 5 script}\label{sec:4.6.2}
 
-<<frees-script, fig.height=3.3, fig.width=6.4>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex.main = 0.8)
+<<frees-script, fig.height=3.5, fig.width=6.4, out.width="0.55\\linewidth", fig.show="hold">>=
+op <- par(mfrow = c(2, 2), mar = c(3, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0))
 plot(mv, cex = 0.4)
 par(op)
-c(hat_60 = hatvalues(mv)[[60]], residual_60 = residuals(mv)[[60]])
 @
 \begin{figure}[H]\centering
 \caption{The four diagnostic plots of \texttt{VOLUME} on \texttt{PRICE}, \texttt{SHARE}
 and \texttt{VALUE}.}
 \end{figure}
+<<frees-script-60>>=
+c(hat_60 = hatvalues(mv)[[60]], residual_60 = residuals(mv)[[60]])
+@
 In the fourth panel IBM, observation $60$, lies beyond the contour $D=1$ at leverage
 $0.88$ with a moderate residual; observation $122$ is beyond $D=1$ as well.
 
@@ -1996,7 +2010,7 @@ Lesotho and compare.
 
 \begin{solution}
 (a)
-<<ex-f5-3a, fig.height=2.3, fig.width=6.4>>=
+<<ex-f5-3a, fig.height=1.95, fig.width=5.4, fig.show="hold">>=
 un <- read.csv("data/frees/csv/UNLifeExpectancy.csv")
 un$COUNTRY <- gsub(" ", " ", iconv(un$COUNTRY, "latin1", "UTF-8"))
 un$lnGDP <- log(un$GDP); un$lnHEALTH <- log(un$PRIVATEHEALTH)
@@ -2017,13 +2031,15 @@ $-0.04$ and $-0.03$). The logarithm also reduces the leverage of the largest val
 (Proposition~\ref{prop:mahal}).
 
 (c)
-<<ex-f5-3c, fig.height=2.2, fig.width=6.4>>=
+<<ex-f5-3c, fig.height=2.2, fig.width=6.4, fig.show="hold">>=
 d_un <- na.omit(un[, c("COUNTRY", "LIFEEXP", "FERTILITY", "PUBLICEDUCATION", "lnHEALTH")])
 fit_un <- lm(LIFEEXP ~ FERTILITY + PUBLICEDUCATION + lnHEALTH, data = d_un)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 hist(rstandard(fit_un), breaks = 20, main = "", xlab = "standardised residual")
 hist(hatvalues(fit_un), breaks = 20, main = "", xlab = "leverage")
 par(op)
+@
+<<ex-f5-3c-lesotho>>=
 n_un <- nrow(d_un); i_les <- which(d_un$COUNTRY == "Lesotho")
 c(n = n_un, r = rstandard(fit_un)[[i_les]], t = rstudent(fit_un)[[i_les]],
   h = hatvalues(fit_un)[[i_les]], cut = 3 * 4 / n_un, rank_h = rank(-hatvalues(fit_un))[[i_les]],
@@ -2083,7 +2099,7 @@ round(h6[term$INCOME == 260], 3)
 c(max_leverage_change_with_FACE = max(abs(hatvalues(update(f6, FACE ~ .)) - h6)))
 c(nR2 = unname(lmtest::bptest(f6)$statistic), p = lmtest::bptest(f6)$p.value)
 @
-<<ex-f5-4-fig, fig.height=2.3, fig.width=6.4, echo=FALSE>>=
+<<ex-f5-4-fig, fig.height=1.95, fig.width=5.4, echo=FALSE>>=
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.2, 0.6, 0.4), mgp = c(1.9, 0.6, 0))
 plot(fitted(f6), rstandard(f6), xlab = "fitted", ylab = "standardised residual", pch = 16, cex = 0.4)
 abline(h = c(-2, 0, 2), lty = c(3, 2, 3))
@@ -2146,12 +2162,14 @@ mismeasured observation \texttt{x1} $=0.1$, \texttt{x2} $=0.8$, \texttt{y} $=6$ 
 \begin{solution}
 (a) $y=\beta_0+\beta_1x_1+\beta_2x_2+\varepsilon$ with $\beta_0=2$, $\beta_1=2$,
 $\beta_2=0.3$ and $\varepsilon\sim N(0,1)$.
-<<ex-i-14, fig.height=2.2, fig.width=6.4, out.width="0.5\\linewidth">>=
+<<ex-i-14, fig.height=2.5, fig.width=4.2, out.width="0.45\\linewidth", fig.show="hold">>=
 set.seed(1)
 x1 <- runif(100); x2 <- 0.5 * x1 + rnorm(100) / 10; y <- 2 + 2 * x1 + 0.3 * x2 + rnorm(100)
 op <- par(mar = c(3.2, 3.4, 0.6, 0.6), mgp = c(1.9, 0.6, 0))
 plot(x1, x2, pch = 16, cex = 0.5)
 par(op)
+@
+<<ex-i-14-fits>>=
 c(cor_x1_x2 = cor(x1, x2), VIF = 1 / (1 - cor(x1, x2)^2))
 fits14 <- list(both = lm(y ~ x1 + x2), x1_only = lm(y ~ x1), x2_only = lm(y ~ x2))
 lapply(fits14, function(m) round(coef(summary(m)), 4))

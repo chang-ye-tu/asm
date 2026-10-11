@@ -15,6 +15,11 @@
 \renewcommand\theexercise {6.\arabic{exercise}}
 \renewcommand\thefigure   {6.\arabic{figure}}
 
+% A code or output block leaves neither its first line alone at the foot of a slide nor its
+% last line alone at the top of the next (fancyvrb reads these two penalties).
+\fvset{formatcom*=\clubpenalty10000 \widowpenalty10000 }
+\setminted{formatcom=\clubpenalty10000 \widowpenalty10000 }
+
 \title{\color{hdrBG}\bfseries\Huge Shrinkage, Nearest Neighbours and High Dimensions}
 \author{}\date{}
 
@@ -383,7 +388,7 @@ $2\sigma^2(1+r)$ of least squares, $1+r=\rank[\bone\ \bX]$, when $r=\rank(\bX)\g
 \begin{example}[Ridge coefficient paths; ISLR §6.2.1, Figure 6.4]\label{ex:credit-ridge}
 The standardised ridge coefficients of \texttt{Balance} on the eleven \texttt{Credit}
 predictors, through Theorem~\ref{thm:ridge-svd}:
-<<credit-ridge, fig.height=2.5, fig.width=6.4>>=
+<<credit-ridge, fig.height=2.2, fig.width=6.4, out.width="0.66\\linewidth", fig.show='hold'>>=
 Xc <- model.matrix(Balance ~ ., Credit)[, -1]; yc <- Credit$Balance; n_c <- nrow(Xc); p_c <- ncol(Xc)
 sdn <- function(v) sqrt(mean((v - mean(v))^2))
 Xs_c <- scale(Xc, center = TRUE, scale = apply(Xc, 2, sdn))
@@ -400,10 +405,10 @@ col_c <- ifelse(colnames(Xc) %in% c("Income", "Limit", "Rating", "StudentYes"),
                 c(Income = 1, Limit = 2, Rating = 4, StudentYes = 3)[colnames(Xc)], 8)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
 ax10 <- function() axis(1, at = 10^c(-2, 0, 2, 4), labels = c("0.01", "1", "100", "10000"))
-matplot(lam_c, t(B_c), type = "l", lty = 1, log = "x", col = col_c, xlab = "lambda",
-        ylab = "standardised coefficient", xaxt = "n"); ax10()
-legend("topright", c("Income", "Limit", "Rating", "StudentYes"), col = c(1, 2, 4, 3), lty = 1, bty = "n", cex = 0.7)
+matplot(lam_c, t(B_c), type = "l", lty = 1, log = "x", col = col_c,
+        xlab = "lambda", ylab = "coefficient", xaxt = "n"); ax10()
 matplot(ratio_c, t(B_c), type = "l", lty = 1, col = col_c, xlab = "norm ratio", ylab = "")
+legend("topleft", c("Income", "Limit", "Rating", "StudentYes"), col = c(1, 2, 4, 3), lty = 1, bty = "n", cex = 0.7, y.intersp = 0.85)
 par(op)
 @
 \begin{figure}[H]\centering
@@ -426,7 +431,7 @@ independent standard normal coordinates the expected test error is
 $\sigma^2+\|\expc\hat\bb_\lambda-\bb\|^2+\tr\var(\hat\bb_\lambda)$, by the remark after
 Theorem~\ref{thm:hoerl-kennard} without the intercept, computed exactly from
 Proposition~\ref{prop:ridge-mse}:
-<<ridge-sim, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth">>=
+<<ridge-sim, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth", fig.show='hold'>>=
 set.seed(645); n_s <- 50; p_s <- 45; X_s <- matrix(rnorm(n_s * p_s), n_s); XtX_s <- crossprod(X_s)
 b_dense <- rep(0.5, p_s); b_sparse <- c(2.5, 2.5, rep(0, p_s - 2)); lam_s <- 10^seq(3, -2, length = 60)
 ridge_exact <- function(beta) t(sapply(lam_s, function(l) { W <- solve(XtX_s + l * diag(p_s), t(X_s))
@@ -437,7 +442,7 @@ c(min_test_MSE = min(mse_rd), at_lambda = lam_s[which.min(mse_rd)],
 op <- par(mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
 matplot(lam_s, cbind(re_d, mse_rd), type = "l", lty = 1, lwd = 1.5, log = "x", col = c(1, 3, 6),
         xlab = "lambda", ylab = "", ylim = c(0, 16))
-legend("topright", c("squared bias", "variance", "test MSE"), col = c(1, 3, 6), lty = 1, bty = "n", cex = 0.7)
+legend("top", c("squared bias", "variance", "test MSE"), col = c(1, 3, 6), lty = 1, bty = "n", cex = 0.9)
 par(op)
 @
 \begin{figure}[H]\centering
@@ -688,31 +693,32 @@ Two correlated predictors; the lasso at $\lambda=40$, with $s=\|\hat\bb\|_1$, an
 estimate with $\|\hat\bb_\lambda\|=s$, whose disc passes through the corners of the diamond
 $\|\bb\|_1\leqslant s$; and the two shrinkage rules of Theorem~\ref{thm:orthonormal} at
 $\lambda=1$:
-<<shapes, fig.height=2.9, fig.width=6.4>>=
+<<shapes, fig.height=2.9, fig.width=6.4, fig.show='hold'>>=
 set.seed(4); nn <- 60; x1 <- rnorm(nn); x2 <- 0.6 * x1 + sqrt(1 - 0.36) * rnorm(nn)
-Xm <- scale(cbind(x1, x2), TRUE, FALSE); yv <- drop(x1 + rnorm(nn)); yv <- yv - mean(yv)
-A2 <- crossprod(Xm); bh <- drop(solve(A2, crossprod(Xm, yv)))
+Xm <- scale(cbind(x1, x2), TRUE, FALSE); yv <- drop(x1 + rnorm(nn))
+yv <- yv - mean(yv); A2 <- crossprod(Xm); bh <- drop(solve(A2, crossprod(Xm, yv)))
 soft <- function(a, t) sign(a) * pmax(abs(a) - t, 0)
-bl <- c(0, 0); for (it in 1:3000) for (j in 1:2) {
-  r <- yv - Xm[, -j] * bl[-j]; bl[j] <- soft(sum(Xm[, j] * r), 20) / sum(Xm[, j]^2) }
-s1 <- sum(abs(bl))
+bl <- c(0, 0); for (it in 1:3000) for (j in 1:2) { r <- yv - Xm[, -j] * bl[-j]
+  bl[j] <- soft(sum(Xm[, j] * r), 20) / sum(Xm[, j]^2) }; s1 <- sum(abs(bl))
 lr <- uniroot(function(l) sqrt(sum(solve(A2 + l * diag(2), crossprod(Xm, yv))^2)) - s1, c(1e-8, 1e5))$root
 br <- drop(solve(A2 + lr * diag(2), crossprod(Xm, yv)))
 round(rbind(least_squares = bh, lasso = bl, ridge = br), 4)
-qf <- function(b) drop(t(b - bh) %*% A2 %*% (b - bh)); g2 <- seq(-0.85, 1.75, length.out = 250)
-Zc <- outer(g2, g2, Vectorize(function(a, b) qf(c(a, b)))); th <- seq(0, 2 * pi, length.out = 300)
-op <- par(mfrow = c(1, 4), mar = c(3.2, 3.2, 1.6, 0.4), mgp = c(1.9, 0.6, 0), cex = 0.7)
+qf <- function(b) drop(t(b - bh) %*% A2 %*% (b - bh))
+g2 <- seq(-0.85, 1.75, length.out = 250); th <- seq(0, 2 * pi, length.out = 300)
+Zc <- outer(g2, g2, Vectorize(function(a, b) qf(c(a, b))))
+op <- par(mfrow = c(1, 4), mar = c(3, 3, 1.4, 0.3), mgp = c(1.8, 0.6, 0), cex = 0.85)
 for (w in 1:2) { bs <- if (w == 1) bl else br
-  contour(g2, g2, Zc, levels = qf(bs) * c(0.2, 1, 2.5), drawlabels = FALSE, col = "grey55", asp = 1,
-          xlab = expression(beta[1]), ylab = expression(beta[2]), main = c("lasso", "ridge")[w])
+  contour(g2, g2, Zc, levels = qf(bs) * c(0.2, 1, 2.5), drawlabels = FALSE,
+    col = "grey55", xlab = expression(beta[1]), ylab = expression(beta[2]),
+    asp = 1, main = c("lasso", "ridge")[w])
   if (w == 1) polygon(c(s1, 0, -s1, 0), c(0, s1, 0, -s1), border = 4, col = adjustcolor(4, 0.15))
   else polygon(s1 * cos(th), s1 * sin(th), border = 4, col = adjustcolor(4, 0.15))
   points(bs[1], bs[2], pch = 19, col = 2); points(bh[1], bh[2], pch = 19) }
 a <- seq(-3, 3, length.out = 301)
-plot(a, a / 2, type = "l", col = 4, lwd = 2, asp = 1, xlab = "least squares", ylab = "estimate", main = "ridge")
-abline(0, 1, lty = 3)
-plot(a, soft(a, 0.5), type = "l", col = 2, lwd = 2, asp = 1, xlab = "least squares", ylab = "", main = "lasso")
-abline(0, 1, lty = 3)
+plot(a, a / 2, type = "l", col = 4, lwd = 2, asp = 1, xlab = "least squares",
+     ylab = "estimate", main = "ridge"); abline(0, 1, lty = 3)
+plot(a, soft(a, 0.5), type = "l", col = 2, lwd = 2, asp = 1,
+     xlab = "least squares", ylab = "", main = "lasso"); abline(0, 1, lty = 3)
 par(op)
 @
 \begin{figure}[H]\centering
@@ -779,29 +785,30 @@ the normal prior only by coincidence (the remark after Theorem~\ref{thm:lasso-sp
 The lasso path of the standardised \texttt{Credit} predictors, computed by \texttt{glmnet}
 without its own standardisation and intercept; it minimises $\RSS/(2n)+\lambda'\|\bb\|_1$,
 so $\lambda'=\lambda/(2n)$. The entry points are read on the grid:
-<<credit-lasso, fig.height=2.5, fig.width=6.4>>=
-yc_c <- yc - mean(yc)
-lmax_c <- 2 * max(abs(crossprod(Xs_c, yc_c)))
+<<credit-lasso, R.options=list(width=75)>>=
+yc_c <- yc - mean(yc); lmax_c <- 2 * max(abs(crossprod(Xs_c, yc_c)))
 gl_c <- glmnet(Xs_c, yc_c, alpha = 1, standardize = FALSE, intercept = FALSE,
                lambda = lmax_c * 10^seq(0, -4, length = 400) / (2 * n_c), thresh = 1e-12, maxit = 1e6)
 BL_c <- as.matrix(coef(gl_c))[-1, ]; lam_l <- 2 * n_c * gl_c$lambda
 entry <- apply(BL_c, 1, function(b) { w <- which(b != 0); if (length(w)) lam_l[w[1]] else NA })
 c(lambda_max = lmax_c); round(sort(entry, decreasing = TRUE))
+@
+\texttt{Rating} enters first, at $\lambda_{\max}=317{,}250$
+(Corollary~\ref{cor:lambda-max}), then \texttt{StudentYes} ($95{,}521$) and \texttt{Limit}
+($91{,}211$) almost together, and \texttt{Income} ($45{,}635$), the order ISLR reports; the
+other seven enter at $16{,}150$ or below.
+<<credit-lasso-fig, fig.height=2.5, fig.width=6.4, fig.show='hold'>>=
 ratio_l <- colSums(abs(BL_c)) / sum(abs(b_ls))
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
 matplot(lam_l, t(BL_c), type = "l", lty = 1, log = "x", col = col_c, xlab = "lambda", ylab = "standardised coefficient")
-legend("topright", c("Income", "Limit", "Rating", "StudentYes"), col = c(1, 2, 4, 3), lty = 1, bty = "n", cex = 0.7)
 matplot(ratio_l, t(BL_c), type = "l", lty = 1, col = col_c, xlab = "l1 norm ratio", ylab = "")
+legend("bottomleft", c("Income", "Limit", "Rating", "StudentYes"), col = c(1, 2, 4, 3), lty = 1, bty = "n", cex = 0.7)
 par(op)
 @
 \begin{figure}[H]\centering
 \caption{Standardised lasso coefficients for \texttt{Credit} against $\lambda$ (log scale)
 and against $\|\hat\bb_\lambda\|_1/\|\hat\bb\|_1$ (ISLR Figure 6.6).}
 \end{figure}
-\texttt{Rating} enters first, at $\lambda_{\max}=317{,}250$
-(Corollary~\ref{cor:lambda-max}), then \texttt{StudentYes} ($95{,}521$) and \texttt{Limit}
-($91{,}211$) almost together, and \texttt{Income} ($45{,}635$), the order ISLR reports; the
-other seven enter at $16{,}150$ or below.
 \end{example}
 
 \begin{example}[Lasso against ridge; ISLR §6.2.2, Figures 6.8 and 6.9]\label{ex:lasso-sim}
@@ -813,7 +820,7 @@ $\|\bar\bb-\bb\|^2-\tr\hat\bSig/200$ is unbiased for $\|\expc\hat\bb-\bb\|^2$, b
 $\expc\|\bar\bb-\bb\|^2=\|\expc\hat\bb-\bb\|^2+\tr\var(\hat\bb)/200$ and
 $\expc\hat\bSig=\var(\hat\bb)$. Ridge's come from Proposition~\ref{prop:ridge-mse}. Both are
 plotted against their average training $R^2$:
-<<lasso-sim, fig.height=2.5, fig.width=6.4>>=
+<<lasso-sim, fig.height=2.5, fig.width=6.4, out.width="0.72\\linewidth", fig.show='hold'>>=
 sim_both <- function(beta, R = 200) {
   mu <- drop(X_s %*% beta); sv_s <- svd(X_s)
   arr <- replicate(R, { yy <- mu + rnorm(n_s)
@@ -833,9 +840,11 @@ round(rbind(ridge_dense = ends(1 + rowSums(re_d)), lasso_dense = ends(1 + ls_d[,
             ridge_sparse = ends(1 + rowSums(re_s)), lasso_sparse = ends(1 + ls_s[, 1] + ls_s[, 2])), 3)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 1.6, 0.6), mgp = c(2.1, 0.6, 0))
 for (w in 1:2) { L <- list(ls_d, ls_s)[[w]]; Rr <- list(re_d, re_s)[[w]]
-  matplot(L[, "R2_lasso"], cbind(L[, 1], L[, 2], 1 + L[, 1] + L[, 2]), type = "l", lty = 1, col = c(1, 3, 6),
-          xlab = "training R-squared", ylab = "", ylim = c(0, 16), main = c("dense", "sparse")[w])
-  matlines(L[, "R2_ridge"], cbind(Rr, 1 + rowSums(Rr)), lty = 3, col = c(1, 3, 6)) }
+  matplot(L[, "R2_lasso"], cbind(L[, 1], L[, 2], 1 + L[, 1] + L[, 2]), type = "l",
+          lty = 1, col = c(1, 3, 6), xlab = "training R-squared", ylab = "",
+          ylim = c(0, 16), main = c("dense", "sparse")[w])
+  matlines(L[, "R2_ridge"], cbind(Rr, 1 + rowSums(Rr)), lty = 3, col = c(1, 3, 6))
+}
 par(op)
 @
 \begin{figure}[H]\centering
@@ -1014,21 +1023,24 @@ fold of an outer cross-validation.
 \begin{example}[LOOCV for ridge on the Credit data; ISLR §6.2.3, Figure 6.12]\label{ex:credit-loo}
 Proposition~\ref{prop:ridge-loo} on the standardised predictors of
 Example~\ref{ex:credit-ridge}, against $400$ refits at the selected $\lambda$:
-<<credit-loo, fig.height=2.4, fig.width=6.4>>=
-loo_c <- function(l) { S <- sv_c$u %*% (sv_c$d^2 / (sv_c$d^2 + l) * t(sv_c$u)) + matrix(1 / n_c, n_c, n_c)
-  mean(((yc - drop(S %*% yc)) / (1 - diag(S)))^2) }
-lg_c <- 10^seq(-2, 4, length = 121); cv_loo <- sapply(lg_c, loo_c); lb_c <- lg_c[which.min(cv_loo)]
-brute_c <- mean(sapply(1:n_c, function(i) { Xi <- Xs_c[-i, ]; yi <- yc[-i]; mi <- colMeans(Xi)
-  b <- solve(crossprod(sweep(Xi, 2, mi)) + lb_c * diag(p_c), crossprod(sweep(Xi, 2, mi), yi - mean(yi)))
+<<credit-loo, fig.height=2.4, fig.width=6.4, out.width="0.72\\linewidth", fig.show='hold'>>=
+loo_c <- function(l) { S <- sv_c$u %*% (sv_c$d^2 / (sv_c$d^2 + l) * t(sv_c$u)) +
+    matrix(1 / n_c, n_c, n_c); mean(((yc - drop(S %*% yc)) / (1 - diag(S)))^2) }
+lg_c <- 10^seq(-2, 4, length = 121); cv_loo <- sapply(lg_c, loo_c)
+lb_c <- lg_c[which.min(cv_loo)]
+brute_c <- mean(sapply(1:n_c, function(i) { Xi <- Xs_c[-i, ]; yi <- yc[-i]
+  mi <- colMeans(Xi); b <- solve(crossprod(sweep(Xi, 2, mi)) + lb_c * diag(p_c),
+                                 crossprod(sweep(Xi, 2, mi), yi - mean(yi)))
   (yc[i] - mean(yi) - sum((Xs_c[i, ] - mi) * b))^2 }))
 round(c(lambda_min = lb_c, norm_ratio = sqrt(sum(ridge_c(lb_c)^2) / sum(b_ls^2)), LOOCV_min = min(cv_loo),
   LOOCV_at_0.01 = cv_loo[1], LOOCV_at_10000 = cv_loo[121]), 3)
 signif(c(refits_minus_shortcut = brute_c - loo_c(lb_c)), 3)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
-plot(lg_c, cv_loo, type = "l", log = "x", xlab = "lambda", ylab = "LOOCV error", xaxt = "n"); ax10(); abline(v = lb_c, lty = 2)
-matplot(lam_c, t(B_c), type = "l", lty = 1, log = "x", col = col_c, xlab = "lambda", ylab = "standardised coefficient", xaxt = "n")
-ax10(); abline(v = lb_c, lty = 2)
-par(op)
+plot(lg_c, cv_loo, type = "l", log = "x", xlab = "lambda", ylab = "LOOCV error",
+     xaxt = "n"); ax10(); abline(v = lb_c, lty = 2)
+matplot(lam_c, t(B_c), type = "l", lty = 1, log = "x", col = col_c,
+        xlab = "lambda", ylab = "standardised coefficient", xaxt = "n"); ax10()
+abline(v = lb_c, lty = 2); par(op)
 @
 \begin{figure}[H]\centering
 \caption{Leave-one-out cross-validation error of ridge regression on \texttt{Credit}, and
@@ -1042,7 +1054,7 @@ the $400$ refits to rounding error.
 
 \begin{example}[Ten-fold cross-validation for the lasso on sparse data; ISLR §6.2.3, Figure 6.13]\label{ex:sparse-cv}
 One training set from the sparse model of Example~\ref{ex:lasso-sim}:
-<<sparse-cv, fig.height=2.4, fig.width=6.4>>=
+<<sparse-cv, fig.height=2.4, fig.width=6.4, fig.show='hold'>>=
 set.seed(613); y_sp <- drop(X_s %*% b_sparse + rnorm(n_s))
 cv_sp <- cv.glmnet(X_s, y_sp, alpha = 1, standardize = FALSE, intercept = FALSE)
 cf_min <- as.matrix(coef(cv_sp, s = "lambda.min"))[-1, 1]; cf_1se <- as.matrix(coef(cv_sp, s = "lambda.1se"))[-1, 1]
@@ -1201,7 +1213,7 @@ tenth of the points spans $0.794$ of the range of every coordinate.
 $n=50$ training points with $x\sim U(-1,1)$ and $\sigma=0.3$, for a linear truth
 $1+2x$, a slightly non-linear $1+2x+0.8x^2$ and a strongly non-linear $1+\sin(4x)+x$; the
 test error is averaged over $100$ training sets and $1000$ test points each:
-<<knn-1d, fig.height=2.4, fig.width=6.4>>=
+<<knn-1d, fig.height=2.4, fig.width=6.4, out.width="0.64\\linewidth", fig.show='hold', R.options=list(width=70)>>=
 fs <- list(linear = function(x) 1 + 2 * x, slight = function(x) 1 + 2 * x + 0.8 * x^2,
            strong = function(x) 1 + sin(4 * x) + x)
 Ks <- c(1, 2, 3, 5, 9, 15, 25)
@@ -1357,15 +1369,16 @@ independent test set or by cross-validation.
 \begin{example}[Unrelated features; ISLR §6.4.2, Figure 6.23]\label{ex:unrelated}
 $n=20$ training observations, a response unrelated to $19$ standard normal features, and
 least squares on the first $k$ of them, with the test error on $1000$ new observations:
-<<unrelated, fig.height=2.3, fig.width=6.4>>=
+<<unrelated, fig.height=2.3, fig.width=6.4, fig.show='hold'>>=
 set.seed(623); n_u <- 20; P_u <- 19
 X_u <- matrix(rnorm(n_u * P_u), n_u); y_u <- rnorm(n_u)
 Xt_u <- matrix(rnorm(1000 * P_u), 1000); yt_u <- rnorm(1000)
 res_u <- t(sapply(1:P_u, function(k) { f <- lm(y_u ~ X_u[, 1:k, drop = FALSE]); b <- coef(f)
   c(R2 = summary(f)$r.squared, train_MSE = mean(residuals(f)^2),
     test_MSE = mean((yt_u - cbind(1, Xt_u[, 1:k, drop = FALSE]) %*% b)^2)) }))
-round(res_u[c(1, 5, 10, 15, 18, 19), ], 4)
-op <- par(mfrow = c(1, 3), mar = c(3.2, 3.6, 0.6, 0.4), mgp = c(2, 0.6, 0))
+rownames(res_u) <- paste0("k=", 1:P_u); round(res_u[c(1, 5, 10, 15, 18, 19), ], 4)
+op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 0.6, 0.4), mgp = c(2, 0.6, 0),
+          cex = 0.9)
 for (v in colnames(res_u)) plot(1:P_u, res_u[, v], type = "b", pch = 16, cex = 0.5,
                                 xlab = "number of features", ylab = v)
 par(op)
@@ -1392,7 +1405,8 @@ sim_p <- function(p, R = 20) {
     f <- glmnet(X, y, alpha = 1); lam <- f$lambda
     ks <- sapply(c(0.5, 0.2, 0.05), function(q) which.min(abs(lam / max(lam) - q)))
     rbind(test_MSE = colMeans((yt - predict(f, Xt, s = lam[ks]))^2), df = f$df[ks]) })
-  m <- apply(out, c(1, 2), mean); colnames(m) <- c("0.5", "0.2", "0.05"); m }
+  m <- apply(out, c(1, 2), mean); colnames(m) <- c("0.5", "0.2", "0.05")
+  m }
 set.seed(624); lapply(c(p20 = 20, p50 = 50, p2000 = 2000), function(p) round(sim_p(p), 2))
 @
 With $p=20$ and $p=50$ the test error falls from $16.92$ and $16.97$ to $1.67$
@@ -1433,10 +1447,9 @@ ISLR §6.5.2.
 
 \subsection{The ISLR lab: ridge regression and the lasso}\label{sec:6.6.1}
 
-<<lab-ridge>>=
+<<lab-ridge, R.options=list(width=84)>>=
 Hitters <- na.omit(Hitters)
-x <- model.matrix(Salary ~ ., Hitters)[, -1]
-y <- Hitters$Salary
+x <- model.matrix(Salary ~ ., Hitters)[, -1]; y <- Hitters$Salary
 grid <- 10^seq(10, -2, length = 100)
 ridge.mod <- glmnet(x, y, alpha = 0, lambda = grid)
 dim(coef(ridge.mod))
@@ -1451,7 +1464,7 @@ $\lambda'=705.5$ it is $57.11$: the larger $\lambda'$ shrinks more, although
 Proposition~\ref{prop:ridge-norm} guarantees a monotone norm only for the standardised
 coefficients, not for these. A training half, and the test error at $\lambda'=4$, at the
 null model, at $\lambda'=10^{10}$ and at least squares, by \texttt{glmnet} and by \texttt{lm}:
-<<lab-ridge-test>>=
+<<lab-ridge-test, R.options=list(width=84)>>=
 set.seed(1)
 train <- sample(1:nrow(x), nrow(x) / 2)
 test <- (-train)
@@ -1473,10 +1486,16 @@ which $\lambda'=10^{10}$ reproduces, and $168{,}589$ for the least squares fit t
 \texttt{glmnet} computes at $\lambda'=0$ with \texttt{exact = T}, against $168{,}593$ from
 \texttt{lm}; the coefficients agree to about three significant digits (\texttt{Hits}:
 $-1.637$, against $-1.638$ from \texttt{lm}).
-<<lab-ridge-cv, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth">>=
+<<lab-ridge-cv, fig.height=2.0, fig.width=6.4, out.width="0.56\\linewidth">>=
 set.seed(1)
 cv.out <- cv.glmnet(x[train, ], y[train], alpha = 0)
 op <- par(mar = c(3.2, 3.8, 1.8, 0.6), mgp = c(2.1, 0.6, 0)); plot(cv.out); par(op)
+@
+\begin{figure}[H]\centering
+\caption{Ten-fold cross-validation error of ridge regression on the \texttt{Hitters}
+training half, with $\lambda_{\min}$ and $\lambda_{1\SE}$ dotted.}
+\end{figure}
+<<lab-ridge-best, R.options=list(width=84)>>=
 bestlam <- cv.out$lambda.min
 bestlam
 ridge.pred <- predict(ridge.mod, s = bestlam, newx = x[test, ])
@@ -1484,19 +1503,21 @@ mean((ridge.pred - y.test)^2)
 out <- glmnet(x, y, alpha = 0)
 round(predict(out, type = "coefficients", s = bestlam)[1:20, ], 3)
 @
-\begin{figure}[H]\centering
-\caption{Ten-fold cross-validation error of ridge regression on the \texttt{Hitters}
-training half, with $\lambda_{\min}$ and $\lambda_{1\SE}$ dotted.}
-\end{figure}
 Cross-validation selects $\lambda'=326.1$, with test error $139{,}857$,
 lower than at $\lambda'=4$; refitted on all the data, ridge keeps all $19$ coefficients
 nonzero.
-<<lab-lasso, fig.height=2.4, fig.width=6.4>>=
+<<lab-lasso, fig.height=2.4, fig.width=6.4, out.width="0.68\\linewidth">>=
 lasso.mod <- glmnet(x[train, ], y[train], alpha = 1, lambda = grid)
 set.seed(1)
 cv.out <- cv.glmnet(x[train, ], y[train], alpha = 1)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 1.8, 0.6), mgp = c(2.1, 0.6, 0))
 plot(lasso.mod, xvar = "norm"); plot(cv.out); par(op)
+@
+\begin{figure}[H]\centering
+\caption{Lasso coefficient paths on the \texttt{Hitters} training half against their
+$\ell_1$ norm, and the ten-fold cross-validation error.}
+\end{figure}
+<<lab-lasso-best, R.options=list(width=84)>>=
 bestlam <- cv.out$lambda.min
 lasso.pred <- predict(lasso.mod, s = bestlam, newx = x[test, ])
 mean((lasso.pred - y.test)^2)
@@ -1504,10 +1525,6 @@ out <- glmnet(x, y, alpha = 1, lambda = grid)
 lasso.coef <- predict(out, type = "coefficients", s = bestlam)[1:20, ]
 round(lasso.coef[lasso.coef != 0], 3)
 @
-\begin{figure}[H]\centering
-\caption{Lasso coefficient paths on the \texttt{Hitters} training half against their
-$\ell_1$ norm, and the ten-fold cross-validation error.}
-\end{figure}
 At its cross-validated $\lambda'$ the lasso has test error $143{,}674$,
 close to that of ridge, and its fit to all the data keeps $11$ of the $19$ predictors, as in
 the lab.
@@ -1520,7 +1537,7 @@ ridge by Theorem~\ref{thm:ridge}, by Theorem~\ref{thm:ridge-svd} and by
 recovered from the equation of Theorem~\ref{thm:ridge} coordinate by coordinate; the
 degrees of freedom of Proposition~\ref{prop:ridge-df}; and the risk formula of
 Theorem~\ref{thm:hoerl-kennard} against simulation:
-<<formulas-ridge>>=
+<<formulas-ridge, R.options=list(width=75)>>=
 nH <- nrow(x); pH <- ncol(x); Xs <- scale(x, center = TRUE, scale = apply(x, 2, sdn)); ycH <- y - mean(y)
 lam <- 100; svH <- svd(Xs); dH <- svH$d
 b_solve <- drop(solve(crossprod(Xs) + lam * diag(pH), crossprod(Xs, ycH)))
@@ -1749,7 +1766,7 @@ soft-thresholded value of Theorem~\ref{thm:orthonormal}.
 
 \begin{solution}
 With $y_1=2$ and $\lambda=1$ the minimisers are $1$ and $2-1/2=1.5$:
-<<ex-i6-6, fig.height=2.3, fig.width=6.4>>=
+<<ex-i6-6, fig.height=2.3, fig.width=6.4, fig.show='hold'>>=
 y6 <- 2; l6 <- 1; bb <- seq(-1, 3, length = 401)
 rc <- function(b) (y6 - b)^2 + l6 * b^2; lc <- function(b) (y6 - b)^2 + l6 * abs(b)
 c(ridge_numeric = optimize(rc, c(-5, 5))$minimum, ridge_formula = y6 / (1 + l6),
@@ -1804,14 +1821,16 @@ set.seed(1); X8 <- rnorm(100); eps8 <- rnorm(100); Y8 <- 3 + 2 * X8 - 3 * X8^2 +
 M8 <- poly(X8, 10, raw = TRUE); colnames(M8) <- paste0("x", 1:10)
 set.seed(1); cv8 <- cv.glmnet(M8, Y8, alpha = 1)
 Y7 <- 3 + 7 * X8^7 + eps8; set.seed(1); cv7 <- cv.glmnet(M8, Y7, alpha = 1)
-round(cbind(cubic_min = as.matrix(coef(cv8, s = "lambda.min"))[, 1], cubic_1se = as.matrix(coef(cv8, s = "lambda.1se"))[, 1],
-            x7_min = as.matrix(coef(cv7, s = "lambda.min"))[, 1], x7_1se = as.matrix(coef(cv7, s = "lambda.1se"))[, 1]), 4)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 1.8, 0.6), mgp = c(2.1, 0.6, 0)); plot(cv8); plot(cv7); par(op)
 @
 \begin{figure}[H]\centering
 \caption{Ten-fold cross-validation error of the lasso for the cubic of part (e) and for the
 seventh-power model of part (f).}
 \end{figure}
+<<ex-i6-8-coef>>=
+round(cbind(cubic_min = as.matrix(coef(cv8, s = "lambda.min"))[, 1], cubic_1se = as.matrix(coef(cv8, s = "lambda.1se"))[, 1],
+            x7_min = as.matrix(coef(cv7, s = "lambda.min"))[, 1], x7_1se = as.matrix(coef(cv7, s = "lambda.1se"))[, 1]), 4)
+@
 (e) At $\lambda_{\min}$ the lasso keeps $X$ and $X^2$ with
 coefficients $2.2242$ and $-3.0981$, close to $\beta_1=2$ and $\beta_2=-3$, and tiny ones on
 $X^5$ and $X^7$, but not the small cubic term; the one-standard-error fit adds $X^3$ with
@@ -1828,7 +1847,7 @@ coefficients. (g) Compare the test errors with those of least squares, PCR and P
 \end{exercise}
 
 \begin{solution}
-<<ex-i6-9>>=
+<<ex-i6-9, R.options=list(width=72)>>=
 set.seed(1); tr9 <- sample(nrow(College), nrow(College) / 2); te9 <- College[-tr9, ]
 xC <- model.matrix(Apps ~ ., College)[, -1]; yC <- College$Apps
 set.seed(1); cvr9 <- cv.glmnet(xC[tr9, ], yC[tr9], alpha = 0)
@@ -1869,9 +1888,8 @@ iminl <- which(cvlB$lambda == cvlB$lambda.min); iminr <- which(cvrB$lambda == cv
 mseB <- sapply(1:10, function(j) { fj <- leaps::regsubsets(crim ~ ., data = Boston[foldB != j, ], nvmax = 12)
   mm <- model.matrix(crim ~ ., Boston[foldB == j, ])
   sapply(1:12, function(i) { cf <- coef(fj, id = i); mean((yB[foldB == j] - mm[, names(cf)] %*% cf)^2) }) })
-cvB <- drop(mseB %*% wB)
 pcrB <- pls::pcr(crim ~ ., data = Boston, scale = TRUE, validation = "CV", segments = split(seq_len(nrow(Boston)), foldB))
-cvP <- pls::MSEP(pcrB, estimate = "CV")$val[1, 1, -1]
+cvB <- drop(mseB %*% wB); cvP <- pls::MSEP(pcrB, estimate = "CV")$val[1, 1, -1]
 round(c(lasso = min(cvlB$cvm), ridge = min(cvrB$cvm), best_subset = min(cvB), PCR = min(cvP)), 2)
 round(c(lasso_SE = cvlB$cvsd[iminl], ridge_SE = cvrB$cvsd[iminr]), 2)
 c(lasso_nonzero = cvlB$nzero[[iminl]], lasso_1se_nonzero = cvlB$nzero[[which(cvlB$lambda == cvlB$lambda.1se)]],

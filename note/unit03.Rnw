@@ -2,8 +2,10 @@
 \documentclass[17pt]{extarticle}
 
 \input{asm_preamble.tex}
+% A code or output block is never cut after its first line or before its last one.
+\fvset{formatcom=\clubpenalty10000\widowpenalty10000}
 
-\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 3\ \ Multiple Regression II: Inference and Interpretation}}
+\fancyhead[L]{\small\color{hdrBG}\textbf{Unit\ 3\ \ Multiple Regression II}}
 
 \setcounter{theorem}{0}\setcounter{example}{0}
 \renewcommand\thedefinition{3.\arabic{theorem}}
@@ -333,7 +335,7 @@ t_f <- coef(summary(fit_fridge))[-1, "t value"]
 round(t_f / sqrt(t_f^2 + 37 - 6), 3)                       # all five partial correlations
 @
 <<fridge-avp-fig, fig.height=2.6, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
+op <- par(mfrow = c(1, 2), mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0), cex.lab = 0.85)
 plot(fridge$ECOST, fridge$PRICE, xlab = "ECOST", ylab = "PRICE", pch = 16, cex = 0.6)
 plot(e2, e1, xlab = "ECOST, residual on the others", ylab = "PRICE, residual on the others",
      pch = 16, cex = 0.6)
@@ -696,7 +698,7 @@ anova(fit_hp2, fit_hp5)
 loocv <- function(m) mean((residuals(m) / (1 - hatvalues(m)))^2)
 round(sapply(1:5, function(d) loocv(lm(mpg ~ poly(horsepower, d), data = Auto))), 3)
 @
-<<auto-poly-fig, fig.height=2.6, fig.width=6.4, out.width="0.62\\linewidth", echo=FALSE>>=
+<<auto-poly-fig, fig.height=2.07, fig.width=5.1, out.width="0.56\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 plot(Auto$horsepower, Auto$mpg, xlab = "horsepower", ylab = "mpg", pch = 16, cex = 0.4,
      col = "grey45")
@@ -1123,8 +1125,9 @@ c(t_squared = coef(summary(lm.fit2))[3, "t value"]^2)
 @
 The quadratic term has $F=135$, the square of its $t$ ratio, with $p$-value $0$ to machine
 precision.
-<<lab-quadratic-fig, fig.height=3.3, fig.width=6.4, echo=FALSE>>=
-op <- par(mfrow = c(2, 2), mar = c(3.2, 3.4, 1.6, 0.6), mgp = c(1.9, 0.6, 0), cex.main = 0.8)
+<<lab-quadratic-fig, fig.height=3.4, fig.width=6.4, echo=FALSE>>=
+op <- par(mfrow = c(2, 2), mar = c(2.9, 3.4, 1.6, 1.4), mgp = c(1.9, 0.6, 0), cex.main = 0.8,
+          cex.lab = 0.77)
 plot(lm.fit2, cex = 0.4)
 par(op)
 @
@@ -1254,7 +1257,8 @@ cs_good <- lm(Sales ~ Price + relevel(ShelveLoc, ref = "Good"), data = Carseats)
 c(fitted_diff = max(abs(fitted(cs_bad) - fitted(cs_good))),
   F_bad = anova(lm(Sales ~ Price, data = Carseats), cs_bad)$F[2],
   F_good = anova(lm(Sales ~ Price, data = Carseats), cs_good)$F[2])
-rbind(bad_baseline = coef(cs_bad), good_baseline = coef(cs_good))
+tb <- rbind(bad_baseline = coef(cs_bad), good_baseline = coef(cs_good))
+colnames(tb)[3:4] <- c("Good|Bad", "Medium"); tb
 Bc <- transform(Boston, lstat = lstat - mean(lstat), age = age - mean(age))
 h_raw <- lm(medv ~ lstat * age, data = Boston); h_cen <- lm(medv ~ lstat * age, data = Bc)
 rbind(raw = coef(summary(h_raw))[, 3], centred = coef(summary(h_cen))[, 3])
@@ -1296,7 +1300,7 @@ c(e_school_obs11 = e_school[[11]], largest_other = max(abs(e_school[-11])))
 t49 <- coef(summary(update(fit_l3, data = lot[-11, ])))["MEDSCHYR", "t value"]
 c(t_without_11 = t49, partial_without_11 = t49 / sqrt(t49^2 + 49 - 4))
 @
-<<ex-f3-4gh-fig, fig.height=2.6, fig.width=6.4, out.width="0.6\\linewidth", echo=FALSE>>=
+<<ex-f3-4gh-fig, fig.height=2.23, fig.width=5.5, out.width="0.6\\linewidth", echo=FALSE>>=
 op <- par(mar = c(3.2, 3.4, 1.2, 0.6), mgp = c(1.9, 0.6, 0))
 plot(e_school, e_sales, pch = 16, cex = 0.6, xlab = "MEDSCHYR, residual on MEDHVL and POP",
      ylab = "SALES, residual")
@@ -1434,8 +1438,9 @@ round(t(sapply(chi[, -1], function(v) c(mean = mean(v), median = median(v), sd =
                                         min = min(v), max = max(v), skew = skew(v)))), 3)
 round(cor(chi[, -1]), 3)
 @
-<<ex-f6-1b, fig.height=3.0, fig.width=6.4, out.width="0.6\\linewidth", echo=FALSE>>=
-pairs(chi[, c("volact", "involact", "race")], pch = 16, cex = 0.5, gap = 0.3)
+<<ex-f6-1b, fig.height=2.16, fig.width=4.6, out.width="0.6\\linewidth", echo=FALSE>>=
+pairs(chi[, c("volact", "involact", "race")], pch = 16, cex = 0.5, gap = 0.3, cex.axis = 1.25,
+      oma = c(2.4, 2.4, 2.4, 2.4))
 @
 <<ex-f6-1d>>=
 chi$proportion <- chi$involact / (chi$volact + chi$involact)
@@ -1614,8 +1619,9 @@ rural one with the same price and country, and a US store $1{,}201$ more than a 
 \texttt{Urban} ($p=0.94$). (e) $\widehat{\texttt{Sales}}=13.03-0.0545\,\texttt{Price}
 +1.1996\,\texttt{US}$. (f) Both explain $23.9\%$ of the variation; dropping \texttt{Urban}
 lowers $R^2$ in the fifth decimal and raises $R_a^2$ from $0.2335$ to $0.2354$, and the
-partial $F$ for \texttt{Urban} is $0.007$, the square of its $t$ ratio. (g) \texttt{Price}
-$(-0.0648,-0.0442)$ and \texttt{US} $(0.692,1.708)$, neither containing $0$
+partial $F$ for \texttt{Urban} is $0.007$, the square of its $t$ ratio. (g) The intercept
+$(11.790,14.271)$, \texttt{Price} $(-0.0648,-0.0442)$ and \texttt{US} $(0.692,1.708)$, none
+containing $0$
 (Proposition~\ref{prop:duality}). (h) The largest standardised residual is $2.87$ in
 absolute value, and $23$ exceed $2$, against $18$ expected under normality: no outliers
 of note. Twenty observations exceed the leverage flag $2(k+1)/n=0.015$, the largest being

@@ -143,7 +143,7 @@ errors} applies whenever its design conditions hold.
 Least squares of \texttt{POSEXP} on the explanatory variables of FREES's reduced model of
 §11.4 (sex, race, region, education, self-rated physical health, activity limitation, income
 and insurance), with HC0 standard errors:
-<<lpm, fig.height=2.4, fig.width=6.4, out.width="0.62\\linewidth">>=
+<<lpm, fig.height=2.5, fig.width=6.4, out.width="0.62\\linewidth", fig.show="hold">>=
 f_red <- POSEXP ~ GENDER + RACE + REGION + EDUC + PHSTAT + ANYLIMIT + INCOME + insure
 lp <- lm(f_red, data = H); fv <- fitted(lp); el <- residuals(lp)
 round(c(min_fitted = min(fv), max_fitted = max(fv)), 5); c(below_0 = sum(fv < 0), above_1 = sum(fv > 1))
@@ -151,8 +151,7 @@ Xl <- model.matrix(lp); Bl <- solve(crossprod(Xl))
 se_hc0 <- sqrt(diag(Bl %*% crossprod(Xl * el) %*% Bl))
 round(cbind(estimate = coef(lp), se_ols = coef(summary(lp))[, 2], se_hc0 = se_hc0)[c("GENDER", "PHSTATPOOR", "insure"), ], 4)
 op <- par(mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
-plot(fv, el, pch = 16, cex = 0.35, xlab = "fitted value", ylab = "residual"); abline(v = 0, lty = 3)
-par(op)
+plot(fv, el, pch = 16, cex = 0.35, xlab = "fitted value", ylab = "residual"); abline(v = 0, lty = 3); par(op)
 @
 \begin{figure}[H]\centering
 \caption{Residuals against fitted values of the linear probability model for the MEPS
@@ -205,15 +204,15 @@ ISLR's simulated \texttt{Default}: $10{,}000$ credit card holders, with \texttt{
 \texttt{Yes} or \texttt{No}, monthly \texttt{balance}, annual \texttt{income} and
 \texttt{student} status. Least squares and the logit on \texttt{balance}:
 <<default-lpm>>=
-Df <- Default; Df$y <- 1 * (Df$default == "Yes")
-lpD <- lm(y ~ balance, data = Df); lgD <- glm(default ~ balance, family = binomial, data = Df)
+Df <- Default; Df$y <- 1 * (Df$default == "Yes"); lpD <- lm(y ~ balance, data = Df)
+lgD <- glm(default ~ balance, family = binomial, data = Df)
 round(c(default_rate = mean(Df$y), negative_fitted_lpm = mean(fitted(lpD) < 0),
         min_fitted_lpm = min(fitted(lpD)), mean_fitted_lpm = mean(fitted(lpD)),
         mean_fitted_logit = mean(fitted(lgD))), 4)
 @
 \begin{figure}[H]\centering
-<<default-lpm-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
-op <- par(mfrow = c(1, 2), mar = c(3.4, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.8)
+<<default-lpm-fig, echo=FALSE, fig.width=6.4, fig.height=2.35, out.width="0.62\\linewidth">>=
+op <- par(mfrow = c(1, 2), mar = c(3.4, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.9)
 ob <- order(Df$balance)
 for (m in list(lpD, lgD)) {
   plot(Df$balance, Df$y, pch = "|", cex = 0.5, col = "#B45309", xlab = "balance",
@@ -412,7 +411,7 @@ $\Lambda(\bx'\bb/\sigma)$, and a normal one is $sZ$, which gives $\Phi(\bx'\bb/s
 FREES's comparison of $\Lambda(\pi z/\sqrt3)$ with $\Phi(z)$, the two factors of
 Proposition~\ref{prop:logit-probit}, and the ratio $\logit(p)/\Phi^{-1}(p)$ over
 $0.1\leqslant p\leqslant0.9$:
-<<logit-probit, fig.height=2.4, fig.width=6.4>>=
+<<logit-probit, fig.height=2.7, fig.width=6.4, fig.show="hold">>=
 z <- seq(-4, 4, length = 2001); dl <- plogis(z * pi / sqrt(3)) - pnorm(z)
 pp <- seq(0.1, 0.9, length = 801); pp <- pp[abs(pp - 0.5) > 1e-9]; rr <- qlogis(pp) / qnorm(pp)
 round(c(max_abs_difference = max(abs(dl)), at_z = abs(z[which.max(abs(dl))]),
@@ -916,8 +915,7 @@ overall likelihood ratio test, and the measures of fit of Definition~\ref{def:r2
 <<meps-read>>=
 L_red <- as.numeric(logLik(red)); L0_meps <- as.numeric(logLik(glm(POSEXP ~ 1, family = binomial, data = H)))
 big <- names(which(abs(coef(summary(red))[, 3]) > 2))
-round(c(odds_ratio_sex_full = exp(coef(full)[["GENDER"]]), exp_0.733 = exp(0.733),
-        odds_ratio_sex_raw = (p_w / (1 - p_w)) / (p_m / (1 - p_m))), 3)
+round(c(odds_ratio_sex_full = exp(coef(full)[["GENDER"]]), exp_0.733 = exp(0.733), odds_ratio_sex_raw = (p_w / (1 - p_w)) / (p_m / (1 - p_m))), 3)
 round(coef(red)[big] / coef(pro)[big], 3)
 R2cs <- 1 - exp(2 * (L0_meps - L_red) / nrow(H)); R2max <- 1 - exp(2 * L0_meps / nrow(H))
 round(c(L0 = L0_meps, LRT_overall = 2 * (L_red - L0_meps), df = length(coef(red)) - 1,
@@ -1380,11 +1378,12 @@ the thresholds. TPR and FPR are proportions within the two classes.
 The reduced logit fit of Example~\ref{ex:meps-fits} as a classifier at $t=1/2$ and at the
 sample proportion of hospitalised persons, against the rule that predicts $0$ always; and
 the AUC (beyond the syllabus) of Theorem~\ref{thm:auc}, of the trapezoids, and of the linear predictor:
-<<classify, fig.height=2.4, fig.width=6.4, out.width="0.5\\linewidth">>=
+<<classify, fig.height=2.2, fig.width=3.6, out.width="0.3\\linewidth", fig.show="hold">>=
 ph <- fitted(red); yv <- H$POSEXP
 conf <- sapply(c(0.5, mean(yv)), function(t) { yh <- as.numeric(ph > t)
-  c(t = t, TP = sum(yh == 1 & yv == 1), FN = sum(yh == 0 & yv == 1), FP = sum(yh == 1 & yv == 0),
-    TN = sum(yh == 0 & yv == 0), sensitivity = mean(yh[yv == 1]), specificity = mean(1 - yh[yv == 0]),
+  c(t = t, TP = sum(yh == 1 & yv == 1), FN = sum(yh == 0 & yv == 1),
+    FP = sum(yh == 1 & yv == 0), TN = sum(yh == 0 & yv == 0),
+    sensitivity = mean(yh[yv == 1]), specificity = mean(1 - yh[yv == 0]),
     accuracy = mean(yh == yv)) })
 colnames(conf) <- c("t_half", "t_rate"); round(conf, 4); round(c(accuracy_of_always_0 = mean(yv == 0)), 4)
 pair_auc <- function(s) { d <- outer(s[yv == 1], s[yv == 0], "-"); mean((d > 0) + 0.5 * (d == 0)) }
@@ -1393,8 +1392,8 @@ tpr <- c(0, sapply(thr, function(t) mean(ph[yv == 1] >= t))); fpr <- c(0, sapply
 round(c(pairs = pair_auc(ph), trapezoids = sum(diff(fpr) * (head(tpr, -1) + tail(tpr, -1)) / 2),
         linear_predictor = pair_auc(qlogis(ph))), 4)
 op <- par(mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
-plot(fpr, tpr, type = "l", xlab = "false positive rate", ylab = "true positive rate"); abline(0, 1, lty = 3)
-par(op)
+plot(fpr, tpr, type = "l", xlab = "false positive rate",
+     ylab = "true positive rate"); abline(0, 1, lty = 3); par(op)
 @
 \begin{figure}[H]\centering
 \caption{ROC curve of the reduced logit model for hospitalisation, with the diagonal of a
@@ -1438,9 +1437,12 @@ $z^2$ and likelihood ratio statistics for sex (Corollary~\ref{cor:tests}):
 <<formulas-binary>>=
 X <- model.matrix(red); b <- coef(red); pr <- drop(plogis(X %*% b))
 Info <- crossprod(X, pr * (1 - pr) * X)
-scoring <- function(X, y, Fn, fn) { bb <- numeric(ncol(X))
-  repeat { eta <- drop(X %*% bb); p <- Fn(eta); f <- fn(eta); w <- f^2 / (p * (1 - p)); z <- eta + (y - p) / f
-    bn <- drop(solve(crossprod(X, w * X), crossprod(X, w * z))); if (max(abs(bn - bb)) < 1e-10) return(bn); bb <- bn } }
+scoring <- function(X, y, Fn, fn) {
+  bb <- numeric(ncol(X))
+  repeat { eta <- drop(X %*% bb); p <- Fn(eta); f <- fn(eta)
+    w <- f^2 / (p * (1 - p)); z <- eta + (y - p) / f
+    bn <- drop(solve(crossprod(X, w * X), crossprod(X, w * z)))
+    if (max(abs(bn - bb)) < 1e-10) return(bn); bb <- bn } }
 signif(c(max_abs_score = max(abs(crossprod(X, yv - pr))),
   se_manual_vs_glm = max(abs(sqrt(diag(solve(Info))) - coef(summary(red))[, 2])),
   scoring_logit_vs_glm = max(abs(scoring(X, yv, plogis, dlogis) - b)),
@@ -1500,7 +1502,8 @@ includes.
 Sm <- Smarket; CS <- cor(Sm[, -9]); round(CS["Year", "Volume"], 3)
 diag(CS) <- 0; CS["Year", "Volume"] <- CS["Volume", "Year"] <- 0; round(max(abs(CS)), 3)
 fS6 <- Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume
-gS <- glm(fS6, data = Sm, family = binomial); round(coef(summary(gS)), 4)
+gS <- glm(fS6, data = Sm, family = binomial)
+round(coef(summary(gS)), 4)
 cls <- function(p) ifelse(p > 0.5, "Up", "Down")
 pS <- cls(fitted(gS)); table(pS, Sm$Direction); mean(pS == Sm$Direction)
 trS <- Sm$Year < 2005; d05 <- Sm$Direction[!trS]
@@ -1540,12 +1543,12 @@ Proposition~\ref{prop:logistic}. (b) and (c) $\mu_y=0$ and $\sigma_y=\pi/\sqrt3$
 $\pi=3.14159\ldots$ the number, by
 Proposition~\ref{prop:logit-probit}\ref{lp:ii}. (d) $\prb(y^{**}\leqslant a)=F(\sigma_ya)$, so
 $y^{**}$ has density $\sigma_yF'(\sigma_ya)=\sigma_ye^{\sigma_ya}/(1+e^{\sigma_ya})^2$. (e):
-<<ex-f11-1, fig.height=2.3, fig.width=6.4, out.width="0.5\\linewidth">>=
+<<ex-f11-1, fig.height=2.75, fig.width=4.6, out.width="0.46\\linewidth", fig.show="hold">>=
 s_y <- pi / sqrt(3); a <- seq(-4, 4, length = 801)
 round(c(sigma_y = s_y, max_density_difference = max(abs(s_y * dlogis(s_y * a) - dnorm(a)))), 4)
 op <- par(mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
-plot(a, dnorm(a), type = "l", xlab = "y", ylab = "density", ylim = c(0, 0.47)); lines(a, s_y * dlogis(s_y * a), lty = 2)
-par(op)
+plot(a, dnorm(a), type = "l", xlab = "y", ylab = "density", ylim = c(0, 0.47))
+lines(a, s_y * dlogis(s_y * a), lty = 2); par(op)
 @
 \begin{figure}[H]\centering
 \caption{The density of $y^{**}$ (dashed) and the standard normal density (solid).}
@@ -1615,8 +1618,7 @@ large-sample variance of $b_1$ is $1/\{n_1\pi_1(1-\pi_1)\}+1/\{n_2\pi_2(1-\pi_2)
 fit of Example~\ref{ex:meps-sex-fit}, with $\bar y_1$ and $\bar y_2$ in place of $\pi_1$ and
 $\pi_2$:
 <<ex-f11-4>>=
-n_m <- sum(tab_sex[, "0"]); n_w <- sum(tab_sex[, "1"])
-round(c(se_formula = sqrt(1 / (n_m * p_m * (1 - p_m)) + 1 / (n_w * p_w * (1 - p_w))), se_glm = coef(summary(g1))[2, 2]), 6)
+n_m <- sum(tab_sex[, "0"]); n_w <- sum(tab_sex[, "1"]); round(c(se_formula = sqrt(1 / (n_m * p_m * (1 - p_m)) + 1 / (n_w * p_w * (1 - p_w))), se_glm = coef(summary(g1))[2, 2]), 6)
 @
 The formula and \texttt{glm} give the same standard error, $0.1837$.
 \end{solution}
@@ -1681,12 +1683,12 @@ model of (iv). (c) Part (b)(v) by probit, interpreting only signs.
 \end{exercise}
 
 \begin{solution}
-<<ex-f11-8a, fig.height=2.2, fig.width=6.4>>=
+<<ex-f11-8a, fig.height=2.2, fig.width=6.4, fig.show="hold">>=
 bi <- read.csv("data/frees/csv/AUTOBIsim.csv"); bi$lnLOSS <- log(bi$LOSS); bi$att <- 1 * (bi$ATTORNEY == 1)
 round(sapply(bi[, c("CLMAGE", "LOSS", "lnLOSS")], function(v) c(summary(v), sd = sd(v))), 3)
 round(sapply(bi[, c("CLMAGE", "LOSS", "lnLOSS")], function(v) tapply(v, bi$ATTORNEY, mean)), 3)
-lapply(bi[, c("CLMSEX", "MARITAL", "SEATBELT", "CLMINSUR")],
-       function(v) round(100 * prop.table(table(ATTORNEY = bi$ATTORNEY, level = v), 2), 1))
+lapply(bi[, c("CLMSEX", "MARITAL", "SEATBELT", "CLMINSUR")], function(v)
+  round(100 * prop.table(table(ATTORNEY = bi$ATTORNEY, level = v), 2), 1))
 colSums(is.na(bi))
 op <- par(mfrow = c(1, 3), mar = c(3.2, 3.4, 1.6, 0.6), mgp = c(2, 0.6, 0))
 for (v in c("CLMAGE", "LOSS", "lnLOSS")) hist(bi[[v]], breaks = 40, main = v, xlab = "", col = "grey85", border = "white")
@@ -1714,7 +1716,8 @@ m4 <- glm(att ~ CLMAGE + CLMSEX + MARITAL + SEATBELT + CLMINSUR + LOSS + lnLOSS,
 round(coef(summary(m4))[c("LOSS", "lnLOSS"), ], 4)
 m4b <- glm(att ~ CLMAGE + CLMSEX + MARITAL + SEATBELT + CLMINSUR + lnLOSS, family = binomial, data = bi)
 round(coef(summary(m4b)), 4)
-m5 <- update(m4b, . ~ . - CLMAGE); round(coef(summary(m5)), 4)
+m5 <- update(m4b, . ~ . - CLMAGE)
+round(coef(summary(m5)), 4)
 c(n_model_iv = nobs(m4b), n_model_v = nobs(m5))
 new8 <- data.frame(CLMAGE = 32, CLMSEX = factor(1, levels = 1:2), MARITAL = factor(2, levels = 1:4),
                    SEATBELT = factor(1, levels = 1:2), CLMINSUR = factor(2, levels = 1:2), lnLOSS = log(5))
@@ -1755,15 +1758,18 @@ $\widehat{\texttt{FINISH}}-\texttt{WIN}$ against \texttt{WIN} and discuss a bett
 (a) At most one horse wins a race, so the two responses have $y_1y_2=0$ and
 $\cov(y_1,y_2)=\expc[y_1y_2]-\pi_1\pi_2=-\pi_1\pi_2<0$: they are dependent, against the
 independence of the responses (Definition~\ref{def:binary}).
-<<ex-f11-9, fig.height=2.3, fig.width=6.4>>=
+<<ex-f11-9, fig.height=2.3, fig.width=6.4, fig.show="hold">>=
 hk <- read.csv("data/frees/csv/HKHorse.csv"); yb <- mean(hk$FINISH); nh <- nrow(hk)
-round(c(mean_FINISH = yb, sd_FINISH = sd(hk$FINISH), formula = sqrt(nh * yb * (1 - yb) / (nh - 1)),
-        mean_WIN = mean(hk$WIN), sd_WIN = sd(hk$WIN), min_WIN = min(hk$WIN), max_WIN = max(hk$WIN)), 4)
+round(c(mean_FINISH = yb, sd_FINISH = sd(hk$FINISH),
+        formula = sqrt(nh * yb * (1 - yb) / (nh - 1)), mean_WIN = mean(hk$WIN),
+        sd_WIN = sd(hk$WIN), min_WIN = min(hk$WIN), max_WIN = max(hk$WIN)), 4)
 round(sapply(split(hk$WIN, hk$FINISH), function(v) c(n = length(v), mean = mean(v), sd = sd(v))), 4)
 lpm9 <- lm(FINISH ~ WIN, data = hk); lg9 <- glm(FINISH ~ WIN, family = binomial, data = hk)
 round(rbind(lpm = coef(summary(lpm9))[2, ], logit = coef(summary(lg9))[2, ]), 4)
 round(c(R2_lpm = summary(lpm9)$r.squared, intercept_lpm = coef(lpm9)[[1]], at_WIN_1 = sum(coef(lpm9))), 4)
-wv <- c(0, 0.01, 0.05, 0.10, 1); fl <- predict(lpm9, data.frame(WIN = wv)); fg <- predict(lg9, data.frame(WIN = wv), type = "response")
+wv <- c(0, 0.01, 0.05, 0.10, 1)
+fl <- predict(lpm9, data.frame(WIN = wv))
+fg <- predict(lg9, data.frame(WIN = wv), type = "response")
 round(rbind(WIN = wv, lpm = fl, logit = fg, logit_over_WIN = fg / wv), 4)
 wg <- seq(0.0005, 0.9995, by = 0.0005); up <- plogis(coef(lg9)[[1]] + coef(lg9)[[2]] * wg) > 1.25 * wg
 ru <- rle(up); last <- cumsum(ru$lengths); first <- last - ru$lengths + 1
@@ -1772,8 +1778,8 @@ cbind(reg, t(apply(reg, 1, function(ab) { k <- hk$WIN >= ab[1] & hk$WIN <= ab[2]
   c(horses = sum(k), won = sum(hk$FINISH[k]), expected_by_crowd = round(sum(hk$WIN[k]), 2)) })))
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 0.6, 0.6), mgp = c(2.1, 0.6, 0))
 plot(fitted(lg9), fitted(lpm9), pch = 16, cex = 0.4, xlab = "logit fitted", ylab = "LPM fitted"); abline(0, 1, lty = 3)
-plot(hk$WIN, fitted(lg9) - hk$WIN, pch = 16, cex = 0.4, xlab = "WIN", ylab = "fitted - WIN"); abline(h = 0, lty = 3)
-par(op)
+plot(hk$WIN, fitted(lg9) - hk$WIN, pch = 16, cex = 0.4, xlab = "WIN",
+     ylab = "fitted - WIN"); abline(h = 0, lty = 3); par(op)
 @
 \begin{figure}[H]\centering
 \caption{Left: fitted values of the linear probability model against those of the logit
@@ -1864,8 +1870,11 @@ $=620$, (iv) \texttt{VSAT} $=540$, (v) \texttt{RANK} $=0.70$.
 <<ex-f11-11>>=
 est <- c(intercept = -12.094, GENDER = 0.256, PLACE = 4.336, MSAT = 0.008, VSAT = -0.002, RANK = 4.442)
 se11 <- c(2.575, 0.407, 1.657, 0.004, 0.003, 1.836); round(c(est / se11, z_0.975 = qnorm(0.975)), 3)
-cases <- rbind(i = c(1, 1, 0.80, 680, 570, 0.90), ii = c(1, 1, 0.60, 680, 570, 0.90), iii = c(1, 1, 0.80, 620, 570, 0.90),
-               iv = c(1, 1, 0.80, 680, 540, 0.90), v = c(1, 1, 0.80, 680, 570, 0.70))
+cases <- rbind(i   = c(1, 1, 0.80, 680, 570, 0.90),
+               ii  = c(1, 1, 0.60, 680, 570, 0.90),
+               iii = c(1, 1, 0.80, 620, 570, 0.90),
+               iv  = c(1, 1, 0.80, 680, 540, 0.90),
+               v   = c(1, 1, 0.80, 680, 570, 0.70))
 round(plogis(drop(cases %*% est)), 4)
 @
 (a) By Corollary~\ref{cor:tests} with the normal reference, PLACE\% ($2.617$), MSAT
@@ -2146,8 +2155,8 @@ pW <- cls(fitted(gW)); table(pW, Wk$Direction); mean(pW == Wk$Direction)
 trW <- Wk$Year <= 2008; dW <- Wk$Direction[!trW]
 gW2 <- glm(Direction ~ Lag2, data = Wk, family = binomial, subset = trW)
 pW2 <- cls(predict(gW2, Wk[!trW, ], type = "response")); table(pW2, dW)
-set.seed(1); kW <- knn(as.matrix(Wk$Lag2[trW]), as.matrix(Wk$Lag2[!trW]), Wk$Direction[trW], k = 1)
-table(kW, dW)
+set.seed(1); kW <- knn(as.matrix(Wk$Lag2[trW]), as.matrix(Wk$Lag2[!trW]),
+                       Wk$Direction[trW], k = 1); table(kW, dW)
 round(c(logit = mean(pW2 == dW), knn1 = mean(kW == dW), always_up = mean(dW == "Up")), 4)
 @
 (a) \texttt{Volume} grows with \texttt{Year} (correlation $0.842$); $55.6\%$ of the weeks are
@@ -2162,7 +2171,8 @@ $58.7\%$ for always predicting \texttt{Up}. (g) KNN with $K=1$ is right $50.0\%$
 trw <- Wk$Year <= 2008
 accw <- function(f) mean(ifelse(predict(glm(f, binomial, Wk[trw, ]), Wk[!trw, ],
   type = "response") > 0.5, "Up", "Down") == Wk$Direction[!trw])
-round(c(lag2 = accw(Direction ~ Lag2), lag1_lag2 = accw(Direction ~ Lag1 + Lag2),
+round(c(lag2 = accw(Direction ~ Lag2),
+        lag1_lag2 = accw(Direction ~ Lag1 + Lag2),
         lag2_squared = accw(Direction ~ Lag2 + I(Lag2^2)),
         lag2_times_volume = accw(Direction ~ Lag2 * Volume)), 4)
 set.seed(1)
@@ -2218,14 +2228,14 @@ $x^a$; (c) use it for $10^3$, $8^{17}$, $131^3$; (d) \texttt{Power3(x, a)} retur
 \end{exercise}
 
 \begin{solution}
-<<ex-i4-15, fig.width=6.4, fig.height=2.4, out.width="0.62\\linewidth">>=
+<<ex-i4-15, fig.width=6.4, fig.height=2.7, out.width="0.62\\linewidth", fig.show="hold">>=
 Power <- function() print(2^3); Power()
 Power2 <- function(x, a) print(x^a); Power2(3, 8); Power2(10, 3); Power2(8, 17); Power2(131, 3)
 Power3 <- function(x, a) { result <- x^a; return(result) }
 PlotPower <- function(x, a, ...) plot(x, Power3(x, a), xlab = "x", ylab = paste0("x^", a), ...)
 op <- par(mfrow = c(1, 2), mar = c(3.2, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.8)
-PlotPower(1:10, 2, log = "y", main = "f(x) = x^2, log y axis"); PlotPower(1:10, 3, main = "x^3")
-par(op)
+PlotPower(1:10, 2, log = "y", main = "f(x) = x^2, log y axis")
+PlotPower(1:10, 3, main = "x^3"); par(op)
 @
 \texttt{Power2} prints; \texttt{Power3} returns a value that can be used in further
 computation, which is what \texttt{PlotPower} needs. $8^{17}=2.25\times10^{15}$ is printed in

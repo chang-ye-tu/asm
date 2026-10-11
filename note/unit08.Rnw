@@ -324,7 +324,8 @@ contrasts(B$hr) <- contr.sum(24); contrasts(B$mnth) <- contr.sum(12)
 fB <- bikers ~ mnth + hr + workingday + temp + weathersit
 mlm <- lm(fB, data = B)
 round(coef(summary(mlm))[c(1, 36:40), ], 2)
-c(min_bikers = min(B$bikers), negative_fitted = mean(fitted(mlm) < 0))
+c(min_bikers = min(B$bikers),
+  negative_fitted = mean(fitted(mlm) < 0))
 hr <- as.numeric(as.character(B$hr))
 night <- B$bikers[hr %in% 1:3 & B$mnth %in% c("Dec", "Jan", "Feb") &
                   B$weathersit == "light rain/snow"]
@@ -658,8 +659,7 @@ $0$--$2$, $3$--$5$, $6$--$10$, $11$--$15$, $16+$ (codes $2$--$6$); \texttt{AgeCa
 $2$--$7$ are the ages $22$--$25$, $26$--$35$, $36$--$45$, $46$--$55$, $56$--$65$ and $66+$;
 \texttt{NCD} is the no-claims discount in percent.
 <<sing-tables>>=
-S$Auto <- 1 * (S$VehicleType == "A")
-table(Auto = S$Auto, count = y)
+S$Auto <- 1 * (S$VehicleType == "A"); table(Auto = S$Auto, count = y)
 table(VAgecat1 = S$VAgecat1, count = y)
 SA <- subset(S, Auto == 1)
 rbind(n = table(SA$SexInsured), zero = table(SA$SexInsured[SA$Clm_Count == 0]))
@@ -686,8 +686,8 @@ S$VAgecat1F <- relevel(factor(S$VAgecat1), ref = "6")
 S$AgeCatF <- relevel(factor(S$AgeCat), ref = "2")
 fS <- Clm_Count ~ Female + Auto + Auto:AgeCatF + Auto:NCD1F + VAgecat1F
 m3 <- glm(fS, offset = LNWEIGHT, family = poisson, data = S)
-round(coef(summary(m3))[, c(1, 3)], 3)
 lfact <- sum(lfactorial(y))
+round(coef(summary(m3))[, c(1, 3)], 3)
 print(c(logLik = as.numeric(logLik(m3)), sum_log_y_factorial = lfact,
         logLik_plus_sum = as.numeric(logLik(m3)) + lfact), digits = 7)
 @
@@ -1425,8 +1425,8 @@ of eight driver age groups by four vehicle uses, fitted by a gamma model with lo
 link and the claim counts as weights $w_i$, so that $\var y_i=\phi\mu_i^2/w_i$ for a cell
 average of $w_i$ claims:
 <<autocoll>>=
-AC <- read.csv("data/frees/csv/AutoCollision.csv", quote = "", fileEncoding = "latin1")
-AC$Age <- sub("\u0096", "-", AC$Age)
+AC <- read.csv("data/frees/csv/AutoCollision.csv", quote = "",
+               fileEncoding = "latin1"); AC$Age <- sub("\u0096", "-", AC$Age)
 gA <- glm(Severity ~ factor(Age) + factor(Vehicle_Use), weights = Claim_Count,
           data = AC, family = Gamma(link = "log"))
 cA <- coef(gA); levels(factor(AC$Vehicle_Use))
@@ -1454,8 +1454,8 @@ equals $\sum_i(y_i-\hat\mu_i)\hat\mu_i$, which need not vanish.
 \end{proposition}
 
 \begin{proof}
-Expand $\{(y_i-\hat y_i)+(\hat y_i-\bar y)\}^2$. For least squares, $\bX'\be=\bzero$ makes
-$\be$ orthogonal to $\hat\bY$ and to $\mathbf 1$. Under a canonical link
+Expand $\{(y_i-\hat y_i)+(\hat y_i-\bar y)\}^2$. For least squares, $\bX'\mathbf e=\bzero$ makes
+$\mathbf e$ orthogonal to $\hat\bY$ and to $\mathbf 1$. Under a canonical link
 $\sum_i(y_i-\hat\mu_i)=0$ by Proposition~\ref{prop:canonical}, which removes $\bar y$; the
 normal equations make $\bY-\hat\bmu$ orthogonal to $\bX\mathbf b$, the vector of
 $\hat\eta_i$, not to the vector of $\hat\mu_i=b'(\hat\eta_i)$.
@@ -1477,7 +1477,7 @@ convention $0\ln0=0$,
 \begin{align*}
 \text{normal:}\quad&D=\sum_i(y_i-\hat\mu_i)^2 ,\\
 \text{Bernoulli:}\quad&D=2\sum_i\Bigl\{y_i\ln\frac{y_i}{\hat\mu_i}
-                       +(1-y_i)\ln\frac{1-y_i}{1-\hat\mu_i}\Bigr\} ,\\
+                       +(1-y_i)\ln\frac{1-y_i}{1-\hat\mu_i}\Bigr\} ,\displaybreak[0]\\
 \text{Poisson:}\quad&D=2\sum_i\Bigl\{y_i\ln\frac{y_i}{\hat\mu_i}-(y_i-\hat\mu_i)\Bigr\} ,\\
 \text{gamma:}\quad&D=2\sum_i\Bigl\{-\ln\frac{y_i}{\hat\mu_i}+\frac{y_i-\hat\mu_i}{\hat\mu_i}
                    \Bigr\} .
@@ -1653,8 +1653,8 @@ fit_ml <- function(g, ldens, lo, hi) {        # b from glm; scale by a 1-d searc
   nll <- function(th) { k <- length(th)
     -sum(ldens(yy, exp(drop(X %*% th[-k])), exp(th[k]))) }
   th <- c(b, ls); V <- solve(hessian(nll, th)); k <- length(th)
-  list(b = b, t = b / sqrt(diag(V)[-k]), scale = exp(ls), se_logscale = sqrt(V[k, k]),
-       logLik = -nll(th), npar = k, X = X, y = yy) }
+  list(b = b, t = b / sqrt(diag(V)[-k]), scale = exp(ls),
+       se_logscale = sqrt(V[k, k]), logLik = -nll(th), npar = k, X = X, y = yy) }
 lgam <- function(y, mu, nu) dgamma(y, shape = nu, rate = nu / mu, log = TRUE)
 lig <- function(y, mu, phi) statmod::dinvgauss(y, mean = mu, dispersion = phi, log = TRUE)
 fF <- EXPENDIP ~ COUNTIP + AGE + GENDER + RACE + REGION + EDUC + PHSTAT + MNHPOOR +
@@ -1693,9 +1693,9 @@ For the full gamma model, the $t$-ratios of \texttt{COUNTIP} and \texttt{insure}
 observed information (FREES), the expected information with $\phi=1/\hat\nu$, R's
 \texttt{summary} (expected information with the Pearson $\hat\phi$), and the sandwich:
 <<meps-se>>=
-X <- full$X; yy <- full$y; bF <- full$b; muF <- exp(drop(X %*% bF)); nu <- full$scale
-Gobs <- nu * crossprod(X, (yy / muF) * X); Gexp <- nu * crossprod(X)
-Fsw <- nu^2 * crossprod(X, (yy / muF - 1)^2 * X)
+X <- full$X; yy <- full$y; bF <- full$b; muF <- exp(drop(X %*% bF))
+nu <- full$scale; Gobs <- nu * crossprod(X, (yy / muF) * X)
+Gexp <- nu * crossprod(X); Fsw <- nu^2 * crossprod(X, (yy / muF - 1)^2 * X)
 tt <- function(V) bF / sqrt(diag(V))
 j <- c("COUNTIP", "insure")
 round(rbind(observed = tt(solve(Gobs))[j], expected = tt(solve(Gexp))[j],
@@ -1761,10 +1761,12 @@ mom <- function(lam) { j <- 0:qpois(1 - 1e-15, lam); pj <- dpois(j, lam)
   c(lambda = lam, var_2sqrt = v(2 * sqrt(j)), mean_anscombe = sum(an * pj),
     var_anscombe = v(an)) }
 round(t(sapply(c(0.5, 1, 5, 20, 100), mom)), 4)
-gam <- function(al) { a <- function(y) 3 * al^(1/6) * (y^(1/3) - (al^(1/3) - al^(-2/3) / 9))
+gam <- function(al) {
+  a <- function(y) 3 * al^(1/6) * (y^(1/3) - (al^(1/3) - al^(-2/3) / 9))
   m <- integrate(function(y) a(y) * dgamma(y, al), 0, Inf, rel.tol = 1e-10)$value
   c(alpha = al, mean_anscombe = m,
-    var_anscombe = integrate(function(y) (a(y) - m)^2 * dgamma(y, al), 0, Inf, rel.tol = 1e-10)$value) }
+    var_anscombe = integrate(function(y) (a(y) - m)^2 * dgamma(y, al), 0, Inf,
+                             rel.tol = 1e-10)$value) }
 round(t(sapply(c(1, 2, 5, 20, 100), gam)), 4)
 bin <- function(m, p) { y <- 0:m; py <- dbinom(y, m, p)
   h <- 2 * sqrt(m) * (asin(sqrt(y / m)) - asin(sqrt(p))); mu <- sum(h * py)
@@ -1782,9 +1784,9 @@ Example~\ref{ex:meps-gamma}, Figure~\ref{fig:meps} plots the deviance residuals 
 \end{example}
 
 \begin{figure}[H]\centering
-<<meps-resid-fig, echo=FALSE, fig.width=6.4, fig.height=2.9>>=
+<<meps-resid-fig, echo=FALSE, fig.width=6.4, fig.height=2.6, out.width="0.7\\linewidth">>=
 gD <- glm(fR, data = D, family = Gamma(link = "log"))
-op <- par(mfrow = c(1, 2), mar = c(4, 4.2, 1.6, 0.8), cex = 0.85)
+op <- par(mfrow = c(1, 2), mar = c(3.1, 3.5, 1.4, 0.6), mgp = c(2, 0.65, 0), cex = 0.95)
 plot(density(D$EXPENDIP[D$EXPENDIP < 6e5]), main = "kernel density",
      xlab = "EXPENDIP (largest omitted)", col = "#1E3A8A", lwd = 2)
 qqnorm(residuals(gD, "deviance"), main = "deviance residuals", pch = 19, cex = 0.6,
@@ -1964,10 +1966,11 @@ irls <- function(X, y, off, link_inv, dmu, vfun, eta0) {
     if (max(abs(eta_new - eta)) < 1e-13) return(b)
     eta <- eta_new } }
 b_irls <- irls(X3, y, off, exp, exp, identity, log(y + 0.5))
-signif(c(max_abs_score = max(abs(crossprod(X3, y - mu3t))),
-         se_manual_minus_glm = max(abs(sqrt(diag(solve(crossprod(X3, mu3t * X3)))) -
-                                       coef(summary(m3t))[, 2])),
-         irls_minus_glm = max(abs(b_irls - b3t))), 3)
+signif(c(
+  max_abs_score = max(abs(crossprod(X3, y - mu3t))),
+  se_manual_minus_glm = max(abs(sqrt(diag(solve(crossprod(X3, mu3t * X3)))) -
+                                coef(summary(m3t))[, 2])),
+  irls_minus_glm = max(abs(b_irls - b3t))), 3)
 @
 \end{example}
 
@@ -2004,7 +2007,9 @@ set.seed(21)
 t(sapply(c(0.3, 1, 5, 50), function(m) {
   Dv <- replicate(200, deviance(glm(rpois(2000, m) ~ 1, family = poisson)))
   Xv <- replicate(200, { yy <- rpois(2000, m); sum((yy - mean(yy))^2) / mean(yy) })
-  round(c(mu = m, mean_deviance = mean(Dv), mean_pearson = mean(Xv), n_minus_1 = 1999), 1) }))
+  round(c(mu = m, mean_deviance = mean(Dv), mean_pearson = mean(Xv),
+          n_minus_1 = 1999), 1)
+}))
 @
 The mean deviance is $1683$ at $\mu=0.3$ and $2296$ at $\mu=1$, against $1999$; the
 Pearson statistic stays within $10$ of $1999$ at every mean (Proposition~\ref{prop:phihat}).
@@ -2158,8 +2163,9 @@ round(cbind(pois_b = coef(p1), pois_z = coef(summary(p1))[, 3],
 LRi <- 2 * (as.numeric(logLik(n1)) - as.numeric(logLik(n2)))
 LRr <- 2 * (as.numeric(logLik(n1)) - as.numeric(logLik(n2r)))
 round(c(X2_null = pearson(p0, identity), X2_poisson = pearson(p1, identity),
-        X2_negbin = pearson(n1, function(m) m + m^2 / n1$theta), phi_quasi = summary(q1)$dispersion,
-        AIC_null = AIC(p0), AIC_poisson = AIC(p1), AIC_negbin = AIC(n1), r_negbin = n1$theta,
+        X2_negbin = pearson(n1, function(m) m + m^2 / n1$theta),
+        phi_quasi = summary(q1)$dispersion, AIC_null = AIC(p0),
+        AIC_poisson = AIC(p1), AIC_negbin = AIC(n1), r_negbin = n1$theta,
         exp_gender = exp(coef(p1)[["GENDER"]]), LR_income = LRi,
         p_income = pchisq(LRi, 4, lower.tail = FALSE), LR_income_fixed_r = LRr,
         p_income_fixed_r = pchisq(LRr, 4, lower.tail = FALSE)), 3)
@@ -2175,7 +2181,7 @@ statistic falls to $32{,}398$ on $1979$ degrees of freedom, $\hat\phi=16.4$; the
 covariates help, but by Proposition~\ref{prop:phihat} the Poisson variance is wrong by a
 factor of about $16$, and the $z$ values of (i) are not to be trusted. (iv) Under
 Theorem~\ref{thm:quasipois} every $t$ is the $z$ divided by $\sqrt{16.37}=4.05$:
-\texttt{SOUTH}, \texttt{LINCOME}, \texttt{MINCOME}, income \texttt{POOR} and \texttt{NATIVE} are no longer
+\texttt{SOUTH}, \texttt{LINCOME}, \texttt{MINCOME}, income \texttt{POOR} and \texttt{NATIV} are no longer
 significant at $5\%$ (\texttt{BLACK}, with $|z|<1.96$, was not significant in (i)), while
 \texttt{GENDER}, health, \texttt{ANYLIMIT}, education, \texttt{insure}, \texttt{ASIAN},
 \texttt{MIDWEST} and \texttt{MNHPOOR} remain so.
@@ -2250,9 +2256,10 @@ $\var y=\phi b''(\theta)=\phi/\theta^2=\alpha/\gamma^2$, the gamma's moments
 $\expc y^2=\alpha(\alpha+1)/\gamma^2$). FREES's table has $+\phi^{-1}\ln\phi$:
 <<f13-1>>=
 al <- 2.5; ga <- 0.7; yv <- c(0.5, 2, 6); th <- -ga / al; ph <- 1 / al
-lef <- function(sgn) exp((yv * th + log(-th)) / ph + sgn * log(ph) / ph - lgamma(1 / ph) +
-                         (1 / ph - 1) * log(yv))
-signif(rbind(dgamma = dgamma(yv, al, ga), corrected = lef(-1), frees_table = lef(+1)), 5)
+lef <- function(sgn) exp((yv * th + log(-th)) / ph + sgn * log(ph) / ph -
+                         lgamma(1 / ph) + (1 / ph - 1) * log(yv))
+signif(rbind(dgamma = dgamma(yv, al, ga), corrected = lef(-1),
+             frees_table = lef(+1)), 5)
 @
 \end{solution}
 

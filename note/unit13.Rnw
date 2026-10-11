@@ -15,6 +15,12 @@
 \renewcommand\theexercise {13.\arabic{exercise}}
 \renewcommand\thefigure   {13.\arabic{figure}}
 
+% keepends: inside it the first and the last line of a code or output block stay with their
+% neighbours, so a slide break cannot leave one line of a block alone (layout only).
+\makeatletter
+\newenvironment{keepends}{\clubpenalty\@M\widowpenalty\@M\@clubpenalty\@M}{}
+\makeatother
+
 \title{\color{hdrBG}\bfseries\Huge Unsupervised Learning}
 \author{}\date{}
 
@@ -456,6 +462,7 @@ completion) is excluded by the syllabus. \ SRM learning outcomes 5(b)--5(d).
 \begin{example}[$K$-means and hierarchical clustering on simulated data; ISLR §12.5.3]
 \label{ex:lab-cluster}
 Fifty points in the plane, the first $25$ shifted by $(3,-4)$, ISLR's seeds:
+\begin{keepends}
 <<lab-cluster>>=
 suppressMessages(library(ISLR2))
 set.seed(2); x <- matrix(rnorm(50 * 2), ncol = 2)
@@ -465,8 +472,7 @@ c(misplaced_by_K2 = min(sum(km2$cluster != rep(1:2, each = 25)),
                         sum(km2$cluster != rep(2:1, each = 25))))
 set.seed(4); km3 <- kmeans(x, 3, nstart = 20); km3$size
 table(cluster = km3$cluster, group = rep(1:2, each = 25))
-set.seed(4)
-c(nstart_1 = kmeans(x, 3, nstart = 1)$tot.withinss,
+set.seed(4); c(nstart_1 = kmeans(x, 3, nstart = 1)$tot.withinss,
   nstart_20 = kmeans(x, 3, nstart = 20)$tot.withinss)
 hcs <- lapply(c(complete = "complete", average = "average", single = "single"),
               function(m) hclust(dist(x), method = m))
@@ -477,6 +483,7 @@ table(scaled_complete = cutree(hclust(dist(scale(x))), 2), group = rep(1:2, each
 x3 <- matrix(rnorm(30 * 3), ncol = 3); dc <- as.dist(1 - cor(t(x3)))
 range(dc)
 @
+\end{keepends}
 $K=2$ recovers the two groups exactly. With $K=3$ the third cluster takes points from both
 groups ($8$ and $2$). With one start the
 criterion $W$, which \texttt{kmeans} reports as \texttt{tot.withinss}, is $104.33$; with twenty it
@@ -621,11 +628,13 @@ c(best = min(one), worst = max(one), distinct_values = length(unique(round(one, 
   with_nstart_50 = kmeans(X, centers = 3, nstart = 50)$tot.withinss)
 @
 
+\begin{keepends}
 <<kmeans-K>>=
 set.seed(7)
 t(sapply(1:8, function(K) c(K = K,
   within = kmeans(X, centers = K, nstart = 25)$tot.withinss)))
 @
+\end{keepends}
 
 \subsection{Hierarchical clustering (§\ref{sec:13.3})}\label{sec:comp-hclust}
 
@@ -633,7 +642,7 @@ t(sapply(1:8, function(K) c(K = K,
 dd <- dist(X)
 t(sapply(c("single", "complete", "average", "centroid"), function(m) {
   h <- hclust(if (m == "centroid") dd^2 else dd, method = m)
-  if (m == "centroid") h$height <- sqrt(h$height)   # eq:centroid needs squared distances
+  if (m == "centroid") h$height <- sqrt(h$height)   # needs squared distances
   c(smallest_height_step = min(diff(h$height)),
     inversions = sum(diff(h$height) < 0),
     largest_height = max(h$height)) }))
@@ -662,15 +671,15 @@ c(height = h0, clusters_from_cutree = length(unique(lab)),
 @
 
 \begin{figure}[H]\centering
-<<hclust-fig, echo=FALSE, fig.width=6.4, fig.height=3.0>>=
-op <- par(mfrow = c(1, 2), mar = c(0.6, 3.6, 2.0, 0.6), cex = 0.55,
+<<hclust-fig, echo=FALSE, fig.width=9.6, fig.height=3.3, out.width="\\linewidth">>=
+op <- par(mfrow = c(1, 2), mar = c(0.3, 3.6, 1.8, 0.4), cex = 0.7,
           mgp = c(2.2, 0.7, 0))
-plot(hclust(dd, "complete"), labels = abbreviate(rownames(USArrests), 4),
+plot(hclust(dd, "complete"), labels = abbreviate(rownames(USArrests), 4), cex = 0.66,
      main = "complete linkage", xlab = "", sub = "", ylab = "height")
 abline(h = mean(hclust(dd, "complete")$height[c(n - 4, n - 3)]), col = "#B45309", lty = 2,
        lwd = 2)
 hcen <- hclust(dd^2, "centroid"); hcen$height <- sqrt(hcen$height)
-plot(hcen, labels = abbreviate(rownames(USArrests), 4),
+plot(hcen, labels = abbreviate(rownames(USArrests), 4), cex = 0.66,
      main = "centroid linkage: five inversions", xlab = "", sub = "",
      ylab = "height")
 par(op)
@@ -711,8 +720,7 @@ in whatever units the columns carry.
 cl_raw <- cutree(hclust(dist(USArrests), "complete"), 3)
 cl_std <- cutree(hclust(dist(X), "complete"), 3)
 table(unstandardised = cl_raw, standardised = cl_std)
-c(states_in_the_diagonal_cells = sum(diag(table(cl_raw, cl_std))),
-  n = nrow(USArrests))
+c(states_in_the_diagonal_cells = sum(diag(table(cl_raw, cl_std))), n = n)
 @
 
 The cluster labels are arbitrary, so the table is the object to read and not the diagonal:
@@ -926,7 +934,7 @@ score vectors; (g) with $K=3$ after scaling each variable.
 \end{exercise}
 
 \begin{solution}
-<<i12-10, fig.width=4.2, fig.height=2.8>>=
+<<i12-10, fig.width=4.2, fig.height=2.8, out.width="0.75\\linewidth">>=
 set.seed(2); x10 <- matrix(rnorm(60 * 50), ncol = 50); y10 <- rep(1:3, each = 20)
 x10[1:20, 1:2] <- x10[1:20, 1:2] + 4; x10[21:40, 1] <- x10[21:40, 1] - 4
 x10[41:60, 2] <- x10[41:60, 2] - 4
@@ -1015,7 +1023,8 @@ iteration of $K$-means with Euclidean distance, how many points are in the small
 P <- rbind(c(2, -1), c(-1, 2), c(-2, 1), c(1, 2), c(4, 0), c(4, -1), c(0, -2),
            c(0, -5), c(-1, 0), c(3, 8), c(-2, 0), c(0, 0))
 g0 <- rep(c("A", "B", "C"), each = 4)
-cen <- apply(P, 2, function(v) tapply(v, g0, mean)); cen
+cen <- apply(P, 2, function(v) tapply(v, g0, mean))
+cen
 table(c("A", "B", "C")[max.col(-as.matrix(dist(rbind(cen, P)))[-(1:3), 1:3])])
 @
 The centroids are $(0,1)$, $(2,-2)$ and $(0,2)$; reassigning each point to its nearest centroid

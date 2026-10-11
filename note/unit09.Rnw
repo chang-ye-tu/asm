@@ -18,6 +18,14 @@
 \title{\color{hdrBG}\bfseries\Huge Modelling Trends in Time}
 \author{}\date{}
 
+% Inside an example or a solution no slide break leaves the first or the last line of a code
+% block, of an output block or of a paragraph alone.
+\makeatletter
+\newcommand{\keeplines}{\clubpenalty\@M \@clubpenalty\@M \widowpenalty\@M}
+\makeatother
+\AtBeginEnvironment{example}{\keeplines}
+\AtBeginEnvironment{solution}{\keeplines}
+
 \begin{document}
 
 <<setup, include=FALSE>>=
@@ -166,10 +174,10 @@ dates $t=503$ in April 2007.
 \end{example}
 
 \begin{figure}[H]\centering
-<<hk-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+<<hk-fig, echo=FALSE, fig.width=6.4, fig.height=2.2, out.width="0.72\\linewidth">>=
 op <- par(mfrow = c(1, 2), mar = c(3.4, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.8)
 plot(hk$t, hk$EXHKUS, type = "l", xlab = "t (trading day)", ylab = "HK$ per US$",
-     main = "series and quadratic trend")
+     main = "series and quadratic trend", ylim = range(hk$EXHKUS, fitted(mhk)))
 lines(hk$t, fitted(mhk), col = "#B45309", lwd = 2)
 plot(hk$t, residuals(mhk), type = "l", xlab = "t (trading day)", ylab = "residual",
      main = "residuals"); abline(h = 0, col = "#B45309")
@@ -437,17 +445,8 @@ $\expc\sum_t(u_t-\bar u)^2=\sigma^2(T+1)\{T/2-(2T+1)/6\}=\sigma^2(T^2-1)/6$. Div
 The differences are independent with variance $\sigma^2$, and a sample variance is unbiased.
 \end{proof}
 
-\begin{remark}[Identifying a random walk; FREES §7.4]
-FREES's three indications: a control chart showing a linear trend and growing variability
-(Proposition~\ref{prop:rw-moments}); differences that look like white noise
-(Definition~\ref{def:rw}); and a standard deviation of the series far above that of the
-differences, by Proposition~\ref{prop:rw-sd} a factor of order $\sqrt T$ even without
-drift. On the labor force rates (Figure~\ref{fig:lfpr}), $0.1237$ against $0.0101$
-(Example~\ref{ex:lfpr}).
-\end{remark}
-
 \begin{figure}[H]\centering
-<<lfpr-fig, echo=FALSE, fig.width=6.4, fig.height=2.6>>=
+<<lfpr-fig, echo=FALSE, fig.width=6.4, fig.height=2.1, out.width="0.72\\linewidth">>=
 op <- par(mfrow = c(1, 2), mar = c(3.4, 3.8, 1.4, 0.6), mgp = c(2.1, 0.6, 0), cex = 0.8)
 cc <- function(x, yr, main) { plot(yr, x, type = "o", pch = 16, cex = 0.5, xlab = "year",
   ylab = "", main = main, ylim = range(x, mean(x) + c(-3, 3) * sd(x)))
@@ -458,6 +457,15 @@ par(op)
 \caption{Retrospective control charts, with limits $\bar y\pm3s_y$ (dashed), of the labor force
 participation rates (FREES Figure 7.7) and of their differences.}\label{fig:lfpr}
 \end{figure}
+
+\begin{remark}[Identifying a random walk; FREES §7.4]
+FREES's three indications: a control chart showing a linear trend and growing variability
+(Proposition~\ref{prop:rw-moments}); differences that look like white noise
+(Definition~\ref{def:rw}); and a standard deviation of the series far above that of the
+differences, by Proposition~\ref{prop:rw-sd} a factor of order $\sqrt T$ even without
+drift. On the labor force rates (Figure~\ref{fig:lfpr}), $0.1237$ against $0.0101$
+(Example~\ref{ex:lfpr}).
+\end{remark}
 
 \subsection{Random walk against linear trend}\label{sec:9.3.3}
 
@@ -503,8 +511,7 @@ deviations of the first and last thirds of each, a crude check of constant varia
 <<sp>>=
 sp <- read.csv("data/frees/csv/SP500Quarterly.csv")
 x <- list(index = sp$SPINDEX, difference = diff(sp$SPINDEX),
-          log_index = log(sp$SPINDEX),
-          difference_of_logs = diff(log(sp$SPINDEX)))
+          log_index = log(sp$SPINDEX), difference_of_logs = diff(log(sp$SPINDEX)))
 round(t(sapply(x, function(v) { k <- floor(length(v) / 3)
   c(sd_first_third = sd(head(v, k)), sd_last_third = sd(tail(v, k))) })), 4)
 pc <- diff(sp$SPINDEX) / head(sp$SPINDEX, -1)
@@ -521,8 +528,8 @@ $0.158$ (the actual distance is at most $0.053$): a log difference is a proporti
 \end{example}
 
 \begin{figure}[H]\centering
-<<sp-fig, echo=FALSE, fig.width=6.4, fig.height=3.3>>=
-op <- par(mfrow = c(2, 2), mar = c(2.6, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex = 0.7)
+<<sp-fig, echo=FALSE, fig.width=6.4, fig.height=3.0, out.width="0.72\\linewidth">>=
+op <- par(mfrow = c(2, 2), mar = c(3.0, 3.4, 1.8, 0.6), mgp = c(1.9, 0.6, 0), cex = 0.7)
 plot(sp$YEAR, sp$SPINDEX, type = "l", xlab = "", ylab = "", main = "index")
 plot(sp$YEAR[-1], x$difference, type = "l", xlab = "", ylab = "", main = "difference")
 plot(sp$YEAR, x$log_index, type = "l", xlab = "year", ylab = "", main = "log index")
@@ -563,9 +570,8 @@ walk, the one-step forecasts $y_{t-1}+\bar c$ of the definition and the forecast
 leads $1$ to $4$ that FREES's script computes; the percentage statistics without the factor
 $100$, as FREES prints them:
 <<oos>>=
-yr <- lf$YEAR; tt <- 1:31
-lin <- lm(msc ~ tt, subset = yr %in% 1968:1994); cb <- mean(dl[yr[-1] %in% 1969:1994])
-y58 <- msc[yr %in% 1995:1998]
+yr <- lf$YEAR; tt <- 1:31; lin <- lm(msc ~ tt, subset = yr %in% 1968:1994)
+cb <- mean(dl[yr[-1] %in% 1969:1994]); y58 <- msc[yr %in% 1995:1998]
 fc <- list(linear_trend = coef(lin)[[1]] + coef(lin)[[2]] * tt[yr %in% 1995:1998],
            random_walk_one_step = msc[yr %in% 1994:1997] + cb,
            random_walk_script = msc[yr == 1994] + cb * (1:4))
